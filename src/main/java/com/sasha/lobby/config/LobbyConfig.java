@@ -122,7 +122,7 @@ public record LobbyConfig(
         return new LobbyConfig(
                 new Spawn(
                         c.getString("spawn.world", "world"),
-                        c.getDouble("spawn.x"), c.getDouble("spawn.y", 64), c.getDouble("spawn.z"),
+                        c.getDouble("spawn.x", -46.5), c.getDouble("spawn.y", 103), c.getDouble("spawn.z", 892.5),
                         (float) c.getDouble("spawn.yaw"), (float) c.getDouble("spawn.pitch"),
                         c.getBoolean("spawn.teleport-on-join", true)),
                 new Protection(

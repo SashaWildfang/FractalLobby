@@ -21,9 +21,9 @@ config-version: 2
 # Set it in-game with /setspawn (saves your position here).
 spawn:
   world: "world"
-  x: 27.500
-  y: 84.0
-  z: -8.500
+  x: -46.500
+  y: 103.0
+  z: 892.500
   yaw: 0.0
   pitch: 0.0
   # Send players to spawn every time they join.
