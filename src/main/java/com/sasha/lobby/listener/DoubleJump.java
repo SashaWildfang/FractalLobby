@@ -5,7 +5,6 @@ package com.sasha.lobby.listener;
 
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.LobbyConfig;
-import com.sasha.lobby.hook.PlaceholderHook;
 import com.sasha.lobby.items.Settings;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -40,7 +39,7 @@ public final class DoubleJump implements Listener {
     /** Players Lobby gave "allow flight" to for double jumping. */
     private final Set<UUID> granted = new HashSet<>();
     /** Players in an ajParkour run right now (checked twice a second). */
-    private final Set<UUID> inParkour = new HashSet<>();
+    private final Set<UUID> runners = new HashSet<>();
     private BukkitTask parkourTask;
 
     public DoubleJump(Lobby plugin) {
@@ -62,7 +61,7 @@ public final class DoubleJump implements Listener {
         GameMode mode = player.getGameMode();
         return config.enabled() && player.hasPermission(PERMISSION)
                 && (mode == GameMode.SURVIVAL || mode == GameMode.ADVENTURE)
-                && player.getVehicle() == null && !inParkour.contains(player.getUniqueId())
+                && player.getVehicle() == null && !runners.contains(player.getUniqueId())
                 && plugin.settings().on(player, Settings.Setting.DOUBLE_JUMP);
     }
 
@@ -141,16 +140,69 @@ public final class DoubleJump implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         revoke(event.getPlayer());
-        inParkour.remove(event.getPlayer().getUniqueId());
+        runners.remove(event.getPlayer().getUniqueId());
     }
 
-    /** Double jump would be cheating in parkour: ajParkour's %ajpk_current% is a number during a run. */
+    /**
+     * Double jump would be cheating in parkour. ajParkour has no placeholder that says "in a run" (its
+     * score placeholder shows 0 outside a run too), so its own Manager#inParkour(Player) is asked,
+     * found by name so Lobby doesn't need ajParkour to build or run.
+     */
     private void checkParkour() {
-        if (!plugin.placeholderApi()) return;
+        if (!findParkourCheck()) return;
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            boolean running = PlaceholderHook.apply(player, "%ajpk_current%").trim().matches("\\d+");
-            boolean changed = running ? inParkour.add(player.getUniqueId()) : inParkour.remove(player.getUniqueId());
-            if (changed || running) refresh(player);
+            boolean running;
+            try {
+                running = Boolean.TRUE.equals(inParkour.invoke(parkourManager.get(), player));
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                plugin.getLogger().warning("Couldn't ask ajParkour who is in a run; double jump stays on during parkour: " + e);
+                parkourManager = null;
+                parkourChecked = true;
+                return;
+            }
+            boolean changed = running ? runners.add(player.getUniqueId()) : runners.remove(player.getUniqueId());
+            if (changed) refresh(player);
+        }
+    }
+
+    /** Gets ajParkour's Manager (its static getInstance(), or the main class's "man" field in older versions). */
+    private java.util.function.Supplier<Object> parkourManager;
+    private java.lang.reflect.Method inParkour;
+    private boolean parkourChecked;
+
+    /** Looks up ajParkour's Manager.getInstance() and Manager#inParkour(Player) once, if ajParkour is there. */
+    private boolean findParkourCheck() {
+        if (parkourManager != null) return true;
+        if (parkourChecked) return false;
+        org.bukkit.plugin.Plugin ajParkour = null;
+        for (org.bukkit.plugin.Plugin other : plugin.getServer().getPluginManager().getPlugins()) {
+            if (other.getName().equalsIgnoreCase("ajParkour") && other.isEnabled()) ajParkour = other;
+        }
+        if (ajParkour == null) return false; // may still be loading: try again next time
+        parkourChecked = true;
+        try {
+            Class<?> manager = Class.forName("us.ajg0702.parkour.game.Manager", true, ajParkour.getClass().getClassLoader());
+            inParkour = manager.getMethod("inParkour", Player.class);
+            java.lang.reflect.Method getInstance = null;
+            try {
+                getInstance = manager.getMethod("getInstance");
+            } catch (NoSuchMethodException older) {
+                // fall back to the field below
+            }
+            java.lang.reflect.Method instance = getInstance;
+            java.lang.reflect.Field field = instance == null ? ajParkour.getClass().getField("man") : null;
+            org.bukkit.plugin.Plugin owner = ajParkour;
+            parkourManager = () -> {
+                try {
+                    return instance != null ? instance.invoke(null) : field.get(owner);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+            };
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().warning("This ajParkour version has no Manager#inParkour; double jump stays on during parkour.");
+            return false;
         }
     }
 }
