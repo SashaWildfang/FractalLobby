@@ -1,0 +1,140 @@
+# ┌──────────────────────────────────────────────────────────────┐
+# │                       Lobby · messages                       │
+# │       Built by Sasha Wildfang for Fractal Network.           │
+# └──────────────────────────────────────────────────────────────┘
+#
+#  Text uses MiniMessage: https://docs.advntr.dev/minimessage/format
+#  Leave a chat message empty ("") to turn it off.
+#
+#  Theme tags work everywhere in this file:
+#    <primary> <secondary> <accent> <muted> <good> <bad>
+#    <brand>text</brand>   - the theme gradient
+#    <prefix>              - the prefix below
+#
+#  Resource packs can turn symbols into images. If a symbol shows up as
+#  a picture, your pack uses it: replace it here.
+
+# Do not change. When a plugin update ships new text, your old file is
+# saved as messages.yml.old and replaced.
+messages-version: 1
+
+theme:
+  primary: "#B266FF"
+  secondary: "#E3C4FF"
+  accent: "#FF7BE5"
+  muted: "#9C8DB8"
+  good: "#9BFFC4"
+  bad: "#FF7590"
+  gradient: ["#8E2DE2", "#E58BFF"]
+
+prefix: "<brand><bold>Lobby</bold></brand> <dark_gray>»</dark_gray> "
+
+format:
+  # Font for everything players see: chat, the scoreboard, item names.
+  #   small-caps - tiny text: "Lobby" shows as "ʟᴏʙʙʏ" (player names too)
+  #   normal     - regular text
+  # Write the text in this file normally; the plugin converts it as it's shown.
+  font: small-caps
+
+
+# ── Scoreboard ──────────────────────────────────────────────────
+# Up to 15 lines, top to bottom. There are no numbers on the right.
+# Tags you can use:
+#   <online:NAME>  players on a proxy server (names from config.yml), e.g. <online:survival>
+#   <online:all>   players on the whole network
+#   <here>         players on this server
+#   <player>       the viewer's name
+#   <date> <time>  today's date and the time
+# PlaceholderAPI placeholders (%...%) also work when it's installed.
+scoreboard:
+  title: "<brand><bold>FractalSMP</bold></brand>"
+  lines:
+    - "<dark_gray><date>"
+    - ""
+    - "<secondary>Realms <muted>(<online:all>)"
+    - " <primary>▪</primary> <white>Lobby: <primary><online:lobby>"
+    - " <primary>▪</primary> <white>Survival: <primary><online:survival>"
+    - " <primary>▪</primary> <white>Lifesteal: <primary><online:lifesteal>"
+    - " <primary>▪</primary> <white>Practice: <primary><online:practice>"
+    - ""
+    - "<muted>web.fractalsmp.net"
+
+
+# ── Tab list ────────────────────────────────────────────────────
+# Above and below the player list. Same tags as the scoreboard.
+# Player names in the list use nametag.format from config.yml.
+tablist:
+  header:
+    - ""
+    - "<brand><bold>FractalSMP</bold></brand>"
+    - "<muted>You're in the <primary>Lobby</primary>"
+    - ""
+  footer:
+    - ""
+    - "<muted>web.fractalsmp.net"
+    - ""
+
+
+# ── Realm selector ──────────────────────────────────────────────
+# Each realm's name, item and description are in config.yml (realm-selector).
+realm-selector:
+  title: "<brand><bold>Realms</bold></brand>"
+  # Added under every realm's description. <online> <server>
+  button-lore:
+    - ""
+    - "<muted>Playing: <white><online>"
+    - ""
+    - "<dark_gray>▸ <accent>Left-click</accent> <muted>to join"
+  connecting: "<prefix><secondary>Sending you to <primary><server></primary>…"   # <server> (proxy server name)
+
+
+# ── Join items ──────────────────────────────────────────────────
+items:
+  realm-selector:
+    name: "<primary>Realm Selector"
+    lore:
+      - "<muted>Pick a realm to play on."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
+  radio:
+    name: "<primary>Radio"
+    lore:
+      - "<muted>Pick songs, skip, change the volume"
+      - "<muted>or tune in to the lobby station."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
+  visibility-shown:
+    name: "<good>Players: Visible"
+    lore:
+      - "<muted>You can see everyone in the lobby."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to hide other players"
+  visibility-hidden:
+    name: "<bad>Players: Hidden"
+    lore:
+      - "<muted>Other players are hidden from you."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to show other players"
+
+
+# ── Chat ────────────────────────────────────────────────────────
+visibility:
+  shown: "<prefix><secondary>Other players are now <good>visible</good>."
+  hidden: "<prefix><secondary>Other players are now <bad>hidden</bad>."
+  cooldown: "<prefix><muted>Slow down a little."
+
+# Shown above the hotbar when a player is saved from the void.
+void-rescued: "<secondary>Whoosh! <muted>Back on solid ground."
+
+glow:
+  "on": "<prefix><secondary>You're now <primary>glowing</primary> in your rank colour."
+  "off": "<prefix><secondary>You stopped glowing."
+
+spawn:
+  teleported: "<prefix><secondary>Back to spawn."
+  set: "<prefix><good>Spawn set to where you're standing."
+
+general:
+  players-only: "<prefix><bad>Only players can do that."
+  unknown-command: "<prefix><bad>Unknown command. Try <white>/lobby reload</white>."
+  reloaded: "<prefix><good>Reloaded the config and messages."

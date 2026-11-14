@@ -1,0 +1,70 @@
+/*
+ * Lobby - built by Sasha Wildfang for Fractal Network.
+ */
+package com.sasha.lobby.scoreboard;
+
+import com.sasha.lobby.config.LobbyConfig;
+import com.sasha.lobby.config.Messages;
+import com.sasha.lobby.config.MessagesTestAccess;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ScoreboardTagsTest {
+
+    private static final Map<String, Integer> COUNTS = Map.of("lobby", 1, "survival", 4, "ALL", 5);
+
+    private static TagResolver tags() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("scoreboard.date-format", "dd/MM/yy");
+        LobbyConfig config = LobbyConfig.load(yaml, Logger.getLogger("test"));
+        return DisplayService.tags(config,
+                server -> COUNTS.getOrDefault(server.equalsIgnoreCase("all") ? "ALL" : server.toLowerCase(), 0),
+                1, "SashaWildfang");
+    }
+
+    private static String plain(Messages messages, String template) {
+        return PlainTextComponentSerializer.plainText().serialize(messages.render(template, tags()));
+    }
+
+    @Test
+    void onlineTagsShowProxyCounts() throws Exception {
+        YamlConfiguration server = new YamlConfiguration();
+        server.set("format.font", "normal");
+        Messages messages = MessagesTestAccess.messages(server);
+
+        assertEquals("Realms (5)", plain(messages, "<secondary>Realms <muted>(<online:all>)"));
+        assertEquals("Survival: 4", plain(messages, "<white>Survival: <primary><online:survival>"));
+        assertEquals("Practice: 0", plain(messages, "Practice: <online:practice>"));
+        assertEquals("1 here, SashaWildfang", plain(messages, "<here> here, <player>"));
+    }
+
+    /** The default scoreboard renders with small caps, and numbers stay as digits. */
+    @Test
+    void defaultScoreboardUsesSmallCaps() throws Exception {
+        Messages messages = MessagesTestAccess.messages(new YamlConfiguration());
+        List<String> lines = messages.lines("scoreboard.lines");
+
+        assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(2)));
+        assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(4)));
+        assertEquals(MessagesTestAccess.smallCaps("FractalSMP"), plain(messages, messages.raw("scoreboard.title")));
+    }
+
+    /** A server file from an older version lacks newer keys: the built-in text fills in, not the key name. */
+    @Test
+    void missingKeysFallBackToBuiltInText() throws Exception {
+        YamlConfiguration server = new YamlConfiguration();
+        server.set("format.font", "normal");
+        Messages messages = MessagesTestAccess.messages(server);
+
+        assertEquals("Players: Visible", PlainTextComponentSerializer.plainText().serialize(
+                messages.item("items.visibility-shown.name")));
+    }
+}

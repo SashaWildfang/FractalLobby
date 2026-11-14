@@ -1,0 +1,26 @@
+name: Lobby
+version: '${version}'
+main: com.sasha.lobby.Lobby
+api-version: '1.21.11'
+description: '${description}'
+authors: [Sasha Wildfang]
+softdepend: [PlaceholderAPI, LuckPerms]
+
+# Commands are registered in code through Paper's command API (see LobbyCommand).
+
+permissions:
+  lobby.staff:
+    description: Move and drop items in the lobby
+    default: op
+  lobby.admin:
+    description: Reload Lobby and set the spawn
+    default: op
+  lobby.build:
+    description: Place and break blocks in the lobby (name set by protection.build-permission)
+    default: false
+  lobby.spawn:
+    description: Use /spawn
+    default: true
+  lobby.cmd.glow:
+    description: Use /glow to glow in your rank colour
+    default: op

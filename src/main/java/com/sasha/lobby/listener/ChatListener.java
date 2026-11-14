@@ -1,0 +1,62 @@
+/*
+ * Lobby - built by Sasha Wildfang for Fractal Network.
+ */
+package com.sasha.lobby.listener;
+
+import com.sasha.lobby.Lobby;
+import com.sasha.lobby.config.LegacyCodes;
+import com.sasha.lobby.config.LobbyConfig;
+import io.papermc.paper.chat.ChatRenderer;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.Component;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+/** Join, quit and first-join messages, and the chat format. */
+public final class ChatListener implements Listener {
+
+    private static final String MESSAGE = "%message%";
+
+    private final Lobby plugin;
+
+    public ChatListener(Lobby plugin) {
+        this.plugin = plugin;
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        LobbyConfig.JoinMessages messages = plugin.lobbyConfig().joinMessages();
+        String format = !player.hasPlayedBefore() && !messages.firstJoin().isEmpty() ? messages.firstJoin() : messages.join();
+        event.joinMessage(format.isEmpty() ? null : plugin.playerFormat().render(player, format));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onQuit(PlayerQuitEvent event) {
+        String format = plugin.lobbyConfig().joinMessages().quit();
+        event.quitMessage(format.isEmpty() ? null : plugin.playerFormat().render(event.getPlayer(), format));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onChat(AsyncChatEvent event) {
+        LobbyConfig.Chat chat = plugin.lobbyConfig().chat();
+        if (!chat.enabled()) return;
+        Player player = event.getPlayer();
+        String format = plugin.playerFormat().prefix(player).isEmpty() ? chat.defaultFormat() : chat.rankedFormat();
+
+        // The format around %message% gets colours and the font; what the player typed is left exactly as is.
+        int split = format.indexOf(MESSAGE);
+        String before = split < 0 ? format : format.substring(0, split);
+        String after = split < 0 ? "" : format.substring(split + MESSAGE.length());
+        Component head = before.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, before);
+        Component tail = after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after);
+        // Like old-style codes, the message takes the colour written right before it (&7 → grey, &f → white).
+        Component message = event.message().colorIfAbsent(LegacyCodes.lastColor(before));
+        Component line = split < 0 ? head : Component.empty().append(head).append(message).append(tail);
+        event.renderer(ChatRenderer.viewerUnaware((source, displayName, typed) -> line));
+    }
+}

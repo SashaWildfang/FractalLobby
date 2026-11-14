@@ -1,0 +1,200 @@
+# ┌──────────────────────────────────────────────────────────────┐
+# │                            Lobby                             │
+# │  Scoreboard, tab list, chat, protection, spawn and items.    │
+# │       Built by Sasha Wildfang for Fractal Network.           │
+# └──────────────────────────────────────────────────────────────┘
+#
+#  Text in this file and messages.yml can use:
+#    - & colour codes: &7 grey, &l bold, &#B266FF hex
+#    - MiniMessage tags: <gray>, <bold>, <#B266FF>, plus the theme tags
+#      <primary> <secondary> <accent> <muted> <good> <bad> and <brand>text</brand>
+#    - %player%, %luckperms_prefix% / %luckperms_suffix% (LuckPerms), and
+#      any PlaceholderAPI placeholder when PlaceholderAPI is installed
+#  The font (tiny "small caps" or normal) is set in messages.yml (format.font).
+#  Apply changes with /lobby reload.
+
+# Do not change. Used to upgrade this file in future versions.
+config-version: 2
+
+
+# ── Spawn ───────────────────────────────────────────────────────
+# Set it in-game with /setspawn (saves your position here).
+spawn:
+  world: "world"
+  x: 27.500
+  y: 84.0
+  z: -8.500
+  yaw: 0.0
+  pitch: 0.0
+  # Send players to spawn every time they join.
+  teleport-on-join: true
+
+
+# ── Protection ──────────────────────────────────────────────────
+protection:
+  # Players with this permission can place and break blocks.
+  build-permission: "lobby.build"
+  # Operators can always build, even without the permission.
+  allow-ops-to-build: true
+  # Players can't hurt each other.
+  disable-pvp: true
+  # Players can't hurt mobs or other non-player entities (incl. with arrows).
+  disable-mob-attacks: true
+  # Players never take fall damage.
+  disable-fall-damage: true
+  # Hunger never goes down.
+  disable-hunger: true
+
+
+# ── Void rescue ─────────────────────────────────────────────────
+# Falling off the map puts players back on the last block they stood on,
+# with a puff of cloud particles. With none yet, they go to spawn.
+void-rescue:
+  enabled: true
+  # Players are rescued once they fall below this height.
+  below-y: 0
+  # Sound when rescued (a sound name, or "" for none).
+  sound: entity.player.teleport
+  sound-volume: 0.6
+  sound-pitch: 1.4
+
+
+# ── Launch pads ─────────────────────────────────────────────────
+# Stepping on this block launches players the way they're facing.
+# Place them anywhere; every one of this block in the lobby is a pad.
+launch-pads:
+  enabled: true
+  block: STONE_PRESSURE_PLATE
+  # Push forward and up. Higher = further / higher.
+  forward: 2.4
+  upward: 1.0
+  sound: entity.firework_rocket.launch
+  sound-volume: 0.8
+  sound-pitch: 1.2
+
+
+# ── Join, quit and first-join messages ──────────────────────────
+# Leave a message empty ("") to turn it off.
+join-messages:
+  first-join: "&7ᴡᴇʟᴄᴏᴍᴇ &c%player% &7ᴛᴏ ᴛʜᴇ ꜱᴇʀᴠᴇʀ!"
+  join-message: "&a+ &7%player%"
+  quit-message: "&c- &7%player%"
+
+
+# ── Chat ────────────────────────────────────────────────────────
+# Players with a LuckPerms prefix use ranked-format, everyone else
+# default-format. %message% is what they typed (never recoloured).
+chat:
+  enabled: true
+  default-format: "&7%player%: %message%"
+  ranked-format: "%luckperms_prefix%%player%&f: %message%"
+
+
+# ── Nametags ────────────────────────────────────────────────────
+# Shown above players' heads. The colour code right before %player%
+# colours the name itself.
+nametag:
+  enabled: true
+  format: "%luckperms_prefix%%player%"
+  # Use the same format for names in the tab list.
+  apply-to-tablist: true
+
+
+# ── Network player counts ───────────────────────────────────────
+# Asks the proxy (Velocity or BungeeCord) how many players are on each
+# server. Works with no proxy plugin: Velocity relays these requests as
+# long as "bungee-plugin-message-channel" is true in velocity.toml
+# (it is by default). Counts need at least one player in the lobby.
+proxy:
+  enabled: true
+  # How often to ask for new counts, in seconds.
+  refresh-seconds: 2
+  # Server names exactly as they are in the proxy config. Use them as
+  # <online:survival>; <online:all> is the whole network.
+  servers:
+    - lobby
+    - survival
+    - lifesteal
+    - practice
+
+
+# ── Scoreboard and tab list ─────────────────────────────────────
+# The text is in messages.yml (scoreboard and tablist).
+scoreboard:
+  enabled: true
+  # How often the scoreboard and tab list redraw, in ticks (20 = 1 second).
+  # Only lines that actually changed are sent.
+  update-ticks: 10
+  # Format of <date>, see https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/format/DateTimeFormatter.html
+  date-format: "dd/MM/yy"
+  # Time zone for <date> and <time>, e.g. America/New_York. Empty = the server's.
+  time-zone: ""
+
+tablist:
+  enabled: true
+
+
+# ── Join items ──────────────────────────────────────────────────
+join-items:
+  # Clear the inventory on join, then give the join items.
+  clear-inventory: true
+  # Only players with lobby.staff can move, drop or swap items.
+  lock-inventory: true
+
+  # Opens the realm selector.
+  realm-selector:
+    enabled: true
+    # Hotbar slot, 1 to 9.
+    slot: 2
+    item: COMPASS
+
+  # Opens the Radio menu (from the Radio plugin).
+  radio:
+    enabled: true
+    slot: 5
+    item: JUKEBOX
+    # Command run when it's right-clicked, without the /.
+    command: radio
+    # Only give the item when this plugin is installed ("" = always).
+    requires-plugin: Radio
+
+  # Toggles whether you can see other players. Remembered between joins.
+  player-visibility:
+    enabled: true
+    slot: 8
+    item-visible: LIME_DYE
+    item-hidden: GRAY_DYE
+    # Seconds between uses, to stop spam clicking.
+    cooldown-seconds: 1.5
+
+
+# ── Realm selector ──────────────────────────────────────────────
+# The menu the compass opens. Clicking a realm sends the player to its
+# server through the proxy. Menu title and button text are in messages.yml.
+realm-selector:
+  # Menu height in rows (1-6).
+  rows: 3
+  realms:
+    survival:
+      # Server name in the proxy config.
+      server: survival
+      # Menu slot, counting from 0 at the top left (9 per row).
+      slot: 11
+      item: GRASS_BLOCK
+      name: "<primary>Survival"
+      description:
+        - "<muted>Classic survival with friends."
+    lifesteal:
+      server: lifesteal
+      slot: 13
+      item: NETHERITE_SWORD
+      name: "<accent>Lifesteal"
+      description:
+        - "<muted>Kill to gain hearts, die to lose them."
+    practice:
+      server: practice
+      slot: 15
+      item: IRON_SWORD
+      name: "<secondary>Practice"
+      description:
+        - "<muted>Sharpen your PvP."
