@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 4
+messages-version: 5
 
 theme:
   primary: "#B266FF"
@@ -147,6 +147,13 @@ items:
       - "<muted>Other players are hidden from you."
       - ""
       - "<dark_gray>▸ <accent>Right-click</accent> <muted>to show other players"
+  profile:
+    name: "<primary>Your Profile"
+    lore:
+      - "<muted>Your stats, chat colour, trail,"
+      - "<muted>glow and settings."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
   settings:
     name: "<primary>Settings"
     lore:
@@ -219,6 +226,98 @@ visibility:
 # Shown above the hotbar when a player is saved from the void.
 void-rescued: "<secondary>Whoosh! <muted>Flying you back to solid ground."
 
+# Punching staff (players with lobby.punch). <puncher> <target> <seconds>
+punch:
+  announce: "<prefix><accent><puncher></accent> <secondary>punched <primary><target></primary> <secondary>into the sky!"
+  you-punched: "<prefix><secondary>You punched <primary><target></primary> <secondary>into the sky!"
+  punched: "<prefix><accent><puncher></accent> <secondary>punched you into the sky!"
+  cooldown: "<muted>You can punch again in <white><seconds>s"
+
+# The profile menu (the player's head in the hotbar).
+# The head shows: <player> <rank> <joined> <playtime> <parkour-best> <parkour-rank> <chat-color> <trail> <glow>
+profile:
+  title: "<brand><bold>Your Profile</bold></brand>"
+  no-rank: "<gray>Member"
+  default: "<gray>Default"
+  none: "<gray>None"
+  locked: "<prefix><bad>You haven't unlocked that yet."
+  head:
+    name: "<primary><player>"
+    lore:
+      - "<muted>Rank: <rank>"
+      - "<muted>First joined: <white><joined>"
+      - "<muted>Playtime: <white><playtime>"
+      - ""
+      - "<muted>Parkour best: <white><parkour-best> <muted>(<parkour-rank>)"
+  chat-color:
+    name: "<primary>Chat Colour"
+    lore:
+      - "<muted>The colour your messages are in."
+      - "<muted>Now: <chat-color>"
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  trail:
+    name: "<primary>Particle Trail"
+    lore:
+      - "<muted>Particles that follow you around."
+      - "<muted>Now: <trail>"
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  glow:
+    name: "<primary>Glow"
+    lore:
+      - "<muted>Glow in your rank colour."
+      - "<muted>Now: <glow>"
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to switch"
+  glow-locked:
+    name: "<dark_gray>Glow"
+    lore:
+      - "<muted>Glow in your rank colour."
+      - ""
+      - "<bad>✖ Locked"
+  settings:
+    name: "<primary>Settings"
+    lore:
+      - "<muted>Join and leave messages, chat,"
+      - "<muted>player visibility, mention sounds,"
+      - "<muted>double jump and the scoreboard."
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to open"
+  parkour:
+    name: "<primary>Parkour"
+    lore:
+      - "<muted>Your best: <white><parkour-best> <muted>(<parkour-rank>)"
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>for the leaderboard"
+  realms:
+    name: "<primary>Realms"
+    lore:
+      - "<muted>Pick a realm to play on."
+      - ""
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to open"
+  back:
+    name: "<secondary>← Back"
+    lore:
+      - "<muted>Back to your profile."
+
+# The particle trail menu (from the profile). Trails are listed in config.yml.
+trails:
+  title: "<brand><bold>Particle Trails</bold></brand>"
+  set: "<prefix><secondary>Your trail is now <trail><secondary>."   # <trail>
+  removed: "<prefix><secondary>Trail removed."
+  locked: "<prefix><bad>You haven't unlocked that trail."
+  item:
+    - "<dark_gray>▸ <accent>Click</accent> <muted>to use"
+  item-selected:
+    - "<good>✔ In use"
+  item-locked:
+    - "<bad>✖ Locked"
+  none-item:
+    name: "<bad>No Trail"
+    lore:
+      - "<muted>Take your trail off."
+
 chat-color:
   title: "<brand><bold>Chat Colour</bold></brand>"
   set: "<prefix><secondary>Your chat colour is now <color><secondary>."   # <color> = the colour's name
@@ -257,8 +356,8 @@ spawn:
 
 general:
   players-only: "<prefix><bad>Only players can do that."
-  unknown-command: "<prefix><bad>Unknown command. Try <white>/lobby reload</white>."
-  reloaded: "<prefix><good>Reloaded the config and messages."
+  unknown-command: "<prefix><bad>Unknown command. Try <white>/lobbycore reload</white>."
+  reloaded: "<prefix><good>Reloaded config.yml, messages.yml and parkour.yml."
 
 parkour:
   setup: "<prefix><good>Parkour pressure plate and hologram set up."

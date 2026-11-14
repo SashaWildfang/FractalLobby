@@ -15,6 +15,15 @@ permissions:
   lobby.donor:
     description: Counts as a donor (settings like Donors Only, join sounds)
     default: op
+  lobby.punch:
+    description: Punch staff to launch them into the sky
+    default: op
+  lobby.punch.immune:
+    description: Can't be punched
+    default: false
+  lobby.trail.donor:
+    description: Use the donor particle trails (set per trail in config.yml)
+    default: op
   lobby.doublejump:
     description: Double jump in the lobby
     default: true

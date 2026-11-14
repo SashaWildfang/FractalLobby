@@ -81,6 +81,8 @@ public final class Settings implements Listener {
         }
     }
 
+    private static final int BACK = 31;
+
     private final Lobby plugin;
     private final Map<Setting, NamespacedKey> keys = new EnumMap<>(Setting.class);
     /** Before settings had options, hiding players was its own on/off flag. */
@@ -247,6 +249,7 @@ public final class Settings implements Listener {
             });
             menu.inventory.setItem(setting.slot + 9, pane);
         }
+        menu.inventory.setItem(BACK, Profile.button(messages, Material.ARROW, "profile.back"));
         player.openInventory(menu.inventory);
     }
 
@@ -265,6 +268,10 @@ public final class Settings implements Listener {
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (event.getRawSlot() == BACK) {
+            plugin.profile().open(player);
+            return;
+        }
         for (Setting setting : Setting.values()) {
             if (event.getRawSlot() == setting.slot || event.getRawSlot() == setting.slot + 9) {
                 cycle(player, setting, event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT);

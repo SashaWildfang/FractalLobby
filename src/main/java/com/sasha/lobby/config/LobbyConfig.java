@@ -39,7 +39,9 @@ public record LobbyConfig(
         Parkour parkour,
         Ranks ranks,
         Mentions mentions,
-        DoubleJump doubleJump
+        DoubleJump doubleJump,
+        Punch punch,
+        Trails trails
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -77,6 +79,19 @@ public record LobbyConfig(
 
     /** color: a hex colour, a colour name, "rainbow" or "gradient:#AAAAAA:#BBBBBB". permission "" = everyone. */
     public record ChatColor(String id, String name, String color, Material item, String permission) {
+    }
+
+    /** Punching staff: launches them (never hurts). staffOnly = only staff can be punched. */
+    public record Punch(boolean enabled, boolean staffOnly, long cooldownMillis, double upward, double backward,
+                        String sound, boolean announce) {
+    }
+
+    public record Trails(boolean enabled, List<Trail> trails) {
+    }
+
+    /** A particle trail. permission "" = everyone. */
+    public record Trail(String id, String name, org.bukkit.Particle particle, Material item, String permission,
+                        int amount, double speed) {
     }
 
     public record VoidRescue(boolean enabled, double belowY, String sound, float volume, float pitch) {
@@ -119,7 +134,8 @@ public record LobbyConfig(
                             boolean radio, int radioSlot, Material radioItem, String radioCommand, String radioRequiresPlugin,
                             boolean visibility, int visibilitySlot, Material visibleItem, Material hiddenItem,
                             long visibilityCooldownMillis,
-                            boolean settings, int settingsSlot, Material settingsItem) {
+                            boolean settings, int settingsSlot, Material settingsItem,
+                            boolean profile, int profileSlot) {
     }
 
     public record Border(boolean enabled, double radius, int warningDistance) {
@@ -214,7 +230,7 @@ public record LobbyConfig(
                         c.getBoolean("join-items.lock-inventory", true),
                         c.getBoolean("join-items.block-off-hand", true),
                         c.getBoolean("join-items.realm-selector.enabled", true),
-                        slot(c.getInt("join-items.realm-selector.slot", 2)),
+                        slot(c.getInt("join-items.realm-selector.slot", 1)),
                         item(c.getString("join-items.realm-selector.item"), Material.COMPASS, "join-items.realm-selector.item", log),
                         c.getBoolean("join-items.radio.enabled", true),
                         slot(c.getInt("join-items.radio.slot", 5)),
@@ -228,7 +244,9 @@ public record LobbyConfig(
                         Math.round(Math.max(0, c.getDouble("join-items.player-visibility.cooldown-seconds", 1.5)) * 1000),
                         c.getBoolean("join-items.settings.enabled", true),
                         slot(c.getInt("join-items.settings.slot", 8)),
-                        item(c.getString("join-items.settings.item"), Material.COMPARATOR, "join-items.settings.item", log)),
+                        item(c.getString("join-items.settings.item"), Material.COMPARATOR, "join-items.settings.item", log),
+                        c.getBoolean("join-items.profile.enabled", true),
+                        slot(c.getInt("join-items.profile.slot", 2))),
                 selector(c, log),
                 new Border(
                         c.getBoolean("border.enabled", true),
@@ -257,7 +275,44 @@ public record LobbyConfig(
                         c.getDouble("double-jump.upward", 0.9),
                         sound(c.getString("double-jump.sound", "entity.breeze.jump")),
                         (float) c.getDouble("double-jump.sound-volume", 0.6),
-                        (float) c.getDouble("double-jump.sound-pitch", 1.2)));
+                        (float) c.getDouble("double-jump.sound-pitch", 1.2)),
+                new Punch(
+                        c.getBoolean("punch.enabled", true),
+                        c.getBoolean("punch.staff-only", true),
+                        Math.round(Math.max(0, c.getDouble("punch.cooldown-seconds", 10)) * 1000),
+                        c.getDouble("punch.upward", 1.6),
+                        c.getDouble("punch.backward", 0.8),
+                        sound(c.getString("punch.sound", "entity.generic.explode")),
+                        c.getBoolean("punch.announce", true)),
+                trails(c, log));
+    }
+
+    private static Trails trails(FileConfiguration c, Logger log) {
+        List<Trail> trails = new ArrayList<>();
+        ConfigurationSection section = c.getConfigurationSection("trails.trails");
+        if (section != null) {
+            for (String id : section.getKeys(false)) {
+                String path = "trails.trails." + id;
+                String name = c.getString(path + ".particle", "");
+                org.bukkit.Particle particle;
+                try {
+                    particle = org.bukkit.Particle.valueOf(name.trim().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException e) {
+                    log.warning("config.yml " + path + ".particle: '" + name + "' is not a particle; skipping " + id);
+                    continue;
+                }
+                if (particle.getDataType() != Void.class) {
+                    log.warning("config.yml " + path + ".particle: " + particle + " needs extra data and can't be a trail; skipping " + id);
+                    continue;
+                }
+                trails.add(new Trail(id, c.getString(path + ".name", id), particle,
+                        item(c.getString(path + ".item"), Material.BLAZE_POWDER, path + ".item", log),
+                        c.getString(path + ".permission", "").trim(),
+                        Math.max(1, Math.min(20, c.getInt(path + ".amount", 2))),
+                        Math.max(0, c.getDouble(path + ".speed", 0))));
+            }
+        }
+        return new Trails(c.getBoolean("trails.enabled", true), List.copyOf(trails));
     }
 
     private static ChatColors chatColors(FileConfiguration c, Logger log) {

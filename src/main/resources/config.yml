@@ -226,6 +226,116 @@ parkour:
   rank-search: 100
 
 
+# ── Punching ────────────────────────────────────────────────────
+# Players with lobby.punch can punch staff to launch them into the sky
+# (it never hurts). Staff with lobby.punch.immune can't be punched.
+punch:
+  enabled: true
+  # Only staff can be punched (false: anyone).
+  staff-only: true
+  # Seconds before the same player can punch again.
+  cooldown-seconds: 10
+  # How hard: up, and away from the puncher.
+  upward: 1.6
+  backward: 0.8
+  sound: entity.generic.explode
+  # Tell everyone in chat (false: only the two players).
+  announce: true
+
+
+# ── Particle trails ─────────────────────────────────────────────
+# Players pick one in their profile; it follows them while they walk.
+#   particle:   a particle name (https://jd.papermc.io/paper/org/bukkit/Particle.html),
+#               one that needs no extra data
+#   amount:     particles each step (1-20)
+#   speed:      how much they spread out (0 = stay put)
+#   permission: needed to use it ("" or left out = everyone)
+trails:
+  enabled: true
+  trails:
+    notes:
+      name: "<#9BFFC4>Music Notes"
+      particle: NOTE
+      item: NOTE_BLOCK
+      amount: 1
+    clouds:
+      name: "<white>Clouds"
+      particle: CLOUD
+      item: WHITE_WOOL
+      amount: 2
+    sparkles:
+      name: "<#9BFFC4>Sparkles"
+      particle: HAPPY_VILLAGER
+      item: EMERALD
+      amount: 2
+    hearts:
+      name: "<#FF7590>Hearts"
+      particle: HEART
+      item: RED_DYE
+      amount: 1
+      permission: lobby.trail.donor
+    snowflakes:
+      name: "<#E8F6FF>Snowflakes"
+      particle: SNOWFLAKE
+      item: SNOWBALL
+      amount: 3
+      permission: lobby.trail.donor
+    flames:
+      name: "<#FFB36B>Flames"
+      particle: FLAME
+      item: BLAZE_POWDER
+      amount: 2
+      speed: 0.01
+      permission: lobby.trail.donor
+    soul-flames:
+      name: "<#7FE7FF>Soul Flames"
+      particle: SOUL_FIRE_FLAME
+      item: SOUL_TORCH
+      amount: 2
+      speed: 0.01
+      permission: lobby.trail.donor
+    magic:
+      name: "<#B266FF>Magic"
+      particle: WITCH
+      item: AMETHYST_SHARD
+      amount: 3
+      permission: lobby.trail.donor
+    stars:
+      name: "<#FFE680>Stars"
+      particle: END_ROD
+      item: END_ROD
+      amount: 1
+      speed: 0.02
+      permission: lobby.trail.donor
+    enchanted:
+      name: "<#C9A8FF>Enchanted"
+      particle: ENCHANT
+      item: ENCHANTED_BOOK
+      amount: 6
+      speed: 0.5
+      permission: lobby.trail.donor
+    blossom:
+      name: "<#FFC2F2>Cherry Blossom"
+      particle: CHERRY_LEAVES
+      item: PINK_PETALS
+      amount: 2
+      permission: lobby.trail.donor
+    sparks:
+      name: "<#7FA8FF>Electric"
+      particle: ELECTRIC_SPARK
+      item: LIGHTNING_ROD
+      amount: 3
+      speed: 0.05
+      permission: lobby.trail.donor
+    totem:
+      name: "<gradient:#FFE680:#9BFFC4>Totem</gradient>"
+      particle: TOTEM_OF_UNDYING
+      item: TOTEM_OF_UNDYING
+      amount: 3
+      speed: 0.1
+      permission: lobby.trail.donor
+
+
 # ── Chat colour ─────────────────────────────────────────────────
 # /chatcolor opens a menu; /chatcolor NAME picks a colour directly,
 # /chatcolor reset goes back to normal. Needs lobby.cmd.chatcolor.
@@ -363,7 +473,7 @@ join-items:
   realm-selector:
     enabled: true
     # Hotbar slot, 1 to 9.
-    slot: 2
+    slot: 1
     item: COMPASS
 
   # Opens the Radio menu (from the Radio plugin).
@@ -375,6 +485,12 @@ join-items:
     command: radio
     # Only give the item when this plugin is installed ("" = always).
     requires-plugin: Radio
+
+  # The player's own head: opens their profile (stats, chat colour,
+  # trail, glow, settings).
+  profile:
+    enabled: true
+    slot: 2
 
   # Opens the settings menu: join messages, leave messages, chat and
   # the scoreboard, each on or off per player. Remembered between joins.

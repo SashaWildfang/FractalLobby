@@ -153,6 +153,7 @@ public final class ChatColors implements Listener {
         private Inventory inventory;
         private final Map<Integer, String> slots = new HashMap<>();
         private int resetSlot = -1;
+        private int backSlot = -1;
 
         @Override
         public Inventory getInventory() {
@@ -197,8 +198,10 @@ public final class ChatColors implements Listener {
             meta.displayName(messages.item("chat-color.reset-item.name"));
             meta.lore(messages.lore("chat-color.reset-item.lore"));
         });
-        menu.resetSlot = menu.inventory.getSize() - 5;
+        menu.resetSlot = menu.inventory.getSize() - 4;
         menu.inventory.setItem(menu.resetSlot, reset);
+        menu.backSlot = menu.inventory.getSize() - 6;
+        menu.inventory.setItem(menu.backSlot, Profile.button(plugin.messages(), Material.ARROW, "profile.back"));
         player.openInventory(menu.inventory);
     }
 
@@ -210,6 +213,10 @@ public final class ChatColors implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         int slot = event.getRawSlot();
+        if (slot == menu.backSlot) {
+            plugin.profile().open(player);
+            return;
+        }
         if (slot == menu.resetSlot) {
             reset(player);
         } else {

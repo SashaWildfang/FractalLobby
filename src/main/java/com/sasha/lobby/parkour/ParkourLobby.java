@@ -119,6 +119,21 @@ public final class ParkourLobby implements Listener {
         plugin.messages().send(admin, "parkour.leaderboard-removed");
     }
 
+    public Leaderboard leaderboard() {
+        return leaderboard;
+    }
+
+    /** Re-reads parkour.yml (/lobby reload), in case it was edited by hand. */
+    public void reload() {
+        try {
+            data.load(file);
+        } catch (java.io.IOException | org.bukkit.configuration.InvalidConfigurationException e) {
+            if (file.exists()) plugin.getLogger().warning("Could not read parkour.yml: " + e.getMessage());
+        }
+        holograms.forEach(Hologram::remove);
+        updateDisplays();
+    }
+
     public void shutdown() {
         displayTask.cancel();
         holograms.forEach(Hologram::remove);

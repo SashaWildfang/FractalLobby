@@ -47,6 +47,7 @@ public final class JoinItems implements Listener {
     private static final String SELECTOR = "realm-selector";
     private static final String RADIO = "radio";
     private static final String SETTINGS = "settings";
+    private static final String PROFILE = "profile";
     /** Clicks closer together than this are one physical click reported twice. */
     private static final long DUPLICATE_CLICK_MILLIS = 250;
 
@@ -98,7 +99,10 @@ public final class JoinItems implements Listener {
     /** Gives (or refreshes) the join items. Also used after /lobby reload. */
     public void giveItems(Player player) {
         LobbyConfig.JoinItems config = plugin.lobbyConfig().joinItems();
-        if (config.selector()) player.getInventory().setItem(config.selectorSlot(), selectorItem());
+        int selectorSlot = config.selectorSlot();
+        // An older config.yml may still have the realm selector in slot 2, where the profile now goes: it moves one left.
+        if (config.profile() && selectorSlot == config.profileSlot()) selectorSlot = selectorSlot > 0 ? selectorSlot - 1 : selectorSlot + 1;
+        if (config.selector()) player.getInventory().setItem(selectorSlot, selectorItem());
         if (config.radio() && (config.radioRequiresPlugin().isEmpty()
                 || plugin.getServer().getPluginManager().isPluginEnabled(config.radioRequiresPlugin()))) {
             player.getInventory().setItem(config.radioSlot(), joinItem(config.radioItem(), "items.radio", RADIO));
@@ -108,6 +112,10 @@ public final class JoinItems implements Listener {
         if (config.settings() && visibilitySlot == config.settingsSlot()) visibilitySlot = visibilitySlot < 8 ? visibilitySlot + 1 : visibilitySlot - 1;
         if (config.visibility()) player.getInventory().setItem(visibilitySlot, visibilityItem(player));
         if (config.settings()) player.getInventory().setItem(config.settingsSlot(), joinItem(config.settingsItem(), "items.settings", SETTINGS));
+        if (config.profile()) {
+            ItemStack base = joinItem(org.bukkit.Material.PLAYER_HEAD, "items.profile", PROFILE);
+            player.getInventory().setItem(config.profileSlot(), plugin.profile().hotbarItem(player, base));
+        }
     }
 
     private void toggleVisibility(Player player) {
@@ -178,6 +186,7 @@ public final class JoinItems implements Listener {
             case SELECTOR -> selector.open(event.getPlayer());
             case RADIO -> event.getPlayer().performCommand(plugin.lobbyConfig().joinItems().radioCommand());
             case SETTINGS -> plugin.settings().open(event.getPlayer());
+            case PROFILE -> plugin.profile().open(event.getPlayer());
             default -> {
             }
         }

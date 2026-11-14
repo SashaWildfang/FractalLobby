@@ -6,6 +6,9 @@ package com.sasha.lobby;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.sasha.lobby.items.ChatColors;
+import com.sasha.lobby.items.Profile;
+import com.sasha.lobby.items.Trails;
+import com.sasha.lobby.listener.PunchListener;
 import com.sasha.lobby.items.Settings;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
@@ -66,6 +69,8 @@ public final class Lobby extends JavaPlugin implements Listener {
     private ServerStatus serverStatus;
     private RealmSelector selector;
     private DoubleJump doubleJump;
+    private Trails trails;
+    private Profile profile;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
@@ -98,9 +103,12 @@ public final class Lobby extends JavaPlugin implements Listener {
         settings = new Settings(this);
         parkour = new ParkourLobby(this);
         doubleJump = new DoubleJump(this);
+        trails = new Trails(this);
+        profile = new Profile(this);
 
         for (Listener listener : List.of(this, settings, protection, chatColors, voidRescue, border, flyingMinecarts,
-                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump)) {
+                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
+                trails, profile, new PunchListener(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -110,6 +118,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         flyingMinecarts.start();
         selector.start();
         doubleJump.start();
+        trails.start();
         for (Player player : getServer().getOnlinePlayers()) doubleJump.refresh(player);
         if (placeholderApi) {
             placeholderExpansion = new LobbyExpansion(this);
@@ -128,6 +137,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (serverStatus != null) serverStatus.stop();
         if (selector != null) selector.stop();
         if (doubleJump != null) doubleJump.stop();
+        if (trails != null) trails.stop();
     }
 
     public LobbyConfig lobbyConfig() {
@@ -152,6 +162,26 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public JoinItems joinItems() {
         return joinItems;
+    }
+
+    public Trails trails() {
+        return trails;
+    }
+
+    public Profile profile() {
+        return profile;
+    }
+
+    public GlowListener glow() {
+        return glow;
+    }
+
+    public ParkourLobby parkour() {
+        return parkour;
+    }
+
+    public RealmSelector realmSelector() {
+        return selector;
     }
 
     public DoubleJump doubleJump() {
@@ -179,6 +209,11 @@ public final class Lobby extends JavaPlugin implements Listener {
     }
 
     /** Reloads config.yml and messages.yml and refreshes displays and join items for everyone online. */
+    /**
+     * Reloads config.yml, messages.yml and parkour.yml and applies them straight away: scoreboard, tab list,
+     * proxy counts, realm status, join items, border, protection, double jump, parkour holograms. Chat
+     * colours, trails, punching and the menus read the config live, so they follow too.
+     */
     public void reload() {
         reloadConfig();
         loadSettings();
@@ -188,9 +223,11 @@ public final class Lobby extends JavaPlugin implements Listener {
         for (Player player : getServer().getOnlinePlayers()) {
             joinItems.giveItems(player);
             doubleJump.refresh(player);
+            joinItems.applyVisibility(player);
         }
         border.apply();
         protection.applyWorlds();
+        parkour.reload();
     }
 
     private void loadSettings() {
@@ -201,14 +238,18 @@ public final class Lobby extends JavaPlugin implements Listener {
     private void registerCommands() {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             Commands commands = event.registrar();
-            commands.register(Commands.literal("lobby")
-                    .requires(source -> source.getSender().hasPermission("lobby.admin"))
-                    .executes(context -> reply(context.getSource(), "general.unknown-command"))
-                    .then(Commands.literal("reload").executes(context -> {
-                        reload();
-                        return reply(context.getSource(), "general.reloaded");
-                    }))
-                    .build(), "Lobby admin commands", List.of());
+            // A hub plugin on the proxy often owns /lobby (and /hub), so the same command is also /lobbycore,
+            // which always reaches this server.
+            for (String name : List.of("lobby", "lobbycore")) {
+                commands.register(Commands.literal(name)
+                        .requires(source -> source.getSender().hasPermission("lobby.admin"))
+                        .executes(context -> reply(context.getSource(), "general.unknown-command"))
+                        .then(Commands.literal("reload").executes(context -> {
+                            reload();
+                            return reply(context.getSource(), "general.reloaded");
+                        }))
+                        .build(), "Lobby admin commands", List.of());
+            }
 
             // Keep this setup command outside /lobby so proxy command routing cannot capture it.
             commands.register(Commands.literal("lobbyparkour")
