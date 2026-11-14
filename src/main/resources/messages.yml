@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 1
+messages-version: 2
 
 theme:
   primary: "#B266FF"
@@ -67,11 +67,13 @@ tablist:
   header:
     - ""
     - "<brand><bold>FractalSMP</bold></brand>"
-    - "<muted>You're in the <primary>Lobby</primary>"
+    - "<secondary>fractalsmp.net"
+    - ""
+    - "<primary>Survival: <white><online:survival></white> <dark_gray>|</dark_gray> <accent>Lifesteal: <white><online:lifesteal></white> <dark_gray>|</dark_gray> <secondary>Practice: <white><online:practice>"
     - ""
   footer:
     - ""
-    - "<muted>web.fractalsmp.net"
+    - "<muted>(playing with <white><here></white> out of <white><online:all></white> global players)"
     - ""
 
 

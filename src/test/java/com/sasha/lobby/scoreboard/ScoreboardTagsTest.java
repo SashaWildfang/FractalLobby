@@ -57,6 +57,17 @@ class ScoreboardTagsTest {
         assertEquals(MessagesTestAccess.smallCaps("FractalSMP"), plain(messages, messages.raw("scoreboard.title")));
     }
 
+    /** The tab list header and footer show the realm counts and "playing with X out of Y". */
+    @Test
+    void tablistShowsRealmCounts() throws Exception {
+        YamlConfiguration server = new YamlConfiguration();
+        server.set("format.font", "normal");
+        Messages messages = MessagesTestAccess.messages(server);
+
+        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(4)));
+        assertEquals("(playing with 1 out of 5 global players)", plain(messages, messages.lines("tablist.footer").get(1)));
+    }
+
     /** A server file from an older version lacks newer keys: the built-in text fills in, not the key name. */
     @Test
     void missingKeysFallBackToBuiltInText() throws Exception {
