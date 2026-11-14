@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /** A validated snapshot of config.yml, rebuilt on /lobby reload. */
 public record LobbyConfig(
@@ -32,7 +33,8 @@ public record LobbyConfig(
         JoinItems joinItems,
         Selector selector,
         Border border,
-        FlyingMinecarts flyingMinecarts
+        FlyingMinecarts flyingMinecarts,
+        ChatColors chatColors
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -45,9 +47,27 @@ public record LobbyConfig(
         }
     }
 
-    public record Protection(String buildPermission, boolean allowOpsToBuild, boolean disablePvp,
-                             boolean disableMobAttacks, boolean disableFallDamage, boolean disableHunger,
-                             boolean disablePlayerCollision) {
+    public record Protection(String buildPermission, boolean allowOpsToBuild,
+                             boolean disableBuilding, boolean disableBlockInteract, List<Pattern> allowInteract,
+                             boolean disableEntityInteract, boolean disableTrampling, boolean disableItemPickup,
+                             boolean disableProjectiles, boolean disablePvp, boolean disableMobAttacks,
+                             boolean disableDamage, boolean disableFallDamage, boolean disableHunger,
+                             boolean disablePlayerCollision,
+                             boolean disableExplosions, boolean disableFireSpread, boolean disableMobSpawning,
+                             boolean freezeBlocks, boolean disableLiquidFlow, boolean disableWeather, long lockTime) {
+
+        /** Whether a block is on the allow-interact list (names like OAK_DOOR, or patterns like *_DOOR). */
+        public boolean interactAllowed(Material block) {
+            for (Pattern pattern : allowInteract) if (pattern.matcher(block.name()).matches()) return true;
+            return false;
+        }
+    }
+
+    public record ChatColors(boolean enabled, List<ChatColor> colors) {
+    }
+
+    /** color: a hex colour, a colour name, "rainbow" or "gradient:#AAAAAA:#BBBBBB". permission "" = everyone. */
+    public record ChatColor(String id, String name, String color, Material item, String permission) {
     }
 
     public record VoidRescue(boolean enabled, double belowY, String sound, float volume, float pitch) {
@@ -101,11 +121,26 @@ public record LobbyConfig(
                 new Protection(
                         c.getString("protection.build-permission", "lobby.build"),
                         c.getBoolean("protection.allow-ops-to-build", true),
+                        c.getBoolean("protection.disable-building", true),
+                        c.getBoolean("protection.disable-block-interact", true),
+                        patterns(c.getStringList("protection.allow-interact")),
+                        c.getBoolean("protection.disable-entity-interact", true),
+                        c.getBoolean("protection.disable-trampling", true),
+                        c.getBoolean("protection.disable-item-pickup", true),
+                        c.getBoolean("protection.disable-projectiles", true),
                         c.getBoolean("protection.disable-pvp", true),
                         c.getBoolean("protection.disable-mob-attacks", true),
+                        c.getBoolean("protection.disable-damage", true),
                         c.getBoolean("protection.disable-fall-damage", true),
                         c.getBoolean("protection.disable-hunger", true),
-                        c.getBoolean("protection.disable-player-collision", true)),
+                        c.getBoolean("protection.disable-player-collision", true),
+                        c.getBoolean("protection.disable-explosions", true),
+                        c.getBoolean("protection.disable-fire-spread", true),
+                        c.getBoolean("protection.disable-mob-spawning", true),
+                        c.getBoolean("protection.freeze-blocks", true),
+                        c.getBoolean("protection.disable-liquid-flow", false),
+                        c.getBoolean("protection.disable-weather", true),
+                        c.getLong("protection.lock-time", -1)),
                 new VoidRescue(
                         c.getBoolean("void-rescue.enabled", true),
                         c.getDouble("void-rescue.below-y", 0),
@@ -167,7 +202,38 @@ public record LobbyConfig(
                 new FlyingMinecarts(
                         Math.max(0.1, Math.min(3.0, c.getDouble("flying-minecarts.speed", 1.0))),
                         Math.max(5, c.getInt("flying-minecarts.despawn-after-seconds", 30)),
-                        c.getBoolean("flying-minecarts.explode-on-collision", true)));
+                        c.getBoolean("flying-minecarts.explode-on-collision", true)),
+                chatColors(c, log));
+    }
+
+    private static ChatColors chatColors(FileConfiguration c, Logger log) {
+        List<ChatColor> colors = new ArrayList<>();
+        ConfigurationSection section = c.getConfigurationSection("chat-color.colors");
+        if (section != null) {
+            for (String id : section.getKeys(false)) {
+                String path = "chat-color.colors." + id;
+                String color = c.getString(path + ".color", "");
+                if (!com.sasha.lobby.items.ChatColors.valid(color)) {
+                    log.warning("config.yml " + path + ".color: '" + color + "' is not a colour; skipping " + id);
+                    continue;
+                }
+                colors.add(new ChatColor(id, c.getString(path + ".name", id), color,
+                        item(c.getString(path + ".item"), Material.WHITE_DYE, path + ".item", log),
+                        c.getString(path + ".permission", "").trim()));
+            }
+        }
+        return new ChatColors(c.getBoolean("chat-color.enabled", true), List.copyOf(colors));
+    }
+
+    /** Block names with * wildcards → patterns. */
+    static List<Pattern> patterns(List<String> names) {
+        List<Pattern> patterns = new ArrayList<>();
+        for (String name : names) {
+            String glob = name.trim().toUpperCase(Locale.ROOT);
+            if (glob.isEmpty()) continue;
+            patterns.add(Pattern.compile(Pattern.quote(glob).replace("*", "\\E.*\\Q")));
+        }
+        return List.copyOf(patterns);
     }
 
     private static Selector selector(FileConfiguration c, Logger log) {

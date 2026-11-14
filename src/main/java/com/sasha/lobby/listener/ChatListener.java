@@ -55,7 +55,10 @@ public final class ChatListener implements Listener {
         Component head = before.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, before);
         Component tail = after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after);
         // Like old-style codes, the message takes the colour written right before it (&7 → grey, &f → white).
-        Component message = event.message().colorIfAbsent(LegacyCodes.lastColor(before));
+        LobbyConfig.ChatColor chosen = plugin.lobbyConfig().chatColors().enabled() ? plugin.chatColors().chosen(player) : null;
+        Component message = chosen != null
+                ? com.sasha.lobby.items.ChatColors.paint(chosen.color(), event.message())
+                : event.message().colorIfAbsent(LegacyCodes.lastColor(before));
         Component line = split < 0 ? head : Component.empty().append(head).append(message).append(tail);
         event.renderer(ChatRenderer.viewerUnaware((source, displayName, typed) -> line));
     }

@@ -4,6 +4,8 @@
 package com.sasha.lobby;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.sasha.lobby.items.ChatColors;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.format.PlayerFormat;
@@ -38,7 +40,7 @@ import java.util.function.Consumer;
 /**
  * Lobby: the core of the Fractal Network lobby. Sidebar with live network player counts, tab list,
  * chat and nametag formats, join messages, protection, void rescue, launch pads, spawn, and locked join
- * items (realm selector, radio and player visibility toggle), /glow, a world border around spawn and flying minecarts.
+ * items (realm selector, radio and player visibility toggle), /glow, a world border around spawn, flying minecarts and /chatcolor.
  *
  * <p>Built by Sasha Wildfang for Fractal Network.
  */
@@ -54,6 +56,8 @@ public final class Lobby extends JavaPlugin implements Listener {
     private VoidRescueListener voidRescue;
     private BorderListener border;
     private FlyingMinecarts flyingMinecarts;
+    private ProtectionListener protection;
+    private ChatColors chatColors;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
     private boolean luckPerms;
@@ -78,14 +82,17 @@ public final class Lobby extends JavaPlugin implements Listener {
         voidRescue = new VoidRescueListener(this);
         border = new BorderListener(this);
         flyingMinecarts = new FlyingMinecarts(this);
+        protection = new ProtectionListener(this);
+        chatColors = new ChatColors(this);
 
-        for (Listener listener : List.of(this, new ProtectionListener(this), voidRescue, border, flyingMinecarts,
+        for (Listener listener : List.of(this, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems)) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         display.start();
         border.apply();
+        protection.applyWorlds();
         flyingMinecarts.start();
         if (placeholderApi) {
             placeholderExpansion = new LobbyExpansion(this);
@@ -114,6 +121,10 @@ public final class Lobby extends JavaPlugin implements Listener {
         return proxyCounts;
     }
 
+    public ChatColors chatColors() {
+        return chatColors;
+    }
+
     public PlayerFormat playerFormat() {
         return playerFormat;
     }
@@ -134,6 +145,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         display.start();
         for (Player player : getServer().getOnlinePlayers()) joinItems.giveItems(player);
         border.apply();
+        protection.applyWorlds();
     }
 
     private void loadSettings() {
@@ -165,6 +177,24 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .requires(source -> source.getSender().hasPermission(GlowListener.PERMISSION))
                     .executes(context -> asPlayer(context.getSource(), glow::toggle))
                     .build(), "Glow in your rank colour", List.of());
+
+            commands.register(Commands.literal("chatcolor")
+                    .requires(source -> source.getSender().hasPermission(ChatColors.PERMISSION)
+                            && lobbyConfig().chatColors().enabled())
+                    .executes(context -> asPlayer(context.getSource(), chatColors::open))
+                    .then(Commands.argument("color", StringArgumentType.word())
+                            .suggests((context, builder) -> {
+                                if (context.getSource().getSender() instanceof Player player) {
+                                    String typed = builder.getRemainingLowerCase();
+                                    for (String name : chatColors.names(player)) {
+                                        if (name.toLowerCase(java.util.Locale.ROOT).startsWith(typed)) builder.suggest(name);
+                                    }
+                                }
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> asPlayer(context.getSource(),
+                                    player -> chatColors.choose(player, StringArgumentType.getString(context, "color")))))
+                    .build(), "Pick the colour of your chat messages", List.of("chatcolour"));
 
             commands.register(Commands.literal("flyingminecart")
                     .requires(source -> source.getSender().hasPermission(FlyingMinecarts.PERMISSION))

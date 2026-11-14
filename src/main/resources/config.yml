@@ -31,21 +31,70 @@ spawn:
 
 
 # ── Protection ──────────────────────────────────────────────────
+# Protects every world on this server (no WorldGuard needed), so an
+# imported hub is safe straight away. true = blocked.
 protection:
-  # Players with this permission can place and break blocks.
+  # Players with this permission skip the player rules below
+  # (building, using blocks and entities, items, projectiles).
   build-permission: "lobby.build"
-  # Operators can always build, even without the permission.
+  # Operators count as builders, even without the permission.
   allow-ops-to-build: true
-  # Players can't hurt each other.
+
+  # -- What players can do --
+  # Placing and breaking blocks, buckets, signs, paintings, item frames,
+  # armor stands, boats, minecarts, bone meal, flint and steel.
+  disable-building: true
+  # Using blocks: chests and other containers, doors, trapdoors, gates,
+  # buttons, levers, beds, anvils, crafting tables, note blocks...
+  disable-block-interact: true
+  # Blocks players may still use when the above is on. Use * as a
+  # wildcard, e.g. ["*_DOOR", "*_BUTTON", "LECTERN"].
+  allow-interact: []
+  # Item frames, armor stands, mobs (trading, feeding, mounting), leads.
+  # Players can still ride flying minecarts.
+  disable-entity-interact: true
+  # Farmland, turtle eggs and sniffer eggs never get trampled.
+  disable-trampling: true
+  # Picking up items from the ground.
+  disable-item-pickup: true
+  # Bows, snowballs, eggs, ender pearls, tridents, fishing rods.
+  disable-projectiles: true
+  # Players hurting each other.
   disable-pvp: true
-  # Players can't hurt mobs or other non-player entities (incl. with arrows).
+  # Players hurting mobs and other entities (incl. with arrows).
   disable-mob-attacks: true
-  # Players never take fall damage.
+
+  # -- Players' health --
+  # Players never take damage (fire, drowning, cactus, explosions...).
+  # The void is handled by void-rescue, and /kill still works.
+  disable-damage: true
+  # Only fall damage (used when disable-damage is false).
   disable-fall-damage: true
   # Hunger never goes down.
   disable-hunger: true
   # Players walk through each other instead of pushing.
   disable-player-collision: true
+
+  # -- The world --
+  # Explosions don't break blocks, item frames or armor stands.
+  disable-explosions: true
+  # Fire doesn't spread or burn blocks; lava and lightning don't start it.
+  disable-fire-spread: true
+  # No mobs spawn by themselves (spawn eggs, commands and plugins
+  # like NPCs still work).
+  disable-mob-spawning: true
+  # Blocks never change on their own: no leaf decay, melting, snow or
+  # ice forming, grass/vines spreading, crops growing, farmland drying,
+  # endermen taking blocks, or sand and gravel falling.
+  freeze-blocks: true
+  # Water and lava don't flow.
+  disable-liquid-flow: false
+  # It never rains or storms.
+  disable-weather: true
+  # Lock the time of day: 1000 = morning, 6000 = noon, 13000 = night,
+  # 18000 = midnight. -1 = normal day and night (turning it back to -1
+  # needs /gamerule doDaylightCycle true once).
+  lock-time: -1
 
 
 # ── Void rescue ─────────────────────────────────────────────────
@@ -63,8 +112,8 @@ void-rescue:
 
 # ── World border ────────────────────────────────────────────────
 # Sets the spawn world's world border to a square around the spawn
-# point (it moves with /setspawn). Turn off to leave the world border
-# as it is.
+# point (it moves with /setspawn). Turning it off removes it again
+# (then /lobby reload or a restart).
 border:
   enabled: true
   # Blocks from spawn to each edge (100 = a 200 x 200 square).
@@ -116,6 +165,83 @@ chat:
   enabled: true
   default-format: "&7%player%: %message%"
   ranked-format: "%luckperms_prefix%%player%&f: %message%"
+
+
+# ── Chat colour ─────────────────────────────────────────────────
+# /chatcolor opens a menu; /chatcolor NAME picks a colour directly,
+# /chatcolor reset goes back to normal. Needs lobby.cmd.chatcolor.
+#   name:       shown in the menu and messages (MiniMessage / & codes)
+#   color:      a hex colour (#B266FF), a colour name (light_purple),
+#               rainbow, or gradient:#8E2DE2:#E58BFF (2 or more colours)
+#   item:       the menu item
+#   permission: needed to use it ("" or left out = everyone)
+chat-color:
+  enabled: true
+  colors:
+    white:
+      name: "<white>White"
+      color: "#FFFFFF"
+      item: WHITE_DYE
+    gray:
+      name: "<gray>Gray"
+      color: gray
+      item: LIGHT_GRAY_DYE
+    red:
+      name: "<#FF7590>Red"
+      color: "#FF7590"
+      item: RED_DYE
+    orange:
+      name: "<#FFB36B>Orange"
+      color: "#FFB36B"
+      item: ORANGE_DYE
+    yellow:
+      name: "<#FFE680>Yellow"
+      color: "#FFE680"
+      item: YELLOW_DYE
+    green:
+      name: "<#9BFFC4>Green"
+      color: "#9BFFC4"
+      item: LIME_DYE
+    aqua:
+      name: "<#7FE7FF>Aqua"
+      color: "#7FE7FF"
+      item: LIGHT_BLUE_DYE
+    blue:
+      name: "<#7FA8FF>Blue"
+      color: "#7FA8FF"
+      item: BLUE_DYE
+    purple:
+      name: "<#B266FF>Purple"
+      color: "#B266FF"
+      item: PURPLE_DYE
+    lavender:
+      name: "<#E3C4FF>Lavender"
+      color: "#E3C4FF"
+      item: AMETHYST_SHARD
+    pink:
+      name: "<#FF7BE5>Pink"
+      color: "#FF7BE5"
+      item: PINK_DYE
+    fractal:
+      name: "<gradient:#8E2DE2:#E58BFF>Fractal</gradient>"
+      color: "gradient:#8E2DE2:#E58BFF"
+      item: AMETHYST_CLUSTER
+      permission: lobby.chatcolor.gradients
+    sunset:
+      name: "<gradient:#FF7590:#FFD27F>Sunset</gradient>"
+      color: "gradient:#FF7590:#FFD27F"
+      item: HONEYCOMB
+      permission: lobby.chatcolor.gradients
+    ocean:
+      name: "<gradient:#4FC3F7:#9BFFC4>Ocean</gradient>"
+      color: "gradient:#4FC3F7:#9BFFC4"
+      item: PRISMARINE_CRYSTALS
+      permission: lobby.chatcolor.gradients
+    rainbow:
+      name: "<rainbow>Rainbow</rainbow>"
+      color: rainbow
+      item: NETHER_STAR
+      permission: lobby.chatcolor.rainbow
 
 
 # ── Nametags ────────────────────────────────────────────────────

@@ -24,6 +24,15 @@ permissions:
   lobby.cmd.glow:
     description: Use /glow to glow in your rank colour
     default: op
+  lobby.cmd.chatcolor:
+    description: Use /chatcolor to pick a chat colour
+    default: true
+  lobby.chatcolor.gradients:
+    description: Use the gradient chat colours (set per colour in config.yml)
+    default: op
+  lobby.chatcolor.rainbow:
+    description: Use the rainbow chat colour
+    default: op
   lobby.cmd.flyingminecart:
     description: Use /flyingminecart to summon a flying minecart (and break them)
     default: op
