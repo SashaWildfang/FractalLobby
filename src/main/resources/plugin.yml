@@ -10,7 +10,19 @@ softdepend: [PlaceholderAPI, LuckPerms]
 
 permissions:
   lobby.staff:
-    description: Move and drop items in the lobby
+    description: Counts as staff (settings, join sounds) and can move and drop items in the lobby
+    default: op
+  lobby.donor:
+    description: Counts as a donor (settings like Donors Only, join sounds)
+    default: op
+  lobby.doublejump:
+    description: Double jump in the lobby
+    default: true
+  lobby.bypass.maintenance:
+    description: Join realms that are under maintenance from the realm selector
+    default: op
+  lobby.bypass.full:
+    description: Join full realms from the realm selector
     default: op
   lobby.admin:
     description: Administer Lobby, parkour and set the spawn

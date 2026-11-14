@@ -15,6 +15,8 @@ import com.sasha.lobby.items.JoinItems;
 import com.sasha.lobby.items.RealmSelector;
 import com.sasha.lobby.listener.BorderListener;
 import com.sasha.lobby.listener.ChatListener;
+import com.sasha.lobby.listener.DoubleJump;
+import com.sasha.lobby.proxy.ServerStatus;
 import com.sasha.lobby.listener.FlyingMinecarts;
 import com.sasha.lobby.listener.GlowListener;
 import com.sasha.lobby.listener.LaunchPadListener;
@@ -61,6 +63,9 @@ public final class Lobby extends JavaPlugin implements Listener {
     private ProtectionListener protection;
     private ChatColors chatColors;
     private Settings settings;
+    private ServerStatus serverStatus;
+    private RealmSelector selector;
+    private DoubleJump doubleJump;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
@@ -76,10 +81,12 @@ public final class Lobby extends JavaPlugin implements Listener {
         luckPerms = getServer().getPluginManager().isPluginEnabled("LuckPerms");
 
         playerFormat = new PlayerFormat(this);
+        serverStatus = new ServerStatus(this);
         proxyCounts = new ProxyCounts(this);
         proxyCounts.start();
+        serverStatus.start();
         display = new DisplayService(this);
-        RealmSelector selector = new RealmSelector(this);
+        selector = new RealmSelector(this);
         joinItems = new JoinItems(this, selector);
         spawn = new SpawnListener(this);
         glow = new GlowListener(this);
@@ -90,9 +97,10 @@ public final class Lobby extends JavaPlugin implements Listener {
         chatColors = new ChatColors(this);
         settings = new Settings(this);
         parkour = new ParkourLobby(this);
+        doubleJump = new DoubleJump(this);
 
         for (Listener listener : List.of(this, settings, protection, chatColors, voidRescue, border, flyingMinecarts,
-                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour)) {
+                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump)) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -100,6 +108,9 @@ public final class Lobby extends JavaPlugin implements Listener {
         border.apply();
         protection.applyWorlds();
         flyingMinecarts.start();
+        selector.start();
+        doubleJump.start();
+        for (Player player : getServer().getOnlinePlayers()) doubleJump.refresh(player);
         if (placeholderApi) {
             placeholderExpansion = new LobbyExpansion(this);
             ((LobbyExpansion) placeholderExpansion).register();
@@ -114,6 +125,9 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
+        if (serverStatus != null) serverStatus.stop();
+        if (selector != null) selector.stop();
+        if (doubleJump != null) doubleJump.stop();
     }
 
     public LobbyConfig lobbyConfig() {
@@ -130,6 +144,18 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public ChatColors chatColors() {
         return chatColors;
+    }
+
+    public ServerStatus serverStatus() {
+        return serverStatus;
+    }
+
+    public JoinItems joinItems() {
+        return joinItems;
+    }
+
+    public DoubleJump doubleJump() {
+        return doubleJump;
     }
 
     public Settings settings() {
@@ -157,8 +183,12 @@ public final class Lobby extends JavaPlugin implements Listener {
         reloadConfig();
         loadSettings();
         proxyCounts.restartTask();
+        serverStatus.start();
         display.start();
-        for (Player player : getServer().getOnlinePlayers()) joinItems.giveItems(player);
+        for (Player player : getServer().getOnlinePlayers()) {
+            joinItems.giveItems(player);
+            doubleJump.refresh(player);
+        }
         border.apply();
         protection.applyWorlds();
     }

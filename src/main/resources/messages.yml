@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 3
+messages-version: 4
 
 theme:
   primary: "#B266FF"
@@ -82,13 +82,31 @@ tablist:
 # Each realm's name, item and description are in config.yml (realm-selector).
 realm-selector:
   title: "<brand><bold>Realms</bold></brand>"
-  # Added under every realm's description. <online> <server>
+  # Added under every realm's description (kept up to date while the menu is open).
+  # <status> <players> <action> <online> <max> <realm> <server>
   button-lore:
     - ""
-    - "<muted>Playing: <white><online>"
+    - "<muted>Status: <status>"
+    - "<muted>Playing: <players>"
     - ""
-    - "<dark_gray>▸ <accent>Left-click</accent> <muted>to join"
-  connecting: "<prefix><secondary>Sending you to <primary><server></primary>…"   # <server> (proxy server name)
+    - "<action>"
+  players: "<white><online>"                                   # max players unknown
+  players-max: "<white><online><dark_gray>/<gray><max>"
+  status:
+    online: "<good>● Online"
+    full: "<#FFE680>● Full"
+    maintenance: "<#FFB36B>● Maintenance"
+    offline: "<bad>● Offline"
+  action:
+    online: "<dark_gray>▸ <accent>Click</accent> <muted>to join"
+    full: "<dark_gray>✖ <muted>Full right now, try again soon"
+    maintenance: "<dark_gray>✖ <muted>Being worked on, back soon"
+    offline: "<dark_gray>✖ <muted>Down right now, back soon"
+  connecting: "<prefix><secondary>Sending you to <realm><secondary>…"
+  # When a realm can't be joined. <realm> <server>
+  offline: "<prefix><bad>Can't join <realm><bad>: it's offline right now. <muted>Try again soon!"
+  maintenance: "<prefix><#FFB36B><realm> <#FFB36B>is down for maintenance. <muted>Check back soon!"
+  full: "<prefix><#FFE680><realm> <#FFE680>is full right now. <muted>Try again in a bit!"
 
 
 # ── Join items ──────────────────────────────────────────────────
@@ -96,7 +114,11 @@ items:
   realm-selector:
     name: "<primary>Realm Selector"
     lore:
-      - "<muted>Pick a realm to play on."
+      - "<muted>Pick a realm to play on: Survival,"
+      - "<muted>Lifesteal or Practice."
+      - ""
+      - "<muted>See who's playing and which"
+      - "<muted>realms are online right now."
       - ""
       - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
   radio:
@@ -112,6 +134,13 @@ items:
       - "<muted>You can see everyone in the lobby."
       - ""
       - "<dark_gray>▸ <accent>Right-click</accent> <muted>to hide other players"
+  # Player Visibility set to Donors Only or Staff Only in settings. <option>
+  visibility-partial:
+    name: "<#FFE680>Players: <option>"
+    lore:
+      - "<muted>You only see some players."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to hide everyone"
   visibility-hidden:
     name: "<bad>Players: Hidden"
     lore:
@@ -121,49 +150,64 @@ items:
   settings:
     name: "<primary>Settings"
     lore:
-      - "<muted>Join and leave messages, chat"
-      - "<muted>and the scoreboard."
+      - "<muted>Choose whose join and leave"
+      - "<muted>messages, chat and players you"
+      - "<muted>see, plus mention sounds, double"
+      - "<muted>jump and the scoreboard."
       - ""
       - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
 
-# The settings menu (the comparator). <status> = on or off below.
+# The settings menu (the comparator). Each setting lists its options with
+# the current one marked; clicking moves to the next one.
 settings:
   title: "<brand><bold>Settings</bold></brand>"
-  "on": "<good>✔ On"
-  "off": "<bad>✖ Off"
-  pane-lore:
-    - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
-  turned-on: "<prefix><secondary><setting> <good>on</good>."
-  turned-off: "<prefix><secondary><setting> <bad>off</bad>."
+  # The option names. Donors Only includes staff.
+  options:
+    everyone: "<good>Everyone"
+    donors: "<#FFE680>Donors Only"
+    staff: "<#FFB36B>Staff Only"
+    nobody: "<bad>Nobody"
+    "on": "<good>On"
+    "off": "<bad>Off"
+  option: "<dark_gray>  <gray><option>"   # each option that isn't picked
+  option-selected: "<primary>▸ <option>"    # the picked one
+  current: "<white>Now: <option>"          # the pane under each setting
+  hint:
+    - "<dark_gray>▸ <accent>Left-click</accent> <muted>for the next option"
+    - "<dark_gray>▸ <accent>Right-click</accent> <muted>to go back"
   join-messages:
-    name: "<white>Join Messages"
+    name: "<primary>Join Messages"
     lore:
-      - "<muted>See when players join the lobby."
-      - ""
-      - "<status>"
-      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+      - "<muted>Whose join messages you see."
   leave-messages:
-    name: "<white>Leave Messages"
+    name: "<primary>Leave Messages"
     lore:
-      - "<muted>See when players leave the lobby."
-      - ""
-      - "<status>"
-      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+      - "<muted>Whose leave messages you see."
   chat:
-    name: "<white>Chat"
+    name: "<primary>Chat"
     lore:
-      - "<muted>See what other players say."
-      - "<muted>Your own messages always show."
-      - ""
-      - "<status>"
-      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+      - "<muted>Whose chat messages you see."
+      - "<muted>Your own always show."
+  player-visibility:
+    name: "<primary>Player Visibility"
+    lore:
+      - "<muted>Which players you can see"
+      - "<muted>walking around the lobby."
+  mentions:
+    name: "<primary>Mention Sounds"
+    lore:
+      - "<muted>A ping when someone says"
+      - "<muted>your name in chat."
+  double-jump:
+    name: "<primary>Double Jump"
+    lore:
+      - "<muted>Press jump in the air to"
+      - "<muted>launch yourself forward."
   scoreboard:
-    name: "<white>Scoreboard"
+    name: "<primary>Scoreboard"
     lore:
-      - "<muted>The player counts on the right."
-      - ""
-      - "<status>"
-      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+      - "<muted>The realm player counts"
+      - "<muted>on the right of your screen."
 
 
 # ── Chat ────────────────────────────────────────────────────────

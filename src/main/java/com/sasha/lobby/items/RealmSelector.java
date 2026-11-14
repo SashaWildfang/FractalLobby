@@ -6,9 +6,11 @@ package com.sasha.lobby.items;
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
+import com.sasha.lobby.proxy.ServerStatus;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -22,25 +24,48 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-/** The realm selector menu. Clicking a realm sends the player to its server through the proxy. */
+/**
+ * The realm selector menu. Each realm shows whether it's online, full, under maintenance or offline, and
+ * how many are playing (kept up to date while the menu is open). Clicking a realm that's up sends the
+ * player there through the proxy; otherwise they're told why not.
+ */
 public final class RealmSelector implements Listener {
 
+    public static final String BYPASS_MAINTENANCE = "lobby.bypass.maintenance";
+    public static final String BYPASS_FULL = "lobby.bypass.full";
+
     private final Lobby plugin;
+    private BukkitTask refreshTask;
 
     public RealmSelector(Lobby plugin) {
         this.plugin = plugin;
     }
 
+    /** Redraws open menus every second, so counts and status stay current. */
+    public void start() {
+        refreshTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof Menu menu) draw(menu);
+            }
+        }, 20L, 20L);
+    }
+
+    public void stop() {
+        if (refreshTask != null) refreshTask.cancel();
+    }
+
     /** The open menu; being the inventory's holder is how its clicks are recognised. */
     private static final class Menu implements InventoryHolder {
         private Inventory inventory;
-        private final Map<Integer, String> servers = new HashMap<>();
+        private final Map<Integer, LobbyConfig.SelectorServer> realms = new HashMap<>();
 
         @Override
         public Inventory getInventory() {
@@ -50,32 +75,49 @@ public final class RealmSelector implements Listener {
 
     public void open(Player player) {
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
-        Messages messages = plugin.messages();
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, messages.component("realm-selector.title"));
-
+        menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, plugin.messages().component("realm-selector.title"));
         ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
+        draw(menu);
+        player.openInventory(menu.inventory);
+    }
 
-        for (LobbyConfig.SelectorServer server : config.servers()) {
-            int online = plugin.proxyCounts().count(server.server());
-            TagResolver args = TagResolver.resolver(
-                    Messages.arg("online", online), Messages.arg("server", server.server()));
+    private void draw(Menu menu) {
+        Messages messages = plugin.messages();
+        for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
+            ServerStatus.State state = plugin.serverStatus().status(realm.server()).state();
+            TagResolver args = args(realm);
             List<Component> lore = new ArrayList<>();
-            for (String line : server.description()) lore.add(messages.render("<!italic>" + line, args));
+            for (String line : realm.description()) lore.add(messages.render("<!italic>" + line, args));
             lore.addAll(messages.lore("realm-selector.button-lore", args));
 
-            ItemStack item = ItemStack.of(server.item());
+            ItemStack item = ItemStack.of(state == ServerStatus.State.OFFLINE ? Material.GRAY_DYE : realm.item());
             item.editMeta(meta -> {
-                meta.displayName(messages.render("<!italic>" + server.name(), args));
+                meta.displayName(messages.render("<!italic>" + realm.name(), args));
                 meta.lore(lore);
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             });
-            menu.inventory.setItem(server.slot(), item);
-            menu.servers.put(server.slot(), server.server());
+            menu.inventory.setItem(realm.slot(), item);
+            menu.realms.put(realm.slot(), realm);
         }
-        player.openInventory(menu.inventory);
+    }
+
+    /** Tags for a realm: <online> <max> <players> <server> <realm> <status> <action>. */
+    private TagResolver args(LobbyConfig.SelectorServer realm) {
+        Messages messages = plugin.messages();
+        ServerStatus.Status status = plugin.serverStatus().status(realm.server());
+        String state = (status.state() == ServerStatus.State.UNKNOWN ? ServerStatus.State.ONLINE : status.state())
+                .name().toLowerCase(Locale.ROOT);
+        int online = plugin.proxyCounts().count(realm.server());
+        TagResolver counts = TagResolver.resolver(Messages.arg("online", online), Messages.arg("max", status.max()));
+        Component players = messages.component(status.max() > 0 ? "realm-selector.players-max" : "realm-selector.players", counts);
+        return TagResolver.resolver(counts, Messages.arg("server", realm.server()),
+                Placeholder.component("realm", messages.render(realm.name())),
+                Placeholder.component("players", players),
+                Placeholder.component("status", messages.component("realm-selector.status." + state)),
+                Placeholder.component("action", messages.component("realm-selector.action." + state)));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -84,13 +126,25 @@ public final class RealmSelector implements Listener {
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        String server = menu.servers.get(event.getRawSlot());
-        if (server == null) return;
+        LobbyConfig.SelectorServer realm = menu.realms.get(event.getRawSlot());
+        if (realm == null) return;
 
+        TagResolver args = args(realm);
+        String refusal = switch (plugin.serverStatus().status(realm.server()).state()) {
+            case OFFLINE -> "realm-selector.offline";
+            case MAINTENANCE -> player.hasPermission(BYPASS_MAINTENANCE) ? null : "realm-selector.maintenance";
+            case FULL -> player.hasPermission(BYPASS_FULL) ? null : "realm-selector.full";
+            default -> null;
+        };
+        if (refusal != null) {
+            player.playSound(Sound.sound(Key.key("entity.villager.no"), Sound.Source.MASTER, 0.5f, 1f), Sound.Emitter.self());
+            plugin.messages().send(player, refusal, args);
+            return;
+        }
         player.closeInventory();
         player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 1.2f), Sound.Emitter.self());
-        plugin.messages().send(player, "realm-selector.connecting", Messages.arg("server", server));
-        plugin.proxyCounts().connect(player, server);
+        plugin.messages().send(player, "realm-selector.connecting", args);
+        plugin.proxyCounts().connect(player, realm.server());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

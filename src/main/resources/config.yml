@@ -157,6 +157,51 @@ join-messages:
   first-join: "&7ᴡᴇʟᴄᴏᴍᴇ %luckperms_prefix%&c%player% &7ᴛᴏ ᴛʜᴇ ꜱᴇʀᴠᴇʀ!"
   join-message: "&a+ &7%luckperms_prefix%%player%"
   quit-message: "&c- &7%luckperms_prefix%%player%"
+  # Sounds everyone hears when a staff member or donor joins or leaves
+  # (who counts as which: see ranks below). "" for no sound.
+  sounds:
+    volume: 0.6
+    staff:
+      join: block.beacon.activate
+      leave: block.beacon.deactivate
+    donor:
+      join: entity.player.levelup
+      leave: block.note_block.bass
+
+
+# ── Ranks ───────────────────────────────────────────────────────
+# Who counts as a donor and as staff, for settings like "Donors Only"
+# and the join sounds. Give these permissions to your LuckPerms groups.
+# Staff also count as donors.
+ranks:
+  donor-permission: lobby.donor
+  staff-permission: lobby.staff
+
+
+# ── Mentions ────────────────────────────────────────────────────
+# Saying someone's name in chat plays a sound for them (each player can
+# turn it off in settings). Writing @Name also highlights it in their chat.
+mentions:
+  enabled: true
+  sound: block.note_block.pling
+  volume: 1.0
+  pitch: 1.4
+  # How @Name looks to the player mentioned (MiniMessage).
+  highlight: "<#FFD27F><bold>"
+
+
+# ── Double jump ─────────────────────────────────────────────────
+# Press jump in mid-air to launch forward. Needs lobby.doublejump (everyone
+# by default); each player can turn it off in settings. Off in creative,
+# in vehicles and during a parkour run.
+double-jump:
+  enabled: true
+  # Push forward and up. Higher = further / higher.
+  forward: 1.3
+  upward: 0.9
+  sound: entity.breeze.jump
+  sound-volume: 0.6
+  sound-pitch: 1.2
 
 
 # ── Chat ────────────────────────────────────────────────────────
@@ -354,6 +399,16 @@ join-items:
 realm-selector:
   # Menu height in rows (1-6).
   rows: 3
+  # Each realm shows Online, Full, Maintenance or Offline. Lobby pings
+  # each realm at the address the proxy has for it (or "address" below).
+  # Offline and full realms can't be joined; lobby.bypass.full and
+  # lobby.bypass.maintenance let staff in anyway.
+  status:
+    enabled: true
+    refresh-seconds: 3
+    # A realm whose MOTD or version text has one of these is shown as
+    # under maintenance (works with most maintenance plugins).
+    maintenance-words: ["maintenance"]
   realms:
     survival:
       # Server name in the proxy config.
@@ -361,20 +416,36 @@ realm-selector:
       # Menu slot, counting from 0 at the top left (9 per row).
       slot: 11
       item: GRASS_BLOCK
-      name: "<primary>Survival"
+      name: "<primary><bold>Survival"
       description:
         - "<muted>Classic survival with friends."
+        - ""
+        - "<white>▪ <gray>Claim land and build your base"
+        - "<white>▪ <gray>Trade and team up with others"
+        - "<white>▪ <gray>Explore a shared world"
+      # Optional: "host:port" to ping instead of the proxy's address.
+      address: ""
+      # Optional: true shows it as under maintenance, whatever the ping says.
+      maintenance: false
     lifesteal:
       server: lifesteal
       slot: 13
       item: NETHERITE_SWORD
-      name: "<accent>Lifesteal"
+      name: "<accent><bold>Lifesteal"
       description:
         - "<muted>Kill to gain hearts, die to lose them."
+        - ""
+        - "<white>▪ <gray>Steal hearts from other players"
+        - "<white>▪ <gray>Craft hearts to come back stronger"
+        - "<white>▪ <gray>Run out of hearts and you're out"
     practice:
       server: practice
       slot: 15
       item: IRON_SWORD
-      name: "<secondary>Practice"
+      name: "<secondary><bold>Practice"
       description:
         - "<muted>Sharpen your PvP."
+        - ""
+        - "<white>▪ <gray>Duels and ranked fights"
+        - "<white>▪ <gray>Ready-made kits, no grinding"
+        - "<white>▪ <gray>Warm up before Lifesteal"

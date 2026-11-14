@@ -82,6 +82,7 @@ public final class ProxyCounts implements PluginMessageListener {
         Player carrier = plugin.getServer().getOnlinePlayers().stream().findFirst().orElse(null);
         if (carrier == null) return;
         if (ownName == null) carrier.sendPluginMessage(plugin, CHANNEL, simple("GetServer"));
+        for (String server : plugin.serverStatus().needAddress()) carrier.sendPluginMessage(plugin, CHANNEL, ask("ServerIP", server));
         List<String> servers = plugin.lobbyConfig().proxy().servers();
         for (String server : servers) carrier.sendPluginMessage(plugin, CHANNEL, request(server));
         carrier.sendPluginMessage(plugin, CHANNEL, request(ALL));
@@ -90,6 +91,7 @@ public final class ProxyCounts implements PluginMessageListener {
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
         if (!CHANNEL.equals(channel)) return;
+        decodeServerIp(message).ifPresent(ip -> plugin.serverStatus().proxyAddress(ip.server(), ip.host(), ip.port()));
         decodeServerName(message).ifPresent(name -> {
             ownName = name.toLowerCase(Locale.ROOT);
             plugin.display().updateSoon();
@@ -137,6 +139,30 @@ public final class ProxyCounts implements PluginMessageListener {
             throw new IllegalStateException(e); // writing to memory can't fail
         }
         return bytes.toByteArray();
+    }
+
+    /** A reply to a ServerIP request: where the proxy connects for that server. */
+    record ServerIp(String server, String host, int port) {
+    }
+
+    static byte[] ask(String subchannel, String argument) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.writeUTF(subchannel);
+            out.writeUTF(argument);
+        } catch (IOException e) {
+            throw new IllegalStateException(e); // writing to memory can't fail
+        }
+        return bytes.toByteArray();
+    }
+
+    static Optional<ServerIp> decodeServerIp(byte[] message) {
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!"ServerIP".equals(in.readUTF())) return Optional.empty();
+            return Optional.of(new ServerIp(in.readUTF(), in.readUTF(), in.readUnsignedShort()));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     /** Reads a GetServer reply (this server's name on the proxy). */

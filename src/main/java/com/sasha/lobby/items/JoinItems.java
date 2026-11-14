@@ -7,6 +7,8 @@ import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.LobbyConfig;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -51,8 +53,6 @@ public final class JoinItems implements Listener {
     private final Lobby plugin;
     /** Marks our items, so they're recognised whatever their name or material. */
     private final NamespacedKey itemKey;
-    /** Stored on the player: true while they've hidden other players. Kept between joins. */
-    private final NamespacedKey hiddenKey;
     private final Map<UUID, Long> lastToggle = new HashMap<>();
 
     private final RealmSelector selector;
@@ -61,7 +61,6 @@ public final class JoinItems implements Listener {
         this.plugin = plugin;
         this.selector = selector;
         this.itemKey = new NamespacedKey(plugin, "join-item");
-        this.hiddenKey = new NamespacedKey(plugin, "players-hidden");
     }
 
     // ---------------------------------------------------------------- join / visibility
@@ -72,13 +71,23 @@ public final class JoinItems implements Listener {
         if (plugin.lobbyConfig().joinItems().clearInventory()) player.getInventory().clear();
         giveItems(player);
 
-        // The newcomer hides everyone if that's their setting; anyone hiding players hides the newcomer.
-        boolean hides = hidesPlayers(player);
+        // The newcomer sees whoever their visibility setting allows, and everyone else decides about them.
+        applyVisibility(player);
         for (Player other : plugin.getServer().getOnlinePlayers()) {
             if (other == player) continue;
-            if (hides) player.hidePlayer(plugin, other);
-            if (hidesPlayers(other)) other.hidePlayer(plugin, player);
+            if (plugin.settings().shows(other, Settings.Setting.PLAYER_VISIBILITY, player)) other.showPlayer(plugin, player);
+            else other.hidePlayer(plugin, player);
         }
+    }
+
+    /** Shows and hides other players for the viewer, by their Player Visibility setting, and updates the item. */
+    public void applyVisibility(Player viewer) {
+        for (Player other : plugin.getServer().getOnlinePlayers()) {
+            if (other == viewer) continue;
+            if (plugin.settings().shows(viewer, Settings.Setting.PLAYER_VISIBILITY, other)) viewer.showPlayer(plugin, other);
+            else viewer.hidePlayer(plugin, other);
+        }
+        giveItems(viewer);
     }
 
     @EventHandler
@@ -97,12 +106,8 @@ public final class JoinItems implements Listener {
         int visibilitySlot = config.visibilitySlot();
         // An older config.yml may still have visibility in slot 8, where settings now go: it moves one over.
         if (config.settings() && visibilitySlot == config.settingsSlot()) visibilitySlot = visibilitySlot < 8 ? visibilitySlot + 1 : visibilitySlot - 1;
-        if (config.visibility()) player.getInventory().setItem(visibilitySlot, visibilityItem(hidesPlayers(player)));
+        if (config.visibility()) player.getInventory().setItem(visibilitySlot, visibilityItem(player));
         if (config.settings()) player.getInventory().setItem(config.settingsSlot(), joinItem(config.settingsItem(), "items.settings", SETTINGS));
-    }
-
-    public boolean hidesPlayers(Player player) {
-        return player.getPersistentDataContainer().getOrDefault(hiddenKey, PersistentDataType.BOOLEAN, false);
     }
 
     private void toggleVisibility(Player player) {
@@ -120,34 +125,35 @@ public final class JoinItems implements Listener {
         }
         lastToggle.put(player.getUniqueId(), now);
 
-        boolean hide = !hidesPlayers(player);
-        player.getPersistentDataContainer().set(hiddenKey, PersistentDataType.BOOLEAN, hide);
-        for (Player other : plugin.getServer().getOnlinePlayers()) {
-            if (other == player) continue;
-            if (hide) player.hidePlayer(plugin, other);
-            else player.showPlayer(plugin, other);
-        }
-        giveItems(player);
+        // The item switches between everyone and nobody; Donors/Staff Only are picked in the settings menu.
+        boolean hide = plugin.settings().audience(player, Settings.Setting.PLAYER_VISIBILITY) != Settings.Audience.NOBODY;
+        plugin.settings().set(player, Settings.Setting.PLAYER_VISIBILITY, hide ? "nobody" : "everyone");
         plugin.messages().send(player, hide ? "visibility.hidden" : "visibility.shown");
         player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, hide ? 0.8f : 1.2f),
                 Sound.Emitter.self());
     }
 
-    private ItemStack visibilityItem(boolean hidden) {
+    private ItemStack visibilityItem(Player player) {
         LobbyConfig.JoinItems config = plugin.lobbyConfig().joinItems();
-        String key = hidden ? "items.visibility-hidden" : "items.visibility-shown";
-        return joinItem(hidden ? config.hiddenItem() : config.visibleItem(), key, VISIBILITY);
+        return switch (plugin.settings().audience(player, Settings.Setting.PLAYER_VISIBILITY)) {
+            case EVERYONE -> joinItem(config.visibleItem(), "items.visibility-shown", VISIBILITY);
+            case NOBODY -> joinItem(config.hiddenItem(), "items.visibility-hidden", VISIBILITY);
+            case DONORS -> joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
+                    Placeholder.component("option", plugin.messages().component("settings.options.donors")));
+            case STAFF -> joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
+                    Placeholder.component("option", plugin.messages().component("settings.options.staff")));
+        };
     }
 
     private ItemStack selectorItem() {
         return joinItem(plugin.lobbyConfig().joinItems().selectorItem(), "items.realm-selector", SELECTOR);
     }
 
-    private ItemStack joinItem(org.bukkit.Material material, String key, String type) {
+    private ItemStack joinItem(org.bukkit.Material material, String key, String type, TagResolver... args) {
         ItemStack item = ItemStack.of(material);
         item.editMeta(meta -> {
-            meta.displayName(plugin.messages().item(key + ".name"));
-            meta.lore(plugin.messages().lore(key + ".lore"));
+            meta.displayName(plugin.messages().item(key + ".name", args));
+            meta.lore(plugin.messages().lore(key + ".lore", args));
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, type);
         });

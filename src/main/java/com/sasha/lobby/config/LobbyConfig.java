@@ -36,7 +36,10 @@ public record LobbyConfig(
         Border border,
         FlyingMinecarts flyingMinecarts,
         ChatColors chatColors,
-        Parkour parkour
+        Parkour parkour,
+        Ranks ranks,
+        Mentions mentions,
+        DoubleJump doubleJump
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -83,7 +86,20 @@ public record LobbyConfig(
                              String sound, float volume, float pitch) {
     }
 
-    public record JoinMessages(String firstJoin, String join, String quit) {
+    /** Who counts as staff and as a donor (for settings like "Donors Only", and join sounds). */
+    public record Ranks(String donorPermission, String staffPermission) {
+    }
+
+    /** Saying a player's name pings them; @Name also highlights it (highlight = MiniMessage tags). */
+    public record Mentions(boolean enabled, String sound, float volume, float pitch, String highlight) {
+    }
+
+    public record DoubleJump(boolean enabled, double forward, double upward, String sound, float volume, float pitch) {
+    }
+
+    public record JoinMessages(String firstJoin, String join, String quit,
+                               String staffJoinSound, String staffLeaveSound,
+                               String donorJoinSound, String donorLeaveSound, float soundVolume) {
     }
 
     public record Chat(boolean enabled, String defaultFormat, String rankedFormat) {
@@ -112,10 +128,13 @@ public record LobbyConfig(
     public record FlyingMinecarts(double speed, int despawnSeconds, boolean explodeOnCollision) {
     }
 
-    public record Selector(int rows, List<SelectorServer> servers) {
+    public record Selector(int rows, List<SelectorServer> servers,
+                           boolean statusEnabled, long statusRefreshTicks, List<String> maintenanceWords) {
     }
 
-    public record SelectorServer(String server, int slot, Material item, String name, List<String> description) {
+    /** address: "" = ask the proxy. maintenance: shown as under maintenance whatever the ping says. */
+    public record SelectorServer(String server, int slot, Material item, String name, List<String> description,
+                                 String address, boolean maintenance) {
     }
 
     public static LobbyConfig load(FileConfiguration c, Logger log) {
@@ -165,7 +184,12 @@ public record LobbyConfig(
                 new JoinMessages(
                         c.getString("join-messages.first-join", ""),
                         c.getString("join-messages.join-message", ""),
-                        c.getString("join-messages.quit-message", "")),
+                        c.getString("join-messages.quit-message", ""),
+                        sound(c.getString("join-messages.sounds.staff.join", "block.beacon.activate")),
+                        sound(c.getString("join-messages.sounds.staff.leave", "block.beacon.deactivate")),
+                        sound(c.getString("join-messages.sounds.donor.join", "entity.player.levelup")),
+                        sound(c.getString("join-messages.sounds.donor.leave", "block.note_block.bass")),
+                        (float) c.getDouble("join-messages.sounds.volume", 0.6)),
                 new Chat(
                         c.getBoolean("chat.enabled", true),
                         c.getString("chat.default-format", "&7%player%: %message%"),
@@ -217,7 +241,23 @@ public record LobbyConfig(
                 chatColors(c, log),
                 new Parkour(
                         Math.max(0, Math.min(10, c.getInt("parkour.hologram-top", 5))),
-                        Math.max(10, Math.min(500, c.getInt("parkour.rank-search", 100)))));
+                        Math.max(10, Math.min(500, c.getInt("parkour.rank-search", 100)))),
+                new Ranks(
+                        c.getString("ranks.donor-permission", "lobby.donor"),
+                        c.getString("ranks.staff-permission", "lobby.staff")),
+                new Mentions(
+                        c.getBoolean("mentions.enabled", true),
+                        sound(c.getString("mentions.sound", "block.note_block.pling")),
+                        (float) c.getDouble("mentions.volume", 1.0),
+                        (float) c.getDouble("mentions.pitch", 1.4),
+                        c.getString("mentions.highlight", "<#FFD27F><bold>")),
+                new DoubleJump(
+                        c.getBoolean("double-jump.enabled", true),
+                        c.getDouble("double-jump.forward", 1.3),
+                        c.getDouble("double-jump.upward", 0.9),
+                        sound(c.getString("double-jump.sound", "entity.breeze.jump")),
+                        (float) c.getDouble("double-jump.sound-volume", 0.6),
+                        (float) c.getDouble("double-jump.sound-pitch", 1.2)));
     }
 
     private static ChatColors chatColors(FileConfiguration c, Logger log) {
@@ -267,10 +307,17 @@ public record LobbyConfig(
                         slot,
                         item(c.getString(path + ".item"), Material.GRASS_BLOCK, path + ".item", log),
                         c.getString(path + ".name", id),
-                        c.getStringList(path + ".description")));
+                        c.getStringList(path + ".description"),
+                        c.getString(path + ".address", "").trim(),
+                        c.getBoolean(path + ".maintenance", false)));
             }
         }
-        return new Selector(rows, List.copyOf(servers));
+        List<String> words = c.isList("realm-selector.status.maintenance-words")
+                ? c.getStringList("realm-selector.status.maintenance-words") : List.of("maintenance");
+        return new Selector(rows, List.copyOf(servers),
+                c.getBoolean("realm-selector.status.enabled", true),
+                Math.max(20L, Math.round(c.getDouble("realm-selector.status.refresh-seconds", 3) * 20)),
+                List.copyOf(words));
     }
 
     /** Hotbar slot 1-9 in the config → inventory index 0-8. */
