@@ -46,7 +46,8 @@ public record LobbyConfig(
     }
 
     public record Protection(String buildPermission, boolean allowOpsToBuild, boolean disablePvp,
-                             boolean disableMobAttacks, boolean disableFallDamage, boolean disableHunger) {
+                             boolean disableMobAttacks, boolean disableFallDamage, boolean disableHunger,
+                             boolean disablePlayerCollision) {
     }
 
     public record VoidRescue(boolean enabled, double belowY, String sound, float volume, float pitch) {
@@ -103,7 +104,8 @@ public record LobbyConfig(
                         c.getBoolean("protection.disable-pvp", true),
                         c.getBoolean("protection.disable-mob-attacks", true),
                         c.getBoolean("protection.disable-fall-damage", true),
-                        c.getBoolean("protection.disable-hunger", true)),
+                        c.getBoolean("protection.disable-hunger", true),
+                        c.getBoolean("protection.disable-player-collision", true)),
                 new VoidRescue(
                         c.getBoolean("void-rescue.enabled", true),
                         c.getDouble("void-rescue.below-y", 0),

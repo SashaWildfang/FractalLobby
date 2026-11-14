@@ -44,6 +44,8 @@ protection:
   disable-fall-damage: true
   # Hunger never goes down.
   disable-hunger: true
+  # Players walk through each other instead of pushing.
+  disable-player-collision: true
 
 
 # ── Void rescue ─────────────────────────────────────────────────

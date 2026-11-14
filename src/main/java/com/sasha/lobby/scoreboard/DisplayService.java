@@ -183,13 +183,17 @@ public final class DisplayService {
         if (tag.listName() != null) player.playerListName(tag.listName());
     }
 
-    private static void applyTeam(Scoreboard board, Player player, Nametag tag) {
+    private void applyTeam(Scoreboard board, Player player, Nametag tag) {
         String name = teamName(player.getUniqueId());
         Team team = board.getTeam(name);
         if (team == null) team = board.registerNewTeam(name);
         team.prefix(tag.prefix());
         team.suffix(tag.suffix());
         team.color(tag.color());
+        // Players walk through each other (the team rule is what the game itself checks).
+        Team.OptionStatus collision = plugin.lobbyConfig().protection().disablePlayerCollision()
+                ? Team.OptionStatus.NEVER : Team.OptionStatus.ALWAYS;
+        if (team.getOption(Team.Option.COLLISION_RULE) != collision) team.setOption(Team.Option.COLLISION_RULE, collision);
         if (!team.hasEntry(player.getName())) team.addEntry(player.getName());
     }
 
