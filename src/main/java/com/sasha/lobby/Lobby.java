@@ -18,6 +18,7 @@ import com.sasha.lobby.listener.FlyingMinecarts;
 import com.sasha.lobby.listener.GlowListener;
 import com.sasha.lobby.listener.LaunchPadListener;
 import com.sasha.lobby.listener.ProtectionListener;
+import com.sasha.lobby.parkour.ParkourLobby;
 import com.sasha.lobby.listener.SpawnListener;
 import com.sasha.lobby.listener.VoidRescueListener;
 import com.sasha.lobby.proxy.ProxyCounts;
@@ -58,6 +59,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private FlyingMinecarts flyingMinecarts;
     private ProtectionListener protection;
     private ChatColors chatColors;
+    private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
     private boolean luckPerms;
@@ -84,9 +86,10 @@ public final class Lobby extends JavaPlugin implements Listener {
         flyingMinecarts = new FlyingMinecarts(this);
         protection = new ProtectionListener(this);
         chatColors = new ChatColors(this);
+        parkour = new ParkourLobby(this);
 
         for (Listener listener : List.of(this, protection, chatColors, voidRescue, border, flyingMinecarts,
-                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems)) {
+                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour)) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -107,6 +110,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (proxyCounts != null) proxyCounts.stop();
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
+        if (parkour != null) parkour.shutdown();
     }
 
     public LobbyConfig lobbyConfig() {
@@ -164,6 +168,12 @@ public final class Lobby extends JavaPlugin implements Listener {
                         return reply(context.getSource(), "general.reloaded");
                     }))
                     .build(), "Lobby admin commands", List.of());
+
+            // Keep this setup command outside /lobby so proxy command routing cannot capture it.
+            commands.register(Commands.literal("lobbyparkour")
+                    .requires(source -> source.getSender().hasPermission("lobby.admin"))
+                    .then(Commands.literal("setup").executes(context -> asPlayer(context.getSource(), player -> parkour.setup(player))))
+                    .build(), "Set up the lobby parkour course and displays", List.of());
 
             commands.register(Commands.literal("spawn")
                     .requires(source -> source.getSender().hasPermission("lobby.spawn"))

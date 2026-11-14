@@ -13,7 +13,7 @@ permissions:
     description: Move and drop items in the lobby
     default: op
   lobby.admin:
-    description: Reload Lobby and set the spawn
+    description: Administer Lobby, parkour and set the spawn
     default: op
   lobby.build:
     description: Place and break blocks in the lobby (name set by protection.build-permission)

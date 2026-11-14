@@ -33,6 +33,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 | `/glow` | `lobby.cmd.glow` (op) | Glow in your rank colour |
 | `/setspawn` | `lobby.admin` (op) | Set spawn to where you stand |
 | `/lobby reload` | `lobby.admin` (op) | Reload config and messages |
+| `/lobbyparkour setup` | `lobby.admin` (op) | Set up a pressure-plate start and hologram at your position |
 
 ## Permissions
 

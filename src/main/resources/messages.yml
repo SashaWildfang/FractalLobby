@@ -169,3 +169,6 @@ general:
   players-only: "<prefix><bad>Only players can do that."
   unknown-command: "<prefix><bad>Unknown command. Try <white>/lobby reload</white>."
   reloaded: "<prefix><good>Reloaded the config and messages."
+
+parkour:
+  setup: "<prefix><good>Parkour pressure plate and hologram set up."
