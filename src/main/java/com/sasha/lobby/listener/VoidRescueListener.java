@@ -9,7 +9,6 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,8 +25,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Falling off the map lifts players back up, flies them over to the last block they stood on and sets
- * them down on it, leaving a particle trail. With no safe spot yet, they're flown to spawn.
+ * Falling off the map flies players straight back to the last block they stood on, the quickest way
+ * there, leaving a particle trail. With no safe spot yet, they're flown to spawn.
  */
 public final class VoidRescueListener implements Listener {
 
@@ -81,20 +80,19 @@ public final class VoidRescueListener implements Listener {
     private void startFlight(Player player, Location target, LobbyConfig.VoidRescue config) {
         playSound(player, config.sound(), config.volume(), config.pitch());
         plugin.messages().actionBar(player, "void-rescued");
-        Flight flight = new Flight(player, target.clone().add(0, 0.05, 0));
+        Flight flight = new Flight(player, target);
         flights.put(player.getUniqueId(), plugin.getServer().getScheduler().runTaskTimer(plugin, flight::tick, 0L, 1L));
     }
 
     /**
-     * The rescue path: straight up the column they fell down (it's open, they just came through it), across
-     * above every block between there and the landing spot, then gently down onto it. If anything still gets
-     * in the way, they're put down there directly.
+     * The rescue path, the quickest way back to the exact block they last stood on: straight up the column
+     * they fell down (it's open, they just came through it) to just above that block's height, then a
+     * straight line onto it, hopping over anything in the way. If they still get stuck, they're put there.
      */
     private final class Flight {
         private final Player player;
         private final Location landing;
-        private final double cruiseY;
-        private Phase phase = Phase.RISE;
+        private boolean rising = true;
         private int ticks;
         private int stuckTicks;
         private Location last;
@@ -102,7 +100,6 @@ public final class VoidRescueListener implements Listener {
         Flight(Player player, Location landing) {
             this.player = player;
             this.landing = landing;
-            this.cruiseY = cruiseHeight(player.getLocation(), landing);
             this.last = player.getLocation();
         }
 
@@ -119,35 +116,23 @@ public final class VoidRescueListener implements Listener {
             }
 
             Vector velocity;
-            switch (phase) {
-                case RISE -> {
-                    if (blockedAbove(at)) {
-                        land(true);
-                        return;
-                    }
-                    velocity = new Vector(0, Math.min(1.8, 0.4 + (cruiseY - at.getY()) * 0.1), 0);
-                    if (at.getY() >= cruiseY - 0.3) phase = Phase.GLIDE;
+            double riseTo = landing.getY() + 1.2;
+            if (rising && at.getY() < riseTo - 0.2) {
+                if (blockedAbove(at)) {
+                    land(true);
+                    return;
                 }
-                case GLIDE -> {
-                    Vector across = landing.toVector().subtract(at.toVector()).setY(0);
-                    double distance = across.length();
-                    if (distance < 0.4) {
-                        phase = Phase.DESCEND;
-                        velocity = new Vector();
-                    } else {
-                        velocity = across.normalize().multiply(Math.min(1.1, 0.25 + distance * 0.15));
-                        velocity.setY((cruiseY - at.getY()) * 0.3);
-                    }
+                velocity = new Vector(0, Math.min(2.2, 0.6 + (riseTo - at.getY()) * 0.15), 0);
+            } else {
+                rising = false;
+                Vector toLanding = landing.toVector().subtract(at.toVector());
+                double distance = toLanding.length();
+                if (distance < 0.7) {
+                    land(true); // a tiny snap onto the exact spot
+                    return;
                 }
-                default -> {
-                    double above = at.getY() - landing.getY();
-                    if (above < 0.15 || standingOnGround(at)) {
-                        land(false);
-                        return;
-                    }
-                    Vector across = landing.toVector().subtract(at.toVector()).setY(0).multiply(0.4);
-                    velocity = across.setY(-Math.max(0.15, Math.min(0.7, above * 0.25)));
-                }
+                velocity = toLanding.normalize().multiply(Math.min(1.6, 0.35 + distance * 0.3));
+                if (blockedAhead(at, velocity)) velocity.setY(Math.max(velocity.getY(), 0.6));
             }
             player.setVelocity(velocity);
 
@@ -167,36 +152,26 @@ public final class VoidRescueListener implements Listener {
             if (placeDirectly) player.teleport(landing.clone().setDirection(player.getLocation().getDirection()));
             player.setVelocity(new Vector(0, 0, 0));
             player.setFallDistance(0);
-            player.getWorld().spawnParticle(Particle.CLOUD, player.getLocation().add(0, 0.2, 0), 20, 0.5, 0.05, 0.5, 0.02);
+            player.getWorld().spawnParticle(Particle.CLOUD, landing.clone().add(0, 0.2, 0), 20, 0.5, 0.05, 0.5, 0.02);
             stopFlight(player);
         }
-    }
-
-    private enum Phase { RISE, GLIDE, DESCEND }
-
-    /** A height above every block between the two spots (and the landing spot), with room to spare. */
-    private static double cruiseHeight(Location from, Location to) {
-        World world = to.getWorld();
-        double highest = to.getY();
-        Vector step = to.toVector().subtract(from.toVector()).setY(0);
-        int samples = Math.max(1, (int) Math.ceil(step.length() * 2));
-        for (int i = 0; i <= samples; i++) {
-            double x = from.getX() + step.getX() * i / samples;
-            double z = from.getZ() + step.getZ() * i / samples;
-            for (double ox = -0.5; ox <= 0.5; ox += 0.5) {
-                for (double oz = -0.5; oz <= 0.5; oz += 0.5) {
-                    highest = Math.max(highest, world.getHighestBlockYAt((int) Math.floor(x + ox), (int) Math.floor(z + oz)) + 1);
-                }
-            }
-        }
-        return highest + 2.5;
     }
 
     /** A solid block in the two blocks above the player's head. */
     private static boolean blockedAbove(Location at) {
         for (int up = 2; up <= 3; up++) {
-            Block block = at.clone().add(0, up, 0).getBlock();
-            if (!block.isPassable()) return true;
+            if (!at.clone().add(0, up, 0).getBlock().isPassable()) return true;
+        }
+        return false;
+    }
+
+    /** A solid block just ahead at foot or head height. */
+    private static boolean blockedAhead(Location at, Vector velocity) {
+        Vector ahead = velocity.clone().setY(0);
+        if (ahead.lengthSquared() < 1.0E-4) return false;
+        ahead.normalize().multiply(0.7);
+        for (double up : new double[] {0.1, 1.1}) {
+            if (!at.clone().add(ahead).add(0, up, 0).getBlock().isPassable()) return true;
         }
         return false;
     }
