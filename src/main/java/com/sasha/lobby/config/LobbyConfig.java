@@ -71,14 +71,14 @@ public record LobbyConfig(
     public record Scoreboard(boolean enabled, int updateTicks, DateTimeFormatter dateFormat, ZoneId timeZone) {
     }
 
-    public record JoinItems(boolean clearInventory, boolean lockInventory,
+    public record JoinItems(boolean clearInventory, boolean lockInventory, boolean blockOffHand,
                             boolean selector, int selectorSlot, Material selectorItem,
                             boolean radio, int radioSlot, Material radioItem, String radioCommand, String radioRequiresPlugin,
                             boolean visibility, int visibilitySlot, Material visibleItem, Material hiddenItem,
                             long visibilityCooldownMillis) {
     }
 
-    public record Border(boolean enabled, double radius, boolean showWall, String bypassPermission) {
+    public record Border(boolean enabled, double radius, int warningDistance) {
     }
 
     public record FlyingMinecarts(double speed, int despawnSeconds, boolean explodeOnCollision) {
@@ -143,6 +143,7 @@ public record LobbyConfig(
                 new JoinItems(
                         c.getBoolean("join-items.clear-inventory", true),
                         c.getBoolean("join-items.lock-inventory", true),
+                        c.getBoolean("join-items.block-off-hand", true),
                         c.getBoolean("join-items.realm-selector.enabled", true),
                         slot(c.getInt("join-items.realm-selector.slot", 2)),
                         item(c.getString("join-items.realm-selector.item"), Material.COMPASS, "join-items.realm-selector.item", log),
@@ -160,8 +161,7 @@ public record LobbyConfig(
                 new Border(
                         c.getBoolean("border.enabled", true),
                         Math.max(5, c.getDouble("border.radius", 100)),
-                        c.getBoolean("border.show-wall", true),
-                        c.getString("border.bypass-permission", "lobby.border.bypass")),
+                        Math.max(0, c.getInt("border.warning-distance", 5))),
                 new FlyingMinecarts(
                         Math.max(0.1, Math.min(3.0, c.getDouble("flying-minecarts.speed", 1.0))),
                         Math.max(5, c.getInt("flying-minecarts.despawn-after-seconds", 30)),

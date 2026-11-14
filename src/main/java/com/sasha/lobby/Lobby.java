@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 /**
  * Lobby: the core of the Fractal Network lobby. Sidebar with live network player counts, tab list,
  * chat and nametag formats, join messages, protection, void rescue, launch pads, spawn, and locked join
- * items (realm selector, radio and player visibility toggle), /glow, a spawn border and flying minecarts.
+ * items (realm selector, radio and player visibility toggle), /glow, a world border around spawn and flying minecarts.
  *
  * <p>Built by Sasha Wildfang for Fractal Network.
  */
@@ -85,6 +85,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         }
         registerCommands();
         display.start();
+        border.apply();
         flyingMinecarts.start();
         if (placeholderApi) {
             placeholderExpansion = new LobbyExpansion(this);
@@ -131,10 +132,8 @@ public final class Lobby extends JavaPlugin implements Listener {
         loadSettings();
         proxyCounts.restartTask();
         display.start();
-        for (Player player : getServer().getOnlinePlayers()) {
-            joinItems.giveItems(player);
-            border.refresh(player);
-        }
+        for (Player player : getServer().getOnlinePlayers()) joinItems.giveItems(player);
+        border.apply();
     }
 
     private void loadSettings() {

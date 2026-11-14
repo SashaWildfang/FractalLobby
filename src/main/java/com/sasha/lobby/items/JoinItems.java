@@ -39,6 +39,8 @@ import java.util.UUID;
 public final class JoinItems implements Listener {
 
     public static final String STAFF = "lobby.staff";
+    /** The off-hand's index in the player's inventory. */
+    private static final int OFF_HAND_SLOT = 40;
     private static final String VISIBILITY = "visibility";
     private static final String SELECTOR = "realm-selector";
     private static final String RADIO = "radio";
@@ -174,9 +176,20 @@ public final class JoinItems implements Listener {
         return plugin.lobbyConfig().joinItems().lockInventory() && !player.hasPermission(STAFF);
     }
 
+    private boolean offHandBlocked() {
+        return plugin.lobbyConfig().joinItems().blockOffHand();
+    }
+
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player) || !locked(player)) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        boolean offHandSlot = event.getClickedInventory() != null
+                && event.getClickedInventory().getType() == InventoryType.PLAYER && event.getSlot() == OFF_HAND_SLOT;
+        if (offHandBlocked() && (offHandSlot || event.getClick() == ClickType.SWAP_OFFHAND)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!locked(player)) return;
         boolean ownInventory = event.getClickedInventory() != null
                 && event.getClickedInventory().getType() == InventoryType.PLAYER;
         boolean ownScreen = event.getView().getTopInventory().getType() == InventoryType.CRAFTING;
@@ -188,7 +201,13 @@ public final class JoinItems implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onDrag(InventoryDragEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player) || !locked(player)) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (offHandBlocked() && event.getRawSlots().stream().anyMatch(raw ->
+                event.getView().getInventory(raw) == player.getInventory() && event.getView().convertSlot(raw) == OFF_HAND_SLOT)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!locked(player)) return;
         int topSize = event.getView().getTopInventory().getSize();
         boolean touchesOwn = event.getView().getTopInventory().getType() == InventoryType.CRAFTING
                 || event.getRawSlots().stream().anyMatch(slot -> slot >= topSize);
@@ -202,6 +221,6 @@ public final class JoinItems implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
-        if (locked(event.getPlayer())) event.setCancelled(true);
+        if (offHandBlocked() || locked(event.getPlayer())) event.setCancelled(true);
     }
 }

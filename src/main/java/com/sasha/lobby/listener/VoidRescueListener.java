@@ -9,6 +9,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,13 +26,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Falling off the map lifts players back up and flies them in an arc to the last block they stood on,
- * leaving a particle trail. With no safe spot yet, they're flown to spawn.
+ * Falling off the map lifts players back up, flies them over to the last block they stood on and sets
+ * them down on it, leaving a particle trail. With no safe spot yet, they're flown to spawn.
  */
 public final class VoidRescueListener implements Listener {
 
     /** Give up flying after this long and put them there directly (e.g. something is in the way). */
-    private static final int MAX_FLIGHT_TICKS = 80;
+    private static final int MAX_FLIGHT_TICKS = 200;
 
     private final Lobby plugin;
     private final Map<UUID, Location> lastSafe = new HashMap<>();
@@ -80,38 +81,124 @@ public final class VoidRescueListener implements Listener {
     private void startFlight(Player player, Location target, LobbyConfig.VoidRescue config) {
         playSound(player, config.sound(), config.volume(), config.pitch());
         plugin.messages().actionBar(player, "void-rescued");
-        Location landing = target.clone().add(0, 0.2, 0);
-        int[] ticks = {0};
+        Flight flight = new Flight(player, target.clone().add(0, 0.05, 0));
+        flights.put(player.getUniqueId(), plugin.getServer().getScheduler().runTaskTimer(plugin, flight::tick, 0L, 1L));
+    }
 
-        BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+    /**
+     * The rescue path: straight up the column they fell down (it's open, they just came through it), across
+     * above every block between there and the landing spot, then gently down onto it. If anything still gets
+     * in the way, they're put down there directly.
+     */
+    private final class Flight {
+        private final Player player;
+        private final Location landing;
+        private final double cruiseY;
+        private Phase phase = Phase.RISE;
+        private int ticks;
+        private int stuckTicks;
+        private Location last;
+
+        Flight(Player player, Location landing) {
+            this.player = player;
+            this.landing = landing;
+            this.cruiseY = cruiseHeight(player.getLocation(), landing);
+            this.last = player.getLocation();
+        }
+
+        void tick() {
             if (!player.isOnline()) {
                 stopFlight(player);
                 return;
             }
             Location at = player.getLocation();
-            Vector toTarget = landing.toVector().subtract(at.toVector());
-            double distance = toTarget.length();
             player.setFallDistance(0);
-
-            if (distance < 1.3 || ticks[0]++ > MAX_FLIGHT_TICKS || at.getWorld() != landing.getWorld()) {
-                if (distance >= 1.3) player.teleport(landing.clone().setDirection(at.getDirection()));
-                player.setVelocity(new Vector(0, 0.1, 0));
-                at.getWorld().spawnParticle(Particle.CLOUD, player.getLocation().add(0, 0.2, 0), 20, 0.5, 0.05, 0.5, 0.02);
-                stopFlight(player);
+            if (at.getWorld() != landing.getWorld() || ++ticks > MAX_FLIGHT_TICKS || stuck(at)) {
+                land(true);
                 return;
             }
 
-            // Head for the landing spot, rising extra while still below it, so the path is an arc out of the void.
-            double speed = Math.min(1.6, 0.45 + distance * 0.08);
-            Vector velocity = toTarget.normalize().multiply(speed);
-            if (at.getY() < landing.getY() + 1.5) velocity.setY(Math.max(velocity.getY(), 0.55));
+            Vector velocity;
+            switch (phase) {
+                case RISE -> {
+                    if (blockedAbove(at)) {
+                        land(true);
+                        return;
+                    }
+                    velocity = new Vector(0, Math.min(1.8, 0.4 + (cruiseY - at.getY()) * 0.1), 0);
+                    if (at.getY() >= cruiseY - 0.3) phase = Phase.GLIDE;
+                }
+                case GLIDE -> {
+                    Vector across = landing.toVector().subtract(at.toVector()).setY(0);
+                    double distance = across.length();
+                    if (distance < 0.4) {
+                        phase = Phase.DESCEND;
+                        velocity = new Vector();
+                    } else {
+                        velocity = across.normalize().multiply(Math.min(1.1, 0.25 + distance * 0.15));
+                        velocity.setY((cruiseY - at.getY()) * 0.3);
+                    }
+                }
+                default -> {
+                    double above = at.getY() - landing.getY();
+                    if (above < 0.15 || standingOnGround(at)) {
+                        land(false);
+                        return;
+                    }
+                    Vector across = landing.toVector().subtract(at.toVector()).setY(0).multiply(0.4);
+                    velocity = across.setY(-Math.max(0.15, Math.min(0.7, above * 0.25)));
+                }
+            }
             player.setVelocity(velocity);
 
             Location trail = at.clone().add(0, 0.9, 0);
-            at.getWorld().spawnParticle(Particle.CLOUD, trail, 3, 0.15, 0.15, 0.15, 0.01);
+            at.getWorld().spawnParticle(Particle.CLOUD, trail, 2, 0.15, 0.15, 0.15, 0.01);
             at.getWorld().spawnParticle(Particle.WITCH, trail, 4, 0.2, 0.2, 0.2, 0.02);
-        }, 0L, 1L);
-        flights.put(player.getUniqueId(), task);
+        }
+
+        /** Not moving for a while: something is in the way. */
+        private boolean stuck(Location at) {
+            stuckTicks = at.distanceSquared(last) < 0.0025 ? stuckTicks + 1 : 0;
+            last = at;
+            return stuckTicks > 8;
+        }
+
+        private void land(boolean placeDirectly) {
+            if (placeDirectly) player.teleport(landing.clone().setDirection(player.getLocation().getDirection()));
+            player.setVelocity(new Vector(0, 0, 0));
+            player.setFallDistance(0);
+            player.getWorld().spawnParticle(Particle.CLOUD, player.getLocation().add(0, 0.2, 0), 20, 0.5, 0.05, 0.5, 0.02);
+            stopFlight(player);
+        }
+    }
+
+    private enum Phase { RISE, GLIDE, DESCEND }
+
+    /** A height above every block between the two spots (and the landing spot), with room to spare. */
+    private static double cruiseHeight(Location from, Location to) {
+        World world = to.getWorld();
+        double highest = to.getY();
+        Vector step = to.toVector().subtract(from.toVector()).setY(0);
+        int samples = Math.max(1, (int) Math.ceil(step.length() * 2));
+        for (int i = 0; i <= samples; i++) {
+            double x = from.getX() + step.getX() * i / samples;
+            double z = from.getZ() + step.getZ() * i / samples;
+            for (double ox = -0.5; ox <= 0.5; ox += 0.5) {
+                for (double oz = -0.5; oz <= 0.5; oz += 0.5) {
+                    highest = Math.max(highest, world.getHighestBlockYAt((int) Math.floor(x + ox), (int) Math.floor(z + oz)) + 1);
+                }
+            }
+        }
+        return highest + 2.5;
+    }
+
+    /** A solid block in the two blocks above the player's head. */
+    private static boolean blockedAbove(Location at) {
+        for (int up = 2; up <= 3; up++) {
+            Block block = at.clone().add(0, up, 0).getBlock();
+            if (!block.isPassable()) return true;
+        }
+        return false;
     }
 
     private void stopFlight(Player player) {

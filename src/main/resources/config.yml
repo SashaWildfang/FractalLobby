@@ -59,17 +59,16 @@ void-rescue:
   sound-pitch: 1.4
 
 
-# ── Border ──────────────────────────────────────────────────────
-# A square border around the spawn point. Walking into it bounces
-# players back; flying minecarts are steered back in too.
+# ── World border ────────────────────────────────────────────────
+# Sets the spawn world's world border to a square around the spawn
+# point (it moves with /setspawn). Turn off to leave the world border
+# as it is.
 border:
   enabled: true
   # Blocks from spawn to each edge (100 = a 200 x 200 square).
   radius: 100
-  # Show the purple world-border wall (only to players it applies to).
-  show-wall: true
-  # Players with this permission can leave (e.g. builders).
-  bypass-permission: lobby.border.bypass
+  # The screen tints red this many blocks from the border (0 = never).
+  warning-distance: 5
 
 
 # ── Flying minecarts ────────────────────────────────────────────
@@ -167,6 +166,8 @@ join-items:
   clear-inventory: true
   # Only players with lobby.staff can move, drop or swap items.
   lock-inventory: true
+  # Nobody can put items in their off hand (staff included).
+  block-off-hand: true
 
   # Opens the realm selector.
   realm-selector:

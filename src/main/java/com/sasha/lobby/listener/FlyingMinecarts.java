@@ -19,7 +19,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -33,8 +35,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * /flyingminecart: a minecart anyone can ride and fly around the lobby. The rider steers with W (towards
- * where they look), S (brake/reverse), Space (climb) and Sprint (boost); sneaking gets out. Empty carts
- * vanish after a while, and two ridden carts that touch both explode (a harmless, visual explosion).
+ * where they look), S (brake/reverse), Space (climb) and Sprint (boost); sneaking gets out, and the cart
+ * then drops to the ground until someone gets back in. Empty carts vanish after a while, and two ridden carts that touch both explode (a harmless, visual explosion).
  */
 public final class FlyingMinecarts implements Listener {
 
@@ -105,8 +107,9 @@ public final class FlyingMinecarts implements Listener {
             if (rider == null) {
                 long emptySince = carts.get(id) == 0 ? now : carts.get(id);
                 carts.put(id, emptySince);
-                cart.setVelocity(cart.getVelocity().multiply(0.8)); // drift to a hover
-                if (now - emptySince > config.despawnSeconds() * 1000L) poof(cart);
+                if (!cart.hasGravity()) cart.setVelocity(cart.getVelocity().multiply(0.8)); // never ridden: hover in place
+                boolean inVoid = cart.getLocation().getY() < plugin.lobbyConfig().voidRescue().belowY();
+                if (inVoid || now - emptySince > config.despawnSeconds() * 1000L) poof(cart);
                 continue;
             }
             carts.put(id, 0L);
@@ -128,12 +131,12 @@ public final class FlyingMinecarts implements Listener {
         double max = config.speed() * (input.isSprint() ? 1.6 : 1.0);
         if (velocity.length() > max) velocity.normalize().multiply(max);
 
-        // Stay inside the spawn border: steer back in when crossing it.
+        // Stay inside the world border: steer back in before reaching it.
         LobbyConfig.Border border = plugin.lobbyConfig().border();
-        if (border.enabled() && !rider.hasPermission(border.bypassPermission())) {
+        if (border.enabled()) {
             Location center = plugin.lobbyConfig().spawn().location();
             Location next = cart.getLocation().add(velocity);
-            if (center.getWorld() == next.getWorld() && BorderListener.outside(next, center, border.radius()) > 0) {
+            if (center.getWorld() == next.getWorld() && BorderListener.outside(next, center, border.radius() - 1.5) > 0) {
                 velocity = center.toVector().subtract(cart.getLocation().toVector()).setY(0).normalize().multiply(0.5);
             }
         }
@@ -199,6 +202,17 @@ public final class FlyingMinecarts implements Listener {
     public void onDamage(VehicleDamageEvent event) {
         if (!isFlyingCart(event.getVehicle())) return;
         if (!(event.getAttacker() instanceof Player player) || !player.hasPermission(PERMISSION)) event.setCancelled(true);
+    }
+
+    /** Getting in lifts the cart; getting out lets it fall. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEnter(VehicleEnterEvent event) {
+        if (isFlyingCart(event.getVehicle()) && event.getEntered() instanceof Player) event.getVehicle().setGravity(false);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onExit(VehicleExitEvent event) {
+        if (isFlyingCart(event.getVehicle()) && event.getExited() instanceof Player) event.getVehicle().setGravity(true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

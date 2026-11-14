@@ -129,9 +129,6 @@ visibility:
 # Shown above the hotbar when a player is saved from the void.
 void-rescued: "<secondary>Whoosh! <muted>Flying you back to solid ground."
 
-# Shown above the hotbar when a player walks into the spawn border.
-border: "<secondary>That's the edge of the lobby! <muted>Use the <primary>Realm Selector</primary> to explore."
-
 flying-minecart:
   summoned: "<prefix><secondary>A <primary>flying minecart</primary> appeared! <muted>Hop in: W to fly, Space to climb, sneak to get out."
   crashed: "<bad>Boom! <muted>Your minecarts crashed."

@@ -27,6 +27,3 @@ permissions:
   lobby.cmd.flyingminecart:
     description: Use /flyingminecart to summon a flying minecart (and break them)
     default: op
-  lobby.border.bypass:
-    description: Walk past the spawn border (name set by border.bypass-permission)
-    default: op
