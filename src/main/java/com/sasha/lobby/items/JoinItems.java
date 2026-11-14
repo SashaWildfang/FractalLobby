@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The items players get on join (realm selector, radio and player visibility toggle), and the inventory lock:
+ * The items players get on join (realm selector, radio, settings and player visibility toggle), and the inventory lock:
  * without lobby.staff, items can't be moved, dropped or swapped.
  */
 public final class JoinItems implements Listener {
@@ -44,6 +44,7 @@ public final class JoinItems implements Listener {
     private static final String VISIBILITY = "visibility";
     private static final String SELECTOR = "realm-selector";
     private static final String RADIO = "radio";
+    private static final String SETTINGS = "settings";
     /** Clicks closer together than this are one physical click reported twice. */
     private static final long DUPLICATE_CLICK_MILLIS = 250;
 
@@ -93,7 +94,11 @@ public final class JoinItems implements Listener {
                 || plugin.getServer().getPluginManager().isPluginEnabled(config.radioRequiresPlugin()))) {
             player.getInventory().setItem(config.radioSlot(), joinItem(config.radioItem(), "items.radio", RADIO));
         }
-        if (config.visibility()) player.getInventory().setItem(config.visibilitySlot(), visibilityItem(hidesPlayers(player)));
+        int visibilitySlot = config.visibilitySlot();
+        // An older config.yml may still have visibility in slot 8, where settings now go: it moves one over.
+        if (config.settings() && visibilitySlot == config.settingsSlot()) visibilitySlot = visibilitySlot < 8 ? visibilitySlot + 1 : visibilitySlot - 1;
+        if (config.visibility()) player.getInventory().setItem(visibilitySlot, visibilityItem(hidesPlayers(player)));
+        if (config.settings()) player.getInventory().setItem(config.settingsSlot(), joinItem(config.settingsItem(), "items.settings", SETTINGS));
     }
 
     public boolean hidesPlayers(Player player) {
@@ -158,6 +163,7 @@ public final class JoinItems implements Listener {
     public void onUse(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return; // e.g. the click opened the parkour leaderboard
         String type = joinItemType(event.getItem());
         if (type == null) return;
         event.setCancelled(true);
@@ -165,6 +171,7 @@ public final class JoinItems implements Listener {
             case VISIBILITY -> toggleVisibility(event.getPlayer());
             case SELECTOR -> selector.open(event.getPlayer());
             case RADIO -> event.getPlayer().performCommand(plugin.lobbyConfig().joinItems().radioCommand());
+            case SETTINGS -> plugin.settings().open(event.getPlayer());
             default -> {
             }
         }

@@ -151,11 +151,12 @@ launch-pads:
 
 
 # ── Join, quit and first-join messages ──────────────────────────
-# Leave a message empty ("") to turn it off.
+# Leave a message empty ("") to turn it off. %luckperms_prefix% is the
+# player's rank; the name takes the rank's colour.
 join-messages:
-  first-join: "&7ᴡᴇʟᴄᴏᴍᴇ &c%player% &7ᴛᴏ ᴛʜᴇ ꜱᴇʀᴠᴇʀ!"
-  join-message: "&a+ &7%player%"
-  quit-message: "&c- &7%player%"
+  first-join: "&7ᴡᴇʟᴄᴏᴍᴇ %luckperms_prefix%&c%player% &7ᴛᴏ ᴛʜᴇ ꜱᴇʀᴠᴇʀ!"
+  join-message: "&a+ &7%luckperms_prefix%%player%"
+  quit-message: "&c- &7%luckperms_prefix%%player%"
 
 
 # ── Chat ────────────────────────────────────────────────────────
@@ -165,6 +166,19 @@ chat:
   enabled: true
   default-format: "&7%player%: %message%"
   ranked-format: "%luckperms_prefix%%player%&f: %message%"
+
+
+# ── Parkour leaderboard (ajParkour) ─────────────────────────────
+# /lobbyparkour setup        puts the start plate and its hologram at
+#                             your feet (shows each player's best and rank)
+# /lobbyparkour leaderboard  puts the leaderboard hologram where you
+#                             stand (add "remove" to take it away)
+# Clicking either hologram opens the top 10. Needs PlaceholderAPI.
+parkour:
+  # How many of the best scores the leaderboard hologram lists (0-10).
+  hologram-top: 5
+  # How far down the leaderboard to look for a player's rank.
+  rank-search: 100
 
 
 # ── Chat colour ─────────────────────────────────────────────────
@@ -261,8 +275,9 @@ nametag:
 # (it is by default). Counts need at least one player in the lobby.
 proxy:
   enabled: true
-  # How often to ask for new counts, in seconds.
-  refresh-seconds: 2
+  # How often to ask for new counts, in seconds (0.25 at the fastest).
+  # Joins and leaves on this server show straight away.
+  refresh-seconds: 1
   # Server names exactly as they are in the proxy config. Use them as
   # <online:survival>; <online:all> is the whole network.
   servers:
@@ -286,6 +301,8 @@ scoreboard:
 
 tablist:
   enabled: true
+  # Higher LuckPerms ranks (group weight) are listed first.
+  sort-by-rank: true
 
 
 # ── Join items ──────────────────────────────────────────────────
@@ -314,10 +331,17 @@ join-items:
     # Only give the item when this plugin is installed ("" = always).
     requires-plugin: Radio
 
+  # Opens the settings menu: join messages, leave messages, chat and
+  # the scoreboard, each on or off per player. Remembered between joins.
+  settings:
+    enabled: true
+    slot: 8
+    item: COMPARATOR
+
   # Toggles whether you can see other players. Remembered between joins.
   player-visibility:
     enabled: true
-    slot: 8
+    slot: 9
     item-visible: LIME_DYE
     item-hidden: GRAY_DYE
     # Seconds between uses, to stop spam clicking.

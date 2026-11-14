@@ -34,6 +34,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 | `/setspawn` | `lobby.admin` (op) | Set spawn to where you stand |
 | `/lobby reload` | `lobby.admin` (op) | Reload config and messages |
 | `/lobbyparkour setup` | `lobby.admin` (op) | Set up a pressure-plate start and hologram at your position |
+| `/lobbyparkour leaderboard [remove]` | `lobby.admin` (op) | Put the parkour leaderboard hologram where you stand (or remove it) |
 
 ## Permissions
 

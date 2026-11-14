@@ -34,6 +34,8 @@ public final class ProxyCounts implements PluginMessageListener {
     private final Lobby plugin;
     private final Map<String, Integer> counts = new ConcurrentHashMap<>();
     private BukkitTask task;
+    /** This server's name on the proxy (asked once); its count is taken live from here instead of polled. */
+    private volatile String ownName;
 
     public ProxyCounts(Lobby plugin) {
         this.plugin = plugin;
@@ -49,8 +51,18 @@ public final class ProxyCounts implements PluginMessageListener {
     public void restartTask() {
         if (task != null) task.cancel();
         if (!plugin.lobbyConfig().proxy().enabled()) return;
-        long period = plugin.lobbyConfig().proxy().refreshSeconds() * 20L;
+        long period = plugin.lobbyConfig().proxy().refreshTicks();
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::requestAll, 20L, period);
+    }
+
+    /**
+     * Someone joined or left this server: ask again now and once more a moment later (the proxy
+     * takes a little while to see a player arrive on their next server), then redraw.
+     */
+    public void requestSoon() {
+        if (!plugin.lobbyConfig().proxy().enabled()) return;
+        plugin.getServer().getScheduler().runTask(plugin, this::requestAll);
+        plugin.getServer().getScheduler().runTaskLater(plugin, this::requestAll, 20L);
     }
 
     public void stop() {
@@ -62,12 +74,14 @@ public final class ProxyCounts implements PluginMessageListener {
     /** Players on a proxy server (case-insensitive), or on the whole network for "all". 0 until known. */
     public int count(String server) {
         String key = server.equalsIgnoreCase("all") ? ALL : server.toLowerCase(Locale.ROOT);
+        if (key.equals(ownName)) return plugin.getServer().getOnlinePlayers().size();
         return counts.getOrDefault(key, 0);
     }
 
     private void requestAll() {
         Player carrier = plugin.getServer().getOnlinePlayers().stream().findFirst().orElse(null);
         if (carrier == null) return;
+        if (ownName == null) carrier.sendPluginMessage(plugin, CHANNEL, simple("GetServer"));
         List<String> servers = plugin.lobbyConfig().proxy().servers();
         for (String server : servers) carrier.sendPluginMessage(plugin, CHANNEL, request(server));
         carrier.sendPluginMessage(plugin, CHANNEL, request(ALL));
@@ -76,8 +90,15 @@ public final class ProxyCounts implements PluginMessageListener {
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
         if (!CHANNEL.equals(channel)) return;
-        decode(message).ifPresent(reply -> counts.put(
-                reply.server().equals(ALL) ? ALL : reply.server().toLowerCase(Locale.ROOT), reply.count()));
+        decodeServerName(message).ifPresent(name -> {
+            ownName = name.toLowerCase(Locale.ROOT);
+            plugin.display().updateSoon();
+        });
+        decode(message).ifPresent(reply -> {
+            String key = reply.server().equals(ALL) ? ALL : reply.server().toLowerCase(Locale.ROOT);
+            Integer before = counts.put(key, reply.count());
+            if (before == null || before != reply.count()) plugin.display().updateSoon(); // show changes right away
+        });
     }
 
     /** Sends a player to another server on the network. */
@@ -106,6 +127,26 @@ public final class ProxyCounts implements PluginMessageListener {
             throw new IllegalStateException(e); // writing to memory can't fail
         }
         return bytes.toByteArray();
+    }
+
+    static byte[] simple(String subchannel) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
+            out.writeUTF(subchannel);
+        } catch (IOException e) {
+            throw new IllegalStateException(e); // writing to memory can't fail
+        }
+        return bytes.toByteArray();
+    }
+
+    /** Reads a GetServer reply (this server's name on the proxy). */
+    static Optional<String> decodeServerName(byte[] message) {
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!"GetServer".equals(in.readUTF())) return Optional.empty();
+            return Optional.of(in.readUTF());
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     /** Reads a PlayerCount reply; anything else on the channel is ignored. */

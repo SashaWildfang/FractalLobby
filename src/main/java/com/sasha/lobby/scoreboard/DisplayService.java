@@ -8,6 +8,7 @@ import com.sasha.lobby.config.LegacyCodes;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.hook.PlaceholderHook;
+import com.sasha.lobby.items.Settings;
 import com.sasha.lobby.proxy.ProxyCounts;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -78,7 +79,9 @@ public final class DisplayService {
     public void add(Player player) {
         Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
         boards.put(player.getUniqueId(), board);
-        if (plugin.lobbyConfig().scoreboard().enabled()) sidebars.put(player.getUniqueId(), new Sidebar(board));
+        if (plugin.lobbyConfig().scoreboard().enabled() && plugin.settings().on(player, Settings.Setting.SCOREBOARD)) {
+            sidebars.put(player.getUniqueId(), new Sidebar(board));
+        }
         player.setScoreboard(board);
 
         // Teams are always kept, even with nametags off: a team's colour is also the colour of /glow.
@@ -104,6 +107,32 @@ public final class DisplayService {
             if (team != null) team.unregister();
         }
         if (plugin.lobbyConfig().tablist()) player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
+    }
+
+    /** Shows or hides one player's sidebar (their scoreboard setting). The tab list and nametags stay. */
+    public void showSidebar(Player player, boolean show) {
+        Scoreboard board = boards.get(player.getUniqueId());
+        if (board == null) return;
+        Sidebar sidebar = sidebars.get(player.getUniqueId());
+        if (!show && sidebar != null) {
+            sidebar.remove();
+            sidebars.remove(player.getUniqueId());
+        } else if (show && sidebar == null && plugin.lobbyConfig().scoreboard().enabled()) {
+            sidebars.put(player.getUniqueId(), new Sidebar(board));
+            update(player);
+        }
+    }
+
+    private boolean updateQueued;
+
+    /** Redraws everything on the next tick (once, however often it's asked), e.g. when a count changes. */
+    public void updateSoon() {
+        if (updateQueued || task == null) return;
+        updateQueued = true;
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            updateQueued = false;
+            if (task != null) updateAll();
+        });
     }
 
     private void updateAll() {
@@ -176,6 +205,10 @@ public final class DisplayService {
                 !config.enabled() || after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after),
                 nameColour == null ? null : NamedTextColor.nearestTo(nameColour),
                 config.enabled() && config.applyToTablist() ? plugin.playerFormat().render(player, format) : null);
+
+        // Tab list order: higher LuckPerms weight first (the game sorts by this before anything else).
+        int order = plugin.lobbyConfig().tablistSortByRank() ? Math.max(0, plugin.playerFormat().weight(player)) : 0;
+        if (player.getPlayerListOrder() != order) player.setPlayerListOrder(order);
 
         if (!force && Objects.equals(nametags.get(player.getUniqueId()), tag)) return;
         nametags.put(player.getUniqueId(), tag);

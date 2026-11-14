@@ -42,6 +42,11 @@ public final class PlayerFormat {
         return "";
     }
 
+    /** The weight of the player's LuckPerms rank (higher = more important), or 0 without LuckPerms. */
+    public int weight(Player player) {
+        return plugin.luckPerms() ? LuckPermsHook.weight(player) : 0;
+    }
+
     /**
      * Fills in placeholders, giving a MiniMessage template where the player's name is the &lt;player&gt; tag
      * (inserted as plain text, so a name can never inject formatting).

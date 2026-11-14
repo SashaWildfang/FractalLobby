@@ -118,6 +118,52 @@ items:
       - "<muted>Other players are hidden from you."
       - ""
       - "<dark_gray>▸ <accent>Right-click</accent> <muted>to show other players"
+  settings:
+    name: "<primary>Settings"
+    lore:
+      - "<muted>Join and leave messages, chat"
+      - "<muted>and the scoreboard."
+      - ""
+      - "<dark_gray>▸ <accent>Right-click</accent> <muted>to open"
+
+# The settings menu (the comparator). <status> = on or off below.
+settings:
+  title: "<brand><bold>Settings</bold></brand>"
+  "on": "<good>✔ On"
+  "off": "<bad>✖ Off"
+  pane-lore:
+    - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  turned-on: "<prefix><secondary><setting> <good>on</good>."
+  turned-off: "<prefix><secondary><setting> <bad>off</bad>."
+  join-messages:
+    name: "<white>Join Messages"
+    lore:
+      - "<muted>See when players join the lobby."
+      - ""
+      - "<status>"
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  leave-messages:
+    name: "<white>Leave Messages"
+    lore:
+      - "<muted>See when players leave the lobby."
+      - ""
+      - "<status>"
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  chat:
+    name: "<white>Chat"
+    lore:
+      - "<muted>See what other players say."
+      - "<muted>Your own messages always show."
+      - ""
+      - "<status>"
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
+  scoreboard:
+    name: "<white>Scoreboard"
+    lore:
+      - "<muted>The player counts on the right."
+      - ""
+      - "<status>"
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to change"
 
 
 # ── Chat ────────────────────────────────────────────────────────
@@ -172,3 +218,39 @@ general:
 
 parkour:
   setup: "<prefix><good>Parkour pressure plate and hologram set up."
+  leaderboard-set: "<prefix><good>Parkour leaderboard hologram placed here."
+  leaderboard-removed: "<prefix><secondary>Parkour leaderboard hologram removed."
+  unavailable: "<prefix><bad>The parkour leaderboard needs ajParkour and PlaceholderAPI."
+  # Above the start plate. Each player sees their own best and rank. <score> <rank>
+  hologram:
+    title: "<brand><bold>Parkour!</bold></brand>"
+    you: "<secondary>Your best: <primary><score> <muted>(<rank>)"
+    hint: "<dark_gray>▸ <accent>Click</accent> <muted>for the leaderboard"
+  # The leaderboard hologram (/lobbyparkour leaderboard).
+  leaderboard:
+    title: "<brand><bold>Parkour Leaderboard</bold></brand>"
+    # One per best score (how many: parkour.hologram-top in config.yml). <position> <name> <score>
+    top-line: "<muted>#<position> <white><name> <dark_gray>- <primary><score>"
+    no-scores: "<muted>No scores yet. Be the first!"
+    you: "<secondary>Your best: <primary><score> <muted>(<rank>)"   # <score> <rank>
+    hint: "<dark_gray>▸ <accent>Click</accent> <muted>to see the top 10"
+  rank: "#<position>"
+  unranked: "unranked"
+  menu:
+    title: "<brand><bold>Parkour Leaderboard</bold></brand>"
+    entry-name: "<primary>#<position> <white><name>"   # <position> <name> <score> <time>
+    entry-lore:
+      - "<muted>Best: <white><score> jumps"
+      - "<muted>Time: <white><time>"
+    entry-lore-you:
+      - "<muted>Best: <white><score> jumps"
+      - "<muted>Time: <white><time>"
+      - ""
+      - "<good>✔ That's you!"
+    empty-name: "<dark_gray>#<position> ---"
+    you-name: "<primary>Your stats"
+    you-lore:   # <score> <rank>
+      - "<muted>Best: <white><score> jumps"
+      - "<muted>Rank: <white><rank>"
+      - ""
+      - "<dark_gray>Step on the plate to try again!"

@@ -6,6 +6,7 @@ package com.sasha.lobby;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.sasha.lobby.items.ChatColors;
+import com.sasha.lobby.items.Settings;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.format.PlayerFormat;
@@ -59,6 +60,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private FlyingMinecarts flyingMinecarts;
     private ProtectionListener protection;
     private ChatColors chatColors;
+    private Settings settings;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
@@ -86,9 +88,10 @@ public final class Lobby extends JavaPlugin implements Listener {
         flyingMinecarts = new FlyingMinecarts(this);
         protection = new ProtectionListener(this);
         chatColors = new ChatColors(this);
+        settings = new Settings(this);
         parkour = new ParkourLobby(this);
 
-        for (Listener listener : List.of(this, protection, chatColors, voidRescue, border, flyingMinecarts,
+        for (Listener listener : List.of(this, settings, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour)) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
@@ -127,6 +130,14 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public ChatColors chatColors() {
         return chatColors;
+    }
+
+    public Settings settings() {
+        return settings;
+    }
+
+    public DisplayService display() {
+        return display;
     }
 
     public PlayerFormat playerFormat() {
@@ -173,6 +184,10 @@ public final class Lobby extends JavaPlugin implements Listener {
             commands.register(Commands.literal("lobbyparkour")
                     .requires(source -> source.getSender().hasPermission("lobby.admin"))
                     .then(Commands.literal("setup").executes(context -> asPlayer(context.getSource(), player -> parkour.setup(player))))
+                    .then(Commands.literal("leaderboard")
+                            .executes(context -> asPlayer(context.getSource(), player -> parkour.setupLeaderboard(player)))
+                            .then(Commands.literal("remove")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.removeLeaderboard(player)))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
 
             commands.register(Commands.literal("spawn")
@@ -237,10 +252,14 @@ public final class Lobby extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         display.add(event.getPlayer());
+        proxyCounts.requestSoon();
+        display.updateSoon();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         display.remove(event.getPlayer());
+        proxyCounts.requestSoon();
+        display.updateSoon(); // next tick, once they're gone from the online list
     }
 }

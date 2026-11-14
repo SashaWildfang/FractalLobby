@@ -6,6 +6,7 @@ package com.sasha.lobby.listener;
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.LegacyCodes;
 import com.sasha.lobby.config.LobbyConfig;
+import com.sasha.lobby.items.Settings;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
@@ -32,20 +33,35 @@ public final class ChatListener implements Listener {
         Player player = event.getPlayer();
         LobbyConfig.JoinMessages messages = plugin.lobbyConfig().joinMessages();
         String format = !player.hasPlayedBefore() && !messages.firstJoin().isEmpty() ? messages.firstJoin() : messages.join();
-        event.joinMessage(format.isEmpty() ? null : plugin.playerFormat().render(player, format));
+        event.joinMessage(null);
+        if (!format.isEmpty()) broadcast(plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onQuit(PlayerQuitEvent event) {
         String format = plugin.lobbyConfig().joinMessages().quit();
-        event.quitMessage(format.isEmpty() ? null : plugin.playerFormat().render(event.getPlayer(), format));
+        event.quitMessage(null);
+        if (!format.isEmpty()) {
+            broadcast(plugin.playerFormat().render(event.getPlayer(), format), Settings.Setting.LEAVE_MESSAGES, event.getPlayer());
+        }
+    }
+
+    /** Sends a join/leave message to everyone who has that setting on, and to the console. */
+    private void broadcast(Component message, Settings.Setting setting, Player except) {
+        plugin.getServer().getConsoleSender().sendMessage(message);
+        for (Player viewer : plugin.getServer().getOnlinePlayers()) {
+            if (viewer != except && plugin.settings().on(viewer, setting)) viewer.sendMessage(message);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onChat(AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        // Players who turned chat off in their settings don't see others' messages (they still see their own).
+        event.viewers().removeIf(viewer -> viewer instanceof Player other && other != player
+                && !plugin.settings().on(other, Settings.Setting.CHAT));
         LobbyConfig.Chat chat = plugin.lobbyConfig().chat();
         if (!chat.enabled()) return;
-        Player player = event.getPlayer();
         String format = plugin.playerFormat().prefix(player).isEmpty() ? chat.defaultFormat() : chat.rankedFormat();
 
         // The format around %message% gets colours and the font; what the player typed is left exactly as is.

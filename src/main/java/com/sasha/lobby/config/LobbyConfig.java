@@ -30,11 +30,13 @@ public record LobbyConfig(
         Proxy proxy,
         Scoreboard scoreboard,
         boolean tablist,
+        boolean tablistSortByRank,
         JoinItems joinItems,
         Selector selector,
         Border border,
         FlyingMinecarts flyingMinecarts,
-        ChatColors chatColors
+        ChatColors chatColors,
+        Parkour parkour
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -63,6 +65,10 @@ public record LobbyConfig(
         }
     }
 
+    /** The ajParkour leaderboard: how many names the hologram shows, and how far down to look for a player's rank. */
+    public record Parkour(int hologramTop, int rankSearch) {
+    }
+
     public record ChatColors(boolean enabled, List<ChatColor> colors) {
     }
 
@@ -86,7 +92,7 @@ public record LobbyConfig(
     public record Nametag(boolean enabled, String format, boolean applyToTablist) {
     }
 
-    public record Proxy(boolean enabled, int refreshSeconds, List<String> servers) {
+    public record Proxy(boolean enabled, long refreshTicks, List<String> servers) {
     }
 
     public record Scoreboard(boolean enabled, int updateTicks, DateTimeFormatter dateFormat, ZoneId timeZone) {
@@ -96,7 +102,8 @@ public record LobbyConfig(
                             boolean selector, int selectorSlot, Material selectorItem,
                             boolean radio, int radioSlot, Material radioItem, String radioCommand, String radioRequiresPlugin,
                             boolean visibility, int visibilitySlot, Material visibleItem, Material hiddenItem,
-                            long visibilityCooldownMillis) {
+                            long visibilityCooldownMillis,
+                            boolean settings, int settingsSlot, Material settingsItem) {
     }
 
     public record Border(boolean enabled, double radius, int warningDistance) {
@@ -169,7 +176,7 @@ public record LobbyConfig(
                         c.getBoolean("nametag.apply-to-tablist", true)),
                 new Proxy(
                         c.getBoolean("proxy.enabled", true),
-                        Math.max(1, c.getInt("proxy.refresh-seconds", 2)),
+                        Math.max(5L, Math.round(c.getDouble("proxy.refresh-seconds", 1) * 20)),
                         c.getStringList("proxy.servers").stream().map(String::trim).filter(s -> !s.isEmpty()).toList()),
                 new Scoreboard(
                         c.getBoolean("scoreboard.enabled", true),
@@ -177,6 +184,7 @@ public record LobbyConfig(
                         dateFormat(c.getString("scoreboard.date-format", "dd/MM/yy"), log),
                         timeZone(c.getString("scoreboard.time-zone", ""), log)),
                 c.getBoolean("tablist.enabled", true),
+                c.getBoolean("tablist.sort-by-rank", true),
                 new JoinItems(
                         c.getBoolean("join-items.clear-inventory", true),
                         c.getBoolean("join-items.lock-inventory", true),
@@ -190,10 +198,13 @@ public record LobbyConfig(
                         c.getString("join-items.radio.command", "radio").trim().replaceFirst("^/", ""),
                         c.getString("join-items.radio.requires-plugin", "Radio").trim(),
                         c.getBoolean("join-items.player-visibility.enabled", true),
-                        slot(c.getInt("join-items.player-visibility.slot", 8)),
+                        slot(c.getInt("join-items.player-visibility.slot", 9)),
                         item(c.getString("join-items.player-visibility.item-visible"), Material.LIME_DYE, "join-items.player-visibility.item-visible", log),
                         item(c.getString("join-items.player-visibility.item-hidden"), Material.GRAY_DYE, "join-items.player-visibility.item-hidden", log),
-                        Math.round(Math.max(0, c.getDouble("join-items.player-visibility.cooldown-seconds", 1.5)) * 1000)),
+                        Math.round(Math.max(0, c.getDouble("join-items.player-visibility.cooldown-seconds", 1.5)) * 1000),
+                        c.getBoolean("join-items.settings.enabled", true),
+                        slot(c.getInt("join-items.settings.slot", 8)),
+                        item(c.getString("join-items.settings.item"), Material.COMPARATOR, "join-items.settings.item", log)),
                 selector(c, log),
                 new Border(
                         c.getBoolean("border.enabled", true),
@@ -203,7 +214,10 @@ public record LobbyConfig(
                         Math.max(0.1, Math.min(3.0, c.getDouble("flying-minecarts.speed", 1.0))),
                         Math.max(5, c.getInt("flying-minecarts.despawn-after-seconds", 30)),
                         c.getBoolean("flying-minecarts.explode-on-collision", true)),
-                chatColors(c, log));
+                chatColors(c, log),
+                new Parkour(
+                        Math.max(0, Math.min(10, c.getInt("parkour.hologram-top", 5))),
+                        Math.max(10, Math.min(500, c.getInt("parkour.rank-search", 100)))));
     }
 
     private static ChatColors chatColors(FileConfiguration c, Logger log) {
