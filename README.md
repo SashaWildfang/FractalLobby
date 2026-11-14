@@ -48,6 +48,14 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 
 `<online:NAME>` (players on a proxy server), `<online:all>` (whole network), `<here>` (this server), `<player>`, `<date>`, `<time>`. PlaceholderAPI placeholders work too when it's installed.
 
+## Placeholders
+
+With PlaceholderAPI installed, the same counts as the scoreboard are available everywhere (holograms, other plugins):
+
+- `%lobby_online_all%`: players on the whole network
+- `%lobby_online_<server>%`: players on one proxy server, e.g. `%lobby_online_survival%`
+- `%lobby_online_here%`: players on this server
+
 ## Setup
 
 1. Put `Lobby-<version>.jar` in the lobby server's `plugins/` folder and restart.

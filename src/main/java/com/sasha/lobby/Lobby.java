@@ -7,6 +7,7 @@ import com.mojang.brigadier.Command;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.format.PlayerFormat;
+import com.sasha.lobby.hook.LobbyExpansion;
 import com.sasha.lobby.items.JoinItems;
 import com.sasha.lobby.items.RealmSelector;
 import com.sasha.lobby.listener.ChatListener;
@@ -51,6 +52,8 @@ public final class Lobby extends JavaPlugin implements Listener {
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
     private boolean luckPerms;
+    /** Kept as Object so this class never loads PlaceholderAPI types when it isn't installed. */
+    private Object placeholderExpansion;
 
     @Override
     public void onEnable() {
@@ -74,10 +77,15 @@ public final class Lobby extends JavaPlugin implements Listener {
         }
         registerCommands();
         display.start();
+        if (placeholderApi) {
+            placeholderExpansion = new LobbyExpansion(this);
+            ((LobbyExpansion) placeholderExpansion).register();
+        }
     }
 
     @Override
     public void onDisable() {
+        if (placeholderExpansion != null) ((LobbyExpansion) placeholderExpansion).unregister();
         if (display != null) display.stop();
         if (proxyCounts != null) proxyCounts.stop();
     }
