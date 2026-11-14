@@ -47,8 +47,8 @@ protection:
 
 
 # ── Void rescue ─────────────────────────────────────────────────
-# Falling off the map puts players back on the last block they stood on,
-# with a puff of cloud particles. With none yet, they go to spawn.
+# Falling off the map lifts players back up and flies them to the last
+# block they stood on, with a particle trail. With none yet, to spawn.
 void-rescue:
   enabled: true
   # Players are rescued once they fall below this height.
@@ -57,6 +57,33 @@ void-rescue:
   sound: entity.player.teleport
   sound-volume: 0.6
   sound-pitch: 1.4
+
+
+# ── Border ──────────────────────────────────────────────────────
+# A square border around the spawn point. Walking into it bounces
+# players back; flying minecarts are steered back in too.
+border:
+  enabled: true
+  # Blocks from spawn to each edge (100 = a 200 x 200 square).
+  radius: 100
+  # Show the purple world-border wall (only to players it applies to).
+  show-wall: true
+  # Players with this permission can leave (e.g. builders).
+  bypass-permission: lobby.border.bypass
+
+
+# ── Flying minecarts ────────────────────────────────────────────
+# /flyingminecart summons a minecart anyone can ride.
+# Riding: W flies where you look, S brakes, Space climbs,
+# sprint goes faster, sneak gets out.
+flying-minecarts:
+  # Top speed in blocks per tick (1.0 = 20 blocks a second).
+  speed: 1.0
+  # Empty minecarts vanish after this many seconds.
+  despawn-after-seconds: 30
+  # Two ridden minecarts that crash into each other explode
+  # (just looks and sound: no damage, riders are thrown out).
+  explode-on-collision: true
 
 
 # ── Launch pads ─────────────────────────────────────────────────

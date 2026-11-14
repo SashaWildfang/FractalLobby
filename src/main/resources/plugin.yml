@@ -24,3 +24,9 @@ permissions:
   lobby.cmd.glow:
     description: Use /glow to glow in your rank colour
     default: op
+  lobby.cmd.flyingminecart:
+    description: Use /flyingminecart to summon a flying minecart (and break them)
+    default: op
+  lobby.border.bypass:
+    description: Walk past the spawn border (name set by border.bypass-permission)
+    default: op

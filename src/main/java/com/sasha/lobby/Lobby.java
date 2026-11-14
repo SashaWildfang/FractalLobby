@@ -10,7 +10,9 @@ import com.sasha.lobby.format.PlayerFormat;
 import com.sasha.lobby.hook.LobbyExpansion;
 import com.sasha.lobby.items.JoinItems;
 import com.sasha.lobby.items.RealmSelector;
+import com.sasha.lobby.listener.BorderListener;
 import com.sasha.lobby.listener.ChatListener;
+import com.sasha.lobby.listener.FlyingMinecarts;
 import com.sasha.lobby.listener.GlowListener;
 import com.sasha.lobby.listener.LaunchPadListener;
 import com.sasha.lobby.listener.ProtectionListener;
@@ -36,7 +38,7 @@ import java.util.function.Consumer;
 /**
  * Lobby: the core of the Fractal Network lobby. Sidebar with live network player counts, tab list,
  * chat and nametag formats, join messages, protection, void rescue, launch pads, spawn, and locked join
- * items (realm selector, radio and player visibility toggle) and /glow.
+ * items (realm selector, radio and player visibility toggle), /glow, a spawn border and flying minecarts.
  *
  * <p>Built by Sasha Wildfang for Fractal Network.
  */
@@ -49,6 +51,9 @@ public final class Lobby extends JavaPlugin implements Listener {
     private JoinItems joinItems;
     private SpawnListener spawn;
     private GlowListener glow;
+    private VoidRescueListener voidRescue;
+    private BorderListener border;
+    private FlyingMinecarts flyingMinecarts;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
     private boolean luckPerms;
@@ -70,13 +75,17 @@ public final class Lobby extends JavaPlugin implements Listener {
         joinItems = new JoinItems(this, selector);
         spawn = new SpawnListener(this);
         glow = new GlowListener(this);
+        voidRescue = new VoidRescueListener(this);
+        border = new BorderListener(this);
+        flyingMinecarts = new FlyingMinecarts(this);
 
-        for (Listener listener : List.of(this, new ProtectionListener(this), new VoidRescueListener(this),
+        for (Listener listener : List.of(this, new ProtectionListener(this), voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems)) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         display.start();
+        flyingMinecarts.start();
         if (placeholderApi) {
             placeholderExpansion = new LobbyExpansion(this);
             ((LobbyExpansion) placeholderExpansion).register();
@@ -88,6 +97,8 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (placeholderExpansion != null) ((LobbyExpansion) placeholderExpansion).unregister();
         if (display != null) display.stop();
         if (proxyCounts != null) proxyCounts.stop();
+        if (voidRescue != null) voidRescue.stopAll();
+        if (flyingMinecarts != null) flyingMinecarts.stop();
     }
 
     public LobbyConfig lobbyConfig() {
@@ -120,7 +131,10 @@ public final class Lobby extends JavaPlugin implements Listener {
         loadSettings();
         proxyCounts.restartTask();
         display.start();
-        for (Player player : getServer().getOnlinePlayers()) joinItems.giveItems(player);
+        for (Player player : getServer().getOnlinePlayers()) {
+            joinItems.giveItems(player);
+            border.refresh(player);
+        }
     }
 
     private void loadSettings() {
@@ -152,6 +166,11 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .requires(source -> source.getSender().hasPermission(GlowListener.PERMISSION))
                     .executes(context -> asPlayer(context.getSource(), glow::toggle))
                     .build(), "Glow in your rank colour", List.of());
+
+            commands.register(Commands.literal("flyingminecart")
+                    .requires(source -> source.getSender().hasPermission(FlyingMinecarts.PERMISSION))
+                    .executes(context -> asPlayer(context.getSource(), flyingMinecarts::summon))
+                    .build(), "Summon a flying minecart anyone can ride", List.of("flycart"));
 
             commands.register(Commands.literal("setspawn")
                     .requires(source -> source.getSender().hasPermission("lobby.admin"))

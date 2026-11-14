@@ -30,7 +30,9 @@ public record LobbyConfig(
         Scoreboard scoreboard,
         boolean tablist,
         JoinItems joinItems,
-        Selector selector
+        Selector selector,
+        Border border,
+        FlyingMinecarts flyingMinecarts
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -74,6 +76,12 @@ public record LobbyConfig(
                             boolean radio, int radioSlot, Material radioItem, String radioCommand, String radioRequiresPlugin,
                             boolean visibility, int visibilitySlot, Material visibleItem, Material hiddenItem,
                             long visibilityCooldownMillis) {
+    }
+
+    public record Border(boolean enabled, double radius, boolean showWall, String bypassPermission) {
+    }
+
+    public record FlyingMinecarts(double speed, int despawnSeconds, boolean explodeOnCollision) {
     }
 
     public record Selector(int rows, List<SelectorServer> servers) {
@@ -148,7 +156,16 @@ public record LobbyConfig(
                         item(c.getString("join-items.player-visibility.item-visible"), Material.LIME_DYE, "join-items.player-visibility.item-visible", log),
                         item(c.getString("join-items.player-visibility.item-hidden"), Material.GRAY_DYE, "join-items.player-visibility.item-hidden", log),
                         Math.round(Math.max(0, c.getDouble("join-items.player-visibility.cooldown-seconds", 1.5)) * 1000)),
-                selector(c, log));
+                selector(c, log),
+                new Border(
+                        c.getBoolean("border.enabled", true),
+                        Math.max(5, c.getDouble("border.radius", 100)),
+                        c.getBoolean("border.show-wall", true),
+                        c.getString("border.bypass-permission", "lobby.border.bypass")),
+                new FlyingMinecarts(
+                        Math.max(0.1, Math.min(3.0, c.getDouble("flying-minecarts.speed", 1.0))),
+                        Math.max(5, c.getInt("flying-minecarts.despawn-after-seconds", 30)),
+                        c.getBoolean("flying-minecarts.explode-on-collision", true)));
     }
 
     private static Selector selector(FileConfiguration c, Logger log) {

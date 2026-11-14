@@ -125,8 +125,14 @@ public final class DisplayService {
         if (sidebar != null) {
             Component title = messages.render(placeholders(player, messages.raw("scoreboard.title")), tags);
             List<Component> lines = new ArrayList<>();
-            for (String template : messages.lines("scoreboard.lines")) lines.add(messages.render(placeholders(player, template), tags));
-            sidebar.update(title, lines);
+            List<Boolean> centered = new ArrayList<>();
+            for (String template : messages.lines("scoreboard.lines")) {
+                boolean center = template.startsWith(TextWidth.CENTER);
+                if (center) template = template.substring(TextWidth.CENTER.length());
+                centered.add(center);
+                lines.add(messages.render(placeholders(player, template), tags));
+            }
+            sidebar.update(title, TextWidth.center(title, lines, centered));
         }
 
         if (plugin.lobbyConfig().tablist()) {
