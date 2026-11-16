@@ -83,6 +83,17 @@ public final class ParkourLobby implements Listener {
     public ParkourLobby(Lobby plugin) {
         this.plugin = plugin;
         file = new File(plugin.getDataFolder(), "parkour.yml");
+        // A fresh lobby: the built-in parkour area above spawn (unless ajParkour has one to bring over).
+        if (!file.exists() && !new File(plugin.getDataFolder().getParentFile(), "ajParkour/positions.yml").isFile()) {
+            try (var in = plugin.getResource("defaults/parkour.yml")) {
+                if (in != null) {
+                    file.getParentFile().mkdirs();
+                    java.nio.file.Files.copy(in, file.toPath());
+                }
+            } catch (IOException e) {
+                plugin.getLogger().warning("Couldn't write parkour.yml: " + e.getMessage());
+            }
+        }
         data = YamlConfiguration.loadConfiguration(file);
         scores = new ScoreStore(plugin);
         leaderboard = new Leaderboard(plugin, scores);

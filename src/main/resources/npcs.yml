@@ -1,0 +1,153 @@
+# The lobby's NPCs. Edit in game with /npc (or here, then /npc reload).
+# These are the built-in ones: the realm NPCs facing spawn. Delete this file
+# to get them back.
+npcs:
+  Survival:
+    location:
+      world: world
+      x: -207.5
+      y: 3.0
+      z: 238.5
+      yaw: 90.0
+      pitch: 0.0
+    skin:
+      name: 'azt2'
+      url: ''
+      value: ewogICJ0aW1lc3RhbXAiIDogMTc5NDY4MDY1ODcwNiwKICAicHJvZmlsZUlkIiA6ICJkMjFlNmYxMDQ4OTY0ZjY5YjRjZTE3ZTQwOWMxYWIzMCIsCiAgInByb2ZpbGVOYW1lIiA6ICJhenQyIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzQ3YmE5NzMzODcwZGE5OGYwYWY0Y2MxYTAyZDM2NWY5ZGJjNjg3MGIwYmRiZDBmY2M4YmEzYTY4MDdmMzVmMzUiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfSwKICAgICJDQVBFIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8yNGFhZmM0NTFhYTJjYzM0ZGRjNzI2NTIxMTY3ODU4NWMwZWY0ZGE0ZDMyZWRiNzVlY2VjMWJkOGI1NDA4MzgxIgogICAgfQogIH0KfQ==
+      signature: qZlVspZdFw1HJe8nYJL4Fcv7YkP4ARrY6dYUYuA4IO1BLnlPUWW8ohrmF2nQO0rk5R2HbDZNtafKlf31p8NKHMFlozQafoyqZpoUhTbo+dd1ocdeHt+qZv4WpIbwfRAlMnRz5cGeoMzb9hlk1A6YUtJVY3cLEmbuq0E53fwS0wIawjkVhp12rE61zEjVa3QFazFyAeGpFPRcbwgKuO+MajqhaRmYgSUUpSqH2bQN07HIqrnWRqkYuGLoMQ+mKrK4j4QbXRc4MrGeUcvAmCQYbq66VZviug8fBN5dEzYDnqYGNlcSjc6RJ2RFqu8PyYXxFt8MxL/iiBIA9IW0KIuqP5LxUYpcc9uqaXnrOVuVeTXSf5SVMH3CRlmtCNOc87hssx2q2Q+zA4RBSlZlihXkv8KXvUG3Gz0XSXIgEVft37aqWxtzFMvk8v2xzfqsuQ9YjbqBosxUKaftM4I1rTExb/6OXfPy/TpxysT82jVf6x/fp69Xam9NP9Cu6Zi6I+xnbuA5PT7YSmhXJ2uMXV89EefDS32k/vtcg/OrC3oPweJRnN8ZKtwTdzUgpJLC/4H/SJiOhF1CEpc9dw0QqHx9X6E511j2vz9cZXZjYycNQJDrTMH4/Odcpywd1gIuxjsgJIp01SoRKMF5ztm1e7QLuNomc0SwH5UxkCmj38mrffI=
+      slim: false
+    equipment:
+      HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:end_crystal
+        count: 1
+        schema_version: 1
+      OFF_HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:totem_of_undying
+        count: 1
+        schema_version: 1
+    glowing: false
+    glow-color: light_purple
+    turn-to-player: true
+    turn-distance: 8.0
+    scale: 1.0
+    cooldown: 1.0
+    collidable: true
+    actions:
+      ANY_CLICK:
+      - 'send_to_server:survival'
+      - 'play_sound:entity.experience_orb.pickup'
+    hologram:
+      offset: 0.3
+      lines:
+      - content: '#ICON: GRASS_BLOCK'
+        height: 0.55
+      - content: '<#B266FF>&l✦ ꜱᴜʀᴠɪᴠᴀʟ ✦</#F2B8FF>'
+        height: 0.32
+      - content: '&#E8DDFFᴄʟᴀꜱꜱɪᴄ ꜱᴜʀᴠɪᴠᴀʟ ᴡɪᴛʜ ꜰʀɪᴇɴᴅꜱ'
+        height: 0.27
+      - content: '&#9BFFC4● &f&l%lobby_online_survival% &#9C8DB8ᴘʟᴀʏɪɴɢ ɴᴏᴡ'
+        height: 0.27
+      - content: '&d&l» <#ANIM:burn:&f&l,&d&l>ᴄʟɪᴄᴋ ᴛᴏ ᴘʟᴀʏ</#ANIM> &d&l«'
+        height: 0.27
+  Prison:
+    location:
+      world: world
+      x: -207.5
+      y: 3.0
+      z: 234.5
+      yaw: 90.0
+      pitch: 0.0
+    skin:
+      name: ''
+      url: ''
+      value: ewogICJ0aW1lc3RhbXAiIDogMTc4NDg1NDU1Mzc2MCwKICAicHJvZmlsZUlkIiA6ICIwZmVjMTliNTM1NTQ0MWQ0YmQ1MTE5ZmExMWE2MGIyYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNb3ZpZVBhcmtNQyIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9mMTQyOGM3YjViYmFiYWZmNmEyYjY3ZjU4YTMzYjE5OTA1Y2MyM2QzMTY0NDk1ZWUxZTI1MDM3OWI5ZDVlNTM1IgogICAgfQogIH0KfQ==
+      signature: V6UMAhx2B7O9Zm5COP0xzPxN40trgE+ns0yi2g4dEU+2nfzksk6mDtbgGRDAIxl9S082zE7MUqlWHOrwz31+YHxDKb7c0XjXvUtd8n/Dl7fV8Uuwobxm0zpkTyTwRTQ9PXRTgS/vxjRdLrm+Sbn9Y9rNmc1Ej1Yc53b8Nls5KcMJ5V/hnzcAQfl7neSXhZT46eZrN2ybRVicDv0VDvXH98kS13RaZfzNECAvBCpsyXw2fnsTsOvFRwZeM1jYY1dISV0Tm1Uwt+uasgvT7Fbn2hunS8bzL4I8lnIAlKXz1xfXA5vMgXBSfEZHXGzQFjlfWoB/x92emDo2wQ7bEXFUhL7De2U5CSzJvv7zqX1F16i91Clgq8GOhCFv0SC4X0WaDCM2VhgQOdIfr/DYSIq8QrzaARq69xnCoSsVxPJd89x+3bu+KeTttp/NUXKg8G5zjPjupX4qgVacHxP2rzn/FVEioxQmUCsksP/3MkjD8BJJqFtYPZgRdAB8NtNfJTWWZmFV3d55GJNug6uMsfQ93VgkVtLLU4+ml3luW3bRpu4l32uv+fbds9+0ijokp0iOGaUaXOo5d7AFLxvIMYPLHv2INoEbfiChYjdFqU005RcdIUK20msPF8bPtXUs1+39Xn+5Aj0ooOfWpmfHMvzcZwqh21YtEtAEJaToZSHnaVY=
+      slim: false
+    equipment:
+      HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:diamond_pickaxe
+        count: 1
+        schema_version: 1
+      OFF_HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:lantern
+        count: 1
+        schema_version: 1
+    glowing: false
+    glow-color: gold
+    turn-to-player: true
+    turn-distance: 8.0
+    scale: 1.0
+    cooldown: 1.0
+    collidable: true
+    actions:
+      ANY_CLICK:
+      - 'message:<#FF7BE5><b>ᴘʀɪꜱᴏɴ</b></#FF7BE5> <#9C8DB8>ɪꜱ ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ! <#E8DDFF>ᴋᴇᴇᴘ ᴀɴ ᴇʏᴇ ᴏɴ <#B266FF>/discord'
+      - 'play_sound:block.note_block.bass'
+    hologram:
+      offset: 0.3
+      lines:
+      - content: '#ICON: IRON_BARS'
+        height: 0.55
+      - content: '<#FF7BE5>&l✦ ᴘʀɪꜱᴏɴ ✦</#FFC2F2>'
+        height: 0.32
+      - content: '&#E8DDFFᴍɪɴᴇ, ʀᴀɴᴋ ᴜᴘ ᴀɴᴅ ʙʀᴇᴀᴋ ᴏᴜᴛ'
+        height: 0.27
+      - content: '&#FFB36B● &#FFD8A8ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ'
+        height: 0.27
+  CTF:
+    location:
+      world: world
+      x: -207.5
+      y: 3.0
+      z: 242.5
+      yaw: 90.0
+      pitch: 0.0
+    skin:
+      name: ''
+      url: ''
+      value: ewogICJ0aW1lc3RhbXAiIDogMTc4NjAyODcwMjAyOSwKICAicHJvZmlsZUlkIiA6ICJlZDUzZGQ4MTRmOWQ0YTNjYjRlYjY1MWRjYmE3N2U2NiIsCiAgInByb2ZpbGVOYW1lIiA6ICI0MTQxNDE0MWgiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMmNiYmViYjJjMDE2Yzk3YmQ4MDlkOTlhYzM2ZGQwNGU4YTE3Nzc3N2FhMDI4YzU4MTk4YWRmZGRkMmQ4ZDdiYyIKICAgIH0KICB9Cn0=
+      signature: TFSGUK6aiFgU9fCRHafGaP811ezWMvyYnBB4LMbmGWmzEjgQm7Q5s8LruvU6CtutNLIq8H0IzlABg4fsRnn16kzQgk5Utmk+6RaTLboGVdWAAQcRw271k8iN8reIXgz6lNXq0qwNiYVu/rPv/vqteyBXz+NPX1/fTOPP2Bk7QcLReARZrpZNG7yoD/ZnHaiIhdz9iMiSF72dM0FBoXgg47aP+tuUI1/0mlnt7mMc2e25JgnCCF3Ygu6z40fWNLLM9eHbpWMOiYMN7/A0INzalTfWt2vjlERFF+ZzPStYFoVlS4X4RiIitOQDjGavsprYQOzyw5fAR4bumDDLPNdvJK9Gs8t7YfKshNUOld98bGqBEVD3NMj7Cf2Ff67S8hwJvMqYhjYdEKO9AZbH6RCl/6UTKWhgRG8a+SMTjWA7VxKmvlJ+3k260M6yGYP+/fIY9hezuotyQi2MDg77vHKQPl0J5UkexATHwBJ9eu2HLzb1B3e3e9l4wrBmTVv+VeEe3wjDGN8vVF0VLK3WFJ/E8ETbyfJHEn3/Qro+1xR1qMeh2P+6CRtoBfxcePR9obfd0TF3g+wWFawPqTgou4oYy9JMIUO1KZpGBlawioy8EnCtC7pP75Fy1kUUTUvStLeS1BpwzC+GIcXt8gPYkpIJuamxNspaqMj5s4W8s+dopLI=
+      slim: false
+    equipment:
+      HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:iron_sword
+        count: 1
+        schema_version: 1
+      OFF_HAND:
+        ==: org.bukkit.inventory.ItemStack
+        DataVersion: 4903
+        id: minecraft:red_banner
+        count: 1
+        schema_version: 1
+    glowing: false
+    glow-color: aqua
+    turn-to-player: true
+    turn-distance: 8.0
+    scale: 1.0
+    cooldown: 1.0
+    collidable: true
+    actions:
+      ANY_CLICK:
+      - 'message:<#7FA8FF><b>ᴄᴀᴘᴛᴜʀᴇ ᴛʜᴇ ꜰʟᴀɢ</b></#7FA8FF> <#9C8DB8>ɪꜱ ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ! <#E8DDFF>ᴋᴇᴇᴘ ᴀɴ ᴇʏᴇ ᴏɴ <#B266FF>/discord'
+      - 'play_sound:block.note_block.bass'
+    hologram:
+      offset: 0.3
+      lines:
+      - content: '#ICON: RED_BANNER'
+        height: 0.55
+      - content: '<#7FA8FF>&l✦ ᴄᴀᴘᴛᴜʀᴇ ᴛʜᴇ ꜰʟᴀɢ ✦</#C9A8FF>'
+        height: 0.32
+      - content: '&#E8DDFFᴛᴇᴀᴍ ᴜᴘ ᴀɴᴅ ꜱᴛᴇᴀʟ ᴛʜᴇ ꜰʟᴀɢ'
+        height: 0.27
+      - content: '&#FFB36B● &#FFD8A8ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ'
+        height: 0.27

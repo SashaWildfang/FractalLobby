@@ -1,0 +1,20 @@
+# Built in: the parkour area above spawn, and where players go after a run.
+# Place the start plate with /lobbyparkour setup.
+area:
+  pos1:
+    world: world
+    x: -201.0
+    y: 61.0
+    z: 252.0
+  pos2:
+    world: world
+    x: -242.0
+    y: 97.0
+    z: 225.0
+return:
+  world: world
+  x: -221.5
+  y: 3.0
+  z: 238.5
+  yaw: -90.0
+  pitch: 0.0

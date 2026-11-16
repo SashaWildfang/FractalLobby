@@ -1,0 +1,40 @@
+location: world:-216.500:6.000:238.500
+enabled: true
+display-range: 48
+update-range: 48
+update-interval: 20
+facing: 0.0
+down-origin: true
+pages:
+- lines:
+  - content: '&#8E2DE2&m                                        '
+    height: 0.25
+  - content: '&#B266FF&l✦ <#B266FF>&lᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ꜰʀᴀᴄᴛᴀʟꜱᴍᴘ</#F2B8FF> &#F2B8FF&l✦'
+    height: 0.35
+  - content: '&#E8DDFFʜᴇʏ &f&l{player}&#E8DDFF, ɢʟᴀᴅ ʏᴏᴜ''ʀᴇ ʜᴇʀᴇ!'
+    height: 0.3
+  - content: ''
+    height: 0.15
+  - content: '&#C77DFF▸ &fᴘɪᴄᴋ ᴀ ʀᴇᴀʟᴍ &#E8DDFFᴡɪᴛʜ ᴛʜᴇ &#D9A8FFʀᴇᴀʟᴍ ꜱᴇʟᴇᴄᴛᴏʀ &#E8DDFF(ꜱʟᴏᴛ 1)'
+    height: 0.28
+  - content: '&#C77DFF▸ &fᴏʀ ᴛᴀʟᴋ ᴛᴏ ᴀ ʀᴇᴀʟᴍ ɴᴘᴄ &#E8DDFFʀɪɢʜᴛ ɪɴ ꜰʀᴏɴᴛ ᴏꜰ ʏᴏᴜ'
+    height: 0.28
+  - content: '&#C77DFF▸ &fʏᴏᴜʀ ꜱᴛᴀᴛꜱ &#E8DDFFᴀɴᴅ ᴄᴏꜱᴍᴇᴛɪᴄꜱ ɪɴ ʏᴏᴜʀ &#D9A8FFᴘʀᴏꜰɪʟᴇ &#E8DDFF(ꜱʟᴏᴛ 2)'
+    height: 0.28
+  - content: '&#C77DFF▸ &fᴘɪᴄᴋ ʏᴏᴜʀ ᴍᴜꜱɪᴄ &#E8DDFFᴡɪᴛʜ ᴛʜᴇ &#D9A8FFʀᴀᴅɪᴏ &#E8DDFF(ꜱʟᴏᴛ 5)'
+    height: 0.28
+  - content: '&#C77DFF▸ &fʏᴏᴜʀ &#D9A8FFꜱᴇᴛᴛɪɴɢꜱ &#E8DDFF(ꜱʟᴏᴛ 8) ᴀɴᴅ &fʜɪᴅᴇ ᴘʟᴀʏᴇʀꜱ &#E8DDFF(ꜱʟᴏᴛ 9)'
+    height: 0.28
+  - content: '&#C77DFF▸ &fʟᴏꜱᴛ? &#E8DDFFᴛʏᴘᴇ &#D9A8FF/ꜱᴘᴀᴡɴ'
+    height: 0.28
+  - content: '&#C77DFF▸ &fᴄᴏᴍᴍᴀɴᴅꜱ? &#E8DDFFᴛʏᴘᴇ &#D9A8FF/ʟᴏʙʙʏʜᴇʟᴘ'
+    height: 0.28
+  - content: ''
+    height: 0.15
+  - content: '&#E8DDFFᴘʟᴀʏᴇʀꜱ ᴏɴʟɪɴᴇ  &f&l%lobby_online_all%'
+    height: 0.3
+  - content: <#C77DFF>&lᴡᴇʙ.ꜰʀᴀᴄᴛᴀʟꜱᴍᴘ.ɴᴇᴛ</#F2B8FF>
+    height: 0.3
+  - content: '&#8E2DE2&m                                        '
+    height: 0.25
+  actions: {}

@@ -73,6 +73,8 @@ public final class Npcs implements Listener {
     public void start() {
         stop();
         if (!file.exists()) importFancyNpcs();
+        // Nothing to bring over: the built-in realm NPCs.
+        if (!file.exists()) plugin.saveResource("npcs.yml", false);
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
         ConfigurationSection section = yaml.getConfigurationSection("npcs");
         if (section != null) {

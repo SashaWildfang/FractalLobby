@@ -73,7 +73,18 @@ public final class Holograms implements Listener {
 
     public void start() {
         stop();
-        if (!folder.isDirectory()) importDecentHolograms();
+        if (!folder.isDirectory()) {
+            importDecentHolograms();
+            // Nothing to bring over: the built-in welcome hologram.
+            if (!folder.isDirectory()) {
+                folder.mkdirs();
+                try (var in = plugin.getResource("defaults/holograms/welcome.yml")) {
+                    if (in != null) Files.copy(in, new File(folder, "welcome.yml").toPath());
+                } catch (IOException e) {
+                    plugin.getLogger().warning("Couldn't write the welcome hologram: " + e.getMessage());
+                }
+            }
+        }
         folder.mkdirs();
         clearLeftovers();
         File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
