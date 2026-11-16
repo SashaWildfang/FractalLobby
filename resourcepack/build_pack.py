@@ -428,3 +428,8 @@ radio_model('skip', art(SKIP, G))
 radio_model('previous', art([r[::-1] for r in SKIP], G))
 radio_model('station', art(["........#.", ".......#..", "......#...", "##########", "#SSS#....#", "#SSS#.##.#", "#SSS#....#", "#SSS#.##.#", "##########"],
                            {'#': glyph, 'S': (0x6a, 0x6f, 0x8d)}))
+# the totem trail: Minecraft's own Totem of Undying
+trail_model('totem', Image.open(f'{VANILLA}/assets/minecraft/textures/item/totem_of_undying.png').convert('RGBA'))
+# Radio close button: a red X
+radio_model('close', art(["##.....##", "###...###", ".###.###.", "..#####..", "...###...", "..#####..", ".###.###.", "###...###", "##.....##"],
+                         {'#': (0xff, 0x75, 0x90)}))
