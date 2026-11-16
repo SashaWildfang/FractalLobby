@@ -126,7 +126,8 @@ public record LobbyConfig(
     public record Proxy(boolean enabled, long refreshTicks, List<String> servers) {
     }
 
-    public record Scoreboard(boolean enabled, int updateTicks, DateTimeFormatter dateFormat, ZoneId timeZone) {
+    public record Scoreboard(boolean enabled, int updateTicks, DateTimeFormatter dateFormat, ZoneId timeZone,
+                             boolean hideOfflineRealms) {
     }
 
     public record JoinItems(boolean clearInventory, boolean lockInventory, boolean blockOffHand,
@@ -230,8 +231,9 @@ public record LobbyConfig(
                 new Scoreboard(
                         c.getBoolean("scoreboard.enabled", true),
                         Math.max(1, c.getInt("scoreboard.update-ticks", 10)),
-                        dateFormat(c.getString("scoreboard.date-format", "dd/MM/yy"), log),
-                        timeZone(c.getString("scoreboard.time-zone", ""), log)),
+                        dateFormat(c.getString("scoreboard.date-format", "MM/dd/yyyy"), log),
+                        timeZone(c.getString("scoreboard.time-zone", ""), log),
+                        c.getBoolean("scoreboard.hide-offline-realms", true)),
                 c.getBoolean("tablist.enabled", true),
                 c.getBoolean("tablist.sort-by-rank", true),
                 new JoinItems(
@@ -415,8 +417,8 @@ public record LobbyConfig(
         try {
             return DateTimeFormatter.ofPattern(pattern);
         } catch (IllegalArgumentException e) {
-            log.warning("config.yml scoreboard.date-format is not a valid pattern, using dd/MM/yy");
-            return DateTimeFormatter.ofPattern("dd/MM/yy");
+            log.warning("config.yml scoreboard.date-format is not a valid pattern, using MM/dd/yyyy");
+            return DateTimeFormatter.ofPattern("MM/dd/yyyy");
         }
     }
 

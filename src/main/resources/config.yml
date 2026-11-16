@@ -450,9 +450,13 @@ scoreboard:
   # Only lines that actually changed are sent.
   update-ticks: 10
   # Format of <date>, see https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/format/DateTimeFormatter.html
-  date-format: "dd/MM/yy"
+  # MM/dd/yyyy = 11/15/2026.
+  date-format: "MM/dd/yyyy"
   # Time zone for <date> and <time>, e.g. America/New_York. Empty = the server's.
   time-zone: ""
+  # Leave out any line that counts a realm (<online:NAME>) while that realm
+  # is offline or in maintenance. Uses the realm selector's status checks.
+  hide-offline-realms: true
 
 tablist:
   enabled: true

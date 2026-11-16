@@ -10,6 +10,7 @@ import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.hook.PlaceholderHook;
 import com.sasha.lobby.items.Settings;
 import com.sasha.lobby.proxy.ProxyCounts;
+import com.sasha.lobby.proxy.ServerStatus;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -145,6 +146,20 @@ public final class DisplayService {
 
     // ---------------------------------------------------------------- sidebar + tab header/footer
 
+    private static final java.util.regex.Pattern ONLINE_TAG = java.util.regex.Pattern.compile("<online:([^>]+)>");
+
+    /** Whether a scoreboard line counts a realm that's offline or in maintenance (then it's left out). */
+    static boolean aboutDownServer(String template, java.util.function.Function<String, ServerStatus.State> state) {
+        var matcher = ONLINE_TAG.matcher(template);
+        while (matcher.find()) {
+            String server = matcher.group(1).trim();
+            if (server.equalsIgnoreCase("all")) continue;
+            ServerStatus.State now = state.apply(server);
+            if (now == ServerStatus.State.OFFLINE || now == ServerStatus.State.MAINTENANCE) return true;
+        }
+        return false;
+    }
+
     private void update(Player player) {
         Messages messages = plugin.messages();
         TagResolver tags = tags(plugin.lobbyConfig(), plugin.proxyCounts()::count,
@@ -155,7 +170,9 @@ public final class DisplayService {
             Component title = messages.render(placeholders(player, messages.raw("scoreboard.title")), tags);
             List<Component> lines = new ArrayList<>();
             List<Boolean> centered = new ArrayList<>();
+            boolean hideDown = plugin.lobbyConfig().scoreboard().hideOfflineRealms();
             for (String template : messages.lines("scoreboard.lines")) {
+                if (hideDown && aboutDownServer(template, server -> plugin.serverStatus().status(server).state())) continue;
                 boolean center = template.startsWith(TextWidth.CENTER);
                 if (center) template = template.substring(TextWidth.CENTER.length());
                 centered.add(center);

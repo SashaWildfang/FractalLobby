@@ -214,7 +214,7 @@ public final class Settings implements Listener {
     private static final int LOBBY_LABEL = 9;
     private static final int NETWORK_LABEL = 27;
     private static final int NETWORK_UNAVAILABLE = 31;
-    private static final int RESET = 50;
+    private static final int RESET = 48;
     private static final int IGNORED_SLOT = 30;
     /** The ignored-players list shows this many heads (Core keeps the rest; /unignore reaches them). */
     private static final int IGNORED_SHOWN = 45;
