@@ -546,6 +546,24 @@
    "chars": [
     "\uf169"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/settings.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf170"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/ignored.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf171"
+   ]
   }
  ]
 }

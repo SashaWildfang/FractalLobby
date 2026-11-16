@@ -116,8 +116,12 @@ public final class RealmSelector implements Listener {
      * picture isn't tinted like normal title text.
      */
     static Component customGuiTitle(int rows, int realms) {
-        String background = "\uF001" + (char) (0xF100 + rows * 16 + realms) + "\uF002";
-        return Component.text(background).font(GUI_FONT).color(NamedTextColor.WHITE);
+        return backgroundTitle((char) (0xF100 + rows * 16 + realms));
+    }
+
+    /** A menu title that is just one of the resource pack's backgrounds (see customGuiTitle). */
+    static Component backgroundTitle(char background) {
+        return Component.text("\uF001" + background + "\uF002").font(GUI_FONT).color(NamedTextColor.WHITE);
     }
 
     /** Which background fits: squares for centred realms (up to 9), otherwise none. */

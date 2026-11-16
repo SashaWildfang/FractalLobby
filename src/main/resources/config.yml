@@ -513,6 +513,14 @@ join-items:
     cooldown-seconds: 1.5
 
 
+# ── Settings menu ───────────────────────────────────────────────
+settings-menu:
+  # Draw the settings menu with the resource pack's background and icons
+  # (needs FractalLobby.zip, like realm-selector.custom-gui). false =
+  # black panes and normal items.
+  custom-gui: true
+
+
 # ── Realm selector ──────────────────────────────────────────────
 # The menu the compass opens. Clicking a realm sends the player to its
 # server through the proxy. Menu title and button text are in messages.yml.

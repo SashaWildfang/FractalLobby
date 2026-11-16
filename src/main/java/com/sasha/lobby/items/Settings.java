@@ -280,14 +280,16 @@ public final class Settings implements Listener {
     /** Opens settings; from the profile, a Back button returns there. */
     public void open(Player player, boolean fromProfile) {
         Menu menu = new Menu(Page.SETTINGS, fromProfile);
-        menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.title"));
+        menu.inventory = Bukkit.createInventory(menu, 54, customGui()
+                ? RealmSelector.backgroundTitle('\uF170') : plugin.messages().component("settings.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
     }
 
     private void openIgnored(Player player, boolean fromProfile) {
         Menu menu = new Menu(Page.IGNORED, fromProfile);
-        menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.ignored-menu.title"));
+        menu.inventory = Bukkit.createInventory(menu, 54, customGui()
+                ? RealmSelector.backgroundTitle('\uF171') : plugin.messages().component("settings.ignored-menu.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
     }
@@ -300,8 +302,11 @@ public final class Settings implements Listener {
     /** Fills the menu in place (so the cursor stays where it is). */
     private void draw(Player player, Menu menu) {
         menu.actions.clear();
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        ItemStack filler = null; // the custom background draws the menu itself
+        if (!customGui()) {
+            filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
+            filler.editMeta(meta -> meta.setHideTooltip(true));
+        }
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
         if (menu.page == Page.SETTINGS) drawSettings(player, menu);
         else drawIgnored(player, menu);
@@ -309,9 +314,9 @@ public final class Settings implements Listener {
 
     private void drawSettings(Player player, Menu menu) {
         Messages messages = plugin.messages();
-        menu.inventory.setItem(HEADER, Profile.button(messages, Material.COMPARATOR, "settings.header"));
-        menu.inventory.setItem(LOBBY_LABEL, Profile.button(messages, Material.GRASS_BLOCK, "settings.lobby-section"));
-        menu.inventory.setItem(NETWORK_LABEL, Profile.button(messages, Material.ENDER_PEARL, "settings.network-section"));
+        menu.inventory.setItem(HEADER, styled(Profile.button(messages, Material.COMPARATOR, "settings.header"), "header"));
+        menu.inventory.setItem(LOBBY_LABEL, styled(Profile.button(messages, Material.GRASS_BLOCK, "settings.lobby-section"), "lobby"));
+        menu.inventory.setItem(NETWORK_LABEL, styled(Profile.button(messages, Material.ENDER_PEARL, "settings.network-section"), "network"));
 
         for (Setting setting : Setting.values()) {
             put(menu, setting.slot, setting.icon, setting.id, setting.kind.options, option(player, setting),
@@ -320,7 +325,7 @@ public final class Settings implements Listener {
 
         CoreLink.State state = plugin.coreLink().state(player);
         if (state == null) {
-            menu.inventory.setItem(NETWORK_UNAVAILABLE, Profile.button(messages, Material.BARRIER, "settings.network-unavailable"));
+            menu.inventory.setItem(NETWORK_UNAVAILABLE, styled(Profile.button(messages, Material.BARRIER, "settings.network-unavailable"), "unavailable"));
         } else {
             for (NetworkSetting setting : NetworkSetting.values()) {
                 if (!state.has(setting.toggle)) continue; // staff settings only show for staff
@@ -331,10 +336,10 @@ public final class Settings implements Listener {
         }
 
         if (menu.fromProfile) {
-            menu.inventory.setItem(BACK, Profile.button(messages, Material.ARROW, "profile.back"));
+            menu.inventory.setItem(BACK, styled(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
             menu.actions.put(BACK, (who, click) -> plugin.profile().open(who));
         }
-        menu.inventory.setItem(RESET, Profile.button(messages, Material.TNT_MINECART, "settings.reset"));
+        menu.inventory.setItem(RESET, styled(Profile.button(messages, Material.TNT_MINECART, "settings.reset"), "reset"));
         menu.actions.put(RESET, (who, click) -> {
             if (!click.isShiftClick()) return;
             reset(who);
@@ -361,7 +366,7 @@ public final class Settings implements Listener {
             meta.lore(lore);
             meta.addItemFlags(ItemFlag.values());
         });
-        menu.inventory.setItem(slot, icon);
+        menu.inventory.setItem(slot, styled(icon, id));
 
         ItemStack pane = ItemStack.of(paneFor(current));
         pane.editMeta(meta -> {
@@ -369,7 +374,7 @@ public final class Settings implements Listener {
                     Placeholder.component("option", messages.component("settings.options." + current))));
             meta.lore(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
         });
-        menu.inventory.setItem(slot + 9, pane);
+        menu.inventory.setItem(slot + 9, styled(pane, paneModel(current)));
         menu.actions.put(slot, action);
         menu.actions.put(slot + 9, action);
     }
@@ -398,14 +403,14 @@ public final class Settings implements Listener {
             meta.lore(lore);
             meta.addItemFlags(ItemFlag.values());
         });
-        menu.inventory.setItem(IGNORED_SLOT, icon);
+        menu.inventory.setItem(IGNORED_SLOT, styled(icon, "ignored"));
 
         ItemStack pane = ItemStack.of(ignored.isEmpty() ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
         pane.editMeta(meta -> {
             meta.displayName(messages.item("settings.ignored.count", Messages.arg("count", ignored.size())));
             meta.lore(messages.lore("settings.ignored.hint"));
         });
-        menu.inventory.setItem(IGNORED_SLOT + 9, pane);
+        menu.inventory.setItem(IGNORED_SLOT + 9, styled(pane, ignored.isEmpty() ? "on" : "middle"));
         Action open = (who, click) -> {
             openIgnored(who, menu.fromProfile);
             click(who, 0);
@@ -420,7 +425,7 @@ public final class Settings implements Listener {
         CoreLink.State state = plugin.coreLink().state(player);
         Map<UUID, String> ignored = state == null ? Map.of() : state.ignored();
         if (ignored.isEmpty()) {
-            menu.inventory.setItem(22, Profile.button(messages, Material.LIME_DYE, "settings.ignored-menu.empty"));
+            menu.inventory.setItem(22, styled(Profile.button(messages, Material.LIME_DYE, "settings.ignored-menu.empty"), "on"));
         }
         int slot = 0;
         for (Map.Entry<UUID, String> entry : ignored.entrySet()) {
@@ -445,10 +450,10 @@ public final class Settings implements Listener {
             slot++;
         }
         if (ignored.size() > IGNORED_SHOWN) {
-            menu.inventory.setItem(53, Profile.button(messages, Material.PAPER, "settings.ignored-menu.more",
-                    Messages.arg("count", ignored.size() - IGNORED_SHOWN)));
+            menu.inventory.setItem(53, styled(Profile.button(messages, Material.PAPER, "settings.ignored-menu.more",
+                    Messages.arg("count", ignored.size() - IGNORED_SHOWN)), "more"));
         }
-        menu.inventory.setItem(49, Profile.button(messages, Material.ARROW, "settings.ignored-menu.back"));
+        menu.inventory.setItem(49, styled(Profile.button(messages, Material.ARROW, "settings.ignored-menu.back"), "back"));
         menu.actions.put(49, (who, click) -> {
             open(who, menu.fromProfile);
             click(who, 0);
@@ -481,6 +486,26 @@ public final class Settings implements Listener {
         }
         plugin.messages().send(player, "settings.reset.done");
         player.playSound(Sound.sound(Key.key("entity.experience_orb.pickup"), Sound.Source.MASTER, 0.5f, 1f), Sound.Emitter.self());
+    }
+
+    /** Whether the menus use the resource pack's backgrounds and icons (settings-menu.custom-gui). */
+    private boolean customGui() {
+        return plugin.getConfig().getBoolean("settings-menu.custom-gui", true);
+    }
+
+    /** With the custom look, gives the item the resource pack's icon fractal:menu/NAME. */
+    private ItemStack styled(ItemStack item, String name) {
+        if (customGui()) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "menu/" + name)));
+        return item;
+    }
+
+    /** The switch icon for an option: on (green), off (red), or in between (Donors/Staff Only). */
+    private static String paneModel(String option) {
+        return switch (option) {
+            case "everyone", "on" -> "on";
+            case "donors", "staff" -> "middle";
+            default -> "off";
+        };
     }
 
     private static Material paneFor(String option) {
