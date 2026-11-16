@@ -1207,23 +1207,25 @@ def sprite(rows, colours):
             if ch in colours: img.putpixel((x, y), hexc(colours[ch]) + (255,))
     return img
 DUST_COL = {'#': '#1a1b26', 'g': '#FFD27F', 'G': '#C9963A', 'w': '#FFFFFF', 'p': '#FF7BE5', 'l': '#FFF1C9'}
-# Mystery Dust: a little heap of gold dust with sparkles over it
+# Mystery Dust: a purple pouch tied with gold, glittering with dust, sparkles rising out of it
+DUST_COL = {'#': '#1a1b26', 'p': '#B266FF', 'P': '#7d3fc4', 'q': '#d9a8ff', 's': '#5a2a9a', 'y': '#FFD27F', 'Y': '#C9963A',
+            'w': '#FFFFFF', 'k': '#FF7BE5', 't': '#e8ddff'}
 mystery_sprite('dust', sprite([
-    "................",
-    "....w......p....",
-    "...www.........",
-    "....w....w......",
-    ".........www....",
-    "..p.......w.....",
-    "................",
-    "......####......",
-    ".....#lggg#.....",
-    "....#lggggg#....",
-    "...#gggGgggg#...",
-    "..#ggGgggGggg#..",
-    ".#GgggGggggGgG#.",
-    ".#GGGGGGGGGGGG#.",
-    "..############..",
+    "...k......w.....",
+    ".........www..y.",
+    "......y...w.....",
+    "....y.####...k..",
+    ".....#tyyt#.....",
+    "......#YY#......",
+    ".....##ss##.....",
+    "....#qppppp#....",
+    "...#qpypppkp#...",
+    "..#qppppyppPP#..",
+    "..#pkpppppypP#..",
+    "..#ppypkpppPP#..",
+    "..#PpppppypPP#..",
+    "...#PPPPPPPP#...",
+    "....########....",
     "................"], DUST_COL))
 CRAFT_COL = {'#': '#1a1b26', 'b': '#C77DFF', 'B': '#8a4fd1', 'y': '#FFD27F', 'Y': '#C9963A', 'w': '#FFFFFF', 'g': '#5BE37C', 'G': '#2fb956'}
 craft_rows = [
