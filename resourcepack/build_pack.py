@@ -561,3 +561,7 @@ for x in range(182):
     fill.putpixel((x, 2), c + (255,)); fill.putpixel((x, 3), mix(c, (0, 0, 0), 0.15) + (255,))
 for y in range(5): fill.putpixel((0, y), (0x2a, 0x17, 0x40, 255))
 fill.save(f'{OUT}/assets/minecraft/textures/gui/sprites/boss_bar/purple_progress.png')
+# Staff Only: an orange shield with a white tick
+STAFF = [".RRRRRRRRRRR.", "RLLLLLLDDDDDR", "RLLLLLLDDDDDR", "RLLLLLLDDDWDR", "RLLLLLLDDWWDR", "RLLWLLLDWWDDR", "RLLWWLLWWDDDR",
+         "RLLLWWWWDDDDR", ".RLLLWWDDDDR.", ".RLLLLLDDDDR.", "..RLLLLDDDR..", "...RLLLDDR...", "....RLLDR....", ".....RRR....."]
+model('audience-staff', art(STAFF, {'R': hexc('#B85A1E'), 'L': hexc('#FFC48A'), 'D': hexc('#F0923F'), 'W': (255, 255, 255)}, shade=False))
