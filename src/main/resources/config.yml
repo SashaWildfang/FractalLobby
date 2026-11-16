@@ -28,6 +28,9 @@ spawn:
   pitch: 0.0
   # Send players to spawn every time they join.
   teleport-on-join: true
+  # Put everyone in Adventure mode when they join (staff can switch back
+  # with /gamemode).
+  adventure-on-join: true
 
 
 # ── Protection ──────────────────────────────────────────────────

@@ -30,6 +30,11 @@ public final class SpawnListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onJoin(PlayerJoinEvent event) {
         event.getPlayer().setFallDistance(0);
+        // Everyone starts in Adventure mode (staff can switch back with /gamemode).
+        if (plugin.getConfig().getBoolean("spawn.adventure-on-join", true)
+                && event.getPlayer().getGameMode() != org.bukkit.GameMode.ADVENTURE) {
+            event.getPlayer().setGameMode(org.bukkit.GameMode.ADVENTURE);
+        }
     }
 
     public void sendToSpawn(Player player) {

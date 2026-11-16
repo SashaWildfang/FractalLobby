@@ -675,3 +675,11 @@ for code, name, img in ((0xF010, 'click_left', mouse8(True, False)), (0xF011, 'c
     img.save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
     lobby_font['providers'].append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 7, "height": 8, "chars": [chr(code)]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+
+# 17. Double Jump: a winged boot
+BOOT = ["WW....BBBBB...", "WWW...BBBBB...", "WWWW..BCCCB...", ".WWWW.BBBBB...", "..WWWWBBBBB...", "...WWWBBBBB...", "......BBBBBBB.",
+        "......BBBBBBBB", "......BBBBBBBB", "......SSSSSSSS", "......SSS.SSSS"]
+model('double-jump', art(BOOT, {'B': hexc('#E0483C'), 'C': hexc('#FFE680'), 'S': (0x7a, 0x4a, 0x2a), 'W': (0xf4, 0xf5, 0xfb)}))
+BOOT = ["......TTTTT.....", "......BBBBB.....", ".W....BBBBB.....", "WWW...BBBBB.....", "WWWWW.BBBBB.....", ".WWWWWBBBBB.....", "..WWWWBBBBBBB...",
+        "....WWBBBBBBBBB.", "......BBBBBBBBBB", "......BBBBBBBBBB", "......SSSSSSSSSS"]
+model('double-jump', art(BOOT, {'B': hexc('#E0483C'), 'T': hexc('#FFE680'), 'S': (0x6b, 0x40, 0x24), 'W': (0xf4, 0xf5, 0xfb)}, shade=False))
