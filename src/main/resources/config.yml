@@ -581,8 +581,8 @@ proxy:
   servers:
     - lobby
     - survival
-    - lifesteal
-    - practice
+    - prison
+    - ctf
 
 
 # ── Scoreboard and tab list ─────────────────────────────────────
@@ -720,25 +720,25 @@ realm-selector:
       address: ""
       # Optional: true shows it as under maintenance, whatever the ping says.
       maintenance: false
-    lifesteal:
-      server: lifesteal
+    prison:
+      server: prison
       slot: 13
-      item: NETHERITE_SWORD
-      name: "<accent><bold>Lifesteal"
+      item: IRON_BARS
+      name: "<accent><bold>Prison"
       description:
-        - "<muted>Kill to gain hearts, die to lose them."
+        - "<muted>Mine your way to the top."
         - ""
-        - "<white>▪ <gray>Steal hearts from other players"
-        - "<white>▪ <gray>Craft hearts to come back stronger"
-        - "<white>▪ <gray>Run out of hearts and you're out"
-    practice:
-      server: practice
+        - "<white>▪ <gray>Mine, sell and rank up"
+        - "<white>▪ <gray>Unlock new mines as you climb"
+        - "<white>▪ <gray>Prestige and break out"
+    ctf:
+      server: ctf
       slot: 15
-      item: IRON_SWORD
-      name: "<secondary><bold>Practice"
+      item: RED_BANNER
+      name: "<secondary><bold>Capture the Flag"
       description:
-        - "<muted>Sharpen your PvP."
+        - "<muted>Team up and steal the flag."
         - ""
-        - "<white>▪ <gray>Duels and ranked fights"
-        - "<white>▪ <gray>Ready-made kits, no grinding"
-        - "<white>▪ <gray>Warm up before Lifesteal"
+        - "<white>▪ <gray>Two teams, one flag each"
+        - "<white>▪ <gray>Grab theirs and bring it home"
+        - "<white>▪ <gray>Defend yours at all costs"

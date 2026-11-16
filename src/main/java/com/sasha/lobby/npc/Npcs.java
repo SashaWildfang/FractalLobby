@@ -264,6 +264,34 @@ public final class Npcs implements Listener {
         return found;
     }
 
+    /** Gives an NPC a new name (its hologram, skin and actions stay). False if the new name is taken. */
+    public boolean rename(Npc npc, String newName) {
+        if (npcs.containsKey(newName) && !npc.name.equalsIgnoreCase(newName)) return false;
+        npcs.remove(npc.name);
+        despawn(npc.name);
+        plugin.holograms().detach(key(npc));
+        Npc renamed = new Npc(newName, npc.location);
+        renamed.skin.name = npc.skin.name;
+        renamed.skin.url = npc.skin.url;
+        renamed.skin.value = npc.skin.value;
+        renamed.skin.signature = npc.skin.signature;
+        renamed.skin.slim = npc.skin.slim;
+        renamed.equipment.putAll(npc.equipment);
+        renamed.glowing = npc.glowing;
+        renamed.glowColor = npc.glowColor;
+        renamed.turnToPlayer = npc.turnToPlayer;
+        renamed.turnDistance = npc.turnDistance;
+        renamed.scale = npc.scale;
+        renamed.cooldownSeconds = npc.cooldownSeconds;
+        renamed.collidable = npc.collidable;
+        renamed.actions.putAll(npc.actions);
+        renamed.lines.addAll(npc.lines);
+        renamed.hologramOffset = npc.hologramOffset;
+        npcs.put(newName, renamed);
+        changed(renamed);
+        return true;
+    }
+
     /** Moves an NPC (and its hologram). */
     public void move(Npc npc, Location to) {
         npc.location = to;

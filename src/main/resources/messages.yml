@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 22
+messages-version: 23
 
 theme:
   primary: "#B266FF"
@@ -136,7 +136,7 @@ items:
     name: "<primary>Realm Selector"
     lore:
       - "<muted>Pick a realm to play on: Survival,"
-      - "<muted>Lifesteal or Practice."
+      - "<muted>Prison or Capture the Flag."
       - ""
       - "<muted>See who's playing and which"
       - "<muted>realms are online right now."
@@ -624,6 +624,7 @@ holo:
 npc:
   created: "<prefix><good>NPC <white><name></white> made where you stand, with your skin. <muted>/lobbyhelp npcs"
   removed: "<prefix><secondary>NPC <white><name></white> removed."
+  renamed: "<prefix><good>NPC <white><name></white> is now <white><new></white>."
   saved: "<prefix><good>NPC <white><name></white> saved."
   moved: "<prefix><good>NPC <white><name></white> moved to where you're standing."
   reloaded: "<prefix><good>NPCs reloaded (<white><count></white>)."

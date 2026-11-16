@@ -119,6 +119,7 @@ public final class CommandHelp {
         e.add(new Entry("npcs", "/npc turn <name> <on|off> [distance]", "Whether it looks at nearby players.", admin, List.of()));
         e.add(new Entry("npcs", "/npc scale <name> <size>", "Make it bigger or smaller (1 is normal).", admin, List.of()));
         e.add(new Entry("npcs", "/npc cooldown <name> <seconds>", "Time before the same player can click it again.", admin, List.of()));
+        e.add(new Entry("npcs", "/npc rename <name> <new name>", "Give an NPC a new name (everything else stays).", admin, List.of()));
         e.add(new Entry("npcs", "/npc movehere <name>", "Move it (and its hologram) to where you stand.", admin, List.of()));
         e.add(new Entry("npcs", "/npc tp <name>", "Go to an NPC.", admin, List.of()));
         e.add(new Entry("npcs", "/npc info <name>", "Show its skin, actions and hologram lines.", admin, List.of()));

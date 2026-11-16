@@ -99,6 +99,16 @@ public final class NpcCommands {
                     npcs.delete(npc);
                     messages().send(context.getSource().getSender(), "npc.removed", Messages.arg("name", npc.name));
                 }))
+                .then(Commands.literal("rename").then(Commands.argument("name", StringArgumentType.word()).suggests(names)
+                        .then(Commands.argument("new", StringArgumentType.word()).executes(context -> edit(context, (ctx, npc) -> {
+                            String newName = StringArgumentType.getString(ctx, "new");
+                            String old = npc.name;
+                            if (!npcs.rename(npc, newName)) {
+                                messages().send(ctx.getSource().getSender(), "npc.exists", Messages.arg("name", newName));
+                                return;
+                            }
+                            messages().send(ctx.getSource().getSender(), "npc.renamed", Messages.arg("name", old), Messages.arg("new", newName));
+                        })))))
                 .then(named("info", names, (context, npc) -> info(context.getSource().getSender(), npc)))
                 .then(named("movehere", names, (context, npc) -> {
                     Player player = player(context);

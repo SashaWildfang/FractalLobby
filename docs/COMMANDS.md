@@ -80,6 +80,7 @@ Making and editing NPCs and the holograms above them.
 | `/npc turn <name> <on\|off> [distance]` | `lobby.admin` | Whether it looks at nearby players. |
 | `/npc scale <name> <size>` | `lobby.admin` | Make it bigger or smaller (1 is normal). |
 | `/npc cooldown <name> <seconds>` | `lobby.admin` | Time before the same player can click it again. |
+| `/npc rename <name> <new name>` | `lobby.admin` | Give an NPC a new name (everything else stays). |
 | `/npc movehere <name>` | `lobby.admin` | Move it (and its hologram) to where you stand. |
 | `/npc tp <name>` | `lobby.admin` | Go to an NPC. |
 | `/npc info <name>` | `lobby.admin` | Show its skin, actions and hologram lines. |
