@@ -305,7 +305,7 @@ public final class DisplayService {
 
     private void applyStatus(Scoreboard board, Player player) {
         org.bukkit.scoreboard.Objective objective = board.getObjective(STATUS);
-        if (!plugin.statuses().enabled()) {
+        if (!plugin.statuses().enabled() && !plugin.afk().enabled()) {
             if (objective != null) objective.unregister();
             return;
         }

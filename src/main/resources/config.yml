@@ -260,6 +260,15 @@ punch:
   announce: true
 
 
+# ── AFK ─────────────────────────────────────────────────────────
+# After this many minutes without moving, looking around, chatting or
+# clicking, a red "AFK" shows under the player's name in place of their
+# status. Nothing is said in chat; any activity takes it away.
+afk:
+  enabled: true
+  minutes: 5
+
+
 # ── Status ──────────────────────────────────────────────────────
 # Players pick a status in My Profile; it shows under their name as
 # "Status: <emoji> <name>". Needs the lobby resource pack for the emojis.

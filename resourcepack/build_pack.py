@@ -884,3 +884,25 @@ for i, name in enumerate(EMOJIS):
                                     "chars": [chr(0xF300 + i)]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
 print('status emojis', len(EMOJIS))
+
+# 22. the AFK clock (U+F310, fractal:lobby) shown before "AFK" under idle players' names
+CLOCK = ["...RRRRR...",
+         "..RWWWWWR..",
+         ".RWWWDWWWR.",
+         "RWWWWDWWWWR",
+         "RWWWWDWWWWR",
+         "RWWWWDDDWWR",
+         "RWWWWWWWWWR",
+         "RWWWWWWWWWR",
+         ".RWWWWWWWR.",
+         "..RWWWWWR..",
+         "...RRRRR..."]
+clock = Image.new('RGBA', (11, 11), (0, 0, 0, 0))
+for y, row in enumerate(CLOCK):
+    for x, ch in enumerate(row):
+        c = {'R': (0xFF, 0x5A, 0x5A), 'W': (0xFF, 0xF4, 0xF4), 'D': (0x3a, 0x1f, 0x2a)}.get(ch)
+        if c: clock.putpixel((x, y), c + (255,))
+clock.save(f'{OUT}/assets/fractal/textures/gui/afk_clock.png')
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/afk_clock.png", "ascent": 8, "height": 9, "chars": [chr(0xF310)]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)

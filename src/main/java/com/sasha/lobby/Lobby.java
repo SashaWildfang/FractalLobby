@@ -74,6 +74,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private DoubleJump doubleJump;
     private Trails trails;
     private com.sasha.lobby.items.Statuses statuses;
+    private com.sasha.lobby.listener.AfkListener afk;
     private Profile profile;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -115,15 +116,17 @@ public final class Lobby extends JavaPlugin implements Listener {
         doubleJump = new DoubleJump(this);
         trails = new Trails(this);
         statuses = new com.sasha.lobby.items.Statuses(this);
+        afk = new com.sasha.lobby.listener.AfkListener(this);
         profile = new Profile(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         coreLink.start();
+        afk.start();
         display.start();
         border.apply();
         protection.applyWorlds();
@@ -179,6 +182,10 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public Trails trails() {
         return trails;
+    }
+
+    public com.sasha.lobby.listener.AfkListener afk() {
+        return afk;
     }
 
     public com.sasha.lobby.items.Statuses statuses() {
@@ -245,6 +252,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         loadSettings();
         proxyCounts.restartTask();
         serverStatus.start();
+        afk.start();
         display.start();
         for (Player player : getServer().getOnlinePlayers()) {
             joinItems.giveItems(player);

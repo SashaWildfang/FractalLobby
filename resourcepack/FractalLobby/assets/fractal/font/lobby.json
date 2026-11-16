@@ -1222,6 +1222,15 @@
    "chars": [
     "\uf318"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/afk_clock.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf310"
+   ]
   }
  ]
 }

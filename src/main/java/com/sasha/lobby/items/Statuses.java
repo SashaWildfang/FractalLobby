@@ -85,6 +85,13 @@ public final class Statuses implements Listener {
 
     /** What shows under the player's name, or null for nothing. */
     public Component belowName(Player player) {
+        if (plugin.afk().isAfk(player)) {
+            Component icon = plugin.menuStyle().custom()
+                    ? Component.text("\uF310").font(Key.key("fractal", "lobby"))
+                            .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                    : Component.empty();
+            return plugin.messages().component("afk.below-name", Placeholder.component("icon", icon));
+        }
         LobbyConfig.Status status = chosen(player);
         if (status == null) return null;
         return plugin.messages().component("status.below-name", Placeholder.component("status", label(status)));
