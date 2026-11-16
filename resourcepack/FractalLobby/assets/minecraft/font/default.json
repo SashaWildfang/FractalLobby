@@ -314,6 +314,15 @@
    "chars": [
     ""
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/afk.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
   }
  ]
 }

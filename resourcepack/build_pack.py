@@ -906,3 +906,25 @@ clock.save(f'{OUT}/assets/fractal/textures/gui/afk_clock.png')
 lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
 lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/afk_clock.png", "ascent": 8, "height": 9, "chars": [chr(0xF310)]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+
+# 23. the AFK badge (U+E2A0, minecraft:default font, like the rank badges): the OWNER badge's style, light red
+W = 25
+AFK_ART = [list('.' + 'a' * (W - 2) + '.'), list('aa' + 'b' * (W - 4) + 'aa')] \
+    + [list('a' + 'b' * (W - 2) + 'a') for _ in range(3)] + [list('b' + 'd' * (W - 2) + 'b') for _ in range(2)] \
+    + [list('bb' + 'd' * (W - 4) + 'bb'), list('.' + 'b' * (W - 2) + '.')]
+LETTERS = {'A': [".###.", "#...#", "#####", "#...#", "#...#"],
+           'F': ["#####", "#....", "####.", "#....", "#...."],
+           'K': ["#...#", "#..#.", "###..", "#..#.", "#...#"]}
+for n, letter in enumerate('AFK'):  # top three rows white on the light band, bottom two pink on the dark band
+    for y, row in enumerate(LETTERS[letter]):
+        for x, ch in enumerate(row):
+            if ch == '#': AFK_ART[2 + y][4 + n * 6 + x] = 'c' if y < 3 else 'e'
+AFK_COL = {'a': '#ffa3a3', 'b': '#ff6f6f', 'c': '#ffffff', 'd': '#e04848', 'e': '#ffd9d6'}
+afk_badge = Image.new('RGBA', (25, 9), (0, 0, 0, 0))
+for y, row in enumerate(AFK_ART):
+    for x, ch in enumerate(row):
+        if ch in AFK_COL: afk_badge.putpixel((x, y), hexc(AFK_COL[ch]) + (255,))
+afk_badge.save(f'{OUT}/assets/minecraft/textures/gui/ranks/afk.png')
+default_font = json.load(open(f'{OUT}/assets/minecraft/font/default.json'))
+default_font['providers'].append({"type": "bitmap", "file": "minecraft:gui/ranks/afk.png", "ascent": 8, "height": 9, "chars": [""]})
+json.dump(default_font, open(f'{OUT}/assets/minecraft/font/default.json', 'w'), ensure_ascii=False, indent=1)

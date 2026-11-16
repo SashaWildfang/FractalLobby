@@ -3,7 +3,7 @@
 `FractalLobby/` is the whole pack the Lobby server sends: zip its contents and put
 it in `plugins/Nexo/pack/external_packs/FractalLobby.zip`. It has:
 
-- the rank icons and badges (`minecraft:default` font, from the Fractal pack),
+- the rank icons and badges (`minecraft:default` font, from the Fractal pack), and a light red AFK badge in the same style (U+E2A0),
 - the backgrounds for the realm selector, settings, chat colour, trails, parkour and Radio menus (`fractal:lobby` font),
 - the settings menu icons (item models `fractal:menu/NAME`, most from Survival's pack),
 - the Survival realm icon (item model `fractal:survival`),
