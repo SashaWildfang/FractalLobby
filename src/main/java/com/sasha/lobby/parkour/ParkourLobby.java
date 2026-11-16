@@ -51,13 +51,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * The lobby parkour: a pressure plate that starts ajParkour with a hologram above it (each player's own
- * best and rank), and a separate leaderboard hologram with the best scores. Clicking either hologram
- * opens the full top 10.
+ * The lobby parkour: a pressure plate (or /parkour) that starts an infinite parkour run in the parkour area
+ * ({@link ParkourGame}), a hologram above the plate (each player's own best and rank), and a leaderboard hologram
+ * with the best scores. Clicking either hologram opens the full top 10.
  */
 public final class ParkourLobby implements Listener {
 
@@ -67,12 +65,13 @@ public final class ParkourLobby implements Listener {
     private static final double CLICK_RADIUS = 1.3;
     private static final double CLICK_REACH = 7.0;
     private static final long CLICK_COOLDOWN_MILLIS = 400;
-    private static final Pattern TIME = Pattern.compile("(\\d+\\s*h\\s*)?(\\d+\\s*m\\s*)?\\d+\\s*s");
 
     private final Lobby plugin;
     private final File file;
     private final YamlConfiguration data;
+    private final ScoreStore scores;
     private final Leaderboard leaderboard;
+    private final ParkourGame game;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, Long> lastOpened = new HashMap<>();
     private final List<Hologram> holograms;
@@ -85,7 +84,10 @@ public final class ParkourLobby implements Listener {
         this.plugin = plugin;
         file = new File(plugin.getDataFolder(), "parkour.yml");
         data = YamlConfiguration.loadConfiguration(file);
-        leaderboard = new Leaderboard(plugin);
+        scores = new ScoreStore(plugin);
+        leaderboard = new Leaderboard(plugin, scores);
+        if (!data.contains("area")) importAjParkourArea();
+        game = new ParkourGame(plugin, this);
         holograms = List.of(
                 new Hologram("hologram", "fractal_lobby_parkour_holo_", this::plateText),
                 new Hologram("leaderboard", "fractal_lobby_parkour_board_", this::leaderboardText));
@@ -192,6 +194,93 @@ public final class ParkourLobby implements Listener {
         return leaderboard;
     }
 
+    public ScoreStore scores() {
+        return scores;
+    }
+
+    public ParkourGame game() {
+        return game;
+    }
+
+    // ---------------------------------------------------------------- the area
+
+    /** The box the course is built in, or null until both corners are set. */
+    ParkourGame.Area area() {
+        Location a = readLocation("area.pos1"), b = readLocation("area.pos2");
+        return a == null || b == null || !a.getWorld().equals(b.getWorld()) ? null : ParkourGame.Area.of(a, b);
+    }
+
+    /** Where players go after a run (null: the lobby spawn). */
+    Location returnPoint() {
+        Location at = readLocation("return");
+        if (at != null) {
+            at.setYaw((float) data.getDouble("return.yaw"));
+            at.setPitch((float) data.getDouble("return.pitch"));
+        }
+        return at;
+    }
+
+    /** /lobbyparkour area pos1|pos2|return: sets a corner of the area, or where players go after a run. */
+    public void setArea(Player admin, String which) {
+        Location at = admin.getLocation();
+        if (which.equals("return")) {
+            saveLocation("return", at);
+            data.set("return.yaw", Math.round(at.getYaw() * 10) / 10.0);
+            data.set("return.pitch", Math.round(at.getPitch() * 10) / 10.0);
+        } else {
+            saveLocation("area." + which, at.getBlock().getLocation());
+        }
+        save();
+        ParkourGame.Area area = area();
+        plugin.messages().send(admin, "parkour.area-set", Messages.arg("which", which),
+                Messages.arg("size", area == null ? "-" : (area.maxX() - area.minX() + 1) + "×" + (area.maxY() - area.minY() + 1)
+                        + "×" + (area.maxZ() - area.minZ() + 1)));
+    }
+
+    /**
+     * The first time, takes the area from ajParkour's positions.yml (the area called "spawn", or else the first one):
+     * its two corners and its fall position (where players go after a run).
+     */
+    private void importAjParkourArea() {
+        File positions = new File(plugin.getDataFolder().getParentFile(), "ajParkour/positions.yml");
+        if (!positions.isFile()) return;
+        YamlConfiguration aj = YamlConfiguration.loadConfiguration(positions);
+        var areas = aj.getConfigurationSection("areas");
+        if (areas == null || areas.getKeys(false).isEmpty()) return;
+        String name = areas.contains("spawn") ? "spawn" : areas.getKeys(false).iterator().next();
+        Location a = parseAj(areas.getString(name + ".pos1")), b = parseAj(areas.getString(name + ".pos2"));
+        if (a == null || b == null) return;
+        saveLocation("area.pos1", a.getBlock().getLocation());
+        saveLocation("area.pos2", b.getBlock().getLocation());
+        Location fall = parseAj(areas.getString(name + ".fallpos"));
+        if (fall != null) {
+            saveLocation("return", fall);
+            data.set("return.yaw", (double) fall.getYaw());
+            data.set("return.pitch", (double) fall.getPitch());
+        }
+        save();
+        plugin.getLogger().info("Took the parkour area from ajParkour's \"" + name + "\" area.");
+    }
+
+    /** ajParkour's "world,x,y,z,yaw,pitch". */
+    private static Location parseAj(String text) {
+        if (text == null) return null;
+        String[] parts = text.split(",");
+        if (parts.length < 4) return null;
+        World world = Bukkit.getWorld(parts[0].trim());
+        if (world == null) return null;
+        try {
+            Location at = new Location(world, Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
+            if (parts.length >= 6) {
+                at.setYaw(Float.parseFloat(parts[4]));
+                at.setPitch(Float.parseFloat(parts[5]));
+            }
+            return at;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     /** Re-reads parkour.yml (/lobby reload), in case it was edited by hand. */
     public void reload() {
         try {
@@ -205,6 +294,7 @@ public final class ParkourLobby implements Listener {
     }
 
     public void shutdown() {
+        game.shutdown();
         displayTask.cancel();
         holograms.forEach(Hologram::remove);
         playtime.remove();
@@ -218,7 +308,7 @@ public final class ParkourLobby implements Listener {
             plugin.coreLink().requestTopPlaytime(Math.max(1, Math.min(20, plugin.getConfig().getInt("playtime.hologram-top", 10))));
         }
         // Look up the top 10's ranks ahead of time, so the leaderboard menu has them when it opens.
-        if (plugin.luckPerms() && leaderboard.available()) {
+        if (plugin.luckPerms()) {
             plugin.getServer().getOnlinePlayers().stream().findFirst().ifPresent(anyone -> {
                 for (Leaderboard.Entry entry : leaderboard.entries(anyone)) LuckPermsHook.prefix(entry.name());
             });
@@ -448,10 +538,6 @@ public final class ParkourLobby implements Listener {
         if (now - lastOpened.getOrDefault(player.getUniqueId(), 0L) < CLICK_COOLDOWN_MILLIS) return;
         lastOpened.put(player.getUniqueId(), now);
         Messages messages = plugin.messages();
-        if (!leaderboard.available()) {
-            messages.send(player, "parkour.unavailable");
-            return;
-        }
         Menu menu = new Menu();
         var style = plugin.menuStyle();
         menu.inventory = Bukkit.createInventory(menu, 45,
@@ -465,8 +551,7 @@ public final class ParkourLobby implements Listener {
             ItemStack item;
             if (i < top.size()) {
                 Leaderboard.Entry entry = top.get(i);
-                TagResolver args = TagResolver.resolver(row(entry),
-                        Messages.arg("time", cleanTime(leaderboard.time(player, entry.position()))));
+                TagResolver args = TagResolver.resolver(row(entry), Messages.arg("time", entry.time()));
                 boolean isYou = entry.name().equalsIgnoreCase(player.getName());
                 item = head(entry.name(), messages.item("parkour.menu.entry-name", args),
                         messages.lore(isYou ? "parkour.menu.entry-lore-you" : "parkour.menu.entry-lore", args));
@@ -496,20 +581,6 @@ public final class ParkourLobby implements Listener {
         return head;
     }
 
-    /**
-     * ajParkour's time text can come with its chat prefix and colour codes in front (e.g.
-     * "[AL!] ALParkour ➜ &r1m 56s"). Only the time itself is kept.
-     */
-    static String cleanTime(String raw) {
-        String text = raw.replaceAll("[&§](#[0-9a-fA-F]{6}|[0-9a-fk-orA-FK-OR])", "").replaceAll("<[^>]*>", "");
-        Matcher matcher = TIME.matcher(text.toLowerCase(Locale.ROOT));
-        String last = null;
-        while (matcher.find()) last = matcher.group();
-        if (last != null) return last.trim();
-        int arrow = Math.max(text.lastIndexOf('➜'), text.lastIndexOf('»'));
-        return (arrow >= 0 ? text.substring(arrow + 1) : text).trim();
-    }
-
     @EventHandler(priority = EventPriority.LOWEST)
     public void onMenuClick(InventoryClickEvent event) {
         if (event.getView().getTopInventory().getHolder(false) instanceof Menu) event.setCancelled(true);
@@ -531,7 +602,7 @@ public final class ParkourLobby implements Listener {
         if (plate == null || player.isInsideVehicle() || !sameBlock(event.getClickedBlock().getLocation(), plate)) return;
         if (cooldowns.getOrDefault(player.getUniqueId(), 0L) > now) return;
         cooldowns.put(player.getUniqueId(), now + 1000L);
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "ajp start " + player.getName() + " spawn");
+        game.start(player);
     }
 
     @EventHandler

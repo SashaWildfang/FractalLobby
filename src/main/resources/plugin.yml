@@ -26,6 +26,7 @@ permissions:
       lobby.spawn: true
       lobby.cmd.glow: true
       lobby.cmd.afk: true
+      lobby.cmd.parkour: true
       lobby.cmd.chatcolor: true
       lobby.chatcolor.gradients: true
       lobby.chatcolor.rainbow: true
@@ -62,6 +63,9 @@ permissions:
     default: false
   lobby.spawn:
     description: Use /spawn
+    default: true
+  lobby.cmd.parkour:
+    description: Use /parkour to start or stop a parkour run
     default: true
   lobby.cmd.afk:
     description: Use /afk to show (or stop showing) that you're AFK

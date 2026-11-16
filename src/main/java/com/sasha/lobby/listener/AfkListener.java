@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * AFK: after afk.minutes idle, or straight away with /afk, the player's rank becomes the AFK badge, their name
- * goes light red and "AFK" shows under it. Nothing is said in chat (only /afk tells the player).
+ * goes light red and "AFK" shows under it. Nobody else is told; the player is when they go AFK with /afk and
+ * whenever they come back.
  *
  * Coming back is measured from where the player stood when they went AFK, not from one movement packet to the
  * next, so mouse jitter, pressure plates or being nudged never flicker it off:
@@ -95,7 +96,6 @@ public final class AfkListener implements Listener {
     public void toggle(Player player) {
         if (afk.containsKey(player.getUniqueId())) {
             back(player);
-            plugin.messages().send(player, "afk.off");
         } else {
             goAfk(player);
             plugin.messages().send(player, "afk.on");
@@ -112,9 +112,12 @@ public final class AfkListener implements Listener {
         }
     }
 
+    /** Back from AFK (by moving, chatting, clicking or /afk): only the player is told. */
     private void back(Player player) {
         lastActive.put(player.getUniqueId(), System.currentTimeMillis());
-        if (afk.remove(player.getUniqueId()) != null) plugin.display().refreshAfk(player);
+        if (afk.remove(player.getUniqueId()) == null) return;
+        plugin.display().refreshAfk(player);
+        plugin.messages().send(player, "afk.off");
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

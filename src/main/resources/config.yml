@@ -216,20 +216,46 @@ chat:
   ranked-format: "%luckperms_prefix%%player%&f: %message%"
 
 
-# ── Parkour leaderboard (ajParkour) ─────────────────────────────
-# /lobbyparkour setup        puts the start plate and its hologram at
-#                             your feet (shows each player's best and rank)
-# /lobbyparkour leaderboard  puts the leaderboard hologram where you
-#                             stand (add "move" to move it, "remove" to
-#                             take it away)
-# /lobbyparkour hologram move|remove  moves the start plate's hologram
-#                             to where you stand, or takes it away
-# Clicking either hologram opens the top 10. Needs PlaceholderAPI.
+# ── Parkour ─────────────────────────────────────────────────────
+# Infinite parkour, built into the lobby: step on the start plate (or
+# type /parkour) and blocks appear in the air one jump ahead, inside the
+# parkour area. The next block sparkles, with a dotted arc showing the
+# jump. Falling ends the run. Scores are kept in parkour-scores.yml (the
+# first time, ajParkour's scores are brought over).
+#   /lobbyparkour setup              start plate (and its hologram) here
+#   /lobbyparkour area pos1 / pos2   the two corners of the area the
+#                                    course is built in (the first time,
+#                                    they're taken from ajParkour)
+#   /lobbyparkour area return        where players go after a run
+#   /lobbyparkour leaderboard        the leaderboard hologram here
 parkour:
   # How many of the best scores the leaderboard hologram lists (0-10).
   hologram-top: 5
   # How far down the leaderboard to look for a player's rank.
   rank-search: 100
+  # Blocks the course is made of (a random one each jump).
+  blocks:
+    - PURPLE_CONCRETE
+    - MAGENTA_CONCRETE
+    - PINK_CONCRETE
+    - PURPLE_WOOL
+    - MAGENTA_WOOL
+  # A run ends after this long without reaching a new block.
+  idle-seconds: 30
+  # Jump lengths (centre to centre, 2-5 blocks) get longer as the score
+  # goes up: easy until medium-from, then medium, hard, expert.
+  jumps:
+    medium-from: 5
+    hard-from: 25
+    expert-from: 50
+    easy-min: 2
+    easy-max: 2
+    medium-min: 3
+    medium-max: 3
+    hard-min: 3
+    hard-max: 4
+    expert-min: 4
+    expert-max: 5
 
 
 # ── Playtime leaderboard ────────────────────────────────────────

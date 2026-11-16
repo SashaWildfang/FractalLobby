@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 19
+messages-version: 20
 
 theme:
   primary: "#B266FF"
@@ -462,7 +462,7 @@ afk:
   below-name: "<icon> <#FF5A5A><bold>AFK</bold>"
   # In place of the rank above the head and in the tab list while AFK (\uE2A0 = the pack's light red AFK badge)
   tag: "<white>\uE2A0</white> "
-  # /afk (only the player sees these)
+  # Only the player sees these: "on" after /afk, "off" whenever they come back (moving, chatting, /afk...)
   "on": "<prefix><secondary>You're now <#FF7590>AFK</#FF7590>. <muted>Move or type <white>/afk</white> to come back."
   "off": "<prefix><secondary>Welcome back! You're no longer AFK."
 
@@ -531,7 +531,31 @@ parkour:
   leaderboard-moved: "<prefix><good>Parkour leaderboard hologram moved to where you're standing."
   hologram-moved: "<prefix><good>Start plate hologram moved to where you're standing."
   hologram-removed: "<prefix><secondary>Start plate hologram removed. <muted>/lobbyparkour setup puts it back."
-  unavailable: "<prefix><bad>The parkour leaderboard needs ajParkour and PlaceholderAPI."
+  area-set: "<prefix><good>Parkour <which> set. <muted>Area: <white><size></white> blocks."   # <which> <size>
+  # The run itself. <score> <time> <best>
+  game:
+    start: "<prefix><secondary>Parkour started! <muted>Your best is <white><best></white>. Jump to the sparkling block!"
+    fell: "<prefix><secondary>You fell! <muted>Score <white><score></white> in <white><time></white>."
+    idle: "<prefix><secondary>Run over: you stood still too long. <muted>Score <white><score></white>."
+    left: "<prefix><secondary>Run over. <muted>Score <white><score></white>."
+    new-best: "<prefix><good>New personal best: <white><score></white> jumps!"
+    beating-best: "<good>You beat your best!"
+    # Everyone sees this when someone takes first place. <player> <score>
+    record: "<prefix><primary><player></primary> <secondary>set a new parkour record of <white><score></white> jumps!"
+    no-area: "<prefix><bad>The parkour isn't set up yet. <muted>Staff: /lobbyparkour area pos1 and pos2."
+    no-room: "<prefix><bad>There's no room for the parkour right now. Try again in a moment."
+  # The sidebar while running (the lobby one comes back after). <score> <time> <best> <record>
+  sidebar:
+    title: "<brand><bold>Parkour</bold></brand>"
+    lines:
+      - ""
+      - "<muted>Score: <white><score>"
+      - "<muted>Time: <white><time>"
+      - ""
+      - "<muted>Your best: <primary><best>"
+      - "<muted>Record: <accent><record>"
+      - ""
+      - "<dark_gray>Fall to end your run"
   # Above the start plate. Each player sees their own best and rank. <score> <rank>
   hologram:
     title: "<brand><bold>Parkour!</bold></brand>"

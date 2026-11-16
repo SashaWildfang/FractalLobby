@@ -50,6 +50,10 @@ public final class DisplayService {
     /** What each player's nametag currently shows, so teams are only touched when a rank changes. */
     private final Map<UUID, Nametag> nametags = new HashMap<>();
     private final Map<UUID, Component[]> tabShown = new HashMap<>();
+    /** Something else showing on a player's sidebar for now (the parkour board): title and lines. */
+    private final Map<UUID, java.util.function.Supplier<java.util.Map.Entry<Component, List<Component>>>> overrides = new HashMap<>();
+    /** Sidebars made only for an override (the player has the lobby scoreboard turned off). */
+    private final java.util.Set<UUID> overrideOnly = new java.util.HashSet<>();
     private BukkitTask task;
 
     private record Nametag(Component prefix, Component suffix, NamedTextColor color, Component listName) {
@@ -108,6 +112,8 @@ public final class DisplayService {
         if (own != null && player.getScoreboard() == own) player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         nametags.remove(id);
         tabShown.remove(id);
+        overrides.remove(id);
+        overrideOnly.remove(id);
         for (Scoreboard board : boards.values()) {
             Team team = board.getTeam(teamName(id));
             if (team != null) team.unregister();
@@ -115,11 +121,44 @@ public final class DisplayService {
         if (plugin.lobbyConfig().tablist()) player.sendPlayerListHeaderAndFooter(Component.empty(), Component.empty());
     }
 
+    /**
+     * Shows something else on the player's sidebar until {@link #clearSidebarOverride} (the parkour board). The
+     * content is asked for on every update; {@link #refreshSidebar} redraws straight away.
+     */
+    public void setSidebarOverride(Player player, java.util.function.Supplier<java.util.Map.Entry<Component, List<Component>>> content) {
+        overrides.put(player.getUniqueId(), content);
+        refreshSidebar(player);
+    }
+
+    /** Back to the lobby sidebar (or none, if the player has it turned off). */
+    public void clearSidebarOverride(Player player) {
+        if (overrides.remove(player.getUniqueId()) == null) return;
+        if (overrideOnly.remove(player.getUniqueId())) {
+            Sidebar sidebar = sidebars.remove(player.getUniqueId());
+            if (sidebar != null) sidebar.remove();
+        }
+        refreshSidebar(player);
+    }
+
+    public boolean hasSidebarOverride(Player player) {
+        return overrides.containsKey(player.getUniqueId());
+    }
+
+    public void refreshSidebar(Player player) {
+        if (boards.containsKey(player.getUniqueId())) update(player);
+    }
+
     /** Shows or hides one player's sidebar (their scoreboard setting). The tab list and nametags stay. */
     public void showSidebar(Player player, boolean show) {
         Scoreboard board = boards.get(player.getUniqueId());
         if (board == null) return;
         Sidebar sidebar = sidebars.get(player.getUniqueId());
+        if (overrides.containsKey(player.getUniqueId())) {
+            // Mid-run: the parkour board stays; this decides what's left once it goes.
+            if (show) overrideOnly.remove(player.getUniqueId());
+            else overrideOnly.add(player.getUniqueId());
+            return;
+        }
         if (!show && sidebar != null) {
             sidebar.remove();
             sidebars.remove(player.getUniqueId());
@@ -171,7 +210,19 @@ public final class DisplayService {
                 plugin.getServer().getOnlinePlayers().size(), player.getName());
 
         Sidebar sidebar = sidebars.get(player.getUniqueId());
-        if (sidebar != null) {
+        var override = overrides.get(player.getUniqueId());
+        if (override != null) {
+            Scoreboard board = boards.get(player.getUniqueId());
+            if (sidebar == null && board != null) {
+                sidebar = new Sidebar(board);
+                sidebars.put(player.getUniqueId(), sidebar);
+                overrideOnly.add(player.getUniqueId());
+            }
+            if (sidebar != null) {
+                var content = override.get();
+                sidebar.update(content.getKey(), content.getValue());
+            }
+        } else if (sidebar != null) {
             Component title = messages.render(placeholders(player, messages.raw("scoreboard.title")), tags);
             List<Component> lines = new ArrayList<>();
             List<Boolean> centered = new ArrayList<>();

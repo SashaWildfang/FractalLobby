@@ -121,7 +121,7 @@ public final class Lobby extends JavaPlugin implements Listener {
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -301,7 +301,19 @@ public final class Lobby extends JavaPlugin implements Listener {
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.moveHologram(player, "hologram"))))
                             .then(Commands.literal("remove")
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "hologram")))))
+                    .then(Commands.literal("area")
+                            .then(Commands.literal("pos1")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.setArea(player, "pos1"))))
+                            .then(Commands.literal("pos2")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.setArea(player, "pos2"))))
+                            .then(Commands.literal("return")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.setArea(player, "return")))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
+
+            commands.register(Commands.literal("parkour")
+                    .requires(source -> source.getSender().hasPermission("lobby.cmd.parkour"))
+                    .executes(context -> asPlayer(context.getSource(), player -> parkour.game().toggle(player)))
+                    .build(), "Start (or stop) a parkour run", List.of());
 
             commands.register(Commands.literal("lobbyplaytime")
                     .requires(source -> source.getSender().hasPermission("lobby.admin"))
