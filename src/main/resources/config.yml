@@ -489,6 +489,9 @@ join-items:
   clear-inventory: true
   # Only players with lobby.staff can move, drop or swap items.
   lock-inventory: true
+  # No crafting: the 2x2 grid in the inventory takes no items and the
+  # recipe book stays empty and closed (the resource pack hides both).
+  no-crafting: true
   # Nobody can put items in their off hand (staff included).
   block-off-hand: true
 

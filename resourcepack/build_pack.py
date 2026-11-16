@@ -18,7 +18,7 @@ json.dump({"providers": [p for p in font['providers'] if p.get('file', '').start
 subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_gui.py'), MENUS, OUT], check=True)
 
 # 3. slate colours for the vanilla greys, so inventories match Survival's menus
-SLATE = {198: (0x4b, 0x4f, 0x65), 196: (0x4b, 0x4f, 0x65), 255: (0x6a, 0x6f, 0x8d), 252: (0x6a, 0x6f, 0x8d),
+SLATE = {198: (0x4b, 0x4f, 0x65), 197: (0x4b, 0x4f, 0x65), 196: (0x4b, 0x4f, 0x65), 255: (0x6a, 0x6f, 0x8d), 252: (0x6a, 0x6f, 0x8d),
          139: (0x38, 0x3b, 0x4f), 85: (0x31, 0x35, 0x4b), 55: (0x23, 0x25, 0x36)}
 def slate(img):
     px = img.load()
@@ -27,15 +27,34 @@ def slate(img):
             r, g, b, a = px[x, y]
             if a and r == g == b and r in SLATE: px[x, y] = SLATE[r] + (a,)
     return img
-for name in ('inventory', 'generic_54'):
-    os.makedirs(f'{OUT}/assets/minecraft/textures/gui/container', exist_ok=True)
-    slate(Image.open(f'{VANILLA}/assets/minecraft/textures/gui/container/{name}.png').convert('RGBA')) \
-        .save(f'{OUT}/assets/minecraft/textures/gui/container/{name}.png')
+# every container screen, the creative menu backgrounds and its tabs and scroller
+for folder in ('container', 'container/creative_inventory', 'sprites/container/creative_inventory'):
+    src, dst = f'{VANILLA}/assets/minecraft/textures/gui/{folder}', f'{OUT}/assets/minecraft/textures/gui/{folder}'
+    os.makedirs(dst, exist_ok=True)
+    for f in sorted(os.listdir(src)):
+        if f.endswith('.png') and f != 'gamemode_switcher.png':
+            slate(Image.open(f'{src}/{f}').convert('RGBA')).save(f'{dst}/{f}')
+# no crafting in the lobby: the 2x2 grid, arrow and result slot become plain panel, the recipe book button is gone
+inv = Image.open(f'{OUT}/assets/minecraft/textures/gui/container/inventory.png')
+for x in range(95, 172):
+    for y in range(15, 56): inv.putpixel((x, y), SLATE[198] + (255,))
+inv.save(f'{OUT}/assets/minecraft/textures/gui/container/inventory.png')
+os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book', exist_ok=True)
+for f in ('button', 'button_highlighted'):
+    Image.new('RGBA', (20, 18), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book/{f}.png')
 gui = f'{OUT}/assets/fractal/textures/gui'
 for f in os.listdir(gui): slate(Image.open(f'{gui}/{f}').convert('RGBA')).save(f'{gui}/{f}')
 # no "Inventory" label over the player's items in menus
 os.makedirs(f'{OUT}/assets/minecraft/lang')
-json.dump({"container.inventory": ""}, open(f'{OUT}/assets/minecraft/lang/en_us.json', 'w'))
+# and no "Crafting" label over the (now empty) crafting corner; creative tab titles in white, readable on slate
+GROUPS = {'buildingBlocks': 'Building Blocks', 'coloredBlocks': 'Colored Blocks', 'combat': 'Combat',
+          'foodAndDrink': 'Food & Drinks', 'functional': 'Functional Blocks', 'hotbar': 'Saved Hotbars',
+          'ingredients': 'Ingredients', 'inventory': 'Survival Inventory', 'natural': 'Natural Blocks',
+          'op': 'Operator Utilities', 'redstone': 'Redstone Blocks', 'search': 'Search Items',
+          'spawnEggs': 'Spawn Eggs', 'tools': 'Tools & Utilities'}
+lang = {"container.inventory": "", "container.crafting": ""}
+lang.update({f'itemGroup.{k}': '\u00a7f' + v for k, v in GROUPS.items()})
+json.dump(lang, open(f'{OUT}/assets/minecraft/lang/en_us.json', 'w'), ensure_ascii=False, indent=1)
 
 # 4. the Survival realm icon (item model fractal:survival)
 ART = ["................",

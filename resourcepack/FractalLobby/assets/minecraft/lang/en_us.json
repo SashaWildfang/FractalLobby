@@ -1,1 +1,18 @@
-{"container.inventory": ""}
+{
+ "container.inventory": "",
+ "container.crafting": "",
+ "itemGroup.buildingBlocks": "§fBuilding Blocks",
+ "itemGroup.coloredBlocks": "§fColored Blocks",
+ "itemGroup.combat": "§fCombat",
+ "itemGroup.foodAndDrink": "§fFood & Drinks",
+ "itemGroup.functional": "§fFunctional Blocks",
+ "itemGroup.hotbar": "§fSaved Hotbars",
+ "itemGroup.ingredients": "§fIngredients",
+ "itemGroup.inventory": "§fSurvival Inventory",
+ "itemGroup.natural": "§fNatural Blocks",
+ "itemGroup.op": "§fOperator Utilities",
+ "itemGroup.redstone": "§fRedstone Blocks",
+ "itemGroup.search": "§fSearch Items",
+ "itemGroup.spawnEggs": "§fSpawn Eggs",
+ "itemGroup.tools": "§fTools & Utilities"
+}
