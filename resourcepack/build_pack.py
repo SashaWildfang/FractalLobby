@@ -543,3 +543,21 @@ json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/radio/bla
 genre('hip-hop', art([".....####.....", "....#WWWW#....", "...#WGWGWW#...", "...#WWWWWW#...", "...#WGWGWW#...", "....#WWWW#....", ".....####.....",
                       "......##......", "..##..##..##..", "...##.##.##...", "....######....", "......##......", ".....####....."],
                      {'#': SLATE_D, 'W': (0xe1, 0xe3, 0xee), 'G': (0x8a, 0x8f, 0xae)}))
+
+# 13. the Radio's purple boss bar: a dark track like a music staff, filled with the brand gradient
+os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/boss_bar', exist_ok=True)
+track = Image.new('RGBA', (182, 5), (0x23, 0x25, 0x36, 255))
+for x in range(182):
+    for y in (0, 4): track.putpixel((x, y), (0x12, 0x13, 0x1c, 255))
+    if x % 3 == 0 and 2 <= x <= 179: track.putpixel((x, 2), (0x3d, 0x40, 0x5a, 255))   # a dotted staff line
+    if x % 26 == 13: track.putpixel((x, 1), (0x4b, 0x4f, 0x65, 255)); track.putpixel((x, 3), (0x4b, 0x4f, 0x65, 255))  # bar lines
+for y in range(5): track.putpixel((0, y), (0x12, 0x13, 0x1c, 255)); track.putpixel((181, y), (0x12, 0x13, 0x1c, 255))
+track.save(f'{OUT}/assets/minecraft/textures/gui/sprites/boss_bar/purple_background.png')
+fill = Image.new('RGBA', (182, 5), (0, 0, 0, 0))
+for x in range(182):
+    c = mix(hexc('#8E2DE2'), hexc('#FF7BE5'), x / 181)
+    fill.putpixel((x, 0), (0x2a, 0x17, 0x40, 255)); fill.putpixel((x, 4), (0x2a, 0x17, 0x40, 255))
+    fill.putpixel((x, 1), mix(c, (255, 255, 255), 0.4) + (255,))
+    fill.putpixel((x, 2), c + (255,)); fill.putpixel((x, 3), mix(c, (0, 0, 0), 0.15) + (255,))
+for y in range(5): fill.putpixel((0, y), (0x2a, 0x17, 0x40, 255))
+fill.save(f'{OUT}/assets/minecraft/textures/gui/sprites/boss_bar/purple_progress.png')
