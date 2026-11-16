@@ -20,4 +20,12 @@ class RealmLayoutTest {
         assertArrayEquals(new int[] {22}, RealmSelector.centered(1, 5));
         assertNull(RealmSelector.centered(10, 3));
     }
+
+    @Test
+    void customTitleDrawsTheBackgroundForTheRows() {
+        var title = RealmSelector.customGuiTitle(3, net.kyori.adventure.text.Component.text("Realms"));
+        var background = (net.kyori.adventure.text.TextComponent) title.children().getFirst();
+        org.junit.jupiter.api.Assertions.assertEquals("\uF001\uF103\uF002", background.content());
+        org.junit.jupiter.api.Assertions.assertEquals("fractal:lobby", background.font().asString());
+    }
 }

@@ -523,6 +523,10 @@ realm-selector:
   # realm sits in the middle and they close up when one is hidden. false =
   # each realm stays in its own slot below.
   auto-center: true
+  # Draw the menu with Fractal's own background instead of black panes.
+  # Needs FractalLobbyGUI.zip in the server resource pack (with Nexo: put
+  # it in plugins/Nexo/pack/external_packs and run /nexo reload pack).
+  custom-gui: false
   # Each realm shows Online, Full, Maintenance or Offline. Lobby pings
   # each realm at the address the proxy has for it (or "address" below).
   # Offline and full realms can't be joined; lobby.bypass.full and

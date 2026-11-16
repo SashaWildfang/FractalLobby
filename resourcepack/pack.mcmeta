@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "supported_formats": [
+      34,
+      99
+    ],
+    "description": "Fractal Lobby menus"
+  }
+}

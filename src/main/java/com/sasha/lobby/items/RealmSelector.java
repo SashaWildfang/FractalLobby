@@ -10,6 +10,7 @@ import com.sasha.lobby.proxy.ServerStatus;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
@@ -81,9 +82,10 @@ public final class RealmSelector implements Listener {
     public void open(Player player) {
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
         Menu menu = new Menu(player);
-        menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, plugin.messages().component("realm-selector.title"));
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        Component title = plugin.messages().component("realm-selector.title");
+        if (config.customGui()) title = customGuiTitle(config.rows(), title);
+        menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, title);
+        ItemStack filler = filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
         draw(menu);
         player.openInventory(menu.inventory);
@@ -99,11 +101,32 @@ public final class RealmSelector implements Listener {
                 || state == ServerStatus.State.MAINTENANCE && !viewer.hasPermission(BYPASS_MAINTENANCE);
     }
 
+    /** The font in the Fractal Lobby menus resource pack (FractalLobbyGUI.zip). */
+    private static final Key GUI_FONT = Key.key("fractal", "lobby");
+
+    /**
+     * The menu's title with the resource pack's background drawn behind it: move 8px left to the menu's
+     * edge, draw the background for this many rows (U+F101 to U+F106), then move back so the title text
+     * sits where it normally does. White, so the background isn't tinted like normal title text.
+     */
+    static Component customGuiTitle(int rows, Component title) {
+        String background = "\uF001" + (char) (0xF100 + rows) + "\uF002";
+        return Component.text().append(Component.text(background).font(GUI_FONT).color(NamedTextColor.WHITE))
+                .append(title).build();
+    }
+
+    /** Black panes in empty slots, or nothing with the custom background (it draws its own slots). */
+    private ItemStack filler() {
+        if (plugin.lobbyConfig().selector().customGui()) return null;
+        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
+        filler.editMeta(meta -> meta.setHideTooltip(true));
+        return filler;
+    }
+
     private void draw(Menu menu) {
         Messages messages = plugin.messages();
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        ItemStack filler = filler();
 
         // Which realms this player sees, in slot order.
         List<LobbyConfig.SelectorServer> shown = new ArrayList<>();
