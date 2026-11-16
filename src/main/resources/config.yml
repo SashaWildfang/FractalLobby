@@ -540,7 +540,9 @@ realm-selector:
     # under maintenance (works with most maintenance plugins).
     maintenance-words: ["maintenance"]
     # Leave offline realms out of the menu, and realms under maintenance
-    # too (except for players with lobby.bypass.maintenance).
+    # too (except for players with lobby.bypass.maintenance). A realm only
+    # shows once it's been checked, so one that's down never flashes up
+    # (a realm the proxy doesn't know, with no "address", never shows).
     hide-down-realms: true
   realms:
     survival:

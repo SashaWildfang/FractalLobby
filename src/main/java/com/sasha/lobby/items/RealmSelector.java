@@ -129,6 +129,7 @@ public final class RealmSelector implements Listener {
     private List<LobbyConfig.SelectorServer> shown(Player viewer) {
         List<LobbyConfig.SelectorServer> shown = new ArrayList<>();
         for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
+            if (plugin.lobbyConfig().selector().hideDownRealms() && !plugin.serverStatus().known(realm.server())) continue;
             if (!hidden(viewer, plugin.serverStatus().status(realm.server()).state())) shown.add(realm);
         }
         shown.sort(java.util.Comparator.comparingInt(LobbyConfig.SelectorServer::slot));

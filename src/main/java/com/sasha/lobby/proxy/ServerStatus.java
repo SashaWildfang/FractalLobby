@@ -85,7 +85,22 @@ public final class ServerStatus {
     }
 
     void proxyAddress(String server, String host, int port) {
-        proxyAddresses.put(key(server), InetSocketAddress.createUnresolved(host, port));
+        InetSocketAddress before = proxyAddresses.put(key(server), InetSocketAddress.createUnresolved(host, port));
+        // First time we can reach it: check it now instead of at the next refresh.
+        if (before == null && plugin.lobbyConfig().selector().statusEnabled()) {
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::pingAll);
+        }
+    }
+
+    /**
+     * Whether we know how a realm is doing yet: it's been checked at least once (or status checks are off,
+     * or config.yml marks it as under maintenance). Until then the realm selector leaves it out, so a realm
+     * that's down doesn't flash up in the menu after a restart.
+     */
+    public boolean known(String server) {
+        if (!plugin.lobbyConfig().selector().statusEnabled()) return true;
+        LobbyConfig.SelectorServer realm = realm(server);
+        return realm != null && realm.maintenance() || statuses.containsKey(key(server));
     }
 
     private LobbyConfig.SelectorServer realm(String server) {
