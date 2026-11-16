@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 27
+messages-version: 28
 
 theme:
   primary: "#B266FF"
@@ -201,18 +201,15 @@ settings:
     "off": "<bad>Off"
   option: "<dark_gray>  <gray><option>"   # each option that isn't picked
   option-selected: "<primary>▸ <option>"    # the picked one
-  current: "<white>Now: <option>"          # the pane under each setting
+  current: "<white>Now: <option>"          # on the switch under each setting
   hint:
     - "<accent><left-click></accent> <muted>for the next option"
     - "<accent><right-click></accent> <muted>to go back"
   toggle-hint:
     - "<accent><click></accent> <muted>to switch"
-  header:
-    name: "<brand><bold>Settings</bold></brand>"
-    lore:
-      - "<muted>Lobby settings only apply here."
-      - "<muted>Network settings follow you"
-      - "<muted>to every realm."
+  # Under each setting's options: the switch below it is what to click.
+  switch-below:
+    - "<muted>Use the switch below to change it."
   lobby-section:
     name: "<primary>Lobby <dark_gray>→"
     lore:

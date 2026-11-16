@@ -19,15 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The runner's guide drawn with the lobby resource pack: a glowing frame on top of the next block (fractal:parkour/target)
- * and a row of glowing orbs along the jump (fractal:parkour/dot), only the runner can see them. The frame breathes and a
- * wave runs along the orbs towards the next block. Display entities, so they move smoothly from jump to jump.
+ * The runner's guide drawn with the lobby resource pack: an arrow bobbing above the next block, pointing down at it
+ * (fractal:parkour/arrow), and a row of small glowing orbs along the jump (fractal:parkour/dot); only the runner can
+ * see them. A wave runs along the orbs towards the next block. Display entities, so they move smoothly between jumps.
  */
 final class Guide {
 
     static final String TAG = "lobby_parkour_guide";
     private static final int DOTS = 9;
-    private static final Key TARGET = Key.key("fractal", "parkour/target");
+    private static final Key ARROW = Key.key("fractal", "parkour/arrow");
+    /** The orbs' size, and how much the wave along them grows and shrinks them. */
+    private static final float DOT_SIZE = 0.2f, DOT_WAVE = 0.06f;
+    /** The arrow: its size, how high its middle is above the block's top, and how far it bobs. */
+    private static final float ARROW_SIZE = 0.75f, ARROW_HEIGHT = 1.05f, ARROW_BOB = 0.3f;
     private static final Key DOT = Key.key("fractal", "parkour/dot");
 
     private final Plugin plugin;
@@ -44,10 +48,10 @@ final class Guide {
     /** Called every 4 game ticks: puts the guide on the jump from {@code from} to {@code to} and animates it. */
     void update(Block from, Block to, long step) {
         World world = to.getWorld();
-        Location targetAt = to.getLocation().add(0.5, 0.5, 0.5);
+        Location targetAt = to.getLocation().add(0.5, 1 + ARROW_HEIGHT, 0.5);
         if (target == null || !target.isValid() || target.getWorld() != world) {
             remove();
-            target = spawn(targetAt, TARGET, Display.Billboard.FIXED);
+            target = spawn(targetAt, ARROW, Display.Billboard.VERTICAL);
             for (int i = 0; i < DOTS; i++) dots.add(spawn(arc(from, to, i), DOT, Display.Billboard.CENTER));
             shownFor = to;
         } else if (!to.equals(shownFor)) {
@@ -55,15 +59,12 @@ final class Guide {
             for (int i = 0; i < dots.size(); i++) dots.get(i).teleport(arc(from, to, i));
             shownFor = to;
         }
-        // The frame breathes in and out over a second.
-        if (step % 5 == 0) {
-            float s = (step / 5) % 2 == 0 ? 1.06f : 0.98f;
-            animate(target, s, 0.10f, 20);
-        }
+        // The arrow bobs up and down, half a second each way.
+        if (step % 5 == 0) animate(target, ARROW_SIZE, (step / 5) % 2 == 0 ? ARROW_BOB : 0f, 10);
         // A wave of light runs along the orbs towards the next block.
         for (int i = 0; i < dots.size(); i++) {
             double wave = Math.sin(step * 0.9 - i * 0.8);
-            animate(dots.get(i), (float) (0.32 + 0.12 * wave), 0f, 4);
+            animate(dots.get(i), (float) (DOT_SIZE + DOT_WAVE * wave), 0f, 4);
         }
     }
 
@@ -98,15 +99,16 @@ final class Guide {
             display.setVisibleByDefault(false);
             display.addScoreboardTag(TAG);
             display.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(),
-                    new Vector3f(model == DOT ? 0.32f : 1f), new AxisAngle4f()));
+                    new Vector3f(model == DOT ? DOT_SIZE : ARROW_SIZE), new AxisAngle4f()));
             player.showEntity(plugin, display);
         });
     }
 
+    /** Moves a display to this size and height (above where it stands) over {@code ticks}. */
     private static void animate(ItemDisplay display, float scale, float lift, int ticks) {
         display.setInterpolationDelay(0);
         display.setInterpolationDuration(ticks);
-        display.setTransformation(new Transformation(new Vector3f(0, lift * (scale - 1f) * 10f, 0), new AxisAngle4f(),
+        display.setTransformation(new Transformation(new Vector3f(0, lift, 0), new AxisAngle4f(),
                 new Vector3f(scale), new AxisAngle4f()));
     }
 

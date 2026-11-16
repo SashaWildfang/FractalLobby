@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Each player's settings (the comparator join item). Lobby settings are saved on the player: some choose
  * whose messages or players to see (Everyone, Donors Only, Staff Only, Nobody), the rest are On or Off.
- * Clicking one moves to its next option (right-click goes back). Network settings (private messages,
+ * Clicking the switch under one moves it to its next option (right-click goes back). Network settings (private messages,
  * message sounds, who you ignore, and staff's social spy, command spy and vanish) belong to Core on the
  * proxy, so they follow the player to every realm; they show when Core is installed.
  */
@@ -64,13 +64,13 @@ public final class Settings implements Listener {
 
     /** One setting: its id in messages.yml, its icon, its menu slot and its options. */
     public enum Setting {
-        JOIN_MESSAGES("join-messages", Material.OAK_DOOR, 10, Kind.AUDIENCE),
-        LEAVE_MESSAGES("leave-messages", Material.IRON_DOOR, 11, Kind.AUDIENCE),
-        CHAT("chat", Material.WRITABLE_BOOK, 12, Kind.AUDIENCE),
-        PLAYER_VISIBILITY("player-visibility", Material.ENDER_EYE, 13, Kind.AUDIENCE),
-        MENTIONS("mentions", Material.NOTE_BLOCK, 14, Kind.TOGGLE),
-        DOUBLE_JUMP("double-jump", Material.FEATHER, 15, Kind.TOGGLE),
-        SCOREBOARD("scoreboard", Material.PAINTING, 16, Kind.TOGGLE);
+        JOIN_MESSAGES("join-messages", Material.OAK_DOOR, 1, Kind.AUDIENCE),
+        LEAVE_MESSAGES("leave-messages", Material.IRON_DOOR, 2, Kind.AUDIENCE),
+        CHAT("chat", Material.WRITABLE_BOOK, 3, Kind.AUDIENCE),
+        PLAYER_VISIBILITY("player-visibility", Material.ENDER_EYE, 4, Kind.AUDIENCE),
+        MENTIONS("mentions", Material.NOTE_BLOCK, 5, Kind.TOGGLE),
+        DOUBLE_JUMP("double-jump", Material.FEATHER, 6, Kind.TOGGLE),
+        SCOREBOARD("scoreboard", Material.PAINTING, 7, Kind.TOGGLE);
 
         final String id;
         final Material icon;
@@ -207,11 +207,11 @@ public final class Settings implements Listener {
     // ---------------------------------------------------------------- menu
 
     /*
-     * Six rows: the header on top; Lobby settings (icons, then panes showing the choice); Network settings
-     * from Core (icons, then panes); Back and Reset at the bottom. Each row of icons starts with a label.
+     * Six rows: Lobby settings (icons, then the switches under them); a row of space; Network settings from
+     * Core (icons, then switches); Back and Reset at the bottom. Each row of icons starts with a label. Only the
+     * switches are clicked; the icons above say what each one is.
      */
-    private static final int HEADER = 4;
-    private static final int LOBBY_LABEL = 9;
+    private static final int LOBBY_LABEL = 0;
     private static final int NETWORK_LABEL = 27;
     private static final int NETWORK_UNAVAILABLE = 31;
     private static final int RESET = 49;
@@ -314,7 +314,6 @@ public final class Settings implements Listener {
 
     private void drawSettings(Player player, Menu menu) {
         Messages messages = plugin.messages();
-        menu.inventory.setItem(HEADER, styled(Profile.button(messages, Material.COMPARATOR, "settings.header"), "header"));
         menu.inventory.setItem(LOBBY_LABEL, styled(Profile.button(messages, Material.GRASS_BLOCK, "settings.lobby-section"), "lobby"));
         menu.inventory.setItem(NETWORK_LABEL, styled(Profile.button(messages, Material.ENDER_PEARL, "settings.network-section"), "network"));
 
@@ -357,7 +356,7 @@ public final class Settings implements Listener {
                     Placeholder.component("option", name)));
         }
         lore.add(Component.empty());
-        lore.addAll(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
+        lore.addAll(messages.lore("settings.switch-below"));
 
         ItemStack icon = ItemStack.of(material);
         icon.editMeta(meta -> {
@@ -369,13 +368,16 @@ public final class Settings implements Listener {
 
         ItemStack pane = ItemStack.of(paneFor(current));
         pane.editMeta(meta -> {
-            meta.displayName(messages.item("settings.current",
+            meta.displayName(messages.item("settings." + id + ".name"));
+            List<Component> paneLore = new ArrayList<>();
+            paneLore.add(messages.item("settings.current",
                     Placeholder.component("option", messages.component("settings.options." + current))));
-            meta.lore(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
+            paneLore.add(Component.empty());
+            paneLore.addAll(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
+            meta.lore(paneLore);
         });
         menu.inventory.setItem(slot + 9, styled(pane, paneModel(current)));
-        menu.actions.put(slot, action);
-        menu.actions.put(slot + 9, action);
+        menu.actions.put(slot + 9, action); // only the switch; the icon above just says what it is
     }
 
     /** The Ignored Players button (shown in the profile): how many, who, and a click opens the list. */
