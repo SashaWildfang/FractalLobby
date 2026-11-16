@@ -818,3 +818,24 @@ lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
 lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/icon_store.png", "ascent": 8, "height": 9, "chars": [""]})
 lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/icon_discord.png", "ascent": 8, "height": 10, "chars": [""]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+# Discord icon: the logo cut out of Survival's Discord banner (CrazySurvival pack)
+banner = Image.open(f'{ICONS}/../gui/ui/announcements/discord.png').convert('RGBA')
+dc = Image.new('RGBA', (23, 17), (0, 0, 0, 0))
+for x in range(23):
+    for y in range(17):
+        r, g, b, a = banner.getpixel((28 + x, 19 + y))
+        if min(r, g, b) > 0xd8: dc.putpixel((x, y), (r, g, b, 255))
+dc = dc.crop(dc.getbbox())
+padded = Image.new('RGBA', (dc.width + 2, dc.height + 2), (0, 0, 0, 0)); padded.alpha_composite(dc, (1, 1)); dc = padded.copy()
+for x in range(padded.width):
+    for y in range(padded.height):
+        if padded.getpixel((x, y))[3]: continue
+        if any(0 <= x + dx < padded.width and 0 <= y + dy < padded.height and padded.getpixel((x + dx, y + dy))[3]
+               for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            dc.putpixel((x, y), (0x31, 0x49, 0x8c, 255))
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+dc.save(f'{OUT}/assets/fractal/textures/gui/icon_discord.png')
+for p in lobby_font['providers']:
+    if p.get('file') == 'fractal:gui/icon_discord.png': p.update(height=9, ascent=8)
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+print('discord icon', dc.size)
