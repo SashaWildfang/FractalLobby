@@ -39,6 +39,10 @@ inv = Image.open(f'{OUT}/assets/minecraft/textures/gui/container/inventory.png')
 for x in range(95, 172):
     for y in range(15, 56): inv.putpixel((x, y), SLATE[198] + (255,))
 inv.save(f'{OUT}/assets/minecraft/textures/gui/container/inventory.png')
+# no armour or shield outlines in the empty equipment slots
+os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/container/slot', exist_ok=True)
+for f in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'):
+    Image.new('RGBA', (16, 16), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/container/slot/{f}.png')
 os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book', exist_ok=True)
 for f in ('button', 'button_highlighted'):
     Image.new('RGBA', (20, 18), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book/{f}.png')
