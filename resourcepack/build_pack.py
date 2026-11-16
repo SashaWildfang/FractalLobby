@@ -583,3 +583,34 @@ model('audience-donors', art(CROWN2, {'#': lambda x, y, w, h: mix(hexc('#FFE680'
 # Staff Only: an orange key
 model('audience-staff', art(["..####........", ".######.......", "##....##......", "##....########", "##....########", "##....##..##.#", ".######...##.#", "..####........"],
                             {'#': lambda x, y, w, h: mix(hexc('#FFB36B'), hexc('#E8893A'), y / (h - 1))}))
+
+# 14. redrawn genre icons and a greyed-out "last page" arrow
+genre('hip-hop', art(["...HHHHHHHH...", "...H......H...", "BBBBBBBBBBBBBB", "BSSSSBPPBSSSSB", "BSCCSBPPBSCCSB", "BSCCSBBBBSCCSB", "BSSSSBYYBSSSSB", "BBBBBBBBBBBBBB"],
+                     {'H': (0xc9, 0xcc, 0xdb), 'B': (0x6a, 0x6f, 0x8d), 'S': (0xe1, 0xe3, 0xee), 'C': (0x2c, 0x2e, 0x3e), 'P': hexc('#B266FF'), 'Y': hexc('#FFE680')}, shade=False))
+genre('memes', art(["...######...", ".##########.", ".##########.", "############", "#KKKKKKKKKK#", "#KKKK##KKKK#", "##KK####KK##", "############",
+                    "##K######K##", ".##KKKKKK##.", ".##########.", "...######..."], {'#': (0xff, 0xd8, 0x4a), 'K': (0x22, 0x23, 0x30)}))
+genre('tv-film', art(["...A......A...", "....A....A....", ".....A..A.....", "FFFFFFFFFFFFFF", "FSSSSSSSSSFFKF", "FSSSSSSSSSFFFF", "FSSSSSSSSSFFKF",
+                      "FSSSSSSSSSFFFF", "FSSSSSSSSSFFFF", "FFFFFFFFFFFFFF", ".FF........FF."],
+                     {'A': (0xc9, 0xcc, 0xdb), 'F': (0x5a, 0x5f, 0x7a), 'K': hexc('#FFE680'),
+                      'S': lambda x, y, w, h: mix(hexc('#7FE7FF'), hexc('#B266FF'), (x + y) / 14)}, shade=False))
+genre('games', art([".DDDD....DDDD.", "DDDDDDDDDDDDDD", "DDWDDDDDDDDRDD", "DWWWDDDDDDGDBD", "DDWDDDDDDDDYDD", "DDDDDDDDDDDDDD", "DDDD.DDDD.DDDD", "DDD........DDD", ".D..........D."],
+                   {'D': hexc('#9A7BFF'), 'W': (255, 255, 255), 'R': hexc('#FF5A6E'), 'G': hexc('#9BFFC4'), 'B': hexc('#7FE7FF'), 'Y': GOLD}))
+gtr = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(gtr)
+dr.line([(13, 2), (7, 8)], fill=(0x9a, 0x6a, 0x3c, 255), width=2)
+dr.rectangle((12, 1, 14, 2), fill=(0x4a, 0x2c, 0x10, 255))
+dr.ellipse((1, 8, 8, 14), fill=hexc('#FF5A6E') + (255,)); dr.ellipse((4, 6, 9, 11), fill=hexc('#FF5A6E') + (255,))
+dr.ellipse((2, 9, 4, 11), fill=(0xff, 0x9a, 0xa8, 255)); dr.rectangle((5, 9, 6, 10), fill=(0x22, 0x23, 0x30, 255))
+genre('rock', outline(gtr))
+pno = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(pno)
+dr.rectangle((1, 2, 14, 3), fill=hexc('#B266FF') + (255,))
+dr.rectangle((1, 4, 14, 13), fill=(0xf4, 0xf5, 0xfb, 255))
+for x in (4, 8, 12): dr.line([(x, 4), (x, 13)], fill=(0xa9, 0xae, 0xc8, 255))
+for x in (3, 7, 11): dr.rectangle((x, 4, x + 2, 9), fill=(0x22, 0x23, 0x30, 255))
+genre('classical-jazz', outline(pno))
+off = Image.open(f'{OUT}/assets/fractal/textures/item/menu/next.png').convert('RGBA'); px = off.load()
+for x in range(16):
+    for y in range(16):
+        r, g, b, a = px[x, y]
+        if a and (r, g, b) != (0x1a, 0x1b, 0x26): px[x, y] = (0x62, 0x66, 0x80, a)
+        elif a: px[x, y] = (0x38, 0x3b, 0x4f, a)
+radio_model('next-off', off)
