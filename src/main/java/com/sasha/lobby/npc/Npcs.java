@@ -104,6 +104,14 @@ public final class Npcs implements Listener {
                 }
             }
         }
+        // Realm NPCs join on a right click (the label's mouse icon says so), not any click.
+        for (Npc npc : npcs.values()) {
+            List<String> any = npc.actions.get("ANY_CLICK");
+            if (any == null || any.stream().noneMatch(action -> action.startsWith("realm:"))) continue;
+            npc.actions.computeIfAbsent("RIGHT_CLICK", k -> new ArrayList<>()).addAll(any);
+            npc.actions.remove("ANY_CLICK");
+            changed = true;
+        }
         if (changed) save();
     }
 

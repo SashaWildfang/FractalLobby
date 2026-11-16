@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 31
+messages-version: 32
 
 theme:
   primary: "#B266FF"
@@ -718,7 +718,7 @@ realm-status:
   offline: "<#FF7590>● <#FFB3C1>ᴏꜰꜰʟɪɴᴇ"
   coming-soon: "<#ANIM:shimmer:#FFB36B,#FFE680>ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ</#ANIM>"
 realm-action:
-  online: "<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴄʟɪᴄᴋ ᴛᴏ ᴘʟᴀʏ</#ANIM>"
+  online: "<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ᴘʟᴀʏ</#ANIM>"
   full: "<#8C7BB0>ᴛʀʏ ᴀɢᴀɪɴ ɪɴ ᴀ ᴍɪɴᴜᴛᴇ"
   maintenance: "<#8C7BB0>ʙᴀᴄᴋ ꜱᴏᴏɴ <dark_gray>• <#8C7BB0>ᴄʜᴇᴄᴋ <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ"
   restarting: "<#8C7BB0>ʙᴀᴄᴋ ɪɴ ᴀ ᴍᴏᴍᴇɴᴛ<#ANIM:typewriter:&#8C7BB0>...</#ANIM>"

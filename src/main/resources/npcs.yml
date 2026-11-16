@@ -42,7 +42,7 @@ npcs:
     cooldown: 1.0
     collidable: true
     actions:
-      ANY_CLICK:
+      RIGHT_CLICK:
       - 'realm:survival'
     hologram:
       offset: 0.3
@@ -92,7 +92,7 @@ npcs:
     cooldown: 1.0
     collidable: true
     actions:
-      ANY_CLICK:
+      RIGHT_CLICK:
       - 'realm:prison'
     hologram:
       offset: 0.3
@@ -142,7 +142,7 @@ npcs:
     cooldown: 1.0
     collidable: true
     actions:
-      ANY_CLICK:
+      RIGHT_CLICK:
       - 'realm:ctf'
     hologram:
       offset: 0.3
