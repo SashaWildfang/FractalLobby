@@ -7,6 +7,8 @@ import com.sasha.lobby.Lobby;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+
+import java.util.List;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -24,6 +26,22 @@ public final class MenuStyle {
             "green", "aqua", "blue", "purple", "lavender", "pink", "fractal", "sunset", "ocean", "rainbow");
     private static final java.util.Set<String> TRAIL_ICONS = java.util.Set.of("notes", "clouds", "sparkles", "hearts",
             "snowflakes", "flames", "soul-flames", "magic", "stars", "enchanted", "blossom", "sparks", "totem");
+
+    /** The pack's status emojis, in the order of their glyphs (U+F300 on); never reorder (build_pack.py EMOJIS). */
+    public static final List<String> EMOJIS = List.of("angel", "angry", "begging", "clown", "cool", "crying", "dead",
+            "evil", "eyes", "happy", "heart", "joy", "kiss", "love", "melt", "mindblown", "money", "poop", "sad", "scream",
+            "skull", "sweat", "thinking", "thumbsup", "wink");
+
+    /** The status menu's background: menu rows (3-6) and how many emojis are in its last row (1-7). */
+    public static char status(int rows, int last) {
+        return (char) (0xF1D0 + rows * 8 + last);
+    }
+
+    /** The emoji's glyph in the fractal:lobby font, or 0 if the pack has no such emoji. */
+    public static char emoji(String icon) {
+        int i = EMOJIS.indexOf(icon);
+        return i < 0 ? 0 : (char) (0xF300 + i);
+    }
 
     public static char chatColor(int rows) {
         return (char) (0xF180 + rows);
@@ -71,6 +89,11 @@ public final class MenuStyle {
     /** A trail's particle icon from the pack, if it has one for this trail. */
     public ItemStack trailIcon(ItemStack item, String id) {
         return TRAIL_ICONS.contains(id) ? model(item, "trail/" + id) : item;
+    }
+
+    /** A status's emoji from the pack, if it has one by that name. */
+    public ItemStack statusIcon(ItemStack item, String icon) {
+        return EMOJIS.contains(icon) ? model(item, "status/" + icon) : item;
     }
 
     private ItemStack model(ItemStack item, String path) {

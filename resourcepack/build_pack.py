@@ -858,3 +858,25 @@ for p in lobby_font['providers']:
     if p.get('file') == 'fractal:gui/icon_discord.png': p.update(height=9, ascent=8)
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
 print('discord icon', dc.size)
+
+# 21. status emojis (Survival's chat emojis): item models fractal:status/NAME for the status menu, and font
+# glyphs U+F300 on (fractal:lobby, in the order below) for "Status: <emoji> Happy" under players' names
+EMOJIS = ['angel', 'angry', 'begging', 'clown', 'cool', 'crying', 'dead', 'evil', 'eyes', 'happy', 'heart', 'joy',
+          'kiss', 'love', 'melt', 'mindblown', 'money', 'poop', 'sad', 'scream', 'skull', 'sweat', 'thinking',
+          'thumbsup', 'wink']  # never reorder: the plugin maps names to glyphs by this order (MenuStyle.EMOJIS)
+emoji_dir = f'{ICONS}/../gui/emojis'
+for d in ('textures/item/status', 'models/item/status', 'items/status', 'textures/gui/status'):
+    os.makedirs(f'{OUT}/assets/fractal/{d}', exist_ok=True)
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+for i, name in enumerate(EMOJIS):
+    img = Image.open(f'{emoji_dir}/{name}.png').convert('RGBA')
+    img.save(f'{OUT}/assets/fractal/textures/item/status/{name}.png')
+    img.save(f'{OUT}/assets/fractal/textures/gui/status/{name}.png')
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/status/{name}"}},
+              open(f'{OUT}/assets/fractal/models/item/status/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/status/{name}"}},
+              open(f'{OUT}/assets/fractal/items/status/{name}.json', 'w'))
+    lobby_font['providers'].append({"type": "bitmap", "file": f"fractal:gui/status/{name}.png", "ascent": 8, "height": 9,
+                                    "chars": [chr(0xF300 + i)]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+print('status emojis', len(EMOJIS))

@@ -4,7 +4,8 @@
    "type": "space",
    "advances": {
     "\uf001": -8,
-    "\uf002": -169
+    "\uf002": -169,
+    "\uf003": -4
    }
   },
   {
@@ -657,6 +658,258 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/status_3_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1e9"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ea"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1eb"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ec"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ed"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ee"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_3_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ef"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f1"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f2"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f3"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f4"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f5"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f6"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_4_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f7"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1f9"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1fa"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1fb"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1fc"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1fd"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1fe"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_5_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1ff"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf201"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf202"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf203"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf204"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf205"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf206"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status_6_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf207"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/radio.png",
    "ascent": 29,
    "height": 256,
@@ -734,6 +987,231 @@
    "height": 9,
    "chars": [
     "\uf023"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/angel.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf300"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/angry.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf301"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/begging.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf302"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/clown.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf303"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/cool.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf304"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/crying.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf305"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/dead.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf306"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/evil.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf307"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/eyes.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf308"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/happy.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf309"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/heart.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30a"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/joy.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30b"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/kiss.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30c"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/love.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30d"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/melt.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30e"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/mindblown.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf30f"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/money.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf310"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/poop.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf311"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/sad.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf312"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/scream.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf313"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/skull.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf314"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/sweat.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf315"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/thinking.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf316"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/thumbsup.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf317"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/status/wink.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf318"
    ]
   }
  ]

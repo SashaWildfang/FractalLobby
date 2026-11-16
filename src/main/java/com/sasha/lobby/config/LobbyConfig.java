@@ -42,7 +42,8 @@ public record LobbyConfig(
         Mentions mentions,
         DoubleJump doubleJump,
         Punch punch,
-        Trails trails
+        Trails trails,
+        Statuses statuses
 ) {
 
     public record Spawn(String world, double x, double y, double z, float yaw, float pitch, boolean teleportOnJoin) {
@@ -93,6 +94,13 @@ public record LobbyConfig(
     /** A particle trail. permission "" = everyone. */
     public record Trail(String id, String name, org.bukkit.Particle particle, Material item, String permission,
                         int amount, double speed) {
+    }
+
+    public record Statuses(boolean enabled, List<Status> statuses) {
+    }
+
+    /** A status players can show under their name. icon = the pack's emoji (fractal:status/ICON). permission "" = everyone. */
+    public record Status(String id, String name, String icon, Material item, String permission) {
     }
 
     public record VoidRescue(boolean enabled, double belowY, String sound, float volume, float pitch) {
@@ -297,7 +305,8 @@ public record LobbyConfig(
                         c.getDouble("punch.backward", 0.8),
                         sound(c.getString("punch.sound", "entity.generic.explode")),
                         c.getBoolean("punch.announce", true)),
-                trails(c, log));
+                trails(c, log),
+                statuses(c, log));
     }
 
     private static Trails trails(FileConfiguration c, Logger log) {
@@ -326,6 +335,26 @@ public record LobbyConfig(
             }
         }
         return new Trails(c.getBoolean("trails.enabled", true), List.copyOf(trails));
+    }
+
+    private static Statuses statuses(FileConfiguration c, Logger log) {
+        List<Status> statuses = new ArrayList<>();
+        ConfigurationSection section = section(c, "status.statuses");
+        if (section != null) {
+            for (String id : section.getKeys(false)) {
+                String path = "status.statuses." + id;
+                // c.get (not getString with a fallback) so a config.yml without this section uses the built-in one
+                statuses.add(new Status(id, text(c, path + ".name", id), text(c, path + ".icon", id).trim(),
+                        item(text(c, path + ".item", null), Material.SUNFLOWER, path + ".item", log),
+                        text(c, path + ".permission", "").trim()));
+            }
+        }
+        return new Statuses(!(c.get("status.enabled") instanceof Boolean on) || on, List.copyOf(statuses));
+    }
+
+    private static String text(FileConfiguration c, String path, String fallback) {
+        Object value = c.get(path);
+        return value == null ? fallback : value.toString();
     }
 
     private static ChatColors chatColors(FileConfiguration c, Logger log) {

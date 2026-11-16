@@ -21,6 +21,8 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 - **Void rescue**: falling off the map puts you back on the last block you stood on, with a puff of clouds
 - **Launch pads**: stone pressure plates fling you forward
 - **Spawn**: teleport on join, `/spawn`, `/setspawn`
+- **Status**: players pick one of 25 emoji statuses in My Profile (Happy, Chilling, Thinking...), shown under their name as "Status: (emoji) Happy". Listed in `config.yml` (`status`), open to everyone by default
+- **No crafting**: the inventory's crafting grid and recipe book are hidden and blocked (`join-items.no-crafting`)
 - **`/glow`**: glow in your rank colour without touching the sidebar
 - `&` colour codes, MiniMessage tags, `%luckperms_prefix%` and PlaceholderAPI placeholders all work in the config
 - Every message and label is editable in `messages.yml`, in tiny small-caps text or normal (`format.font`)

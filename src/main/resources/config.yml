@@ -260,6 +260,97 @@ punch:
   announce: true
 
 
+# ── Status ──────────────────────────────────────────────────────
+# Players pick a status in My Profile; it shows under their name as
+# "Status: <emoji> <name>". Needs the lobby resource pack for the emojis.
+#   name:       how it's shown (MiniMessage colours)
+#   icon:       the emoji from the pack: angel, angry, begging, clown, cool,
+#               crying, dead, evil, eyes, happy, heart, joy, kiss, love,
+#               melt, mindblown, money, poop, sad, scream, skull, sweat,
+#               thinking, thumbsup, wink
+#   item:       the item without the pack (optional)
+#   permission: needed to use it ("" or left out = everyone)
+# The menu has room for 28.
+status:
+  enabled: true
+  statuses:
+    happy:
+      name: "<#FFD84D>Happy"
+      icon: happy
+    laughing:
+      name: "<#FFD84D>Laughing"
+      icon: joy
+    playful:
+      name: "<#FFB347>Playful"
+      icon: wink
+    chilling:
+      name: "<#7FD8FF>Chilling"
+      icon: cool
+    angelic:
+      name: "<#FFF3B0>Angelic"
+      icon: angel
+    in-love:
+      name: "<#FF7BA9>In Love"
+      icon: love
+    flirty:
+      name: "<#FF8FC7>Flirty"
+      icon: kiss
+    thinking:
+      name: "<#E3C4FF>Thinking"
+      icon: thinking
+    watching:
+      name: "<#E8DDFF>Watching"
+      icon: eyes
+    nervous:
+      name: "<#9FD8FF>Nervous"
+      icon: sweat
+    pleading:
+      name: "<#FFC27A>Pleading"
+      icon: begging
+    melting:
+      name: "<#FFB347>Melting"
+      icon: melt
+    mind-blown:
+      name: "<#FF9F5A>Mind Blown"
+      icon: mindblown
+    shocked:
+      name: "<#B7F0FF>Shocked"
+      icon: scream
+    sad:
+      name: "<#8FB8FF>Sad"
+      icon: sad
+    crying:
+      name: "<#6FA8FF>Crying"
+      icon: crying
+    angry:
+      name: "<#FF5A5A>Angry"
+      icon: angry
+    mischievous:
+      name: "<#C77DFF>Mischievous"
+      icon: evil
+    clowning:
+      name: "<#FF7BE5>Clowning"
+      icon: clown
+    dead:
+      name: "<#D8D8D8>Dead Inside"
+      icon: skull
+    rich:
+      name: "<#9BFFC4>Rich"
+      icon: money
+    good-vibes:
+      name: "<#FFD84D>Good Vibes"
+      icon: thumbsup
+    wholesome:
+      name: "<#FF7590>Wholesome"
+      icon: heart
+    stinky:
+      name: "<#C8A27A>Stinky"
+      icon: poop
+    exhausted:
+      name: "<#FFB36B>Exhausted"
+      icon: dead
+
+
 # ── Particle trails ─────────────────────────────────────────────
 # Players pick one in their profile; it follows them while they walk.
 #   particle:   a particle name (https://jd.papermc.io/paper/org/bukkit/Particle.html),

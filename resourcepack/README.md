@@ -7,6 +7,7 @@ it in `plugins/Nexo/pack/external_packs/FractalLobby.zip`. It has:
 - the backgrounds for the realm selector, settings, chat colour, trails, parkour and Radio menus (`fractal:lobby` font),
 - the settings menu icons (item models `fractal:menu/NAME`, most from Survival's pack),
 - the Survival realm icon (item model `fractal:survival`),
+- the status emojis from Survival's chat emojis (item models `fractal:status/NAME`, glyphs U+F300 on) and the status menu backgrounds,
 - slate textures for every container screen, the creative menu (tabs, scroller, item and inventory tabs)
   and the hotbar, a purple XP bar, white creative tab titles, no "Inventory" label in menus, and no hearts or hunger,
 - no crafting corner in the inventory (grid, arrow, result slot and "Crafting" label painted over) and no recipe

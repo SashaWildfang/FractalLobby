@@ -92,6 +92,10 @@ public final class DisplayService {
             if (tag != null) applyTeam(board, other, tag);
         }
         refreshNametag(player, true);
+        for (Player other : plugin.getServer().getOnlinePlayers()) {
+            if (other != player) applyStatus(board, other);
+        }
+        refreshStatus(player);
         update(player);
     }
 
@@ -286,6 +290,41 @@ public final class DisplayService {
                 ? Team.OptionStatus.NEVER : Team.OptionStatus.ALWAYS;
         if (team.getOption(Team.Option.COLLISION_RULE) != collision) team.setOption(Team.Option.COLLISION_RULE, collision);
         if (!team.hasEntry(player.getName())) team.addEntry(player.getName());
+    }
+
+    // ---------------------------------------------------------------- status under the name
+
+    private static final String STATUS = "lbstatus";
+    /** Pulls the next text back 4px: cancels the space the game puts between the line and the objective's name. */
+    private static final Component BACKSPACE = Component.text("\uF003").font(net.kyori.adventure.key.Key.key("fractal", "lobby"));
+
+    /** Shows the player's status (or nothing) under their name, on everyone's board. */
+    public void refreshStatus(Player player) {
+        for (Scoreboard board : boards.values()) applyStatus(board, player);
+    }
+
+    private void applyStatus(Scoreboard board, Player player) {
+        org.bukkit.scoreboard.Objective objective = board.getObjective(STATUS);
+        if (!plugin.statuses().enabled()) {
+            if (objective != null) objective.unregister();
+            return;
+        }
+        boolean pack = plugin.menuStyle().custom();
+        if (objective == null) {
+            objective = board.registerNewObjective(STATUS, org.bukkit.scoreboard.Criteria.DUMMY, Component.empty());
+            objective.setDisplaySlot(org.bukkit.scoreboard.DisplaySlot.BELOW_NAME);
+            // Everyone without a status: an empty line (as narrow as the pack allows).
+            objective.numberFormat(pack ? io.papermc.paper.scoreboard.numbers.NumberFormat.fixed(BACKSPACE)
+                    : io.papermc.paper.scoreboard.numbers.NumberFormat.blank());
+        }
+        Component line = plugin.statuses().belowName(player);
+        org.bukkit.scoreboard.Score score = objective.getScore(player);
+        if (line == null) {
+            if (score.isScoreSet()) score.resetScore();
+            return;
+        }
+        score.setScore(0);
+        score.numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat.fixed(pack ? Component.textOfChildren(line, BACKSPACE) : line));
     }
 
     /** Short, unique per player (team names are kept under 16 characters for older clients). */

@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 14
+messages-version: 15
 
 theme:
   primary: "#B266FF"
@@ -94,7 +94,7 @@ tablist:
     - "<white>Tip:</white> <muted>Pick a realm with the globe in your hotbar"
     - "<white>Tip:</white> <muted>Lost? <white>/spawn</white> takes you back"
     - "<white>Tip:</white> <muted>Try the parkour course for a spot on the leaderboard"
-    - "<white>Tip:</white> <muted>Pick a chat colour and trail in your profile"
+    - "<white>Tip:</white> <muted>Set a status, chat colour and trail in your profile"
     - "<white>Tip:</white> <muted>Get ranks and perks with <accent>/store"
     - "<white>Tip:</white> <muted>Join the community with <#7FA8FF>/discord"
 
@@ -169,7 +169,7 @@ items:
       - ""
       - "<accent><right-click></accent> <muted>to show other players"
   profile:
-    name: "<primary>Your Profile"
+    name: "<primary>My Profile"
     lore:
       - "<muted>Your stats, chat colour, trail,"
       - "<muted>glow and settings."
@@ -359,7 +359,7 @@ playtime:
 # The profile menu (the player's head in the hotbar).
 # The head shows: <player> <rank> <joined> <playtime> <parkour-best> <parkour-rank> <chat-color> <trail> <glow>
 profile:
-  title: "<brand><bold>Your Profile</bold></brand>"
+  title: "<brand><bold>My Profile</bold></brand>"
   no-rank: "<gray>Member"
   default: "<gray>Default"
   none: "<gray>None"
@@ -372,6 +372,13 @@ profile:
       - "<muted>Playtime: <white><playtime>"
       - ""
       - "<muted>Parkour best: <white><parkour-best> <muted>(<parkour-rank>)"
+  status:
+    name: "<primary>Status"
+    lore:
+      - "<muted>Shown under your name."
+      - "<muted>Now: <status>"
+      - ""
+      - "<accent><click></accent> <muted>to change"
   chat-color:
     name: "<primary>Chat Colour"
     lore:
@@ -423,6 +430,32 @@ profile:
     name: "<secondary>← Back"
     lore:
       - "<muted>Back to your profile."
+
+# The status menu (from the profile). Statuses are listed in config.yml.
+status:
+  title: "<brand><bold>Status</bold></brand>"
+  # Under the player's name. <status> = the emoji and the status's name
+  below-name: "<muted>Status: <status>"
+  set: "<prefix><secondary>Your status is now <status><secondary>."
+  cleared: "<prefix><secondary>Status cleared."
+  locked: "<prefix><bad>You haven't unlocked that status."
+  # Under each status in the menu. <preview> = how it looks under your name
+  item:
+    - "<preview>"
+    - ""
+    - "<accent><left-click></accent> <muted>to use"
+  item-selected:
+    - "<preview>"
+    - ""
+    - "<good>✔ Selected</good> <muted>· <accent><left-click></accent> <muted>to clear"
+  item-locked:
+    - "<preview>"
+    - ""
+    - "<bad>✖ Locked"
+  clear-item:
+    name: "<bad>Clear Status"
+    lore:
+      - "<muted>Show nothing under your name."
 
 # The particle trail menu (from the profile). Trails are listed in config.yml.
 trails:

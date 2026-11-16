@@ -73,6 +73,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private RealmSelector selector;
     private DoubleJump doubleJump;
     private Trails trails;
+    private com.sasha.lobby.items.Statuses statuses;
     private Profile profile;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -113,11 +114,12 @@ public final class Lobby extends JavaPlugin implements Listener {
         parkour = new ParkourLobby(this);
         doubleJump = new DoubleJump(this);
         trails = new Trails(this);
+        statuses = new com.sasha.lobby.items.Statuses(this);
         profile = new Profile(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -177,6 +179,10 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public Trails trails() {
         return trails;
+    }
+
+    public com.sasha.lobby.items.Statuses statuses() {
+        return statuses;
     }
 
     public Profile profile() {

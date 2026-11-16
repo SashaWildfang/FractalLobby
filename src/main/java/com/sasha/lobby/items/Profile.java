@@ -36,10 +36,11 @@ import java.time.Instant;
 public final class Profile implements Listener {
 
     /*
-     * Three rows: the player's head at the top; cosmetics (chat colour, trail, glow) bottom left, ignored
+     * Three rows: the player's head at the top with their status under it; cosmetics (chat colour, trail, glow) bottom left, ignored
      * players in the middle and everything else (parkour, settings, realms) bottom right.
      */
     private static final int HEAD = 4;
+    private static final int STATUS = 13;
     private static final int CHAT_COLOR = 19;
     private static final int TRAIL = 20;
     private static final int GLOW = 21;
@@ -91,6 +92,12 @@ public final class Profile implements Listener {
         hideProfileLine(head);
         menu.inventory.setItem(HEAD, head);
 
+        if (plugin.statuses().enabled()) {
+            LobbyConfig.Status status = plugin.statuses().chosen(player);
+            ItemStack button = style.statusIcon(button(messages, Material.SUNFLOWER, "profile.status", info),
+                    status == null ? "happy" : status.icon());
+            menu.inventory.setItem(STATUS, button);
+        }
         menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
         menu.inventory.setItem(TRAIL, style.icon(button(messages, Material.BLAZE_POWDER, "profile.trail", info), "trail"));
         menu.inventory.setItem(GLOW, style.icon(button(messages, Material.GLOWSTONE_DUST,
@@ -120,6 +127,7 @@ public final class Profile implements Listener {
 
         LobbyConfig.ChatColor colour = plugin.chatColors().chosen(player);
         LobbyConfig.Trail trail = plugin.trails().chosen(player);
+        LobbyConfig.Status status = plugin.statuses().chosen(player);
         int parkourRank = plugin.parkour().leaderboard().rank(player);
 
         return TagResolver.resolver(
@@ -132,6 +140,7 @@ public final class Profile implements Listener {
                         ? messages.component("parkour.rank", Messages.arg("position", parkourRank))
                         : messages.component("parkour.unranked")),
                 Placeholder.component("chat-color", colour == null ? messages.component("profile.default") : messages.render(colour.name())),
+                Placeholder.component("status", status == null ? messages.component("profile.none") : plugin.statuses().label(status)),
                 Placeholder.component("trail", trail == null ? messages.component("profile.none") : messages.render(trail.name())),
                 Placeholder.component("glow", messages.component(player.isGlowing() ? "settings.options.on" : "settings.options.off")));
     }
@@ -169,6 +178,11 @@ public final class Profile implements Listener {
                 } else {
                     locked(player);
                 }
+            }
+            case STATUS -> {
+                if (!plugin.statuses().enabled()) return;
+                click(player);
+                plugin.statuses().open(player);
             }
             case TRAIL -> {
                 click(player);

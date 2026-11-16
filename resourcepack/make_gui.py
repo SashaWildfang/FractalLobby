@@ -120,7 +120,7 @@ def centred(count, rows):
 
 os.makedirs(f'{OUT}/assets/fractal/textures/gui', exist_ok=True)
 os.makedirs(f'{OUT}/assets/fractal/font', exist_ok=True)
-providers = [{"type": "space", "advances": {"": -8, "": -169}}]
+providers = [{"type": "space", "advances": {"": -8, "": -169, "": -4}}]
 for rows in range(1, 7):
     for count in range(0, 10):
         name = f'realms_{rows}_{count}'
@@ -140,6 +140,19 @@ for rows in range(3, 7):
     add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
 add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
-add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[19, 20, 21, 22, 23, 24, 25]))
+add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))
+def status_cols(k):  # a part row of k (of 7) is centred; an even count leaves the middle empty
+    if k == 7: return list(range(7))
+    if k % 2: return list(range((7 - k) // 2, (7 - k) // 2 + k))
+    w = k + 1; start = (7 - w) // 2
+    return [start + i for i in range(w) if i != w // 2]
+def status_slots(n):
+    rows = (n + 6) // 7
+    return [(1 + r) * 9 + 1 + c for r in range(rows) for c in status_cols(min(7, n - 7 * r))]
+for emoji_rows in range(1, 5):  # status menu: 1-4 rows of emojis, the last row holding 1-7 of them
+    rows = emoji_rows + 2; bottom = (rows - 1) * 9
+    for last in range(1, 8):
+        n = (emoji_rows - 1) * 7 + last
+        add(0xF1D0 + rows * 8 + last, f'status_{rows}_{last}', background(rows, [], "STATUS", cells=status_slots(n) + [bottom + 3, bottom + 5]))
 add(0xF1B6, 'radio', background(6, [], "RADIO", cells=grid(6) + [0, 1, 2, 4, 6, 7, 8] + list(range(45, 54))))
 json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
