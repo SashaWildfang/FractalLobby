@@ -663,6 +663,42 @@
    "chars": [
     "\uf1b6"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/click_left.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    "\uf010"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/click_right.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    "\uf011"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/click_any.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    "\uf012"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/key_shift.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    "\uf013"
+   ]
   }
  ]
 }

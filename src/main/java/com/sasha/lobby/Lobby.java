@@ -253,6 +253,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private void loadSettings() {
         config = LobbyConfig.load(getConfig(), getLogger());
         messages = Messages.load(this);
+        messages.buttonIcons(getConfig().getBoolean("menus.custom-gui", getConfig().getBoolean("settings-menu.custom-gui", true)));
     }
 
     private void registerCommands() {

@@ -36,13 +36,14 @@ import java.time.Instant;
 public final class Profile implements Listener {
 
     /*
-     * Three rows: the player's head at the top; cosmetics (chat colour, trail, glow) bottom left and
-     * everything else (parkour, settings, realms) bottom right.
+     * Three rows: the player's head at the top; cosmetics (chat colour, trail, glow) bottom left, ignored
+     * players in the middle and everything else (parkour, settings, realms) bottom right.
      */
     private static final int HEAD = 4;
     private static final int CHAT_COLOR = 19;
     private static final int TRAIL = 20;
     private static final int GLOW = 21;
+    private static final int IGNORED = 22;
     private static final int PARKOUR = 23;
     private static final int SETTINGS = 24;
     private static final int REALMS = 25;
@@ -97,6 +98,9 @@ public final class Profile implements Listener {
         menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
         menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
         menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
+        // Who they ignore is kept by Core on the proxy; without it there's nothing to show.
+        var network = plugin.coreLink().state(player);
+        if (network != null) menu.inventory.setItem(IGNORED, plugin.settings().ignoredButton(network));
         player.openInventory(menu.inventory);
     }
 
@@ -176,6 +180,11 @@ public final class Profile implements Listener {
                 plugin.glow().toggle(player);
                 click(player);
                 open(player);
+            }
+            case IGNORED -> {
+                if (plugin.coreLink().state(player) == null) return;
+                click(player);
+                plugin.settings().openIgnored(player);
             }
             case SETTINGS -> {
                 click(player);

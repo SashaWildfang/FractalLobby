@@ -215,7 +215,6 @@ public final class Settings implements Listener {
     private static final int NETWORK_LABEL = 27;
     private static final int NETWORK_UNAVAILABLE = 31;
     private static final int RESET = 49;
-    private static final int IGNORED_SLOT = 30;
     /** The ignored-players list shows this many heads (Core keeps the rest; /unignore reaches them). */
     private static final int IGNORED_SHOWN = 45;
 
@@ -286,8 +285,9 @@ public final class Settings implements Listener {
         player.openInventory(menu.inventory);
     }
 
-    private void openIgnored(Player player, boolean fromProfile) {
-        Menu menu = new Menu(Page.IGNORED, fromProfile);
+    /** Opens the list of ignored players (from the profile; its Back button returns there). */
+    public void openIgnored(Player player) {
+        Menu menu = new Menu(Page.IGNORED, true);
         menu.inventory = Bukkit.createInventory(menu, 54, customGui()
                 ? RealmSelector.backgroundTitle(MenuStyle.IGNORED) : plugin.messages().component("settings.ignored-menu.title"));
         draw(player, menu);
@@ -332,7 +332,6 @@ public final class Settings implements Listener {
                 put(menu, setting.slot, setting.icon, setting.id, Kind.TOGGLE.options, setting.on(state) ? "on" : "off",
                         (who, click) -> flip(who, setting));
             }
-            drawIgnoredButton(menu, state);
         }
 
         if (menu.fromProfile) {
@@ -379,7 +378,8 @@ public final class Settings implements Listener {
         menu.actions.put(slot + 9, action);
     }
 
-    private void drawIgnoredButton(Menu menu, CoreLink.State state) {
+    /** The Ignored Players button (shown in the profile): how many, who, and a click opens the list. */
+    public ItemStack ignoredButton(CoreLink.State state) {
         Messages messages = plugin.messages();
         Map<UUID, String> ignored = state.ignored();
         List<Component> lore = new ArrayList<>(messages.lore("settings.ignored.lore"));
@@ -403,20 +403,7 @@ public final class Settings implements Listener {
             meta.lore(lore);
             meta.addItemFlags(ItemFlag.values());
         });
-        menu.inventory.setItem(IGNORED_SLOT, styled(icon, "ignored"));
-
-        ItemStack pane = ItemStack.of(ignored.isEmpty() ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
-        pane.editMeta(meta -> {
-            meta.displayName(messages.item("settings.ignored.count", Messages.arg("count", ignored.size())));
-            meta.lore(messages.lore("settings.ignored.hint"));
-        });
-        menu.inventory.setItem(IGNORED_SLOT + 9, styled(pane, ignored.isEmpty() ? "none" : "middle"));
-        Action open = (who, click) -> {
-            openIgnored(who, menu.fromProfile);
-            click(who, 0);
-        };
-        menu.actions.put(IGNORED_SLOT, open);
-        menu.actions.put(IGNORED_SLOT + 9, open);
+        return styled(icon, "ignored");
     }
 
     /** Everyone the player ignores, as heads; clicking one unignores them. */
@@ -455,7 +442,7 @@ public final class Settings implements Listener {
         }
         menu.inventory.setItem(49, styled(Profile.button(messages, Material.ARROW, "settings.ignored-menu.back"), "back"));
         menu.actions.put(49, (who, click) -> {
-            open(who, menu.fromProfile);
+            plugin.profile().open(who);
             click(who, 0);
         });
     }

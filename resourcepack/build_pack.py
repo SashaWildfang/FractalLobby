@@ -614,3 +614,31 @@ for x in range(16):
         if a and (r, g, b) != (0x1a, 0x1b, 0x26): px[x, y] = (0x62, 0x66, 0x80, a)
         elif a: px[x, y] = (0x38, 0x3b, 0x4f, a)
 radio_model('next-off', off)
+
+# 15. mouse and Shift glyphs for item hints (font fractal:lobby: F010 left, F011 right, F012 any click, F013 Shift +)
+KEYL, KEYB, KEYP = (0xe1, 0xe3, 0xee), (0xb4, 0xb8, 0xcf), hexc('#FF7BE5')
+MOUSE = [".LLL.RRR.", "LLLL.RRRR", "LLLL.RRRR", "LLLL.RRRR", ".........", "BBBBBBBBB", "BBBBBBBBB", "BBBBBBBBB", "BBBBBBBBB", ".BBBBBBB."]
+def mouse(left, right):
+    img = Image.new('RGBA', (9, 10), (0, 0, 0, 0))
+    for y, row in enumerate(MOUSE):
+        for x, ch in enumerate(row):
+            if ch == 'L': img.putpixel((x, y), (KEYP if left else KEYL) + (255,))
+            elif ch == 'R': img.putpixel((x, y), (KEYP if right else KEYL) + (255,))
+            elif ch == 'B': img.putpixel((x, y), KEYB + (255,))
+    return img
+F35 = {'S': ["###", "#..", "###", "..#", "###"], 'H': ["#.#", "#.#", "###", "#.#", "#.#"], 'I': ["###", ".#.", ".#.", ".#.", "###"],
+       'F': ["###", "#..", "##.", "#..", "#.."], 'T': ["###", ".#.", ".#.", ".#.", ".#."]}
+shift = Image.new('RGBA', (28, 10), (0, 0, 0, 0)); dr = ImageDraw.Draw(shift)
+dr.rounded_rectangle((0, 0, 22, 9), radius=2, fill=(0x4b, 0x4f, 0x65, 255), outline=KEYL + (255,))
+dr.line([(1, 9), (21, 9)], fill=KEYB + (255,))
+for i, ch in enumerate("SHIFT"):
+    for y, row in enumerate(F35[ch]):
+        for x, c in enumerate(row):
+            if c == '#': shift.putpixel((2 + i * 4 + x, 2 + y), (255, 255, 255, 255))
+dr.line([(24, 5), (26, 5)], fill=KEYL + (255,)); dr.line([(25, 4), (25, 6)], fill=KEYL + (255,))
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+for code, name, img in ((0xF010, 'click_left', mouse(True, False)), (0xF011, 'click_right', mouse(False, True)),
+                        (0xF012, 'click_any', mouse(True, True)), (0xF013, 'key_shift', shift)):
+    img.save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
+    lobby_font['providers'].append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 8, "height": 10, "chars": [chr(code)]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
