@@ -477,6 +477,8 @@ scoreboard:
 
 tablist:
   enabled: true
+  # How often the tip at the bottom of the tab list changes (tips are in messages.yml).
+  tip-seconds: 12
   # Higher LuckPerms ranks (group weight) are listed first.
   sort-by-rank: true
 

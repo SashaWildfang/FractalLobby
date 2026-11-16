@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -182,8 +183,9 @@ public final class DisplayService {
         }
 
         if (plugin.lobbyConfig().tablist()) {
-            Component header = joinLines(player, "tablist.header", tags);
-            Component footer = joinLines(player, "tablist.footer", tags);
+            TagResolver tabTags = TagResolver.resolver(tags, Messages.arg("ping", player.getPing()), tip(player));
+            Component header = joinLines(player, "tablist.header", tabTags);
+            Component footer = joinLines(player, "tablist.footer", tabTags);
             Component[] last = tabShown.get(player.getUniqueId());
             if (last == null || !last[0].equals(header) || !last[1].equals(footer)) {
                 player.sendPlayerListHeaderAndFooter(header, footer);
@@ -196,6 +198,15 @@ public final class DisplayService {
         List<Component> lines = new ArrayList<>();
         for (String template : plugin.messages().lines(key)) lines.add(plugin.messages().render(placeholders(player, template), tags));
         return Component.join(JoinConfiguration.newlines(), lines);
+    }
+
+    /** <tip>: one of tablist.tips, changing every tablist.tip-seconds (the same tip for everyone at once). */
+    private TagResolver tip(Player player) {
+        List<String> tips = plugin.messages().lines("tablist.tips");
+        if (tips.isEmpty()) return Placeholder.component("tip", Component.empty());
+        long every = Math.max(3, plugin.getConfig().getLong("tablist.tip-seconds", 12)) * 1000;
+        String tip = tips.get((int) (System.currentTimeMillis() / every % tips.size()));
+        return Placeholder.component("tip", plugin.messages().render(placeholders(player, tip)));
     }
 
     private String placeholders(Player player, String template) {

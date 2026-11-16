@@ -197,6 +197,10 @@ public final class Messages {
         return TagResolver.resolver(tag, net.kyori.adventure.text.minimessage.tag.Tag.selfClosingInserting(shown));
     }
 
+    /** <keep:'Text'>: text shown in normal letters even in small caps (like a case-sensitive Discord invite). */
+    private static final TagResolver KEEP = TagResolver.resolver("keep", (arguments, context) ->
+            Tag.selfClosingInserting(marker(Component.text(arguments.popOr("<keep> needs text").value()))));
+
     private Component parse(String template, TagResolver... args) {
         String mini = brand(LegacyCodes.toMiniMessage(template));
         Map<String, Component> outer = KEPT.get();
@@ -204,7 +208,7 @@ public final class Messages {
         KEPT.set(kept);
         Component component;
         try {
-            component = MM.deserialize(mini, TagResolver.resolver(theme, clicks(), TagResolver.resolver(args)));
+            component = MM.deserialize(mini, TagResolver.resolver(theme, clicks(), KEEP, TagResolver.resolver(args)));
         } finally {
             KEPT.set(outer);
         }

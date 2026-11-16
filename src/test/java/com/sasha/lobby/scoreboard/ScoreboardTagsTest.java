@@ -30,8 +30,8 @@ class ScoreboardTagsTest {
                 1, "SashaWildfang");
     }
 
-    private static String plain(Messages messages, String template) {
-        return PlainTextComponentSerializer.plainText().serialize(messages.render(template, tags()));
+    private static String plain(Messages messages, String template, TagResolver... more) {
+        return PlainTextComponentSerializer.plainText().serialize(messages.render(template, TagResolver.resolver(tags(), TagResolver.resolver(more))));
     }
 
     @Test
@@ -75,13 +75,14 @@ class ScoreboardTagsTest {
 
     /** The tab list header and footer show the realm counts and "playing with X out of Y". */
     @Test
-    void tablistShowsRealmCounts() throws Exception {
+    void tablistShowsSloganAndCounts() throws Exception {
         YamlConfiguration server = new YamlConfiguration();
         server.set("format.font", "normal");
         Messages messages = MessagesTestAccess.messages(server);
 
-        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(7)));
-        assertEquals("(playing with 1 out of 5 global players)", plain(messages, messages.lines("tablist.footer").get(1)));
+        assertEquals("An experience like no other", plain(messages, messages.lines("tablist.header").get(6)));
+        assertEquals("1 here · 5 online · 42ms", plain(messages, messages.lines("tablist.footer").get(1),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("ping", "42")));
     }
 
     /** A server file from an older version lacks newer keys: the built-in text fills in, not the key name. */

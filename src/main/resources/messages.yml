@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 11
+messages-version: 12
 
 theme:
   primary: "#B266FF"
@@ -75,13 +75,26 @@ tablist:
     - "<white><!shadow><font:fractal:lobby>\uF020</font>"
     - ""
     - "<secondary>fractalsmp.net"
+    - "<gray>An experience like no other"
     - ""
-    - "<primary>Survival: <white><online:survival></white> <dark_gray>|</dark_gray> <accent>Lifesteal: <white><online:lifesteal></white> <dark_gray>|</dark_gray> <secondary>Practice: <white><online:practice>"
-    - ""
+  # <here> players in the lobby, <online:all> on the network, <ping> your ping, <tip> one of the tips below.
   footer:
     - ""
-    - "<muted>(playing with <white><here></white> out of <white><online:all></white> global players)"
+    - "<white><here></white> <muted>here <dark_gray>·</dark_gray> <white><online:all></white> <muted>online <dark_gray>·</dark_gray> <white><ping></white><muted>ms"
+    # <keep:'...'> keeps text in normal letters (the invite code is case-sensitive).
+    - "<accent>store.fractalsmp.net <dark_gray>·</dark_gray> <#7FA8FF><keep:'discord.gg/HRhPDubRhD'>"
     - ""
+    - "<tip>"
+    - ""
+  # One shows at a time under the links, changing every tablist.tip-seconds (config.yml).
+  tips:
+    - "<muted>Tip: <white>/radio</white> plays music while you hang out"
+    - "<muted>Tip: Right-click your head for your profile"
+    - "<muted>Tip: Pick a realm with the globe in your hotbar"
+    - "<muted>Tip: Lost? <white>/spawn</white> takes you back"
+    - "<muted>Tip: Try the parkour course for a spot on the leaderboard"
+    - "<muted>Tip: Pick a chat colour and trail in your profile"
+    - "<muted>Tip: Get ranks and perks at <accent>store.fractalsmp.net"
 
 
 # ── Realm selector ──────────────────────────────────────────────
