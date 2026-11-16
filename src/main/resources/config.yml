@@ -217,7 +217,10 @@ chat:
 # /lobbyparkour setup        puts the start plate and its hologram at
 #                             your feet (shows each player's best and rank)
 # /lobbyparkour leaderboard  puts the leaderboard hologram where you
-#                             stand (add "remove" to take it away)
+#                             stand (add "move" to move it, "remove" to
+#                             take it away)
+# /lobbyparkour hologram move|remove  moves the start plate's hologram
+#                             to where you stand, or takes it away
 # Clicking either hologram opens the top 10. Needs PlaceholderAPI.
 parkour:
   # How many of the best scores the leaderboard hologram lists (0-10).

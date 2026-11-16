@@ -121,6 +121,33 @@ public final class ParkourLobby implements Listener {
         plugin.messages().send(admin, "parkour.leaderboard-removed");
     }
 
+    /**
+     * Moves a hologram ("hologram" above the start plate, or "leaderboard") to exactly where the admin
+     * stands. The start plate itself stays where it is.
+     */
+    public void moveHologram(Player admin, String which) {
+        Location at = admin.getLocation();
+        Location rounded = new Location(at.getWorld(), Math.round(at.getX() * 10) / 10.0, Math.round(at.getY() * 10) / 10.0,
+                Math.round(at.getZ() * 10) / 10.0);
+        saveLocation(which, rounded);
+        save();
+        hologram(which).remove();
+        updateDisplays();
+        plugin.messages().send(admin, which.equals("leaderboard") ? "parkour.leaderboard-moved" : "parkour.hologram-moved");
+    }
+
+    /** Takes a hologram away ("hologram" or "leaderboard"); /lobbyparkour setup or leaderboard puts it back. */
+    public void removeHologram(Player admin, String which) {
+        data.set(which, null);
+        save();
+        hologram(which).remove();
+        plugin.messages().send(admin, which.equals("leaderboard") ? "parkour.leaderboard-removed" : "parkour.hologram-removed");
+    }
+
+    private Hologram hologram(String which) {
+        return which.equals("leaderboard") ? holograms.get(1) : holograms.getFirst();
+    }
+
     public Leaderboard leaderboard() {
         return leaderboard;
     }
@@ -172,7 +199,9 @@ public final class ParkourLobby implements Listener {
 
     /** A leaderboard row: <position> <name> <score>, and <name-rank> (the player's LuckPerms prefix). */
     private TagResolver row(Leaderboard.Entry entry) {
-        String rank = plugin.luckPerms() ? LegacyCodes.toMiniMessage(LuckPermsHook.prefix(entry.name())) : "";
+        // Colour codes reset formatting, which would turn the name in menus back to italic.
+        String rank = plugin.luckPerms()
+                ? LegacyCodes.toMiniMessage(LuckPermsHook.prefix(entry.name())).replace("<reset>", "<reset><!italic>") : "";
         return TagResolver.resolver(Messages.arg("position", entry.position()),
                 Messages.name("name", entry.name()), Messages.arg("score", entry.score()),
                 Placeholder.parsed("name-rank", rank));

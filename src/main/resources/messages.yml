@@ -451,6 +451,9 @@ parkour:
   setup: "<prefix><good>Parkour pressure plate and hologram set up."
   leaderboard-set: "<prefix><good>Parkour leaderboard hologram placed here."
   leaderboard-removed: "<prefix><secondary>Parkour leaderboard hologram removed."
+  leaderboard-moved: "<prefix><good>Parkour leaderboard hologram moved to where you're standing."
+  hologram-moved: "<prefix><good>Start plate hologram moved to where you're standing."
+  hologram-removed: "<prefix><secondary>Start plate hologram removed. <muted>/lobbyparkour setup puts it back."
   unavailable: "<prefix><bad>The parkour leaderboard needs ajParkour and PlaceholderAPI."
   # Above the start plate. Each player sees their own best and rank. <score> <rank>
   hologram:

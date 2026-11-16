@@ -463,3 +463,21 @@ radio_model('search', outline(glass))
 for f in ('slot_highlight_back', 'slot_highlight_front'):
     Image.new('RGBA', (24, 24), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/container/{f}.png') \
         if os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/container', exist_ok=True) is None else None
+
+# 10. a smoother music note (Radio hotbar item and Message Sounds)
+note2 = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(note2)
+dr.polygon([(5, 3), (13, 1), (13, 4), (5, 6)], fill=(255, 255, 255, 255))      # beam
+dr.rectangle((5, 4, 6, 12), fill=(255, 255, 255, 255))                          # stems
+dr.rectangle((12, 2, 13, 10), fill=(255, 255, 255, 255))
+dr.ellipse((1, 10, 6, 14), fill=(255, 255, 255, 255))                           # heads
+dr.ellipse((8, 8, 13, 12), fill=(255, 255, 255, 255))
+px = note2.load()
+for x in range(16):
+    for y in range(16):
+        if px[x, y][3]:
+            c = mix(hexc('#B266FF'), hexc('#FF7BE5'), x / 15)
+            if y in (2, 3) or (x, y) in ((2, 11), (3, 11), (9, 9), (10, 9)): c = mix(c, (255, 255, 255), 0.35)
+            px[x, y] = c + (255,)
+note2 = outline(note2)
+model('radio', note2)
+model('message-sounds', note2)

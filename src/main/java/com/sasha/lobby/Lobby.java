@@ -277,8 +277,15 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .then(Commands.literal("setup").executes(context -> asPlayer(context.getSource(), player -> parkour.setup(player))))
                     .then(Commands.literal("leaderboard")
                             .executes(context -> asPlayer(context.getSource(), player -> parkour.setupLeaderboard(player)))
+                            .then(Commands.literal("move")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.moveHologram(player, "leaderboard"))))
                             .then(Commands.literal("remove")
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.removeLeaderboard(player)))))
+                    .then(Commands.literal("hologram")
+                            .then(Commands.literal("move")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.moveHologram(player, "hologram"))))
+                            .then(Commands.literal("remove")
+                                    .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "hologram")))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
 
             commands.register(Commands.literal("spawn")
