@@ -565,3 +565,13 @@ fill.save(f'{OUT}/assets/minecraft/textures/gui/sprites/boss_bar/purple_progress
 STAFF = [".RRRRRRRRRRR.", "RLLLLLLDDDDDR", "RLLLLLLDDDDDR", "RLLLLLLDDDWDR", "RLLLLLLDDWWDR", "RLLWLLLDWWDDR", "RLLWWLLWWDDDR",
          "RLLLWWWWDDDDR", ".RLLLWWDDDDR.", ".RLLLLLDDDDR.", "..RLLLLDDDR..", "...RLLLDDR...", "....RLLDR....", ".....RRR....."]
 model('audience-staff', art(STAFF, {'R': hexc('#B85A1E'), 'L': hexc('#FFC48A'), 'D': hexc('#F0923F'), 'W': (255, 255, 255)}, shade=False))
+# Staff Only: a magic staff (a wooden staff with a big glowing orange orb)
+staff = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(staff)
+dr.line([(1, 14), (8, 7)], fill=(0x8a, 0x5a, 0x32, 255), width=3)
+dr.line([(2, 14), (8, 8)], fill=(0x6b, 0x43, 0x24, 255), width=1)
+dr.rectangle((6, 7, 8, 9), fill=(0xf2, 0xc9, 0x4c, 255))                       # gold collar
+dr.ellipse((7, 1, 14, 8), fill=(0xff, 0x8a, 0x3a, 255))                         # orb
+dr.ellipse((8, 2, 12, 6), fill=(0xff, 0xb3, 0x6b, 255))
+dr.ellipse((9, 2, 10, 3), fill=(0xff, 0xf0, 0xd8, 255))
+staff = outline(staff)
+model('audience-staff', staff)
