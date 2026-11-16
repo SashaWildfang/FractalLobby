@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 12
+messages-version: 13
 
 theme:
   primary: "#B266FF"
@@ -81,8 +81,9 @@ tablist:
   footer:
     - ""
     - "<white><here></white> <muted>here <dark_gray>·</dark_gray> <white><online:all></white> <muted>online <dark_gray>·</dark_gray> <white><ping></white><muted>ms"
-    # <keep:'...'> keeps text in normal letters (the invite code is case-sensitive).
-    - "<accent>store.fractalsmp.net <dark_gray>·</dark_gray> <#7FA8FF><keep:'discord.gg/HRhPDubRhD'>"
+    # \uF022 and \uF023 are the store and Discord icons from the resource pack. The tab list can't
+    # be clicked, so it names the commands, which send clickable links (from Core on the proxy).
+    - "<white><!shadow><font:fractal:lobby>\uF022</font></white> <accent>/store</accent>   <white><!shadow><font:fractal:lobby>\uF023</font></white> <#7FA8FF>/discord"
     - ""
     - "<tip>"
     - ""
@@ -94,7 +95,8 @@ tablist:
     - "<muted>Tip: Lost? <white>/spawn</white> takes you back"
     - "<muted>Tip: Try the parkour course for a spot on the leaderboard"
     - "<muted>Tip: Pick a chat colour and trail in your profile"
-    - "<muted>Tip: Get ranks and perks at <accent>store.fractalsmp.net"
+    - "<muted>Tip: Get ranks and perks with <accent>/store"
+    - "<muted>Tip: Join the community with <#7FA8FF>/discord"
 
 
 # ── Realm selector ──────────────────────────────────────────────

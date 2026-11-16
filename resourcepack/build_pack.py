@@ -798,3 +798,23 @@ for p in lobby_font['providers']:
     if p.get('file') == 'fractal:gui/logo_fractal.png': p.update(height=30, ascent=30)
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
 print('lobby logo', lobby_logo.size)
+
+# 20. little icons for the tab list: a shopping bag (store) and a blurple chat bubble (Discord)
+BAG = ["..HHHH..", ".H....H.", ".H....H.", "BBBBBBBB", "BBBBBBBB", "BBWBBBBB", "BBBBBBBB", "BBBBBBBB", ".BBBBBB."]
+bag = Image.new('RGBA', (8, 9), (0, 0, 0, 0))
+for y, row in enumerate(BAG):
+    for x, ch in enumerate(row):
+        if ch == 'H': bag.putpixel((x, y), (0xff, 0xe6, 0x80, 255))
+        elif ch == 'B': bag.putpixel((x, y), mix(hexc('#FF7BE5'), hexc('#B266FF'), y / 8) + (255,))
+        elif ch == 'W': bag.putpixel((x, y), (255, 255, 255, 255))
+BUB = [".BBBBBBB.", "BBBBBBBBB", "BBWBBBWBB", "BBWBBBWBB", "BBBBBBBBB", "BWBBBBBWB", "BBWWWWWBB", ".BBBBBBB.", "..BB.....", ".B......."]
+bub = Image.new('RGBA', (9, 10), (0, 0, 0, 0))
+for y, row in enumerate(BUB):
+    for x, ch in enumerate(row):
+        if ch == 'B': bub.putpixel((x, y), (0x58, 0x65, 0xf2, 255))
+        elif ch == 'W': bub.putpixel((x, y), (255, 255, 255, 255))
+bag.save(f'{OUT}/assets/fractal/textures/gui/icon_store.png'); bub.save(f'{OUT}/assets/fractal/textures/gui/icon_discord.png')
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/icon_store.png", "ascent": 8, "height": 9, "chars": [""]})
+lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/icon_discord.png", "ascent": 8, "height": 10, "chars": [""]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)

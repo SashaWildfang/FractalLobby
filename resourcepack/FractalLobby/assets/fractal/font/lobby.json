@@ -717,6 +717,24 @@
    "chars": [
     "\uf020"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/icon_store.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf022"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/icon_discord.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    "\uf023"
+   ]
   }
  ]
 }
