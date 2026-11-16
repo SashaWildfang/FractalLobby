@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Each player's settings (the comparator join item). Lobby settings are saved on the player: some choose
  * whose messages or players to see (Everyone, Donors Only, Staff Only, Nobody), the rest are On or Off.
  * Clicking the switch under one moves it to its next option (right-click goes back). Network settings (private messages,
- * message sounds, friend requests, friend join/leave messages, who you ignore, and staff's social spy, command spy and vanish) belong to Core on the
+ * message sounds, friend requests, friend join/leave messages, party invites, and who you ignore) belong to Core on the
  * proxy, so they follow the player to every realm; they show when Core is installed.
  */
 public final class Settings implements Listener {
@@ -224,9 +224,7 @@ public final class Settings implements Listener {
         MESSAGE_SOUNDS("message-sounds", Material.BELL, 29, CoreLink.MESSAGE_SOUNDS_OFF, true),
         FRIEND_REQUESTS("friend-requests", Material.WRITABLE_BOOK, 30, CoreLink.FRIEND_REQUESTS_OFF, true),
         FRIEND_NOTIFY("friend-notify", Material.EMERALD, 31, CoreLink.FRIEND_NOTIFY_OFF, true),
-        SOCIAL_SPY("social-spy", Material.SPYGLASS, 32, CoreLink.SOCIAL_SPY, false),
-        COMMAND_SPY("command-spy", Material.COMMAND_BLOCK, 33, CoreLink.COMMAND_SPY, false),
-        VANISH("vanish", Material.PHANTOM_MEMBRANE, 34, CoreLink.VANISH, false);
+        PARTY_INVITES("party-invites", Material.CAKE, 32, CoreLink.PARTY_INVITES_OFF, true);
 
         final String id;
         final Material icon;
@@ -467,7 +465,6 @@ public final class Settings implements Listener {
         boolean nowOn = !setting.on(state);
         plugin.coreLink().set(player, setting.toggle, nowOn != setting.inverted);
         click(player, nowOn ? 0 : 1);
-        if (setting == NetworkSetting.VANISH) plugin.joinItems().refreshSeenBy(player);
     }
 
     /** Puts every lobby setting back to its default. */

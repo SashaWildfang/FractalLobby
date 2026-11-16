@@ -62,8 +62,11 @@ public final class FriendsMenu implements Listener {
     /** The Friends button for the profile: how many friends are online. */
     public ItemStack button(CoreLink.State state) {
         long online = state.friends().values().stream().filter(CoreLink.Friend::online).count();
+        TagResolver counts = TagResolver.resolver(Messages.arg("online", online), Messages.arg("count", state.friends().size()));
+        // "None" (in red) when nobody's online, else "2 / 5".
+        var status = plugin.messages().component(online == 0 ? "friends.button.none-online" : "friends.button.some-online", counts);
         ItemStack item = Profile.button(plugin.messages(), Material.PLAYER_HEAD, "friends.button",
-                TagResolver.resolver(Messages.arg("online", online), Messages.arg("count", state.friends().size())));
+                TagResolver.resolver(counts, net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("status", status)));
         return plugin.menuStyle().icon(item, "friends");
     }
 

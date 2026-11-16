@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 30
+messages-version: 31
 
 theme:
   primary: "#B266FF"
@@ -285,6 +285,11 @@ settings:
     lore:
       - "<muted>A message when a friend"
       - "<muted>joins or leaves the network."
+  party-invites:
+    name: "<primary>Party Invites"
+    lore:
+      - "<muted>Whether players can invite"
+      - "<muted>you to their party."
   social-spy:
     name: "<primary>Social Spy"
     lore:
@@ -412,14 +417,16 @@ friends:
         - "<accent><click></accent> <muted>to list them in chat"
     removed: "<prefix><secondary>You removed <primary><player></primary> <secondary>from your friends."
     no-core: "<prefix><bad>Friends aren't available right now."
-  # The Friends button in the profile. <online> <count>
+  # The Friends button in the profile. <online> <count>; <status> is one of the two below
   button:
+    none-online: "<bad>None"
+    some-online: "<#5BE37C><online></#5BE37C> <dark_gray>/ <white><count>"
     name: "<primary>Friends"
     lore:
       - "<muted>Your friends across"
       - "<muted>the network."
       - ""
-      - "<white>Online: <#5BE37C><online></#5BE37C> <dark_gray>/ <white><count>"
+      - "<white>Online: <status>"
       - ""
       - "<accent><click></accent> <muted>to open"
 

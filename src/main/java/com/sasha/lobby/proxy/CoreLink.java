@@ -43,6 +43,7 @@ public final class CoreLink implements PluginMessageListener, Listener {
     public static final String VANISH = "vanish";
     public static final String FRIEND_REQUESTS_OFF = "friend-requests-off";
     public static final String FRIEND_NOTIFY_OFF = "friend-notify-off";
+    public static final String PARTY_INVITES_OFF = "party-invites-off";
 
     /** A friend as Core last sent them: their name, the server they're on ("" when offline), since when friends. */
     public record Friend(String name, String server, long since) {

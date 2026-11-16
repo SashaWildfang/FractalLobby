@@ -1087,4 +1087,22 @@ _box = _friend.getbbox()
 add_friend = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
 add_friend.alpha_composite(_friend.crop(_box), (_box[0], (16 - (_box[3] - _box[1])) // 2))
 model('add-friend', add_friend)
+# party invites: a party popper, a purple cone from the bottom left with confetti flying out of its top
+model('party-invites', art([
+    "...........k..y.",
+    "........y.......",
+    ".....l......k...",
+    "...........l....",
+    "........###..y..",
+    "...k...#wwP#....",
+    ".......#pwpP#.k.",
+    "......#pPppP#...",
+    ".....#pppPpp#...",
+    "....#ppPpppP#...",
+    "...#pPppPpp#....",
+    "..#pppPpp##.....",
+    ".#PppP###.......",
+    ".#PP##..........",
+    ".###............",
+    "................"], {**FRIEND_COL, 'w': '#e8ddff'}))
 print('friends: badge, icons')
