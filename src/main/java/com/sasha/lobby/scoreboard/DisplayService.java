@@ -249,7 +249,7 @@ public final class DisplayService {
                     return Tag.selfClosingInserting(Component.text(online.applyAsInt(server)));
                 }),
                 Messages.arg("here", here),
-                Messages.arg("player", player),
+                Messages.name("player", player),
                 Messages.arg("date", now.format(config.scoreboard().dateFormat())),
                 Messages.arg("time", LocalTime.from(now).format(TIME)));
     }

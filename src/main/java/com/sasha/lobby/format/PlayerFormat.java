@@ -29,7 +29,7 @@ public final class PlayerFormat {
 
     /** Renders a format for a player. */
     public Component render(Player player, String format) {
-        return plugin.messages().render(prepare(player, format), Messages.arg("player", player.getName()));
+        return plugin.messages().render(prepare(player, format), Messages.name("player", player.getName()));
     }
 
     /** The player's rank prefix, or "" when they have none (or LuckPerms/PlaceholderAPI isn't installed). */

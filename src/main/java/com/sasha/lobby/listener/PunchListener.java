@@ -75,7 +75,7 @@ public final class PunchListener implements Listener {
             }
         }
         var names = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
-                Messages.arg("puncher", puncher.getName()), Messages.arg("target", target.getName()));
+                Messages.name("puncher", puncher.getName()), Messages.name("target", target.getName()));
         if (config.announce()) {
             for (Player viewer : plugin.getServer().getOnlinePlayers()) messages.send(viewer, "punch.announce", names);
         } else {

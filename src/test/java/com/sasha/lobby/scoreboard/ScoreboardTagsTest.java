@@ -57,6 +57,22 @@ class ScoreboardTagsTest {
         assertEquals(MessagesTestAccess.smallCaps("FractalSMP"), plain(messages, messages.raw("scoreboard.title")));
     }
 
+    /** In small caps, the player's name still shows in normal letters. */
+    @Test
+    void playerNameStaysNormalInSmallCaps() throws Exception {
+        Messages messages = MessagesTestAccess.messages(new YamlConfiguration());
+        assertEquals(MessagesTestAccess.smallCaps("Hi ") + "SashaWildfang", plain(messages, "Hi <player>"));
+    }
+
+    /** A rank prefix pasted in front of the name (like chat and tab do) keeps one space and the name normal. */
+    @Test
+    void rankedNameInSmallCaps() throws Exception {
+        Messages messages = MessagesTestAccess.messages(new YamlConfiguration());
+        String rendered = PlainTextComponentSerializer.plainText().serialize(
+                messages.render("&f\uE0EA &#c42b2b<player>" + "<gray>: hi", Messages.name("player", "SashaWildfang")));
+        assertEquals("\uE0EA SashaWildfang: " + MessagesTestAccess.smallCaps("hi"), rendered);
+    }
+
     /** The tab list header and footer show the realm counts and "playing with X out of Y". */
     @Test
     void tablistShowsRealmCounts() throws Exception {

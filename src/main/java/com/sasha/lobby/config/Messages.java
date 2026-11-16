@@ -5,8 +5,10 @@ package com.sasha.lobby.config;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -18,7 +20,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -29,6 +33,12 @@ import java.util.logging.Logger;
 public final class Messages {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
+    /**
+     * Player names are kept exactly as they are while the rest of a message turns into small caps. While a
+     * message renders, each name stands in as a marker (private-use characters, which aren't letters, so
+     * small caps leaves them alone) and is swapped back in afterwards.
+     */
+    private static final ThreadLocal<Map<String, Component>> KEPT = new ThreadLocal<>();
 
     private final YamlConfiguration yaml;
     private final String gradientOpen;
@@ -130,9 +140,28 @@ public final class Messages {
         return lines;
     }
 
-    /** Placeholder whose value is inserted as plain text, so tags in names are never parsed. */
+    /** Placeholder whose value is inserted as plain text, so tags in it are never parsed. */
     public static TagResolver arg(String key, Object value) {
         return Placeholder.unparsed(key, String.valueOf(value));
+    }
+
+    /** Placeholder for a player's name: plain text, and always in normal letters (never small caps). */
+    public static TagResolver name(String key, String name) {
+        return keep(key, Component.text(name));
+    }
+
+    /** Placeholder inserted exactly as given: never parsed, and never turned into small caps. */
+    public static TagResolver keep(String key, Component value) {
+        return TagResolver.resolver(key, (arguments, context) -> Tag.selfClosingInserting(marker(value)));
+    }
+
+    /** Swaps kept text for a marker while a message renders (or inserts it directly when there's no small caps). */
+    private static Component marker(Component value) {
+        Map<String, Component> kept = KEPT.get();
+        if (kept == null) return value;
+        String marker = "\uE000" + (char) (0xE100 + kept.size()) + "\uE001";
+        kept.put(marker, value);
+        return Component.text(marker);
     }
 
     /**
@@ -147,9 +176,24 @@ public final class Messages {
 
     private Component parse(String template, TagResolver... args) {
         String mini = brand(LegacyCodes.toMiniMessage(template));
-        Component component = MM.deserialize(mini, TagResolver.resolver(theme, TagResolver.resolver(args)));
-        // Applied after placeholders are filled in, so player names and counts are converted too.
-        return smallCaps ? SmallCaps.apply(component) : component;
+        Map<String, Component> outer = KEPT.get();
+        Map<String, Component> kept = smallCaps ? new LinkedHashMap<>() : null;
+        KEPT.set(kept);
+        Component component;
+        try {
+            component = MM.deserialize(mini, TagResolver.resolver(theme, TagResolver.resolver(args)));
+        } finally {
+            KEPT.set(outer);
+        }
+        if (!smallCaps) return component;
+        // Applied after placeholders are filled in, so counts are converted too; then the kept pieces
+        // (player names) go back in as they were.
+        component = SmallCaps.apply(component);
+        for (Map.Entry<String, Component> piece : kept.entrySet()) {
+            component = component.replaceText(TextReplacementConfig.builder()
+                    .matchLiteral(piece.getKey()).replacement(piece.getValue()).build());
+        }
+        return component;
     }
 
     private String brand(String template) {

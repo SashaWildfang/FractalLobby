@@ -70,7 +70,7 @@ public final class Profile implements Listener {
     public void open(Player player) {
         Messages messages = plugin.messages();
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, 45, messages.component("profile.title", Messages.arg("player", player.getName())));
+        menu.inventory = Bukkit.createInventory(menu, 45, messages.component("profile.title", Messages.name("player", player.getName())));
         ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
@@ -112,7 +112,7 @@ public final class Profile implements Listener {
         int parkourRank = plugin.parkour().leaderboard().rank(player);
 
         return TagResolver.resolver(
-                Messages.arg("player", player.getName()),
+                Messages.name("player", player.getName()),
                 Placeholder.component("rank", rank),
                 Messages.arg("joined", joined),
                 Messages.arg("playtime", playtime),

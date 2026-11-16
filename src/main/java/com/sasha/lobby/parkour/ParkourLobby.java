@@ -170,7 +170,7 @@ public final class ParkourLobby implements Listener {
 
     private static TagResolver row(Leaderboard.Entry entry) {
         return TagResolver.resolver(Messages.arg("position", entry.position()),
-                Messages.arg("name", entry.name()), Messages.arg("score", entry.score()));
+                Messages.name("name", entry.name()), Messages.arg("score", entry.score()));
     }
 
     /** The score and rank tags for the viewer themself. */

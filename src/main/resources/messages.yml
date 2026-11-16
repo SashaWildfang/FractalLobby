@@ -31,7 +31,7 @@ prefix: "<brand><bold>Lobby</bold></brand> <dark_gray>»</dark_gray> "
 
 format:
   # Font for everything players see: chat, the scoreboard, item names.
-  #   small-caps - tiny text: "Lobby" shows as "ʟᴏʙʙʏ" (player names too)
+  #   small-caps - tiny text: "Lobby" shows as "ʟᴏʙʙʏ" (player names always stay normal)
   #   normal     - regular text
   # Write the text in this file normally; the plugin converts it as it's shown.
   font: small-caps
