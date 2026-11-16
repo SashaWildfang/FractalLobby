@@ -193,3 +193,42 @@ npcs:
         height: 0.28
       - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ʀɪɢʜᴛ ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
         height: 0.28
+  Discord:
+    location:
+      world: world
+      x: -216.5
+      y: 3.0
+      z: 244.5
+      yaw: 140.0
+      pitch: 0.0
+    skin:
+      name: ''
+      url: ''
+      value: ''
+      signature: ''
+      slim: true
+      texture: fractal:entity/npc/discord
+      cape: ''
+    equipment: {}
+    glowing: false
+    glow-color: blue
+    turn-to-player: true
+    turn-distance: 8.0
+    scale: 1.0
+    cooldown: 2.0
+    collidable: true
+    actions:
+      RIGHT_CLICK:
+      - 'message:<#5865F2><bold>ᴅɪꜱᴄᴏʀᴅ</bold></#5865F2> <dark_gray>» <#E8DDFF>ᴊᴏɪɴ ᴏᴜʀ ᴅɪꜱᴄᴏʀᴅ: <click:open_url:''https://dc.fractalsmp.net''><hover:show_text:''<#B8A9D9>ᴄʟɪᴄᴋ ᴛᴏ ᴏᴘᴇɴ''><#9AA4FF><underlined>dc.fractalsmp.net</underlined></hover></click> <#8C7BB0>(ᴄʟɪᴄᴋ)'
+      - 'play_sound:entity.experience_orb.pickup'
+    hologram:
+      offset: 0.3
+      lines:
+      - content: '<#ANIM:shimmer:#5865F2,#9AA4FF>&lᴅɪꜱᴄᴏʀᴅ</#ANIM>'
+        height: 0.34
+      - content: '&#E8DDFFᴄʜᴀᴛ &#5E4A86• &#E8DDFFᴇᴠᴇɴᴛꜱ &#5E4A86• &#E8DDFFɢɪᴠᴇᴀᴡᴀʏꜱ'
+        height: 0.28
+      - content: '&#9AA4FFdc.fractalsmp.net'
+        height: 0.28
+      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ʀɪɢʜᴛ ᴄʟɪᴄᴋ ꜰᴏʀ ᴛʜᴇ ʟɪɴᴋ</#ANIM>'
+        height: 0.28

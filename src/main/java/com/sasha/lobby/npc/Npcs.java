@@ -86,9 +86,38 @@ public final class Npcs implements Listener {
                 npcs.put(name, npc);
             }
         }
+        addNewDefaults();
         for (Entity old : allTagged()) old.remove();
         for (Npc npc : npcs.values()) attachHologram(npc);
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 1L, 2L);
+    }
+
+    /** Built-in NPCs that came in later updates: each is added once (deleting it afterwards keeps it gone). */
+    private static final List<String> LATER_DEFAULTS = List.of("Discord");
+
+    private void addNewDefaults() {
+        File marker = new File(plugin.getDataFolder(), "npcs-added.yml");
+        YamlConfiguration added = YamlConfiguration.loadConfiguration(marker);
+        List<String> done = new ArrayList<>(added.getStringList("added"));
+        boolean changed = false;
+        for (String name : LATER_DEFAULTS) {
+            if (done.contains(name)) continue;
+            done.add(name);
+            changed = true;
+            if (npcs.containsKey(name)) continue;
+            Npc builtIn = Npc.builtIn(plugin, name);
+            if (builtIn == null || builtIn.location == null) continue;
+            npcs.put(name, builtIn);
+            plugin.getLogger().info("Added the new built-in NPC " + name + " (/npc movehere " + name + " to move it).");
+        }
+        if (!changed) return;
+        save();
+        added.set("added", done);
+        try {
+            added.save(marker);
+        } catch (java.io.IOException e) {
+            plugin.getLogger().warning("Couldn't save npcs-added.yml: " + e.getMessage());
+        }
     }
 
     public void stop() {
@@ -352,12 +381,13 @@ public final class Npcs implements Listener {
     }
 
     private void click(Npc npc, Player player, String type) {
+        List<String> actions = new ArrayList<>(npc.actions.getOrDefault(type, List.of()));
+        actions.addAll(npc.actions.getOrDefault("ANY_CLICK", List.of()));
+        if (actions.isEmpty()) return; // a click that does nothing doesn't start the cooldown either
         String key = player.getUniqueId() + ":" + npc.name;
         long now = System.currentTimeMillis();
         if (now < cooldowns.getOrDefault(key, 0L)) return;
         cooldowns.put(key, now + Math.round(npc.cooldownSeconds * 1000));
-        List<String> actions = new ArrayList<>(npc.actions.getOrDefault(type, List.of()));
-        actions.addAll(npc.actions.getOrDefault("ANY_CLICK", List.of()));
         run(npc, player, actions, 0);
     }
 
