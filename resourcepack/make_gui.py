@@ -1,60 +1,98 @@
-from PIL import Image, ImageDraw
-import json, os, zipfile, sys
-W = 176
-OUT = '/tmp/gui/pack'
-def hexc(h, a=255): h = h.lstrip('#'); return (int(h[0:2],16), int(h[2:4],16), int(h[4:6],16), a)
-BG = hexc('#100A1C'); PANEL = hexc('#160E27'); TITLE = hexc('#1B1030')
-CELL = hexc('#0B0713'); CELL_HI = hexc('#2A1B45'); CELL_LO = hexc('#06040B')
-G1, G2 = hexc('#8E2DE2'), hexc('#E58BFF')
-def lerp(a, b, t): return tuple(round(a[i] + (b[i]-a[i])*t) for i in range(4))
+"""Draws the Lobby realm menu backgrounds in the style of Survival's menus (CrazySurvival pack)."""
+from PIL import Image
+import json, os, sys, zipfile
 
-def gui(rows):
-    top = 17 + rows * 18          # where the player inventory part starts
-    H = top + 96                  # whole container
+MENUS = sys.argv[1]  # .../assets/minecraft/textures/gui/menus
+OUT = sys.argv[2]
+TEXT = {(255, 255, 255), (212, 212, 212)}
+SHADOW = (73, 77, 107)
+
+warps = Image.open(f'{MENUS}/warp/warps.png').convert('RGBA')
+survival = Image.open(f'{MENUS}/survivalmenu/main.png').convert('RGBA')
+W = 176
+
+def rgb(p): return p[:3]
+
+# -- the letters, cut out of "SURVIVAL MENU"
+def letters(img, y0, y1, x0, x1):
+    cols = [x for x in range(x0, x1) if any(rgb(img.getpixel((x, y))) in TEXT for y in range(y0, y1))]
+    groups, cur = [], []
+    for x in cols:
+        if cur and x != cur[-1] + 1: groups.append(cur); cur = []
+        cur.append(x)
+    if cur: groups.append(cur)
+    out = []
+    for g in groups:
+        pix = {(x - g[0], y): img.getpixel((x, y)) for x in g for y in range(y0, y1) if rgb(img.getpixel((x, y))) in TEXT}
+        out.append((len(g), pix))
+    return out
+
+glyphs = letters(survival, 0, 20, 22, 156)
+# S U R V I V A L | M E N U
+assert len(glyphs) == 12, len(glyphs)
+by = dict(zip("SURVIVALMENU", glyphs))
+gap = 1
+top_y = min(y for _, p in glyphs for (_, y) in p)
+
+def plaque_title(img, word, centre=88):
+    # wipe the old title (copy each row's plain plaque colour across)
+    for y in range(3, 16):
+        plain = img.getpixel((30, y))
+        for x in range(24, 152):
+            img.putpixel((x, y), plain)
+    width = sum(by[c][0] for c in word) + gap * (len(word) - 1)
+    x = centre - width // 2
+    for c in word:
+        w, pix = by[c]
+        for (dx, y), p in pix.items():
+            sx, sy = x + dx + 1, y + 1
+            if rgb(img.getpixel((sx, sy))) not in TEXT: img.putpixel((sx, sy), SHADOW + (255,))
+        for (dx, y), p in pix.items(): img.putpixel((x + dx, y), p)
+        x += w + gap
+
+def tile(img, cx, cy):
+    """A slate square behind a realm's item (item at cx, cy), like the icon squares on Survival's buttons."""
+    x0, y0, x1, y1 = cx - 3, cy - 3, cx + 18, cy + 18
+    for x in range(x0, x1 + 1):
+        for y in range(y0, y1 + 1):
+            edge = x in (x0, x1) or y in (y0, y1)
+            light = x == x0 + 1 or y == y0 + 1
+            dark = x == x1 - 1 or y == y1 - 1
+            c = (0x31, 0x35, 0x4b) if edge else (0x6a, 0x6f, 0x8d) if light and not dark else (0x38, 0x3b, 0x4f) if dark else (0x40, 0x44, 0x5c)
+            img.putpixel((x, y), c + (255,))
+
+def background(rows, slots):
+    top = warps.crop((0, 0, W, 29))
+    middle = warps.crop((0, 25, W, 26))
+    bottom = warps.crop((0, 116, W, 127))
+    total = 45 + 18 * rows
     img = Image.new('RGBA', (W, 256), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    # body with rounded corners
-    d.rounded_rectangle([0, 0, W-1, H-1], radius=5, fill=BG)
-    # gradient frame (2px), purple → pink left to right, following the rounded corners
-    alpha = img.getchannel('A')
-    inner = Image.new('L', img.size, 0)
-    ImageDraw.Draw(inner).rounded_rectangle([2, 2, W-3, H-3], radius=3, fill=255)
-    for x in range(W):
-        c = lerp(G1, G2, x/(W-1))
-        for y in range(H):
-            if alpha.getpixel((x, y)) and not inner.getpixel((x, y)): img.putpixel((x, y), c)
-    # title bar and divider under it
-    d.rectangle([3, 3, W-4, 14], fill=TITLE)
-    for x in range(3, W-3): img.putpixel((x, 15), lerp(G1, G2, x/(W-1))[:3] + (160,))
-    # chest panel
-    d.rectangle([5, 16, W-6, top+1], fill=PANEL)
-    def cell(x, y, fill=CELL):
-        # x,y = item position (16x16); frame sits 1px outside like a vanilla slot
-        d.rectangle([x-1, y-1, x+16, y+16], fill=fill)
-        d.line([x-1, y-1, x+16, y-1], fill=CELL_LO); d.line([x-1, y-1, x-1, y+16], fill=CELL_LO)
-        d.line([x-1, y+16, x+16, y+16], fill=CELL_HI); d.line([x+16, y-1, x+16, y+16], fill=CELL_HI)
-    for r in range(rows):
-        for c in range(9): cell(8 + c*18, 18 + r*18)
-    # player inventory (3 rows) and hotbar
-    inv = top + 14
-    for r in range(3):
-        for c in range(9): cell(8 + c*18, inv + r*18)
-    for c in range(9): cell(8 + c*18, inv + 58)
-    return img, H
+    img.paste(top, (0, 0))
+    for y in range(29, total - 11): img.paste(middle, (0, y))
+    img.paste(bottom, (0, total - 11))
+    plaque_title(img, "REALMS")
+    for slot in slots:
+        r, c = divmod(slot, 9)
+        tile(img, 8 + c * 18, 16 + 18 + r * 18)  # 16 = how far the picture starts above the menu
+    return img
+
+def centred(count, rows):
+    if count == 0: return []
+    if count > 9: return None
+    gap = 2 if count <= 5 else 1
+    first = 4 - (count - 1) * gap // 2
+    row = (rows - 1) // 2
+    return [row * 9 + first + i * gap for i in range(count)]
 
 os.makedirs(f'{OUT}/assets/fractal/textures/gui', exist_ok=True)
 os.makedirs(f'{OUT}/assets/fractal/font', exist_ok=True)
 providers = [{"type": "space", "advances": {"": -8, "": -169}}]
 for rows in range(1, 7):
-    img, H = gui(rows)
-    img.save(f'{OUT}/assets/fractal/textures/gui/realms_{rows}.png')
-    providers.append({"type": "bitmap", "file": f"fractal:gui/realms_{rows}.png", "ascent": 13, "height": 256,
-                      "chars": [chr(0xf100 + rows)]})
-json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=2)
+    for count in range(0, 10):
+        name = f'realms_{rows}_{count}'
+        background(rows, centred(count, rows)).save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
+        providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256,
+                          "chars": [chr(0xF100 + rows * 16 + count)]})
+json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
 json.dump({"pack": {"pack_format": 75, "supported_formats": [34, 99], "description": "Fractal Lobby menus"}},
-          open(f'{OUT}/pack.mcmeta', 'w'), indent=2)
-with zipfile.ZipFile('/tmp/gui/FractalLobbyGUI.zip', 'w', zipfile.ZIP_DEFLATED) as z:
-    for root, _, files in os.walk(OUT):
-        for f in files:
-            p = os.path.join(root, f); z.write(p, os.path.relpath(p, OUT))
-print('ok')
+          open(f'{OUT}/pack.mcmeta', 'w'), indent=1)

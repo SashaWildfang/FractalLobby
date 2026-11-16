@@ -66,6 +66,8 @@ public final class RealmSelector implements Listener {
     /** The open menu; being the inventory's holder is how its clicks are recognised. */
     private static final class Menu implements InventoryHolder {
         private final Player viewer;
+        /** With the custom background: which layout it was drawn for (how many realm squares). */
+        private int background = -1;
         private Inventory inventory;
         private final Map<Integer, LobbyConfig.SelectorServer> realms = new HashMap<>();
 
@@ -83,7 +85,10 @@ public final class RealmSelector implements Listener {
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
         Menu menu = new Menu(player);
         Component title = plugin.messages().component("realm-selector.title");
-        if (config.customGui()) title = customGuiTitle(config.rows(), title);
+        if (config.customGui()) {
+            menu.background = layout(shown(player).size());
+            title = customGuiTitle(config.rows(), menu.background);
+        }
         menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, title);
         ItemStack filler = filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
@@ -105,14 +110,29 @@ public final class RealmSelector implements Listener {
     private static final Key GUI_FONT = Key.key("fractal", "lobby");
 
     /**
-     * The menu's title with the resource pack's background drawn behind it: move 8px left to the menu's
-     * edge, draw the background for this many rows (U+F101 to U+F106), then move back so the title text
-     * sits where it normally does. White, so the background isn't tinted like normal title text.
+     * The menu's title, which is the resource pack's background (it has "Realms" drawn on it, like
+     * Survival's menus): move 8px left to the menu's edge, draw the background for these rows with a
+     * square behind each of this many centred realms (0 = no squares), then move back. White, so the
+     * picture isn't tinted like normal title text.
      */
-    static Component customGuiTitle(int rows, Component title) {
-        String background = "\uF001" + (char) (0xF100 + rows) + "\uF002";
-        return Component.text().append(Component.text(background).font(GUI_FONT).color(NamedTextColor.WHITE))
-                .append(title).build();
+    static Component customGuiTitle(int rows, int realms) {
+        String background = "\uF001" + (char) (0xF100 + rows * 16 + realms) + "\uF002";
+        return Component.text(background).font(GUI_FONT).color(NamedTextColor.WHITE);
+    }
+
+    /** Which background fits: squares for centred realms (up to 9), otherwise none. */
+    private int layout(int shown) {
+        return plugin.lobbyConfig().selector().autoCenter() && shown <= 9 ? shown : 0;
+    }
+
+    /** The realms this player sees, in slot order. */
+    private List<LobbyConfig.SelectorServer> shown(Player viewer) {
+        List<LobbyConfig.SelectorServer> shown = new ArrayList<>();
+        for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
+            if (!hidden(viewer, plugin.serverStatus().status(realm.server()).state())) shown.add(realm);
+        }
+        shown.sort(java.util.Comparator.comparingInt(LobbyConfig.SelectorServer::slot));
+        return shown;
     }
 
     /** Black panes in empty slots, or nothing with the custom background (it draws its own slots). */
@@ -129,11 +149,14 @@ public final class RealmSelector implements Listener {
         ItemStack filler = filler();
 
         // Which realms this player sees, in slot order.
-        List<LobbyConfig.SelectorServer> shown = new ArrayList<>();
-        for (LobbyConfig.SelectorServer realm : config.servers()) {
-            if (!hidden(menu.viewer, plugin.serverStatus().status(realm.server()).state())) shown.add(realm);
+        List<LobbyConfig.SelectorServer> shown = shown(menu.viewer);
+        if (config.customGui() && menu.background >= 0 && layout(shown.size()) != menu.background) {
+            // A realm went down or came back: the background's squares are in the title, so open it afresh.
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (menu.viewer.getOpenInventory().getTopInventory() == menu.inventory) open(menu.viewer);
+            });
+            return;
         }
-        shown.sort(java.util.Comparator.comparingInt(LobbyConfig.SelectorServer::slot));
         int[] slots = config.autoCenter() ? centered(shown.size(), config.rows()) : null;
 
         // Clear where realms were last time (they move when one goes down or comes back).

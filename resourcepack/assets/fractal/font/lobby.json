@@ -1,65 +1,551 @@
 {
-  "providers": [
-    {
-      "type": "space",
-      "advances": {
-        "\uf001": -8,
-        "\uf002": -169
-      }
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_1.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf101"
-      ]
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_2.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf102"
-      ]
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_3.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf103"
-      ]
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_4.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf104"
-      ]
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_5.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf105"
-      ]
-    },
-    {
-      "type": "bitmap",
-      "file": "fractal:gui/realms_6.png",
-      "ascent": 13,
-      "height": 256,
-      "chars": [
-        "\uf106"
-      ]
-    }
-  ]
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    "\uf001": -8,
+    "\uf002": -169
+   }
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf110"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf111"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf112"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf113"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf114"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf115"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf116"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf117"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf118"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_1_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf119"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf120"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf121"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf122"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf123"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf124"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf125"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf126"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf127"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf128"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_2_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf129"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf130"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf131"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf132"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf133"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf134"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf135"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf136"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf137"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf138"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_3_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf139"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf140"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf141"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf142"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf143"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf144"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf145"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf146"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf147"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf148"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_4_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf149"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf150"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf151"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf152"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf153"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf154"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf155"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf156"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf157"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf158"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_5_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf159"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_0.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf160"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_1.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf161"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_2.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf162"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf163"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf164"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf165"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf166"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_7.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf167"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_8.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf168"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/realms_6_9.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf169"
+   ]
+  }
+ ]
 }

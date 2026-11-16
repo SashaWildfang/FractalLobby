@@ -23,9 +23,9 @@ class RealmLayoutTest {
 
     @Test
     void customTitleDrawsTheBackgroundForTheRows() {
-        var title = RealmSelector.customGuiTitle(3, net.kyori.adventure.text.Component.text("Realms"));
-        var background = (net.kyori.adventure.text.TextComponent) title.children().getFirst();
-        org.junit.jupiter.api.Assertions.assertEquals("\uF001\uF103\uF002", background.content());
+        var title = RealmSelector.customGuiTitle(3, 1);
+        var background = (net.kyori.adventure.text.TextComponent) title;
+        org.junit.jupiter.api.Assertions.assertEquals("\uF001\uF131\uF002", background.content());
         org.junit.jupiter.api.Assertions.assertEquals("fractal:lobby", background.font().asString());
     }
 }
