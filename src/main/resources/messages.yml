@@ -403,8 +403,6 @@ friends:
       lore:
         - "<muted>Type <white>/f add [name]</white> <muted>in chat."
         - "<muted>They get a request to accept."
-        - ""
-        - "<accent><click></accent> <muted>to start typing it"
     requests:
       name: "<primary>Friend Requests"
       lore:

@@ -146,10 +146,7 @@ public final class FriendsMenu implements Listener {
                 plugin.profile().open(player);
             }
             case ADD -> {
-                player.closeInventory();
-                click(player, 1);
-                player.sendMessage(plugin.messages().component("friends.menu.add.name")
-                        .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("/friend add ")));
+                // Just says how to add a friend.
             }
             case REQUESTS -> {
                 player.closeInventory();

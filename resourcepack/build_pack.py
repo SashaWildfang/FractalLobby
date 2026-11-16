@@ -1081,6 +1081,10 @@ model('friend-notify', art([
     ".......##.......",
     "................",
     "................"], FRIEND_COL))
-# add a friend: Survival's person with a plus
-model('add-friend', Image.open(f'{ICONS}/profile/friend.png').convert('RGBA'))
+# add a friend: Survival's person with a plus, moved up to sit in the middle like the other icons
+_friend = Image.open(f'{ICONS}/profile/friend.png').convert('RGBA')
+_box = _friend.getbbox()
+add_friend = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+add_friend.alpha_composite(_friend.crop(_box), (_box[0], (16 - (_box[3] - _box[1])) // 2))
+model('add-friend', add_friend)
 print('friends: badge, icons')
