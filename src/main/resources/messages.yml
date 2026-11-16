@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 20
+messages-version: 21
 
 theme:
   primary: "#B266FF"
@@ -590,3 +590,32 @@ parkour:
       - "<muted>Rank: <white><rank>"
       - ""
       - "<dark_gray>Step on the plate to try again!"
+
+# /holo: the lobby's holograms (holograms/*.yml, DecentHolograms' format)
+holo:
+  created: "<prefix><good>Hologram <white><name></white> made above you. <muted>/holo addline <name> <text>"
+  deleted: "<prefix><secondary>Hologram <white><name></white> deleted."
+  saved: "<prefix><good>Hologram <white><name></white> saved."
+  moved: "<prefix><good>Hologram <white><name></white> moved to where you're standing."
+  enabled: "<prefix><good>Hologram <white><name></white> shown."
+  disabled: "<prefix><secondary>Hologram <white><name></white> hidden."
+  origin-top: "<prefix><secondary>Hologram <white><name></white>: its location is now the <white>top</white> line."
+  origin-bottom: "<prefix><secondary>Hologram <white><name></white>: its location is now the <white>bottom</white> line."
+  reloaded: "<prefix><good>Holograms reloaded (<white><count></white>)."
+  exists: "<prefix><bad>There's already a hologram called <white><name></white>."
+  unknown: "<prefix><bad>There's no hologram called <white><name></white>. <muted>/holo list"
+  no-line: "<prefix><bad>That hologram has no such line. <muted>/holo info <name>"
+  save-failed: "<prefix><bad>Couldn't save: <error>"
+  list-header: "<prefix><secondary>Holograms (<white><count></white>):"
+  list-line: "<muted> • <white><name></white> <dark_gray><where>"
+  info-header: "<prefix><secondary>Hologram <white><name></white> <muted>(<pages> page(s)), page 1:"
+  help:
+    - "<brand><bold>Holograms</bold></brand> <muted>(line numbers start at 1)"
+    - "<white>/holo create <name> [text]</white> <muted>- make one above you"
+    - "<white>/holo addline|setline|insertline|removeline <name> ...</white> <muted>- lines"
+    - "<white>/holo height <name> <line> <blocks></white> <muted>- gap below a line"
+    - "<white>/holo movehere|tp|info|delete|toggle|origin <name></white>"
+    - "<white>/holo range <name> <blocks></white> <muted>| <white>/holo interval <name> <ticks></white>"
+    - "<white>/holo action <name> <click> <TYPE:value></white> <muted>- MESSAGE, COMMAND, CONSOLE, CONNECT, SOUND, TELEPORT, NEXT_PAGE"
+    - "<white>/holo addpage <name></white> <muted>| <white>/holo list</white> | <white>/holo near</white> | <white>/holo reload</white>"
+    - "<muted>Text: & codes, hex colours, MiniMessage, {player}, placeholders, and DecentHolograms' gradients and animations"

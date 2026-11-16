@@ -75,6 +75,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private Trails trails;
     private com.sasha.lobby.items.Statuses statuses;
     private com.sasha.lobby.listener.AfkListener afk;
+    private com.sasha.lobby.hologram.Holograms holograms;
     private Profile profile;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -117,15 +118,17 @@ public final class Lobby extends JavaPlugin implements Listener {
         trails = new Trails(this);
         statuses = new com.sasha.lobby.items.Statuses(this);
         afk = new com.sasha.lobby.listener.AfkListener(this);
+        holograms = new com.sasha.lobby.hologram.Holograms(this);
         profile = new Profile(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         coreLink.start();
+        holograms.start();
         afk.start();
         display.start();
         border.apply();
@@ -150,6 +153,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
+        if (holograms != null) holograms.stop();
         if (serverStatus != null) serverStatus.stop();
         if (selector != null) selector.stop();
         if (doubleJump != null) doubleJump.stop();
@@ -252,6 +256,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         loadSettings();
         proxyCounts.restartTask();
         serverStatus.start();
+        holograms.start();
         afk.start();
         display.start();
         for (Player player : getServer().getOnlinePlayers()) {
@@ -309,6 +314,9 @@ public final class Lobby extends JavaPlugin implements Listener {
                             .then(Commands.literal("return")
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.setArea(player, "return")))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
+
+            commands.register(new com.sasha.lobby.hologram.HologramCommands(this, holograms).build(),
+                    "Make and edit the lobby's holograms", List.of("lobbyholo", "hologram"));
 
             commands.register(Commands.literal("parkour")
                     .requires(source -> source.getSender().hasPermission("lobby.cmd.parkour"))

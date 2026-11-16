@@ -22,6 +22,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 - **Launch pads**: stone pressure plates fling you forward
 - **Spawn**: teleport on join, `/spawn`, `/setspawn`
 - **Status**: players pick one of 25 emoji statuses in My Profile (Happy, Chilling, Thinking...), shown under their name as "Status: (emoji) Happy". Listed in `config.yml` (`status`), open to everyone by default
+- **Holograms** (no DecentHolograms needed): `holograms/*.yml` in DecentHolograms' own format (copied over from DecentHolograms the first time). Shown with display entities: lines that are the same for everyone are shared, lines with `{player}` or placeholders are per player. Supports `&` and hex colours, MiniMessage, DecentHolograms gradients and animations (burn, wave, colors, typewriter, scroll), `#ICON:`/`#HEAD:` lines, line heights, down-origin, display range, update interval, pages, and click actions (MESSAGE, COMMAND, CONSOLE, CONNECT, SOUND, TELEPORT, NEXT_PAGE, PREV_PAGE, PAGE). Edit with `/holo`
 - **Parkour**: infinite parkour built in (no ajParkour needed). Step on the start plate or type `/parkour`: blocks appear in the air inside the parkour area one jump ahead, getting longer as your score goes up. The next block sparkles and a dotted arc shows the jump; a parkour sidebar shows your score, time, best and the record until you fall. Scores live in `parkour-scores.yml` (ajParkour's scores and area are brought over the first time)
 - **AFK**: after 5 minutes idle (`afk.minutes`), a red "AFK" with a clock shows under the player's name in place of their status, and a light red AFK badge replaces their rank and their name (and glow) turns light red; nothing in chat. `/afk` does it straight away. Walking a block away, turning around, chatting or clicking brings everything back (small mouse movements and pressure plates don't)
 - **No crafting**: the inventory's crafting grid and recipe book are hidden and blocked (`join-items.no-crafting`)
@@ -39,6 +40,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 | `/setspawn` | `lobby.admin` (op) | Set spawn to where you stand |
 | `/lobby reload` or `/lobbycore reload` | `lobby.admin` (op) | Reload config, messages and parkour (use `/lobbycore` if the proxy owns `/lobby`) |
 | `/lobbyparkour setup` | `lobby.admin` (op) | Set up a pressure-plate start and hologram at your position |
+| `/holo` (or `/lobbyholo`) | `lobby.admin` (op) | Make and edit holograms: create, addline, setline, insertline, removeline, height, movehere, tp, info, delete, toggle, origin, range, interval, action, addpage, list, near, reload |
 | `/parkour` | `lobby.cmd.parkour` (everyone) | Start a parkour run (or stop one) |
 | `/lobbyparkour area pos1\|pos2\|return` | `lobby.admin` (op) | Set the corners of the parkour area, or where players go after a run |
 | `/lobbyparkour leaderboard [remove]` | `lobby.admin` (op) | Put the parkour leaderboard hologram where you stand (or remove it) |
