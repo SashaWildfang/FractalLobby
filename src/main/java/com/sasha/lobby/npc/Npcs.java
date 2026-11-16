@@ -233,6 +233,8 @@ public final class Npcs implements Listener {
                     .addProperty(new ProfileProperty("textures", Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8)))).build();
         }
         if (!npc.skin.name.isBlank()) return builder.name(npc.skin.name).build();
+        // Only a skin from the pack: players without it see the default skin.
+        if (!npc.skin.texture.isBlank() || !npc.skin.cape.isBlank()) return builder.build();
         return Mannequin.defaultProfile();
     }
 
@@ -377,6 +379,7 @@ public final class Npcs implements Listener {
                 case "send_to_server", "connect" -> plugin.proxyCounts().connect(player, value);
                 // Like clicking the realm in the realm selector: offline, full, maintenance and coming soon are checked.
                 case "realm" -> plugin.realmSelector().join(player, value);
+                case "parkour" -> plugin.parkour().game().start(player);
                 case "play_sound", "sound" -> {
                     String[] parts = value.split("[: ]");
                     try {

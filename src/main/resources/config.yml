@@ -217,12 +217,12 @@ chat:
 
 
 # ── Parkour ─────────────────────────────────────────────────────
-# Infinite parkour, built into the lobby: step on the start plate (or
+# Infinite parkour, built into the lobby: click the Parkour NPC (or
 # type /parkour) and blocks appear in the air one jump ahead, inside the
 # parkour area. The next block sparkles, with a dotted arc showing the
 # jump. Falling ends the run. Scores are kept in parkour-scores.yml (the
 # first time, ajParkour's scores are brought over).
-#   /lobbyparkour setup              start plate (and its hologram) here
+#   /lobbyparkour setup              the Parkour NPC (starts runs) here
 #   /lobbyparkour area pos1 / pos2   the two corners of the area the
 #                                    course is built in (the first time,
 #                                    they're taken from ajParkour)

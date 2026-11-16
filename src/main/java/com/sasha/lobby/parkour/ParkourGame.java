@@ -110,7 +110,7 @@ public final class ParkourGame implements Listener {
 
     // ---------------------------------------------------------------- starting
 
-    /** Starts a run (from the start plate or /parkour). */
+    /** Starts a run (from the Parkour NPC or /parkour). */
     public void start(Player player) {
         Messages messages = plugin.messages();
         if (playing(player)) return;

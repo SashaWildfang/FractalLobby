@@ -47,7 +47,7 @@ npcs:
     hologram:
       offset: 0.3
       lines:
-      - content: '<#ANIM:shimmer:#B266FF,#FFC2F2>&l✦ ꜱᴜʀᴠɪᴠᴀʟ ✦</#ANIM>'
+      - content: '<#ANIM:shimmer:#B266FF,#FFC2F2>&lꜱᴜʀᴠɪᴠᴀʟ</#ANIM>'
         height: 0.34
       - content: '&#E8DDFFᴄʟᴀɪᴍ ʟᴀɴᴅ &#5E4A86• &#E8DDFFʙᴜɪʟᴅ &#5E4A86• &#E8DDFFᴛʀᴀᴅᴇ'
         height: 0.28
@@ -97,7 +97,7 @@ npcs:
     hologram:
       offset: 0.3
       lines:
-      - content: '<#ANIM:shimmer:#FF9F5A,#FF7BE5>&l✦ ᴘʀɪꜱᴏɴ ✦</#ANIM>'
+      - content: '<#ANIM:shimmer:#FF9F5A,#FF7BE5>&lᴘʀɪꜱᴏɴ</#ANIM>'
         height: 0.34
       - content: '&#E8DDFFᴍɪɴᴇ &#5E4A86• &#E8DDFFʀᴀɴᴋ ᴜᴘ &#5E4A86• &#E8DDFFʙʀᴇᴀᴋ ᴏᴜᴛ'
         height: 0.28
@@ -147,11 +147,49 @@ npcs:
     hologram:
       offset: 0.3
       lines:
-      - content: '<#ANIM:shimmer:#7FA8FF,#FF7590>&l✦ ᴄᴀᴘᴛᴜʀᴇ ᴛʜᴇ ꜰʟᴀɢ ✦</#ANIM>'
+      - content: '<#ANIM:shimmer:#7FA8FF,#FF7590>&lᴄᴀᴘᴛᴜʀᴇ ᴛʜᴇ ꜰʟᴀɢ</#ANIM>'
         height: 0.34
       - content: '&#E8DDFFᴛᴇᴀᴍ ᴜᴘ &#5E4A86• &#E8DDFFꜱᴛᴇᴀʟ &#5E4A86• &#E8DDFFᴅᴇꜰᴇɴᴅ'
         height: 0.28
       - content: '%lobby_status_ctf%'
         height: 0.28
       - content: '%lobby_action_ctf%'
+        height: 0.28
+  Parkour:
+    location:
+      world: world
+      x: -216.5
+      y: 3.0
+      z: 232.5
+      yaw: 40.0
+      pitch: 0.0
+    skin:
+      name: ''
+      url: ''
+      value: ''
+      signature: ''
+      slim: false
+      texture: fractal:entity/npc/parkour
+      cape: ''
+    equipment: {}
+    glowing: false
+    glow-color: green
+    turn-to-player: true
+    turn-distance: 8.0
+    scale: 1.0
+    cooldown: 1.0
+    collidable: true
+    actions:
+      ANY_CLICK:
+      - 'parkour'
+    hologram:
+      offset: 0.3
+      lines:
+      - content: '<#ANIM:shimmer:#9BFFC4,#7FA8FF>&lᴘᴀʀᴋᴏᴜʀ</#ANIM>'
+        height: 0.34
+      - content: '&#E8DDFFᴊᴜᴍᴘ &#5E4A86• &#E8DDFFᴄʟɪᴍʙ &#5E4A86• &#E8DDFFʙᴇᴀᴛ ʏᴏᴜʀ ʙᴇꜱᴛ'
+        height: 0.28
+      - content: '&#B8A9D9ʏᴏᴜʀ ʙᴇꜱᴛ: &f&l%lobby_parkour_best% &#8C7BB0(%lobby_parkour_rank%)'
+        height: 0.28
+      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
         height: 0.28

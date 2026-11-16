@@ -53,9 +53,9 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * The lobby parkour: a pressure plate (or /parkour) that starts an infinite parkour run in the parkour area
- * ({@link ParkourGame}), a hologram above the plate (each player's own best and rank), and a leaderboard hologram
- * with the best scores. Clicking either hologram opens the full top 10.
+ * The lobby parkour: the Parkour NPC (action "parkour", or /parkour) starts an infinite parkour run in the
+ * parkour area ({@link ParkourGame}), and a leaderboard hologram shows the best scores. Clicking the hologram opens
+ * the full top 10.
  */
 public final class ParkourLobby implements Listener {
 
@@ -99,25 +99,54 @@ public final class ParkourLobby implements Listener {
         leaderboard = new Leaderboard(plugin, scores);
         if (!data.contains("area")) importAjParkourArea();
         game = new ParkourGame(plugin, this);
-        holograms = List.of(
-                new Hologram("hologram", "fractal_lobby_parkour_holo_", this::plateText),
-                new Hologram("leaderboard", "fractal_lobby_parkour_board_", this::leaderboardText));
+        holograms = List.of(new Hologram("leaderboard", "fractal_lobby_parkour_board_", this::leaderboardText));
+        // The start plate is gone: the Parkour NPC starts runs now. Done once the world and NPCs are loaded.
+        plugin.getServer().getScheduler().runTask(plugin, this::replacePlate);
         playtime = new Hologram("playtime", "fractal_lobby_playtime_board_", this::playtimeText);
         displayTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::updateDisplays, 1L, 20L);
     }
 
     // ---------------------------------------------------------------- setup
 
-    /** Places the start plate at the admin's feet and its hologram one block above it. */
+    /** Puts the Parkour NPC where the admin stands (making it if it's gone). */
     public void setup(Player admin) {
-        Location plate = admin.getLocation().getBlock().getLocation();
-        plate.getBlock().setType(Material.POLISHED_BLACKSTONE_PRESSURE_PLATE, false);
-        saveLocation("plate", plate);
-        saveLocation("hologram", plate.clone().add(0.5, 1.0, 0.5));
-        save();
-        holograms.getFirst().remove();
-        updateDisplays();
+        Location at = admin.getLocation();
+        Location spot = new Location(at.getWorld(), Math.round(at.getX() * 2) / 2.0, at.getBlockY(), Math.round(at.getZ() * 2) / 2.0,
+                Math.round(at.getYaw() / 15) * 15f, 0f);
+        placeNpc(spot);
         plugin.messages().send(admin, "parkour.setup");
+    }
+
+    /** The Parkour NPC: moved to {@code at}, or made there (from the built-in npcs.yml) if there isn't one. */
+    private void placeNpc(Location at) {
+        var npcs = plugin.npcs();
+        var npc = npcs.get(NPC_NAME);
+        if (npc != null) {
+            npcs.move(npc, at);
+            return;
+        }
+        npc = npcs.create(NPC_NAME, at);
+        var builtIn = com.sasha.lobby.npc.Npc.builtIn(plugin, NPC_NAME);
+        if (builtIn != null) npc.copyLook(builtIn);
+        else npc.actions.put("ANY_CLICK", new ArrayList<>(List.of("parkour")));
+        npcs.changed(npc);
+        npcs.save();
+    }
+
+    static final String NPC_NAME = "Parkour";
+
+    /** Takes away an old start plate (and its hologram), with the Parkour NPC standing there instead. */
+    private void replacePlate() {
+        Location plate = readLocation("plate");
+        if (plate == null && !data.contains("hologram")) return;
+        if (plate != null) {
+            if (plate.getBlock().getType().name().endsWith("PRESSURE_PLATE")) plate.getBlock().setType(Material.AIR, false);
+            if (plugin.npcs().get(NPC_NAME) == null) placeNpc(plate.clone().add(0.5, 0, 0.5));
+        }
+        data.set("plate", null);
+        data.set("hologram", null);
+        save();
+        plugin.getLogger().info("The parkour start plate is now the Parkour NPC (/lobbyparkour setup moves it).");
     }
 
     /** Puts the leaderboard hologram where the admin stands (centred on the block). */
@@ -125,7 +154,7 @@ public final class ParkourLobby implements Listener {
         Location at = admin.getLocation().getBlock().getLocation().add(0.5, 0.0, 0.5);
         saveLocation("leaderboard", at);
         save();
-        holograms.get(1).remove();
+        holograms.getFirst().remove();
         updateDisplays();
         plugin.messages().send(admin, "parkour.leaderboard-set");
     }
@@ -134,13 +163,12 @@ public final class ParkourLobby implements Listener {
     public void removeLeaderboard(Player admin) {
         data.set("leaderboard", null);
         save();
-        holograms.get(1).remove();
+        holograms.getFirst().remove();
         plugin.messages().send(admin, "parkour.leaderboard-removed");
     }
 
     /**
-     * Moves a hologram ("hologram" above the start plate, or "leaderboard") to exactly where the admin
-     * stands. The start plate itself stays where it is.
+     * Moves a hologram ("leaderboard" or "playtime") to exactly where the admin stands.
      */
     public void moveHologram(Player admin, String which) {
         Location at = admin.getLocation();
@@ -150,21 +178,19 @@ public final class ParkourLobby implements Listener {
         save();
         hologram(which).remove();
         updateDisplays();
-        plugin.messages().send(admin, which.equals("playtime") ? "playtime.moved"
-                : which.equals("leaderboard") ? "parkour.leaderboard-moved" : "parkour.hologram-moved");
+        plugin.messages().send(admin, which.equals("playtime") ? "playtime.moved" : "parkour.leaderboard-moved");
     }
 
-    /** Takes a hologram away ("hologram" or "leaderboard"); /lobbyparkour setup or leaderboard puts it back. */
+    /** Takes a hologram away ("leaderboard" or "playtime"). */
     public void removeHologram(Player admin, String which) {
         data.set(which, null);
         save();
         hologram(which).remove();
-        plugin.messages().send(admin, which.equals("playtime") ? "playtime.removed"
-                : which.equals("leaderboard") ? "parkour.leaderboard-removed" : "parkour.hologram-removed");
+        plugin.messages().send(admin, which.equals("playtime") ? "playtime.removed" : "parkour.leaderboard-removed");
     }
 
     private Hologram hologram(String which) {
-        return which.equals("playtime") ? playtime : which.equals("leaderboard") ? holograms.get(1) : holograms.getFirst();
+        return which.equals("playtime") ? playtime : holograms.getFirst();
     }
 
     /** Puts the playtime leaderboard hologram where the admin stands (centred on the block). */
@@ -327,14 +353,6 @@ public final class ParkourLobby implements Listener {
     }
 
     // ---------------------------------------------------------------- hologram text
-
-    /** Above the start plate: the title and the viewer's own best and rank. */
-    private List<Component> plateText(Player viewer) {
-        Messages messages = plugin.messages();
-        return List.of(messages.component("parkour.hologram.title"),
-                messages.component("parkour.hologram.you", you(viewer)),
-                messages.component("parkour.hologram.hint"));
-    }
 
     /** The leaderboard: the best scores, then the viewer's own best and rank. */
     private List<Component> leaderboardText(Player viewer) {
@@ -603,20 +621,6 @@ public final class ParkourLobby implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onMenuDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder(false) instanceof Menu) event.setCancelled(true);
-    }
-
-    // ---------------------------------------------------------------- the start plate
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlate(PlayerInteractEvent event) {
-        if (event.getAction() != Action.PHYSICAL || event.getClickedBlock() == null) return;
-        Player player = event.getPlayer();
-        long now = System.currentTimeMillis();
-        Location plate = readLocation("plate");
-        if (plate == null || player.isInsideVehicle() || !sameBlock(event.getClickedBlock().getLocation(), plate)) return;
-        if (cooldowns.getOrDefault(player.getUniqueId(), 0L) > now) return;
-        cooldowns.put(player.getUniqueId(), now + 1000L);
-        game.start(player);
     }
 
     @EventHandler

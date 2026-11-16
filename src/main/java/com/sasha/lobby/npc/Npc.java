@@ -63,6 +63,32 @@ public final class Npc {
         return 1.8 * scale;
     }
 
+    /** The NPC of this name in the plugin's built-in npcs.yml (not the one on disk), or null. */
+    public static Npc builtIn(org.bukkit.plugin.Plugin plugin, String name) {
+        try (var in = plugin.getResource("npcs.yml")) {
+            if (in == null) return null;
+            var yaml = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                    new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+            ConfigurationSection c = yaml.getConfigurationSection("npcs." + name);
+            return c == null ? null : load(name, c);
+        } catch (java.io.IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    /** Takes everything but the name and where it stands from another NPC. */
+    public void copyLook(Npc from) {
+        skin.name = from.skin.name; skin.url = from.skin.url; skin.value = from.skin.value; skin.signature = from.skin.signature;
+        skin.slim = from.skin.slim; skin.texture = from.skin.texture; skin.cape = from.skin.cape;
+        equipment.clear(); equipment.putAll(from.equipment);
+        glowing = from.glowing; glowColor = from.glowColor; turnToPlayer = from.turnToPlayer; turnDistance = from.turnDistance;
+        scale = from.scale; cooldownSeconds = from.cooldownSeconds; collidable = from.collidable;
+        actions.clear();
+        from.actions.forEach((k, v) -> actions.put(k, new ArrayList<>(v)));
+        lines.clear(); lines.addAll(from.lines);
+        hologramOffset = from.hologramOffset;
+    }
+
     static Npc load(String name, ConfigurationSection c) {
         Npc npc = new Npc(name, readLocation(c.getConfigurationSection("location")));
         ConfigurationSection skin = c.getConfigurationSection("skin");

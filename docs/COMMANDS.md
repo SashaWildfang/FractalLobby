@@ -23,15 +23,13 @@ Setting up the parkour course and its holograms.
 
 | Command | Permission | What it does |
 |---|---|---|
-| `/lobbyparkour setup` | `lobby.admin` | Put the parkour start plate (and its hologram) where you stand. |
+| `/lobbyparkour setup` | `lobby.admin` | Put the Parkour NPC where you stand (it starts runs; make it again if it was removed). |
 | `/lobbyparkour area pos1` | `lobby.admin` | Set one corner of the area the course is built in.<br>Stand in one corner, then the opposite one for pos2.<br>The course is built anywhere inside the box. |
 | `/lobbyparkour area pos2` | `lobby.admin` | Set the opposite corner of the parkour area. |
 | `/lobbyparkour area return` | `lobby.admin` | Set where players go after a run.<br>Without it they go to the lobby spawn. |
 | `/lobbyparkour leaderboard` | `lobby.admin` | Put the parkour leaderboard hologram where you stand. |
 | `/lobbyparkour leaderboard move` | `lobby.admin` | Move the leaderboard hologram to exactly where you stand. |
 | `/lobbyparkour leaderboard remove` | `lobby.admin` | Take the leaderboard hologram away. |
-| `/lobbyparkour hologram move` | `lobby.admin` | Move the start plate's hologram to where you stand. |
-| `/lobbyparkour hologram remove` | `lobby.admin` | Take the start plate's hologram away. |
 
 ## Holograms
 
@@ -74,7 +72,7 @@ Making and editing NPCs and the holograms above them.
 | `/npc line <name> remove <line>` | `lobby.admin` | Remove a line from its hologram. |
 | `/npc line <name> height <line> <blocks>` | `lobby.admin` | Set the gap a line takes. |
 | `/npc line <name> offset <blocks>` | `lobby.admin` | How far above its head the hologram starts (0.35 is normal). |
-| `/npc action <name> <any\|left\|right> add <type:value>` | `lobby.admin` | Add something that happens when it's clicked.<br>realm:survival (like the realm selector: checks offline, full, maintenance, coming soon),<br>message:<text>, player_command:spawn, console_command:say hi, send_to_server:survival,<br>play_sound:entity.player.levelup, need_permission:some.perm (stops if missing), wait:1.5,<br>execute_random_action (runs one of the actions after it) |
+| `/npc action <name> <any\|left\|right> add <type:value>` | `lobby.admin` | Add something that happens when it's clicked.<br>realm:survival (like the realm selector: checks offline, full, maintenance, coming soon), parkour (starts a run),<br>message:<text>, player_command:spawn, console_command:say hi, send_to_server:survival,<br>play_sound:entity.player.levelup, need_permission:some.perm (stops if missing), wait:1.5,<br>execute_random_action (runs one of the actions after it) |
 | `/npc action <name> <any\|left\|right> clear` | `lobby.admin` | Remove its click actions. |
 | `/npc glow <name> <colour\|off>` | `lobby.admin` | Make it glow in a colour. |
 | `/npc turn <name> <on\|off> [distance]` | `lobby.admin` | Whether it looks at nearby players. |

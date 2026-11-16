@@ -60,7 +60,7 @@ public final class CommandHelp {
         e.add(new Entry("player", "/lobbyhelp [topic|command]", "This help.", null,
                 List.of("Example: /lobbyhelp npcs", "Example: /lobbyhelp npc skin")));
         // ---- parkour
-        e.add(new Entry("parkour", "/lobbyparkour setup", "Put the parkour start plate (and its hologram) where you stand.", admin, List.of()));
+        e.add(new Entry("parkour", "/lobbyparkour setup", "Put the Parkour NPC where you stand (it starts runs; make it again if it was removed).", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour area pos1", "Set one corner of the area the course is built in.", admin,
                 List.of("Stand in one corner, then the opposite one for pos2.", "The course is built anywhere inside the box.")));
         e.add(new Entry("parkour", "/lobbyparkour area pos2", "Set the opposite corner of the parkour area.", admin, List.of()));
@@ -69,8 +69,6 @@ public final class CommandHelp {
         e.add(new Entry("parkour", "/lobbyparkour leaderboard", "Put the parkour leaderboard hologram where you stand.", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour leaderboard move", "Move the leaderboard hologram to exactly where you stand.", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour leaderboard remove", "Take the leaderboard hologram away.", admin, List.of()));
-        e.add(new Entry("parkour", "/lobbyparkour hologram move", "Move the start plate's hologram to where you stand.", admin, List.of()));
-        e.add(new Entry("parkour", "/lobbyparkour hologram remove", "Take the start plate's hologram away.", admin, List.of()));
         // ---- holograms
         String text = "Text can use & codes, &#RRGGBB, MiniMessage, {player}, %placeholders%, gradients like "
                 + "<#FF7BE5>text</#FFC2F2> and animations like <#ANIM:burn:&f,&d>text</#ANIM> (burn, wave, colors, typewriter, scroll).";
@@ -111,7 +109,7 @@ public final class CommandHelp {
         e.add(new Entry("npcs", "/npc line <name> height <line> <blocks>", "Set the gap a line takes.", admin, List.of()));
         e.add(new Entry("npcs", "/npc line <name> offset <blocks>", "How far above its head the hologram starts (0.35 is normal).", admin, List.of()));
         e.add(new Entry("npcs", "/npc action <name> <any|left|right> add <type:value>", "Add something that happens when it's clicked.", admin,
-                List.of("realm:survival (like the realm selector: checks offline, full, maintenance, coming soon),",
+                List.of("realm:survival (like the realm selector: checks offline, full, maintenance, coming soon), parkour (starts a run),",
                         "message:<text>, player_command:spawn, console_command:say hi, send_to_server:survival,",
                         "play_sound:entity.player.levelup, need_permission:some.perm (stops if missing), wait:1.5,",
                         "execute_random_action (runs one of the actions after it)")));

@@ -44,6 +44,12 @@ public final class Placeholders {
                 if (out.contains("%luckperms_prefix%")) out = out.replace("%luckperms_prefix%", LuckPermsHook.prefix(player));
                 if (out.contains("%luckperms_suffix%")) out = out.replace("%luckperms_suffix%", LuckPermsHook.suffix(player));
             }
+            if (out.contains("%lobby_parkour_")) {
+                var board = plugin.parkour().leaderboard();
+                int rank = board.rank(player);
+                out = out.replace("%lobby_parkour_best%", board.best(player))
+                        .replace("%lobby_parkour_rank%", rank > 0 ? "#" + rank : plugin.messages().raw("parkour.unranked"));
+            }
             out = out.replace("%player_name%", player.getName()).replace("%player_ping%", String.valueOf(player.getPing()));
         }
         out = out.replace("%server_online%", String.valueOf(plugin.getServer().getOnlinePlayers().size()));
