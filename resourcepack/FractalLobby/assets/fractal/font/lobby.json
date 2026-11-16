@@ -703,8 +703,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/logo_lobby.png",
-   "ascent": 19,
-   "height": 24,
+   "ascent": 11,
+   "height": 20,
    "chars": [
     "\uf021"
    ]
@@ -712,8 +712,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/logo_fractal.png",
-   "ascent": 29,
-   "height": 32,
+   "ascent": 30,
+   "height": 30,
    "chars": [
     "\uf020"
    ]

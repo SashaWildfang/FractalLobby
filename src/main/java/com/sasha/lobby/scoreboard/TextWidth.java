@@ -29,8 +29,8 @@ public final class TextWidth {
             case 'I', 't', '[', ']', ' ', '"', '(', ')', '{', '}', '*' -> 4;
             case 'f', 'k', '<', '>' -> 5;
             case '@', '~' -> 7;
-            case 0xF021 -> 99; // the resource pack's LOBBY logo
-            case 0xF020 -> 21; // and its FractalSMP logo
+            case 0xF021 -> 73; // the resource pack's LOBBY logo
+            case 0xF020 -> 20; // and its FractalSMP logo
             default -> 6;
         };
     }

@@ -52,8 +52,8 @@ class ScoreboardTagsTest {
         Messages messages = MessagesTestAccess.messages(new YamlConfiguration());
         List<String> lines = messages.lines("scoreboard.lines");
 
-        assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(2)));
-        assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(4)));
+        assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(3)));
+        assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(5)));
         assertEquals("\uF021", plain(messages, messages.raw("scoreboard.title"))); // the pack's LOBBY logo
     }
 
@@ -80,7 +80,7 @@ class ScoreboardTagsTest {
         server.set("format.font", "normal");
         Messages messages = MessagesTestAccess.messages(server);
 
-        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(6)));
+        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(7)));
         assertEquals("(playing with 1 out of 5 global players)", plain(messages, messages.lines("tablist.footer").get(1)));
     }
 

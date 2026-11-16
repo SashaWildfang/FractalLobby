@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 10
+messages-version: 11
 
 theme:
   primary: "#B266FF"
@@ -51,7 +51,9 @@ scoreboard:
   # \uF021 is the "LOBBY" logo from the resource pack (font fractal:lobby). Without the pack, use text
   # instead, e.g. "<brand><bold>FractalSMP</bold></brand>".
   title: "<white><!shadow><font:fractal:lobby>\uF021</font>"
+  # The logo is taller than a line: the first line is left empty to make room for it.
   lines:
+    - " "
     - "<center><dark_gray><date>"
     - ""
     - "<secondary>Realms <muted>(<online:all>)"
@@ -71,6 +73,7 @@ tablist:
     - ""
     - ""
     - "<white><!shadow><font:fractal:lobby>\uF020</font>"
+    - ""
     - "<secondary>fractalsmp.net"
     - ""
     - "<primary>Survival: <white><online:survival></white> <dark_gray>|</dark_gray> <accent>Lifesteal: <white><online:lifesteal></white> <dark_gray>|</dark_gray> <secondary>Practice: <white><online:practice>"

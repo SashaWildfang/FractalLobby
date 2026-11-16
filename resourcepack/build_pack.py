@@ -744,3 +744,57 @@ lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/logo_lobb
 lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/logo_fractal.png", "ascent": 29, "height": 32, "chars": [""]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
 print('logo sizes', lobby_logo.size, ficon.size)
+
+# 19. a new, chunkier LOBBY logo (1:1 pixels, thick strokes) and a slightly smaller F for the tab list
+def chunky(word):
+    H, W, S = 13, 12, 4                     # letter height, width, stroke
+    def letter(c):
+        g = [[False] * W for _ in range(H)]
+        def box(x0, y0, x1, y1, v=True):
+            for y in range(y0, y1 + 1):
+                for x in range(x0, x1 + 1): g[y][x] = v
+        if c == 'L':
+            box(0, 0, S - 1, H - 1); box(0, H - S, W - 1, H - 1)
+        elif c == 'O':
+            box(0, 0, W - 1, H - 1); box(S, S, W - S - 1, H - S - 1, False)
+            for x, y in ((0, 0), (W - 1, 0), (0, H - 1), (W - 1, H - 1)): g[y][x] = False
+        elif c == 'B':
+            box(0, 0, W - 1, H - 1); box(S, 3, W - S - 1, 4, False); box(S, 8, W - S - 1, 9, False)
+            for x, y in ((W - 1, 0), (W - 1, H - 1), (W - 1, 6)): g[y][x] = False
+        elif c == 'Y':
+            box(0, 0, S - 1, 5); box(W - S, 0, W - 1, 5); box(0, 4, W - 1, 7); box(S, 6, W - S - 1, H - 1)
+            g[7][0] = g[7][W - 1] = False
+        return g
+    gap, depth, pad = 2, 3, 2
+    width = len(word) * W + (len(word) - 1) * gap
+    img = Image.new('RGBA', (width + pad * 2, H + depth + pad * 2), (0, 0, 0, 0))
+    face = set()
+    for i, c in enumerate(word):
+        for y, row in enumerate(letter(c)):
+            for x, v in enumerate(row):
+                if v: face.add((pad + i * (W + gap) + x, pad + y))
+    # the extrusion only shows below the letters, never inside their holes
+    solid = face | {(x, y + d) for (x, y) in face for d in range(1, depth + 1)
+                    if (x, y + d) not in face and not any((x, y + d + k) in face for k in range(1, H))}
+    for (x, y) in solid:
+        if (x, y) in face:
+            t = (y - pad) / (H - 1)
+            c = mix(hexc('#F3D9FF'), hexc('#C77DFF'), t / 0.5) if t < 0.5 else mix(hexc('#B266FF'), hexc('#8E2DE2'), (t - 0.5) / 0.5)
+            if (x, y - 1) not in face: c = mix(c, (255, 255, 255), 0.6)          # light top edge
+        else:
+            c = (0x5e, 0x1f, 0xa8) if (x, y - 1) in face else (0x3d, 0x12, 0x70)  # extrusion
+        img.putpixel((x, y), c + (255,))
+    out = img.copy()
+    for x in range(img.width):
+        for y in range(img.height):
+            if (x, y) not in solid and any((x + dx, y + dy) in solid for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+                out.putpixel((x, y), (0x1c, 0x08, 0x36, 255))
+    return out
+lobby_logo = chunky("LOBBY")
+lobby_logo.save(f'{OUT}/assets/fractal/textures/gui/logo_lobby.png')
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+for p in lobby_font['providers']:
+    if p.get('file') == 'fractal:gui/logo_lobby.png': p.update(height=lobby_logo.height, ascent=11)
+    if p.get('file') == 'fractal:gui/logo_fractal.png': p.update(height=30, ascent=30)
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+print('lobby logo', lobby_logo.size)
