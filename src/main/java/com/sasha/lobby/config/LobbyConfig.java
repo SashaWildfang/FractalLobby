@@ -177,8 +177,8 @@ public record LobbyConfig(
         return new LobbyConfig(
                 new Spawn(
                         c.getString("spawn.world", "world"),
-                        c.getDouble("spawn.x", -46.5), c.getDouble("spawn.y", 103), c.getDouble("spawn.z", 892.5),
-                        (float) c.getDouble("spawn.yaw"), (float) c.getDouble("spawn.pitch"),
+                        c.getDouble("spawn.x", -221.515), c.getDouble("spawn.y", 3), c.getDouble("spawn.z", 238.56),
+                        (float) c.getDouble("spawn.yaw", -90.8), (float) c.getDouble("spawn.pitch", 1.3),
                         c.getBoolean("spawn.teleport-on-join", true)),
                 new Protection(
                         c.getString("protection.build-permission", "lobby.build"),
@@ -205,7 +205,7 @@ public record LobbyConfig(
                         c.getLong("protection.lock-time", -1)),
                 new VoidRescue(
                         c.getBoolean("void-rescue.enabled", true),
-                        c.getDouble("void-rescue.below-y", 0),
+                        c.getDouble("void-rescue.below-y", -25),
                         sound(c.getString("void-rescue.sound", "entity.player.teleport")),
                         (float) c.getDouble("void-rescue.sound-volume", 0.6),
                         (float) c.getDouble("void-rescue.sound-pitch", 1.4)),
@@ -270,8 +270,8 @@ public record LobbyConfig(
                         slot(c.getInt("join-items.profile.slot", 2))),
                 selector(c, log),
                 new Border(
-                        c.getBoolean("border.enabled", false),
-                        Math.max(5, c.getDouble("border.radius", 100)),
+                        c.getBoolean("border.enabled", true),
+                        Math.max(5, c.getDouble("border.radius", 318)),
                         Math.max(0, c.getInt("border.warning-distance", 5))),
                 new FlyingMinecarts(
                         Math.max(0.1, Math.min(3.0, c.getDouble("flying-minecarts.speed", 1.0))),

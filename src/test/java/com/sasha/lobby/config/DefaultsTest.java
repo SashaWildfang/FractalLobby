@@ -7,9 +7,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.util.List;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +47,11 @@ class DefaultsTest {
     }
 
     @Test
-    void borderIsOffByDefault() throws Exception {
-        assertFalse(builtIn().getBoolean("border.enabled"));
+    void defaultsAreTheLiveLobby() throws Exception {
+        YamlConfiguration c = builtIn();
+        assertTrue(c.getBoolean("border.enabled"));
+        assertEquals(318, c.getInt("border.radius"));
+        assertEquals(-221.515, c.getDouble("spawn.x"));
+        assertEquals(List.of("lobby", "survival", "prison", "ctf"), c.getStringList("proxy.servers"));
     }
 }
