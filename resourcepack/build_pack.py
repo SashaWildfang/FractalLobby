@@ -642,3 +642,36 @@ for code, name, img in ((0xF010, 'click_left', mouse(True, False)), (0xF011, 'cl
     img.save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
     lobby_font['providers'].append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 8, "height": 10, "chars": [chr(code)]})
 json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+
+# 16. bigger pop heart, centred equalizer, shorter click glyphs (8px, so stacked lines don't touch)
+genre('pop', art(["..###...###..", ".#####.#####.", "#############", "#############", "#############", ".###########.", "..#########..", "...#######...",
+                  "....#####....", ".....###.....", "......#......"], {'#': hexc('#FF7BE5')}))
+eq = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+for i, hgt in enumerate((5, 9, 6, 11, 7)):
+    for x in range(1 + i * 3, 3 + i * 3):
+        for y in range(14 - hgt, 14): eq.putpixel((x, y), mix(hexc('#7FE7FF'), hexc('#B266FF'), (14 - y) / 11) + (255,))
+genre('electronic', outline(eq))
+MOUSE = [".LLL.RRR.", "LLLL.RRRR", "LLLL.RRRR", ".........", "BBBBBBBBB", "BBBBBBBBB", "BBBBBBBBB", ".BBBBBBB."]
+def mouse8(left, right):
+    img = Image.new('RGBA', (9, 8), (0, 0, 0, 0))
+    for y, row in enumerate(MOUSE):
+        for x, ch in enumerate(row):
+            if ch == 'L': img.putpixel((x, y), (KEYP if left else KEYL) + (255,))
+            elif ch == 'R': img.putpixel((x, y), (KEYP if right else KEYL) + (255,))
+            elif ch == 'B': img.putpixel((x, y), KEYB + (255,))
+    return img
+shift = Image.new('RGBA', (28, 8), (0, 0, 0, 0)); dr = ImageDraw.Draw(shift)
+dr.rounded_rectangle((0, 0, 22, 6), radius=1, fill=KEYL + (255,))
+dr.line([(1, 7), (21, 7)], fill=(0x8a, 0x8f, 0xae, 255))
+for i, ch in enumerate("SHIFT"):
+    for y, row in enumerate(F35[ch]):
+        for x, c in enumerate(row):
+            if c == '#': shift.putpixel((2 + i * 4 + x, 1 + y), (0x2c, 0x2e, 0x3e, 255))
+dr.line([(24, 4), (26, 4)], fill=KEYL + (255,)); dr.line([(25, 3), (25, 5)], fill=KEYL + (255,))
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+lobby_font['providers'] = [p for p in lobby_font['providers'] if not any(k in p.get('file', '') for k in ('click_', 'key_shift'))]
+for code, name, img in ((0xF010, 'click_left', mouse8(True, False)), (0xF011, 'click_right', mouse8(False, True)),
+                        (0xF012, 'click_any', mouse8(True, True)), (0xF013, 'key_shift', shift)):
+    img.save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
+    lobby_font['providers'].append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 7, "height": 8, "chars": [chr(code)]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)

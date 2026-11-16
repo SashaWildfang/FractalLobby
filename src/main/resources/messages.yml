@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 8
+messages-version: 9
 
 theme:
   primary: "#B266FF"
@@ -96,7 +96,7 @@ realm-selector:
     maintenance: "<#FFB36B>● Maintenance"
     offline: "<bad>● Offline"
   action:
-    online: "<dark_gray>▸ <accent><click></accent> <muted>to join"
+    online: "<accent><click></accent> <muted>to join"
     full: "<dark_gray>✖ <muted>Full right now, try again soon"
     maintenance: "<dark_gray>✖ <muted>Being worked on, back soon"
     offline: "<dark_gray>✖ <muted>Down right now, back soon"
@@ -118,40 +118,40 @@ items:
       - "<muted>See who's playing and which"
       - "<muted>realms are online right now."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to open"
+      - "<accent><right-click></accent> <muted>to open"
   radio:
     name: "<primary>Radio"
     lore:
       - "<muted>Pick songs, skip, change the volume"
       - "<muted>or tune in to the lobby station."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to open"
+      - "<accent><right-click></accent> <muted>to open"
   visibility-shown:
     name: "<good>Players: Visible"
     lore:
       - "<muted>You can see everyone in the lobby."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to hide other players"
+      - "<accent><right-click></accent> <muted>to hide other players"
   # Player Visibility set to Donors Only or Staff Only in settings. <option>
   visibility-partial:
     name: "<#FFE680>Players: <option>"
     lore:
       - "<muted>You only see some players."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to hide everyone"
+      - "<accent><right-click></accent> <muted>to hide everyone"
   visibility-hidden:
     name: "<bad>Players: Hidden"
     lore:
       - "<muted>Other players are hidden from you."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to show other players"
+      - "<accent><right-click></accent> <muted>to show other players"
   profile:
     name: "<primary>Your Profile"
     lore:
       - "<muted>Your stats, chat colour, trail,"
       - "<muted>glow and settings."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to open"
+      - "<accent><right-click></accent> <muted>to open"
   settings:
     name: "<primary>Settings"
     lore:
@@ -160,7 +160,7 @@ items:
       - "<muted>see, plus mention sounds, double"
       - "<muted>jump and the scoreboard."
       - ""
-      - "<dark_gray>▸ <accent><right-click></accent> <muted>to open"
+      - "<accent><right-click></accent> <muted>to open"
 
 # The settings menu (the comparator). Each setting lists its options with
 # the current one marked; clicking moves to the next one.
@@ -178,10 +178,10 @@ settings:
   option-selected: "<primary>▸ <option>"    # the picked one
   current: "<white>Now: <option>"          # the pane under each setting
   hint:
-    - "<dark_gray>▸ <accent><left-click></accent> <muted>for the next option"
-    - "<dark_gray>▸ <accent><right-click></accent> <muted>to go back"
+    - "<accent><left-click></accent> <muted>for the next option"
+    - "<accent><right-click></accent> <muted>to go back"
   toggle-hint:
-    - "<dark_gray>▸ <accent><click></accent> <muted>to switch"
+    - "<accent><click></accent> <muted>to switch"
   header:
     name: "<brand><bold>Settings</bold></brand>"
     lore:
@@ -207,7 +207,7 @@ settings:
       - "<muted>Puts every lobby setting"
       - "<muted>back to its default."
       - ""
-      - "<dark_gray>▸ <accent><shift><click></accent> <muted>to reset"
+      - "<accent><shift><click></accent> <muted>to reset"
     done: "<prefix><secondary>Your lobby settings are back to their defaults."
   join-messages:
     name: "<primary>Join Messages"
@@ -282,13 +282,13 @@ settings:
     none:
       - "<dark_gray>  Nobody yet. Use <gray>/ignore <name>"
     hint:
-      - "<dark_gray>▸ <accent><click></accent> <muted>to manage"
+      - "<accent><click></accent> <muted>to manage"
   ignored-menu:
     title: "<brand><bold>Ignored Players</bold></brand>"
     head:
       name: "<primary><player>"
       lore:
-        - "<dark_gray>▸ <accent><click></accent> <muted>to unignore"
+        - "<accent><click></accent> <muted>to unignore"
     empty:
       name: "<good>You're not ignoring anyone"
       lore:
@@ -343,21 +343,21 @@ profile:
       - "<muted>The colour your messages are in."
       - "<muted>Now: <chat-color>"
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>to change"
+      - "<accent><click></accent> <muted>to change"
   trail:
     name: "<primary>Particle Trail"
     lore:
       - "<muted>Particles that follow you around."
       - "<muted>Now: <trail>"
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>to change"
+      - "<accent><click></accent> <muted>to change"
   glow:
     name: "<primary>Glow"
     lore:
       - "<muted>Glow in your rank colour."
       - "<muted>Now: <glow>"
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>to switch"
+      - "<accent><click></accent> <muted>to switch"
   glow-locked:
     name: "<dark_gray>Glow"
     lore:
@@ -371,19 +371,19 @@ profile:
       - "<muted>player visibility, mention sounds,"
       - "<muted>double jump and the scoreboard."
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>to open"
+      - "<accent><click></accent> <muted>to open"
   parkour:
     name: "<primary>Parkour"
     lore:
       - "<muted>Your best: <white><parkour-best> <muted>(<parkour-rank>)"
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>for the leaderboard"
+      - "<accent><click></accent> <muted>for the leaderboard"
   realms:
     name: "<primary>Realms"
     lore:
       - "<muted>Pick a realm to play on."
       - ""
-      - "<dark_gray>▸ <accent><click></accent> <muted>to open"
+      - "<accent><click></accent> <muted>to open"
   back:
     name: "<secondary>← Back"
     lore:
@@ -396,7 +396,7 @@ trails:
   removed: "<prefix><secondary>Trail removed."
   locked: "<prefix><bad>You haven't unlocked that trail."
   item:
-    - "<dark_gray>▸ <accent><click></accent> <muted>to use"
+    - "<accent><click></accent> <muted>to use"
   item-selected:
     - "<good>✔ In use"
   item-locked:
@@ -416,7 +416,7 @@ chat-color:
   item:
     - "<muted>Preview: <preview>"
     - ""
-    - "<dark_gray>▸ <accent><left-click></accent> <muted>to use"
+    - "<accent><left-click></accent> <muted>to use"
   item-selected:
     - "<muted>Preview: <preview>"
     - ""
@@ -459,7 +459,7 @@ parkour:
   hologram:
     title: "<brand><bold>Parkour!</bold></brand>"
     you: "<secondary>Your best: <primary><score> <muted>(<rank>)"
-    hint: "<dark_gray>▸ <accent><click></accent> <muted>for the leaderboard"
+    hint: "<accent><click></accent> <muted>for the leaderboard"
   # The leaderboard hologram (/lobbyparkour leaderboard).
   leaderboard:
     title: "<brand><bold>Parkour Leaderboard</bold></brand>"
@@ -468,7 +468,7 @@ parkour:
     top-line: "<muted>#<position> <white><name-rank><name> <dark_gray>- <primary><score>"
     no-scores: "<muted>No scores yet. Be the first!"
     you: "<secondary>Your best: <primary><score> <muted>(<rank>)"   # <score> <rank>
-    hint: "<dark_gray>▸ <accent><click></accent> <muted>to see the top 10"
+    hint: "<accent><click></accent> <muted>to see the top 10"
   rank: "#<position>"
   unranked: "unranked"
   menu:

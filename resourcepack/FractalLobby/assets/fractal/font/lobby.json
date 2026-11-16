@@ -667,8 +667,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/click_left.png",
-   "ascent": 8,
-   "height": 10,
+   "ascent": 7,
+   "height": 8,
    "chars": [
     "\uf010"
    ]
@@ -676,8 +676,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/click_right.png",
-   "ascent": 8,
-   "height": 10,
+   "ascent": 7,
+   "height": 8,
    "chars": [
     "\uf011"
    ]
@@ -685,8 +685,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/click_any.png",
-   "ascent": 8,
-   "height": 10,
+   "ascent": 7,
+   "height": 8,
    "chars": [
     "\uf012"
    ]
@@ -694,8 +694,8 @@
   {
    "type": "bitmap",
    "file": "fractal:gui/key_shift.png",
-   "ascent": 8,
-   "height": 10,
+   "ascent": 7,
+   "height": 8,
    "chars": [
     "\uf013"
    ]
