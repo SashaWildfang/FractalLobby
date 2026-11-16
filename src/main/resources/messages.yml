@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 9
+messages-version: 10
 
 theme:
   primary: "#B266FF"
@@ -48,7 +48,9 @@ format:
 # Start a line with <center> to center it on the scoreboard.
 # PlaceholderAPI placeholders (%...%) also work when it's installed.
 scoreboard:
-  title: "<brand><bold>FractalSMP</bold></brand>"
+  # \uF021 is the "LOBBY" logo from the resource pack (font fractal:lobby). Without the pack, use text
+  # instead, e.g. "<brand><bold>FractalSMP</bold></brand>".
+  title: "<white><!shadow><font:fractal:lobby>\uF021</font>"
   lines:
     - "<center><dark_gray><date>"
     - ""
@@ -63,9 +65,12 @@ scoreboard:
 # Above and below the player list. Same tags as the scoreboard.
 # Player names in the list use nametag.format from config.yml.
 tablist:
+  # \uF020 is the FractalSMP logo from the resource pack; the empty lines above make room for it.
   header:
     - ""
-    - "<brand><bold>FractalSMP</bold></brand>"
+    - ""
+    - ""
+    - "<white><!shadow><font:fractal:lobby>\uF020</font>"
     - "<secondary>fractalsmp.net"
     - ""
     - "<primary>Survival: <white><online:survival></white> <dark_gray>|</dark_gray> <accent>Lifesteal: <white><online:lifesteal></white> <dark_gray>|</dark_gray> <secondary>Practice: <white><online:practice>"

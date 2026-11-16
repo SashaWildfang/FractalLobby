@@ -54,7 +54,7 @@ class ScoreboardTagsTest {
 
         assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(2)));
         assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(4)));
-        assertEquals(MessagesTestAccess.smallCaps("FractalSMP"), plain(messages, messages.raw("scoreboard.title")));
+        assertEquals("\uF021", plain(messages, messages.raw("scoreboard.title"))); // the pack's LOBBY logo
     }
 
     /** In small caps, the player's name still shows in normal letters. */
@@ -80,7 +80,7 @@ class ScoreboardTagsTest {
         server.set("format.font", "normal");
         Messages messages = MessagesTestAccess.messages(server);
 
-        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(4)));
+        assertEquals("Survival: 4 | Lifesteal: 0 | Practice: 0", plain(messages, messages.lines("tablist.header").get(6)));
         assertEquals("(playing with 1 out of 5 global players)", plain(messages, messages.lines("tablist.footer").get(1)));
     }
 

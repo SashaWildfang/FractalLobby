@@ -688,3 +688,59 @@ BOOT = ["...TTTTTT.......", "...GGGGGG.......", "...GGGGGG.......", "...GLGGGG..
         "...GGGGGGGGGGGG.", "...DDDDDDDDDDDD.", "....SSSSSSSS....", ".....SSSSSS.....", "....SSSSSSSS....", ".....SSSSSS....."]
 model('double-jump', art(BOOT, {'G': (0x4c, 0xb8, 0x3a), 'L': (0x9a, 0xe6, 0x7a), 'D': (0x2f, 0x7d, 0x28), 'T': (0xf4, 0xf5, 0xfb),
                                 'S': lambda x, y, w, h: (0xc9, 0xcc, 0xdb) if y % 2 else (0x8a, 0x8f, 0xae)}, shade=False))
+
+# 18. logos: "LOBBY" in the style of Survival's title (purple), and the FractalSMP F for the tab list
+import random
+LETTERS = {'L': ["#....", "#....", "#....", "#....", "#####"], 'O': ["#####", "#...#", "#...#", "#...#", "#####"],
+           'B': ["####.", "#...#", "####.", "#...#", "#####"], 'Y': ["#...#", "#...#", "#####", "..#..", "..#.."]}
+def block_logo(word, cw=9, ch=8, gap=5, depth=14, pad=4):
+    rnd = random.Random(7)
+    width = len(word) * 5 * cw + (len(word) - 1) * gap
+    W2, H2 = width + pad * 2, 5 * ch + depth + pad * 2
+    face = Image.new('L', (W2, H2), 0); fd = ImageDraw.Draw(face)
+    for i, c in enumerate(word):
+        ox = pad + i * (5 * cw + gap)
+        for r, row in enumerate(LETTERS[c]):
+            for col, v in enumerate(row):
+                if v == '#': fd.rectangle((ox + col * cw, pad + r * ch, ox + (col + 1) * cw - 1, pad + (r + 1) * ch - 1), fill=255)
+    img = Image.new('RGBA', (W2, H2), (0, 0, 0, 0)); fp = face.load()
+    solid = Image.new('L', (W2, H2), 0); sp = solid.load()          # face plus its extrusion downwards
+    for x in range(W2):
+        for y in range(H2):
+            if fp[x, y]:
+                for d in range(depth + 1):
+                    if y + d < H2: sp[x, y + d] = 255
+    drip = [0] * W2; level = 5 * ch * 0.45
+    for x in range(W2):                                              # jagged line where the light top meets the purple
+        if x % 3 == 0: level = min(5 * ch * 0.62, max(5 * ch * 0.3, level + rnd.choice((-3, -2, 0, 2, 3))))
+        drip[x] = pad + int(level)
+    for x in range(W2):
+        for y in range(H2):
+            if not sp[x, y]: continue
+            if fp[x, y]:
+                if y < drip[x]: c = mix(hexc('#FBE8FF'), hexc('#EBC4FF'), (y - pad) / (5 * ch * 0.6))
+                elif y < drip[x] + 3: c = hexc('#F6DCFF') if (x // 3) % 2 else hexc('#D9A0FF')
+                else: c = mix(hexc('#C77DFF'), hexc('#8E2DE2'), (y - drip[x]) / (5 * ch * 0.6))
+                if rnd.random() < 0.05: c = mix(c, (255, 255, 255), 0.25)
+            else:
+                dd = 0
+                while y - dd >= 0 and not fp[x, y - dd]: dd += 1     # how far below the face
+                c = mix(hexc('#5E1FA8'), hexc('#35105E'), dd / depth)
+            img.putpixel((x, y), c + (255,))
+    out = img.copy()                                                 # dark outline, 2px
+    for x in range(W2):
+        for y in range(H2):
+            if sp[x, y]: continue
+            if any(0 <= x + dx < W2 and 0 <= y + dy < H2 and sp[x + dx, y + dy] for dx in range(-2, 3) for dy in range(-2, 3)):
+                out.putpixel((x, y), (0x22, 0x0b, 0x40, 255))
+    return out
+lobby_logo = block_logo("LOBBY")
+lobby_logo.save(f'{OUT}/assets/fractal/textures/gui/logo_lobby.png')
+ficon = Image.open(sys.argv[6]).convert('RGBA'); ficon = ficon.crop(ficon.getbbox())
+ficon = ficon.resize((round(ficon.width * 64 / ficon.height), 64), Image.LANCZOS)
+ficon.save(f'{OUT}/assets/fractal/textures/gui/logo_fractal.png')
+lobby_font = json.load(open(f'{OUT}/assets/fractal/font/lobby.json'))
+lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/logo_lobby.png", "ascent": 19, "height": 24, "chars": [""]})
+lobby_font['providers'].append({"type": "bitmap", "file": "fractal:gui/logo_fractal.png", "ascent": 29, "height": 32, "chars": [""]})
+json.dump(lobby_font, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
+print('logo sizes', lobby_logo.size, ficon.size)
