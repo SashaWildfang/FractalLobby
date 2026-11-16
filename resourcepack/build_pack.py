@@ -1106,3 +1106,181 @@ model('party-invites', art([
     "..############..",
     "................"], {**FRIEND_COL, 'w': '#ffffff', 'W': '#c9b8ee', 'Y': '#e0a030'}))
 print('friends: badge, icons')
+
+
+# 27. Mystery Boxes: the boxes (fractal:mystery/box_1..5, little 3D gift boxes, one colour per star count), the
+#     vault (fractal:mystery/vault_closed / vault_open), Mystery Dust and the menu icons
+for dd in ('textures/item/mystery', 'models/item/mystery', 'items/mystery'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
+def mystery_item(name, model_json):
+    json.dump(model_json, open(f'{OUT}/assets/fractal/models/item/mystery/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/mystery/{name}"}},
+              open(f'{OUT}/assets/fractal/items/mystery/{name}.json', 'w'))
+def mystery_sprite(name, img):
+    img.save(f'{OUT}/assets/fractal/textures/item/mystery/{name}.png')
+    mystery_item(name, {"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/mystery/{name}"}})
+def shade(c, f): return tuple(max(0, min(255, round(v * f))) for v in c)
+GOLD, GOLD_DARK, INK = hexc('#FFD27F'), hexc('#C9963A'), hexc('#1a1b26')
+QMARK = [".###.", "#...#", "...#.", "..#..", ".....", "..#.."]
+BLOCK_DISPLAY = {"gui": {"rotation": [30, 225, 0], "translation": [0, 0, 0], "scale": [0.625, 0.625, 0.625]},
+                 "fixed": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.5, 0.5, 0.5]},
+                 "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.25, 0.25, 0.25]},
+                 "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.375, 0.375, 0.375]},
+                 "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.4, 0.4, 0.4]}}
+BOX_COLOURS = {1: '#9C8DB8', 2: '#5BE37C', 3: '#7FA8FF', 4: '#C77DFF', 5: '#FFB347'}
+for stars, hexcol in BOX_COLOURS.items():
+    base = hexc(hexcol)
+    # gold ribbon, except on the gold 5-star box, which gets a purple one
+    GOLD, GOLD_DARK = (hexc('#B266FF'), hexc('#7d3fc4')) if stars == 5 else (hexc('#FFD27F'), hexc('#C9963A'))
+    side = Image.new('RGBA', (16, 16), (0, 0, 0, 255))
+    top = Image.new('RGBA', (16, 16), (0, 0, 0, 255))
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            c = shade(base, 1.12 - y * 0.02)
+            if edge: c = shade(base, 0.6)
+            elif x in (7, 8): c = GOLD if x == 7 else GOLD_DARK      # the ribbon down each side
+            side.putpixel((x, y), c + (255,))
+            t = shade(base, 1.15)
+            if x in (0, 15) or y in (0, 15): t = shade(base, 0.6)
+            elif x in (7, 8) or y in (7, 8): t = GOLD if (x == 7 or y == 7) else GOLD_DARK  # the ribbon cross
+            top.putpixel((x, y), t + (255,))
+    # a "?" on each side, either side of the ribbon... one on the left half, bright
+    for qy, row in enumerate(QMARK):
+        for qx, ch in enumerate(row):
+            if ch == '#': side.putpixel((1 + qx, 5 + qy), (255, 255, 255, 255)); side.putpixel((10 + qx, 5 + qy), (255, 255, 255, 255))
+    # the bow on top: a gold knot in the middle
+    for (bx, by) in ((6, 6), (9, 6), (6, 9), (9, 9), (5, 5), (10, 5), (5, 10), (10, 10)):
+        top.putpixel((bx, by), GOLD + (255,))
+    side.save(f'{OUT}/assets/fractal/textures/item/mystery/box_{stars}_side.png')
+    top.save(f'{OUT}/assets/fractal/textures/item/mystery/box_{stars}_top.png')
+    faces = {f: {"uv": [0, 0, 16, 16], "texture": "#side"} for f in ('north', 'south', 'east', 'west')}
+    faces['up'] = {"uv": [0, 0, 16, 16], "texture": "#top"}
+    faces['down'] = {"uv": [0, 0, 16, 16], "texture": "#side"}
+    bow = {f: {"uv": [5, 5, 11, 11], "texture": "#top"} for f in ('north', 'south', 'east', 'west', 'up', 'down')}
+    mystery_item(f'box_{stars}', {
+        "textures": {"side": f"fractal:item/mystery/box_{stars}_side", "top": f"fractal:item/mystery/box_{stars}_top",
+                     "particle": f"fractal:item/mystery/box_{stars}_side"},
+        "elements": [{"from": [2, 2, 2], "to": [14, 14, 14], "shade": False, "faces": faces},
+                     {"from": [6, 14, 6], "to": [10, 16, 10], "shade": False, "faces": bow}],
+        "display": BLOCK_DISPLAY})
+
+GOLD, GOLD_DARK = hexc('#FFD27F'), hexc('#C9963A')
+# the vault: a slate chest with purple trim and a gold lock; open, the lid tips back and the inside glows
+SLATE, SLATE_DARK, TRIM = hexc('#3a3d56'), hexc('#26283a'), hexc('#B266FF')
+vside = Image.new('RGBA', (16, 16), (0, 0, 0, 255)); vtop = Image.new('RGBA', (16, 16), (0, 0, 0, 255))
+vinside = Image.new('RGBA', (16, 16), (0, 0, 0, 255))
+for y in range(16):
+    for x in range(16):
+        c = SLATE if (x + y) % 5 else shade(SLATE, 0.92)
+        if x in (0, 15) or y in (0, 15): c = SLATE_DARK
+        if y in (1, 14) or x in (1, 14): c = TRIM if 0 < x < 15 and 0 < y < 15 else c
+        vside.putpixel((x, y), c + (255,))
+        t = SLATE if (x * 3 + y) % 7 else shade(SLATE, 0.9)
+        if x in (0, 15) or y in (0, 15): t = SLATE_DARK
+        elif x in (1, 14) or y in (1, 14): t = TRIM
+        vtop.putpixel((x, y), t + (255,))
+        d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5 / 10.6
+        vinside.putpixel((x, y), mix((255, 240, 200), hexc('#B266FF'), min(1, d * 1.3)) + (255,))
+for (lx, ly) in ((6, 5), (7, 5), (8, 5), (9, 5), (6, 6), (9, 6), (6, 7), (7, 7), (8, 7), (9, 7), (7, 8), (8, 8)):
+    vside.putpixel((lx, ly), (GOLD if ly < 7 else GOLD_DARK) + (255,))
+vside.save(f'{OUT}/assets/fractal/textures/item/mystery/vault_side.png')
+vtop.save(f'{OUT}/assets/fractal/textures/item/mystery/vault_top.png')
+vinside.save(f'{OUT}/assets/fractal/textures/item/mystery/vault_inside.png')
+def box_faces(tex, top=None):
+    f = {d: {"uv": [0, 0, 16, 16], "texture": tex} for d in ('north', 'south', 'east', 'west', 'down')}
+    f['up'] = {"uv": [0, 0, 16, 16], "texture": top or tex}
+    return f
+vault_textures = {"side": "fractal:item/mystery/vault_side", "top": "fractal:item/mystery/vault_top",
+                  "inside": "fractal:item/mystery/vault_inside", "particle": "fractal:item/mystery/vault_side"}
+body = {"from": [1, 0, 1], "to": [15, 10, 15], "shade": False, "faces": box_faces("#side", "#inside")}
+lid_closed = {"from": [1, 10, 1], "to": [15, 14, 15], "shade": False, "faces": box_faces("#side", "#top")}
+lid_open = dict(lid_closed, rotation={"origin": [8, 10, 15], "axis": "x", "angle": -45})
+glow = {"from": [2, 9.5, 2], "to": [14, 10.2, 14], "shade": False, "light_emission": 15,
+        "faces": {d: {"uv": [0, 0, 16, 16], "texture": "#inside"} for d in ('north', 'south', 'east', 'west', 'up', 'down')}}
+mystery_item('vault_closed', {"textures": vault_textures, "elements": [body, lid_closed], "display": BLOCK_DISPLAY})
+mystery_item('vault_open', {"textures": vault_textures, "elements": [body, lid_open, glow], "display": BLOCK_DISPLAY})
+
+def sprite(rows, colours):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch in colours: img.putpixel((x, y), hexc(colours[ch]) + (255,))
+    return img
+DUST_COL = {'#': '#1a1b26', 'g': '#FFD27F', 'G': '#C9963A', 'w': '#FFFFFF', 'p': '#FF7BE5', 'l': '#FFF1C9'}
+# Mystery Dust: a little heap of gold dust with sparkles over it
+mystery_sprite('dust', sprite([
+    "................",
+    "....w......p....",
+    "...www.........",
+    "....w....w......",
+    ".........www....",
+    "..p.......w.....",
+    "................",
+    "......####......",
+    ".....#lggg#.....",
+    "....#lggggg#....",
+    "...#gggGgggg#...",
+    "..#ggGgggGggg#..",
+    ".#GgggGggggGgG#.",
+    ".#GGGGGGGGGGGG#.",
+    "..############..",
+    "................"], DUST_COL))
+CRAFT_COL = {'#': '#1a1b26', 'b': '#C77DFF', 'B': '#8a4fd1', 'y': '#FFD27F', 'Y': '#C9963A', 'w': '#FFFFFF', 'g': '#5BE37C', 'G': '#2fb956'}
+craft_rows = [
+    "................",
+    "...........##...",
+    "..........#gg#..",
+    "........###gg###",
+    "........#gggggg#",
+    "........#GGGGGG#",
+    "..#########GG###",
+    "..#bbbyybbb##...",
+    "..#bbbyybbb#....",
+    "..#yyyyyyyy#....",
+    "..#BBBYYBBB#....",
+    "..#BBBYYBBB#....",
+    "..#BBBYYBBB#....",
+    "..##########....",
+    "................",
+    "................"]
+mystery_sprite('craft', sprite(craft_rows, CRAFT_COL))
+grey = {k: ('#1a1b26' if k == '#' else '#6b6b7a' if k in 'bgyw' else '#4a4a58') for k in CRAFT_COL}
+mystery_sprite('craft_locked', sprite(craft_rows, grey))
+# Collection: a purple book with a gold star on the cover
+mystery_sprite('collection', sprite([
+    "................",
+    "...##########...",
+    "..#pppppppppw#..",
+    "..#pppppyppw#...",
+    "..#ppppyyypw#...",
+    "..#ppyyyyyyw#...",
+    "..#pppyyyppw#...",
+    "..#ppyypyypw#...",
+    "..#pppppppw#....",
+    "..#PPPPPPPw#....",
+    "..#pppppppw#....",
+    "..#pppppppw#....",
+    "..#PPPPPPPPw#...",
+    "...##########...",
+    "................",
+    "................"], {'#': '#1a1b26', 'p': '#B266FF', 'P': '#7d3fc4', 'y': '#FFD27F', 'w': '#e8ddff'}))
+# Not found yet: a dim box with a "?"
+locked = sprite([
+    "................",
+    "................",
+    "..############..",
+    "..#dddddddddd#..",
+    "..#dddwwwdddd#..",
+    "..#ddwdddwddd#..",
+    "..#ddddddwddd#..",
+    "..#dddddwdddd#..",
+    "..#ddddwddddd#..",
+    "..#dddddddddd#..",
+    "..#ddddwddddd#..",
+    "..#dddddddddd#..",
+    "..############..",
+    "................",
+    "................",
+    "................"], {'#': '#1a1b26', 'd': '#4a4a58', 'w': '#9C8DB8'})
+mystery_sprite('locked', locked)
+print('mystery boxes: 5 boxes, vault, dust, icons')

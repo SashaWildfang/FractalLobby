@@ -107,7 +107,15 @@ public final class ChatColors implements Listener {
     }
 
     public static boolean allowed(Player player, LobbyConfig.ChatColor colour) {
+        if (com.sasha.lobby.mystery.MysteryBoxes.unlocked(player, "chatcolor:" + colour.id().toLowerCase(java.util.Locale.ROOT))) return true;
+        // Without the chat colour rank, only colours found in Mystery Boxes.
+        if (!player.hasPermission(PERMISSION)) return false;
         return colour.permission().isEmpty() || player.hasPermission(colour.permission());
+    }
+
+    /** Whether the player may pick a chat colour at all: the rank, or a colour found in a Mystery Box. */
+    public static boolean canUse(Player player) {
+        return player.hasPermission(PERMISSION) || com.sasha.lobby.mystery.MysteryBoxes.anyChatColor(player);
     }
 
     /** The names players can type after /chatcolor. */

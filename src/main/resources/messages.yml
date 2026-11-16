@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 32
+messages-version: 33
 
 theme:
   primary: "#B266FF"
@@ -55,6 +55,10 @@ scoreboard:
   lines:
     - " "
     - "<center><gray><date>"
+    - ""
+    - "<secondary>You"
+    - " <primary>▪</primary> <white>Mystery Dust: <#FFD27F>%lobby_dust%"
+    - " <primary>▪</primary> <white>Mystery Boxes: <primary>%lobby_boxes%"
     - ""
     - "<secondary>Realms <muted>(<online:all>)"
     - " <primary>▪</primary> <white>Lobby: <primary><online:lobby>"
@@ -724,3 +728,112 @@ realm-action:
   restarting: "<#8C7BB0>ʙᴀᴄᴋ ɪɴ ᴀ ᴍᴏᴍᴇɴᴛ<#ANIM:typewriter:&#8C7BB0>...</#ANIM>"
   offline: "<#8C7BB0>ᴄʜᴇᴄᴋ <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ <#8C7BB0>ꜰᴏʀ ɴᴇᴡꜱ"
   coming-soon: "<#8C7BB0>ᴄʟɪᴄᴋ ꜰᴏʀ ɴᴇᴡꜱ <dark_gray>• <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ"
+
+
+# ── Mystery Boxes ───────────────────────────────────────────────
+# <stars> the box's stars (★★★ in gold, the rest dim), <star-count> as a number.
+# <reward> what was found, <rarity> its rarity, <dust> Mystery Dust.
+mystery:
+  disabled: "<prefix><bad>Mystery Boxes aren't open right now."
+  glow-name: "<#FFE680>Glow"
+  dust-name: "<#FFD27F><amount> Mystery Dust"
+  dust: "<prefix><secondary>You have <#FFD27F><dust> Mystery Dust</#FFD27F> <secondary>and <primary><boxes></primary> <secondary>Mystery Box(es). <dark_gray>▸ <white>/mysterybox"
+  daily: "<prefix><secondary>Daily reward: a <stars> <secondary>Mystery Box! <muted>(Day <white><streak></white> in a row) <dark_gray>▸ <white>/mysterybox"
+  daily-streak: "<prefix><#FFD27F><bold><streak> days in a row!</bold></#FFD27F> <secondary>Here's a <stars> <secondary>Mystery Box. <dark_gray>▸ <white>/mysterybox"
+  parkour-best: "<prefix><secondary>New parkour best! Here's a <stars> <secondary>Mystery Box."
+  received: "<prefix><secondary>You got <white><amount></white> <stars> <secondary>Mystery Box(es)! <dark_gray>▸ <white>/mysterybox"
+  no-box: "<prefix><bad>You don't have a <stars> <bad>box. <muted>Craft one with Mystery Dust below it."
+  craft-short: "<prefix><bad>You need <white><need></white> more Mystery Dust for a <stars> <bad>box."
+  crafted: "<prefix><secondary>Crafted a <stars> <secondary>Mystery Box for <#FFD27F><cost> Mystery Dust</#FFD27F><secondary>."
+  already-opening: "<prefix><muted>Your box is still opening!"
+  # What the player is told when the box bursts
+  found: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>! <#9BFFC4>It's yours now."
+  found-duplicate: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>, which you already have: <#FFD27F>+<dust> Mystery Dust"
+  found-dust: "<prefix><secondary>You found <#FFD27F><dust> Mystery Dust</#FFD27F><secondary>!"
+  # Everyone sees this for rare finds (mystery-boxes.announce in config.yml)
+  announce: "<prefix><white><player></white> <secondary>found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray> <secondary>in a <stars> <secondary>Mystery Box!"
+  # Admin commands
+  unknown-player: "<prefix><bad>Nobody called <white><input></white> has been in the lobby."
+  given: "<prefix><good>Gave <white><player></white> <white><amount></white> <stars> <good>Mystery Box(es)."
+  dust-given: "<prefix><good>Gave <white><player></white> <white><amount></white> Mystery Dust. <muted>They have <white><dust></white> now."
+  reset: "<prefix><secondary>Took away <white><player></white>'s boxes, dust and found cosmetics."
+  # The hologram over the prize while a box opens. The rarity line can be animated (like holograms).
+  opening:
+    rarity:
+      common: "<#ANIM:shimmer:#C9B8EE,#FFFFFF>&lᴄᴏᴍᴍᴏɴ</#ANIM>"
+      rare: "<#ANIM:shimmer:#7FA8FF,#E3EBFF>&lʀᴀʀᴇ</#ANIM>"
+      epic: "<#ANIM:shimmer:#C77DFF,#FFB8F5>&lᴇᴘɪᴄ</#ANIM>"
+      legendary: "<#ANIM:shimmer:#FFD27F,#FFFFFF>&lʟᴇɢᴇɴᴅᴀʀʏ</#ANIM>"
+    reward: "<white><reward>"
+    new: "<#9BFFC4>ɴᴇᴡ!"
+    duplicate: "<#B8A9D9>ᴀʟʀᴇᴀᴅʏ ᴏᴡɴᴇᴅ <dark_gray>• <#FFD27F>+<dust> ᴅᴜꜱᴛ"
+    dust: "<#FFD27F>+<dust> ᴍʏꜱᴛᴇʀʏ ᴅᴜꜱᴛ"
+    opened-by: "<dark_gray><stars> <#8C7BB0>ʙʏ <white><player>"
+  vault:
+    # Over the vault. %lobby_boxes% and %lobby_dust% are each viewer's own.
+    hologram:
+      - "<#ANIM:shimmer:#B266FF,#FFD27F>&lᴍʏꜱᴛᴇʀʏ ᴠᴀᴜʟᴛ</#ANIM>"
+      - "&#E8DDFFʏᴏᴜ ʜᴀᴠᴇ &f&l%lobby_boxes% &#E8DDFFᴍʏꜱᴛᴇʀʏ ʙᴏxᴇꜱ"
+      - "&#FFD27F%lobby_dust% &#C9A86Aᴍʏꜱᴛᴇʀʏ ᴅᴜꜱᴛ"
+      - "<white><font:fractal:lobby>\uF011</font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ᴏᴘᴇɴ</#ANIM>"
+    set: "<prefix><good>The Mystery Vault is here now."
+    removed: "<prefix><secondary>The Mystery Vault is gone. <muted>Boxes now open in front of the player."
+    too-far: "<prefix><bad>Open your boxes at the Mystery Vault."
+    busy: "<prefix><muted><white><player></white> is opening a box. One moment!"
+  menu:
+    title: "<brand><bold>Mystery Vault</bold></brand>"
+    stash:
+      name: "<#FFD27F>Your Stash"
+      lore:
+        - "<muted>Mystery Dust: <#FFD27F><dust>"
+        - "<muted>Boxes: <white><boxes>"
+        - "<muted>Opened: <white><opened>"
+        - "<muted>Daily streak: <white><streak></white> <muted>day(s)"
+        - ""
+        - "<muted>A box every day you join, and"
+        - "<muted>for a new parkour best."
+    box:
+      name: "<stars> <white>Mystery Box <dark_gray>(<count>)"
+      lore:
+        - "<muted>You have <white><count></white><muted>."
+        - ""
+        - "<muted>Chances:"
+      odds: " <rarity> <dark_gray>- <white><chance>%"
+      open-hint:
+        - "<accent><click></accent> <muted>to open one"
+      none-hint:
+        - "<dark_gray>Craft one below with Mystery Dust"
+    craft:
+      name: "<secondary>Craft a <stars>"
+      lore:
+        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - ""
+        - "<accent><click></accent> <muted>to craft"
+    craft-short:
+      name: "<dark_gray>Craft a <stars>"
+      lore:
+        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<bad>You need <white><need></white> more"
+    collection:
+      name: "<primary>Collection"
+      lore:
+        - "<muted>Everything a box can give."
+        - "<muted>Found: <white><found></white><dark_gray>/<total>"
+        - ""
+        - "<accent><click></accent> <muted>to look"
+  collection:
+    title: "<brand><bold>Collection</bold></brand>"
+    found:
+      name: "<reward>"
+      lore:
+        - "<rarity>"
+        - "<#9BFFC4>Found"
+    locked:
+      name: "<dark_gray>???"
+      lore:
+        - "<rarity>"
+        - "<muted>Not found yet"
+    back:
+      name: "<secondary>← Back"
+      lore:
+        - "<muted>Back to the Mystery Vault."

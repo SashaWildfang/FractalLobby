@@ -52,8 +52,8 @@ class ScoreboardTagsTest {
         Messages messages = MessagesTestAccess.messages(new YamlConfiguration());
         List<String> lines = messages.lines("scoreboard.lines");
 
-        assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(3)));
-        assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(5)));
+        assertEquals(MessagesTestAccess.smallCaps("Realms (5)"), plain(messages, lines.get(7)));
+        assertEquals(" ▪ " + MessagesTestAccess.smallCaps("Survival: 4"), plain(messages, lines.get(9)));
         assertEquals("\uF021", plain(messages, messages.raw("scoreboard.title"))); // the pack's LOBBY logo
     }
 

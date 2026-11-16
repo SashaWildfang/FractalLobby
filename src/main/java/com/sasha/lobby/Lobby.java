@@ -79,6 +79,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private com.sasha.lobby.npc.Npcs npcs;
     private final com.sasha.lobby.help.CommandHelp help = new com.sasha.lobby.help.CommandHelp();
     private Profile profile;
+    private com.sasha.lobby.mystery.MysteryBoxes mystery;
     private com.sasha.lobby.items.FriendsMenu friendsMenu;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -126,16 +127,18 @@ public final class Lobby extends JavaPlugin implements Listener {
         npcs = new com.sasha.lobby.npc.Npcs(this);
         profile = new Profile(this);
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
+        mystery = new com.sasha.lobby.mystery.MysteryBoxes(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, mystery, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         coreLink.start();
         holograms.start();
         npcs.start();
+        mystery.start();
         afk.start();
         display.start();
         border.apply();
@@ -161,6 +164,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
         if (npcs != null) npcs.stop();
+        if (mystery != null) mystery.stop();
         if (holograms != null) holograms.shutdown();
         if (serverStatus != null) serverStatus.stop();
         if (selector != null) selector.stop();
@@ -214,6 +218,11 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public com.sasha.lobby.items.Statuses statuses() {
         return statuses;
+    }
+
+    /** Mystery Boxes and Mystery Dust (null until the plugin has started). */
+    public com.sasha.lobby.mystery.MysteryBoxes mystery() {
+        return mystery;
     }
 
     public com.sasha.lobby.items.FriendsMenu friendsMenu() {
@@ -282,6 +291,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         serverStatus.start();
         holograms.start();
         npcs.start();
+        mystery.reload();
         afk.start();
         display.start();
         for (Player player : getServer().getOnlinePlayers()) {
@@ -389,14 +399,58 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .executes(context -> asPlayer(context.getSource(), afk::toggle))
                     .build(), "Show or stop showing that you're AFK", List.of());
 
+            commands.register(Commands.literal("mysterybox")
+                    .executes(context -> asPlayer(context.getSource(), mystery::openMenu))
+                    .then(Commands.literal("give").requires(source -> source.getSender().hasPermission("lobby.admin"))
+                            .then(Commands.argument("player", StringArgumentType.word())
+                                    .then(Commands.argument("stars", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 5))
+                                            .executes(context -> {
+                                                mystery.giveCommand(context.getSource().getSender(), StringArgumentType.getString(context, "player"),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "stars"), 1);
+                                                return Command.SINGLE_SUCCESS;
+                                            })
+                                            .then(Commands.argument("amount", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 1000))
+                                                    .executes(context -> {
+                                                        mystery.giveCommand(context.getSource().getSender(), StringArgumentType.getString(context, "player"),
+                                                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "stars"),
+                                                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "amount"));
+                                                        return Command.SINGLE_SUCCESS;
+                                                    })))))
+                    .then(Commands.literal("dust").requires(source -> source.getSender().hasPermission("lobby.admin"))
+                            .then(Commands.argument("player", StringArgumentType.word())
+                                    .then(Commands.argument("amount", com.mojang.brigadier.arguments.LongArgumentType.longArg(-1_000_000, 1_000_000))
+                                            .executes(context -> {
+                                                mystery.dustCommand(context.getSource().getSender(), StringArgumentType.getString(context, "player"),
+                                                        com.mojang.brigadier.arguments.LongArgumentType.getLong(context, "amount"));
+                                                return Command.SINGLE_SUCCESS;
+                                            }))))
+                    .then(Commands.literal("reset").requires(source -> source.getSender().hasPermission("lobby.admin"))
+                            .then(Commands.argument("player", StringArgumentType.word())
+                                    .executes(context -> {
+                                        mystery.resetCommand(context.getSource().getSender(), StringArgumentType.getString(context, "player"));
+                                        return Command.SINGLE_SUCCESS;
+                                    })))
+                    .then(Commands.literal("vault").requires(source -> source.getSender().hasPermission("lobby.admin"))
+                            .then(Commands.literal("set").executes(context -> asPlayer(context.getSource(), player -> mystery.vault().set(player))))
+                            .then(Commands.literal("remove").executes(context -> {
+                                mystery.vault().remove(context.getSource().getSender());
+                                return Command.SINGLE_SUCCESS;
+                            })))
+                    .build(), "Open your Mystery Boxes", List.of("mysteryboxes", "mb", "boxes"));
+
+            commands.register(Commands.literal("dust")
+                    .executes(context -> asPlayer(context.getSource(), mystery::showDust))
+                    .build(), "See your Mystery Dust", List.of("mysterydust"));
+
             commands.register(Commands.literal("glow")
-                    .requires(source -> source.getSender().hasPermission(GlowListener.PERMISSION))
+                    .requires(source -> source.getSender() instanceof Player p ? GlowListener.allowed(p)
+                            : source.getSender().hasPermission(GlowListener.PERMISSION))
                     .executes(context -> asPlayer(context.getSource(), glow::toggle))
                     .build(), "Glow in your rank colour", List.of());
 
             commands.register(Commands.literal("chatcolor")
-                    .requires(source -> source.getSender().hasPermission(ChatColors.PERMISSION)
-                            && lobbyConfig().chatColors().enabled())
+                    .requires(source -> (source.getSender() instanceof Player p ? ChatColors.canUse(p)
+                            : source.getSender().hasPermission(ChatColors.PERMISSION)) && lobbyConfig().chatColors().enabled())
                     .executes(context -> asPlayer(context.getSource(), chatColors::open))
                     .then(Commands.argument("color", StringArgumentType.word())
                             .suggests((context, builder) -> {

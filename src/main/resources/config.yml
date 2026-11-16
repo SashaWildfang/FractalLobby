@@ -758,3 +758,92 @@ realm-selector:
         - "<white>▪ <gray>Two teams, one flag each"
         - "<white>▪ <gray>Grab theirs and bring it home"
         - "<white>▪ <gray>Defend yours at all costs"
+
+
+# ── Mystery Boxes ───────────────────────────────────────────────
+# Boxes of 1 to 5 stars that give a random cosmetic (a trail, a chat colour,
+# glowing) or a pile of Mystery Dust. A cosmetic the player already has turns
+# into Mystery Dust, and dust crafts new boxes. Boxes are opened at the
+# Mystery Vault (stand on its spot and type /mysterybox vault set); without a
+# vault they open in front of the player.
+#   /mysterybox                         the Mystery Vault menu (everyone)
+#   /dust                               your Mystery Dust (everyone)
+#   /mysterybox give NAME STARS [AMOUNT] give boxes (console: store, votes)
+#   /mysterybox dust NAME AMOUNT        give (or take, negative) Mystery Dust
+#   /mysterybox reset NAME              take everything away
+#   /mysterybox vault set / remove      place or remove the vault
+# Found cosmetics work without the rank permission (they're saved in
+# mystery-boxes.yml).
+mystery-boxes:
+  enabled: true
+  # A box every day a player joins (the day goes by scoreboard.time-zone);
+  # every streak-days days in a row, a bigger one.
+  daily:
+    enabled: true
+    stars: 1
+    streak-days: 7
+    streak-stars: 3
+  # A box for a new parkour personal best (once a day, from this score up).
+  parkour-best:
+    enabled: true
+    min-score: 10
+    stars: 1
+  # Mystery Dust it costs to craft a box, by stars.
+  craft-cost:
+    1: 150
+    2: 300
+    3: 600
+    4: 1200
+    5: 2500
+  # The chance (in %) of each rarity for a box, by stars:
+  # [common, rare, epic, legendary]
+  odds:
+    1: [70, 25, 5, 0]
+    2: [50, 35, 13, 2]
+    3: [30, 40, 24, 6]
+    4: [10, 40, 38, 12]
+    5: [0, 25, 50, 25]
+  # Each rarity's name and colour, and the Mystery Dust a duplicate turns into.
+  rarities:
+    common:
+      name: "<#C9B8EE>Common"
+      color: "#C9B8EE"
+      duplicate-dust: 10
+    rare:
+      name: "<#7FA8FF>Rare"
+      color: "#7FA8FF"
+      duplicate-dust: 25
+    epic:
+      name: "<#C77DFF>Epic"
+      color: "#C77DFF"
+      duplicate-dust: 60
+    legendary:
+      name: "<#FFD27F>Legendary"
+      color: "#FFD27F"
+      duplicate-dust: 150
+  # Everyone is told when someone finds something this rare or rarer.
+  announce: legendary
+  # What boxes can give: "type:value rarity". Types: trail:ID and
+  # chatcolor:ID (from trails and chat-color above), glow, dust:AMOUNT.
+  # Cosmetics that are free for everyone are left out automatically.
+  rewards:
+    - "dust:20 common"
+    - "dust:35 common"
+    - "trail:hearts common"
+    - "trail:snowflakes common"
+    - "trail:sparks common"
+    - "dust:60 rare"
+    - "trail:flames rare"
+    - "trail:blossom rare"
+    - "trail:magic rare"
+    - "chatcolor:ocean rare"
+    - "dust:140 epic"
+    - "trail:soul-flames epic"
+    - "trail:stars epic"
+    - "chatcolor:sunset epic"
+    - "chatcolor:fractal epic"
+    - "glow epic"
+    - "dust:350 legendary"
+    - "trail:enchanted legendary"
+    - "trail:totem legendary"
+    - "chatcolor:rainbow legendary"

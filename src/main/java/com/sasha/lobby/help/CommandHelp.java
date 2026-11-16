@@ -33,6 +33,7 @@ public final class CommandHelp {
     public static final List<Topic> TOPICS = List.of(
             new Topic("player", "Everyone", "Commands every player can use"),
             new Topic("parkour", "Parkour", "Setting up the parkour course and its holograms"),
+            new Topic("mystery", "Mystery Boxes", "Mystery Boxes, Mystery Dust and the Mystery Vault"),
             new Topic("holograms", "Holograms", "Making and editing holograms"),
             new Topic("npcs", "NPCs", "Making and editing NPCs and the holograms above them"),
             new Topic("admin", "Admin", "Reloading, spawn, playtime board and the rest"));
@@ -60,6 +61,14 @@ public final class CommandHelp {
         e.add(new Entry("player", "/lobbyhelp [topic|command]", "This help.", null,
                 List.of("Example: /lobbyhelp npcs", "Example: /lobbyhelp npc skin")));
         // ---- parkour
+        e.add(new Entry("mystery", "/mysterybox", "Open the Mystery Vault menu: your boxes, crafting with dust, your collection.", null,
+                List.of("Aliases: /mb, /boxes. Boxes are opened at the Mystery Vault.")));
+        e.add(new Entry("mystery", "/dust", "See how much Mystery Dust you have.", null, List.of()));
+        e.add(new Entry("mystery", "/mysterybox give <player> <stars> [amount]", "Give Mystery Boxes (works from the console, for the store and votes).", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox dust <player> <amount>", "Give Mystery Dust (a negative amount takes it away).", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox reset <player>", "Take away a player's boxes, dust and found cosmetics.", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox vault set", "Put the Mystery Vault on the block you stand on.", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox vault remove", "Take the Mystery Vault away (boxes then open in front of the player).", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour setup", "Put the Parkour NPC where you stand (it starts runs; make it again if it was removed).", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour area pos1", "Set one corner of the area the course is built in.", admin,
                 List.of("Stand in one corner, then the opposite one for pos2.", "The course is built anywhere inside the box.")));

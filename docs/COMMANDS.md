@@ -31,6 +31,20 @@ Setting up the parkour course and its holograms.
 | `/lobbyparkour leaderboard move` | `lobby.admin` | Move the leaderboard hologram to exactly where you stand. |
 | `/lobbyparkour leaderboard remove` | `lobby.admin` | Take the leaderboard hologram away. |
 
+## Mystery Boxes
+
+Mystery Boxes, Mystery Dust and the Mystery Vault.
+
+| Command | Permission | What it does |
+|---|---|---|
+| `/mysterybox` | everyone | Open the Mystery Vault menu: your boxes, crafting with dust, your collection.<br>Aliases: /mb, /boxes. Boxes are opened at the Mystery Vault. |
+| `/dust` | everyone | See how much Mystery Dust you have. |
+| `/mysterybox give <player> <stars> [amount]` | `lobby.admin` | Give Mystery Boxes (works from the console, for the store and votes). |
+| `/mysterybox dust <player> <amount>` | `lobby.admin` | Give Mystery Dust (a negative amount takes it away). |
+| `/mysterybox reset <player>` | `lobby.admin` | Take away a player's boxes, dust and found cosmetics. |
+| `/mysterybox vault set` | `lobby.admin` | Put the Mystery Vault on the block you stand on. |
+| `/mysterybox vault remove` | `lobby.admin` | Take the Mystery Vault away (boxes then open in front of the player). |
+
 ## Holograms
 
 Making and editing holograms.

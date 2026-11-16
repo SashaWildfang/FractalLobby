@@ -20,6 +20,11 @@ public final class GlowListener implements Listener {
 
     public static final String PERMISSION = "lobby.cmd.glow";
 
+    /** The glow rank, or glowing found in a Mystery Box. */
+    public static boolean allowed(Player player) {
+        return player.hasPermission(PERMISSION) || com.sasha.lobby.mystery.MysteryBoxes.unlocked(player, "glow");
+    }
+
     private final Lobby plugin;
     private final NamespacedKey glowKey;
 
@@ -41,6 +46,6 @@ public final class GlowListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         boolean glow = player.getPersistentDataContainer().getOrDefault(glowKey, PersistentDataType.BOOLEAN, false);
-        player.setGlowing(glow && player.hasPermission(PERMISSION));
+        player.setGlowing(glow && allowed(player));
     }
 }

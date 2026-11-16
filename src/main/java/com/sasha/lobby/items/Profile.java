@@ -101,7 +101,7 @@ public final class Profile implements Listener {
         menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
         menu.inventory.setItem(TRAIL, style.icon(button(messages, Material.BLAZE_POWDER, "profile.trail", info), "trail"));
         menu.inventory.setItem(GLOW, style.icon(button(messages, Material.GLOWSTONE_DUST,
-                player.hasPermission(GlowListener.PERMISSION) ? "profile.glow" : "profile.glow-locked", info), "glow"));
+                GlowListener.allowed(player) ? "profile.glow" : "profile.glow-locked", info), "glow"));
         menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
         menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
         menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
@@ -172,7 +172,7 @@ public final class Profile implements Listener {
 
         switch (event.getRawSlot()) {
             case CHAT_COLOR -> {
-                if (plugin.lobbyConfig().chatColors().enabled() && player.hasPermission(ChatColors.PERMISSION)) {
+                if (plugin.lobbyConfig().chatColors().enabled() && ChatColors.canUse(player)) {
                     click(player);
                     plugin.chatColors().open(player);
                 } else {
@@ -189,7 +189,7 @@ public final class Profile implements Listener {
                 plugin.trails().open(player);
             }
             case GLOW -> {
-                if (!player.hasPermission(GlowListener.PERMISSION)) {
+                if (!GlowListener.allowed(player)) {
                     locked(player);
                     return;
                 }
