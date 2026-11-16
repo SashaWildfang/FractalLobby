@@ -80,7 +80,7 @@ class ScoreboardTagsTest {
         server.set("format.font", "normal");
         Messages messages = MessagesTestAccess.messages(server);
 
-        assertEquals("An experience like no other", plain(messages, messages.lines("tablist.header").get(6)));
+        assertEquals("An experience like no other", plain(messages, messages.lines("tablist.header").get(5)));
         assertEquals("1 here · 5 online · 42ms", plain(messages, messages.lines("tablist.footer").get(1),
                 net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("ping", "42")));
     }

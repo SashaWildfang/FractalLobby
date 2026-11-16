@@ -205,8 +205,38 @@ public final class DisplayService {
         List<String> tips = plugin.messages().lines("tablist.tips");
         if (tips.isEmpty()) return Placeholder.component("tip", Component.empty());
         long every = Math.max(3, plugin.getConfig().getLong("tablist.tip-seconds", 12)) * 1000;
-        String tip = tips.get((int) (System.currentTimeMillis() / every % tips.size()));
-        return Placeholder.component("tip", plugin.messages().render(placeholders(player, tip)));
+        String tip = placeholders(player, tips.get((int) (System.currentTimeMillis() / every % tips.size())));
+        Component shown = plugin.messages().render(tip);
+        if (!tip.contains("<br>") && TextWidth.width(shown) > TIP_WIDTH) shown = plugin.messages().render(wrap(tip));
+        return Placeholder.component("tip", shown);
+    }
+
+    /** Wider than this (in pixels), a tip goes over two lines. */
+    private static final int TIP_WIDTH = 290;
+
+    /** Puts a line break at the space nearest the middle of the visible text (never inside a tag). */
+    static String wrap(String template) {
+        int visible = 0, depth = 0;
+        for (char c : template.toCharArray()) {
+            if (c == '<') depth++;
+            else if (c == '>') depth = Math.max(0, depth - 1);
+            else if (depth == 0) visible++;
+        }
+        int best = -1, bestDistance = Integer.MAX_VALUE, seen = 0;
+        depth = 0;
+        for (int i = 0; i < template.length(); i++) {
+            char c = template.charAt(i);
+            if (c == '<') depth++;
+            else if (c == '>') depth = Math.max(0, depth - 1);
+            else if (depth == 0) {
+                if (c == ' ' && Math.abs(seen - visible / 2) < bestDistance) {
+                    best = i;
+                    bestDistance = Math.abs(seen - visible / 2);
+                }
+                seen++;
+            }
+        }
+        return best < 0 ? template : template.substring(0, best) + "<br>" + template.substring(best + 1);
     }
 
     private String placeholders(Player player, String template) {
