@@ -19,7 +19,7 @@ import org.bukkit.inventory.ItemStack;
 public final class MenuStyle {
 
     /** The backgrounds, by menu (the pack's fractal:lobby font). */
-    public static final char SETTINGS = '\uF170', IGNORED = '\uF171', PARKOUR = '\uF1A5', PROFILE = '\uF1C3';
+    public static final char SETTINGS = '\uF170', IGNORED = '\uF171', PARKOUR = '\uF1A5', PROFILE = '\uF1C4';
 
     /** Chat colours and trails the pack has an icon for (by their id in config.yml). */
     private static final java.util.Set<String> COLOR_ICONS = java.util.Set.of("white", "gray", "red", "orange", "yellow",

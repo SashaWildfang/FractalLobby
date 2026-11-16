@@ -140,7 +140,8 @@ for rows in range(3, 7):
     add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
 add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
-add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))
+add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))  # before 1.18.1
+add(0xF1C4, 'profile_4', background(4, [4], "PROFILE", cells=[13, 28, 29, 30, 31, 32, 33, 34]))
 def status_cols(k):  # a part row of k (of 7) is centred; an even count leaves the middle empty
     if k == 7: return list(range(7))
     if k % 2: return list(range((7 - k) // 2, (7 - k) // 2 + k))

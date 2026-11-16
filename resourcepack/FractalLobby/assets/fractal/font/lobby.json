@@ -658,6 +658,15 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/profile_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1c4"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/status_3_1.png",
    "ascent": 29,
    "height": 256,

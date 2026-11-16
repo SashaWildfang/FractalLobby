@@ -36,18 +36,18 @@ import java.time.Instant;
 public final class Profile implements Listener {
 
     /*
-     * Three rows: the player's head at the top with their status under it; cosmetics (chat colour, trail, glow) bottom left, ignored
+     * Four rows: the player's head at the top with their status under it, an empty row, then the buttons: cosmetics (chat colour, trail, glow) bottom left, ignored
      * players in the middle and everything else (parkour, settings, realms) bottom right.
      */
     private static final int HEAD = 4;
     private static final int STATUS = 13;
-    private static final int CHAT_COLOR = 19;
-    private static final int TRAIL = 20;
-    private static final int GLOW = 21;
-    private static final int IGNORED = 22;
-    private static final int PARKOUR = 23;
-    private static final int SETTINGS = 24;
-    private static final int REALMS = 25;
+    private static final int CHAT_COLOR = 28;
+    private static final int TRAIL = 29;
+    private static final int GLOW = 30;
+    private static final int IGNORED = 31;
+    private static final int PARKOUR = 32;
+    private static final int SETTINGS = 33;
+    private static final int REALMS = 34;
 
     private final Lobby plugin;
 
@@ -77,7 +77,7 @@ public final class Profile implements Listener {
         Messages messages = plugin.messages();
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
-        menu.inventory = Bukkit.createInventory(menu, 27, style.title(MenuStyle.PROFILE,
+        menu.inventory = Bukkit.createInventory(menu, 36, style.title(MenuStyle.PROFILE,
                 messages.component("profile.title", Messages.name("player", player.getName()))));
         ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
