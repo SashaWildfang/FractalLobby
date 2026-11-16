@@ -339,3 +339,92 @@ for x in range(24):
         if edge: sel.putpixel((x, y), (0x12, 0x13, 0x1c, 255))
         elif inner: sel.putpixel((x, y), (0xd6, 0xd9, 0xea, 255))
 sel.save(f'{HUD}/hotbar_selection.png')
+
+# 8. hand-drawn icons: better trails, profile cosmetics, and the Radio buttons
+from PIL import ImageDraw
+def art(rows, colours, shade=True):
+    """Pixel art from rows of characters, centred in 16x16 and outlined. colours: char -> (r,g,b) or
+    char -> function(x, y, w, h) -> (r,g,b). With shade, the top half is a little lighter."""
+    h, w = len(rows), max(len(r) for r in rows)
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    ox, oy = (16 - w) // 2, (16 - h) // 2
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch not in colours: continue
+            c = colours[ch]
+            c = c(x, y, w, h) if callable(c) else c
+            if shade and y < h * 0.4: c = mix(c, (255, 255, 255), 0.18)
+            img.putpixel((ox + x, oy + y), c + (255,))
+    return outline(img)
+LIGHT, SHADE = (0xe9, 0xeb, 0xf5), (0xa9, 0xae, 0xc8)
+def glyph(x, y, w, h): return LIGHT if y < h / 2 else SHADE
+def hgrad(a, b): return lambda x, y, w, h: mix(hexc(a), hexc(b), x / max(1, w - 1))
+
+SNOW = ["#.....#.....#", ".#...###...#.", "..#...#...#..", "...#..#..#...", "....#.#.#....", ".#...###...#.",
+        "#############", ".#...###...#.", "....#.#.#....", "...#..#..#...", "..#...#...#..", ".#...###...#.", "#.....#.....#"]
+STAR = ["......#......", "......#......", ".....###.....", ".....###.....", "#############", ".###########.",
+        "..#########..", "...#######...", "...#######...", "..####.####..", "..###...###..", ".###.....###.", ".#.........#."]
+BOLT = [".......####", "......####.", ".....####..", "....####...", "...#######.", "..#######..", ".....###...",
+        "....###....", "...###.....", "..##.......", ".#........."]
+SPARKLE = ["...........#..", "..........###.", "....#......#..", "....#.........", "...###........", "..#####.......",
+           "#########.....", "..#####.......", "...###...#....", "....#...###...", "....#....#....", ".............."]
+TOTEM = ["....YYYY....", "...YYYYYY...", "...YGYYGY...", "...YYYYYY...", "....YDDY....", "YY.YYYYYY.YY", "YYYYYYYYYYYY",
+         "...YYYYYY...", "...YDYYDY...", "....YYYY....", "....YDDY....", "...YY..YY..."]
+trail_model('snowflakes', art(SNOW, {'#': lambda x, y, w, h: (0xf4, 0xfb, 0xff) if (x + y) % 2 else (0xa8, 0xd8, 0xff)}, shade=False))
+trail_model('stars', art(STAR, {'#': (0xff, 0xd8, 0x4a)}))
+trail_model('sparks', art(BOLT, {'#': (0x7f, 0xb8, 0xff)}))
+trail_model('magic', art(SPARKLE, {'#': hgrad('#8E2DE2', '#E58BFF')}))
+trail_model('totem', art(TOTEM, {'Y': (0xf2, 0xc9, 0x4c), 'D': (0xb8, 0x86, 0x2b), 'G': (0x5e, 0xc4, 0x5e)}))
+
+BUBBLE = ["..##########..", ".############.", "##############", "##############", "##WW##WW##WW##", "##WW##WW##WW##",
+          "##############", ".############.", "..##########..", "...###........", "...##.........", "...#.........."]
+model('chat-color', art(BUBBLE, {'#': hgrad('#8E2DE2', '#FF7BE5'), 'W': (255, 255, 255)}))
+TRAIL3 = ["..........#...", ".........###..", "..........#...", "..............", "......#.......", ".....###......",
+          "......#.......", "..............", "..#...........", ".###..........", "#####.........", ".###..........", "..#..........."]
+model('trail', art(TRAIL3, {'#': lambda x, y, w, h: mix(hexc('#FFE680'), hexc('#FF7BE5'), y / (h - 1))}))
+orb = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); d = ImageDraw.Draw(orb)
+d.ellipse((1, 1, 14, 14), fill=(0xff, 0xe6, 0x80, 70)); d.ellipse((3, 3, 12, 12), fill=(0xff, 0xe6, 0x80, 140))
+d.ellipse((4, 4, 11, 11), fill=(0xff, 0xd2, 0x4a, 255)); d.ellipse((5, 5, 8, 8), fill=(0xff, 0xf6, 0xc8, 255))
+model('glow', orb)
+
+# Radio buttons (item models fractal:radio/NAME)
+def radio_model(name, img):
+    for dd in ('textures/item/radio', 'models/item/radio', 'items/radio'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
+    img.save(f'{OUT}/assets/fractal/textures/item/radio/{name}.png')
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/radio/{name}"}}, open(f'{OUT}/assets/fractal/models/item/radio/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/radio/{name}"}}, open(f'{OUT}/assets/fractal/items/radio/{name}.json', 'w'))
+G = {'#': glyph}
+P = {'#': hgrad('#8E2DE2', '#E58BFF')}
+radio_model('play', art(["#......", "###....", "#####..", "#######", "#####..", "###....", "#......"][:7] and
+                        ["#.......", "##......", "####....", "######..", "########", "######..", "####....", "##......", "#......."], {'#': (0x9b, 0xff, 0xc4)}))
+radio_model('pause', art(["###..###"] * 9, P))
+radio_model('skip', art(["#.....##", "##....##", "####..##", "########", "####..##", "##....##", "#.....##"], G))
+radio_model('previous', art(["##.....#", "##....##", "##..####", "########", "##..####", "##....##", "##.....#"], G))
+SHUF = ["........#..", "#.....#####", "##...#..#..", "..#.#......", "...#.......", "..#.#......", "##...#..#..", "#.....#####", "........#.."]
+radio_model('shuffle', art(SHUF, P)); radio_model('shuffle-off', art(SHUF, G))
+REPEAT = ["...#........", "..#########.", "...#.......#", "#..........#", "#..........#", "#.......#...", ".#########..", "........#..."]
+radio_model('repeat', art(REPEAT, G))
+radio_model('volume', art(["....#......", "...##..#...", "..###...#..", "####..#..#.", "####...#.#.", "####...#.#.", "####..#..#.",
+                           "..###...#..", "...##..#...", "....#......"], G))
+radio_model('queue', art(["##.########", "##.########", "...........", "##.########", "##.########", "...........", "##.######..", "##.######.."], G))
+radio_model('sort', art(["##########", "##########", "..........", "#######...", "#######...", "..........", "####......", "####......"], G))
+radio_model('categories', art(["AAAA.BBBB", "AAAA.BBBB", "AAAA.BBBB", "AAAA.BBBB", ".........", "CCCC.DDDD", "CCCC.DDDD", "CCCC.DDDD", "CCCC.DDDD"],
+                              {'A': hexc('#B266FF'), 'B': hexc('#FF7BE5'), 'C': hexc('#7FE7FF'), 'D': hexc('#FFE680')}))
+radio_model('favorites', art(STAR, {'#': (0xff, 0xd8, 0x4a)}))
+radio_model('station', art(["#.......#", ".#.....#.", "#.#.#.#.#", ".#.###.#.", "#...#...#", "....#....", "...###...", "...#.#...", "..#...#..", "..#####..", ".#.....#."], G))
+radio_model('bar-boss', art(["############", "#PPPPPPPP..#", "############"], {'#': SHADE, 'P': hexc('#B266FF')}))
+radio_model('bar-action', art(["#.#.###.#.#", "...........", "###########"], G))
+radio_model('bar-off', art(["#.........#", ".#.......#.", "..#.....#..", "...#...#...", "....#.#....", ".....#.....", "....#.#....", "...#...#...",
+                            "..#.....#..", ".#.......#.", "#.........#"], {'#': (0x8a, 0x8e, 0xa8)}))
+radio_model('empty', art(["...#####...", "..#.....#..", ".#.......#.", "#.........#", "#.........#", "#.........#", ".#.......#.", "..#.....#..", "...#####..."],
+                         {'#': (0x8a, 0x8e, 0xa8)}))
+DISC = ["....######....", "..##########..", ".############.", ".####LLLL####.", "####LLLLLL####", "###LLL..LLL###", "###LL....LL###",
+        "###LL....LL###", "###LLL..LLL###", "####LLLLLL####", ".####LLLL####.", ".############.", "..##########..", "....######...."]
+for i, label in enumerate(('#B266FF', '#FF7BE5', '#7FE7FF', '#9BFFC4', '#FFE680')):
+    radio_model(f'disc_{i}', art(DISC, {'#': lambda x, y, w, h: (0x2c, 0x2e, 0x3e) if (x + y) % 5 else (0x3d, 0x40, 0x55),
+                                        'L': hexc(label)}, shade=False))
+SKIP = ["#......##", "##.....##", "###....##", "####...##", "#####..##", "######.##", "#####..##", "####...##", "###....##", "##.....##", "#......##"]
+radio_model('skip', art(SKIP, G))
+radio_model('previous', art([r[::-1] for r in SKIP], G))
+radio_model('station', art(["........#.", ".......#..", "......#...", "##########", "#SSS#....#", "#SSS#.##.#", "#SSS#....#", "#SSS#.##.#", "##########"],
+                           {'#': glyph, 'S': (0x6a, 0x6f, 0x8d)}))
