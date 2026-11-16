@@ -178,6 +178,8 @@ public final class RealmSelector implements Listener {
                 meta.displayName(messages.render("<!italic>" + realm.name(), args));
                 meta.lore(lore);
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                // The resource pack's icon for the realm (an offline realm keeps its grey dye).
+                if (realm.itemModel() != null && state != ServerStatus.State.OFFLINE) meta.setItemModel(realm.itemModel());
             });
             menu.inventory.setItem(slot, item);
             menu.realms.put(slot, realm);

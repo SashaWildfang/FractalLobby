@@ -526,9 +526,9 @@ realm-selector:
   # Draw the menu with a custom background in the style of Survival's
   # menus (title plaque, slate panel, a square behind each realm) instead
   # of black panes.
-  # Needs FractalLobbyGUI.zip in the server resource pack (with Nexo: put
-  # it in plugins/Nexo/pack/external_packs and run /nexo reload pack).
-  custom-gui: false
+  # Needs FractalLobby.zip in the server resource pack (with Nexo: put it
+  # in plugins/Nexo/pack/external_packs). false = black panes, no pack needed.
+  custom-gui: true
   # Each realm shows Online, Full, Maintenance or Offline. Lobby pings
   # each realm at the address the proxy has for it (or "address" below).
   # Offline and full realms can't be joined; lobby.bypass.full and
@@ -551,6 +551,8 @@ realm-selector:
       # Menu slot, counting from 0 at the top left (9 per row).
       slot: 11
       item: GRASS_BLOCK
+      # Optional: the icon from the resource pack instead ("" = the item above).
+      item-model: "fractal:survival"
       name: "<primary><bold>Survival"
       description:
         - "<muted>Classic survival with friends."

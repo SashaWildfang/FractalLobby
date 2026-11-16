@@ -94,5 +94,3 @@ for rows in range(1, 7):
         providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256,
                           "chars": [chr(0xF100 + rows * 16 + count)]})
 json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)
-json.dump({"pack": {"pack_format": 75, "supported_formats": [34, 99], "description": "Fractal Lobby menus"}},
-          open(f'{OUT}/pack.mcmeta', 'w'), indent=1)

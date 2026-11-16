@@ -6,6 +6,7 @@ package com.sasha.lobby.config;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -152,7 +153,7 @@ public record LobbyConfig(
 
     /** address: "" = ask the proxy. maintenance: shown as under maintenance whatever the ping says. */
     public record SelectorServer(String server, int slot, Material item, String name, List<String> description,
-                                 String address, boolean maintenance) {
+                                 String address, boolean maintenance, NamespacedKey itemModel) {
     }
 
     /**
@@ -376,7 +377,8 @@ public record LobbyConfig(
                         c.getString(path + ".name", id),
                         c.getStringList(path + ".description"),
                         c.getString(path + ".address", "").trim(),
-                        c.getBoolean(path + ".maintenance", false)));
+                        c.getBoolean(path + ".maintenance", false),
+                        itemModel(c.getString(path + ".item-model", ""), path + ".item-model", log)));
             }
         }
         List<String> words = c.isList("realm-selector.status.maintenance-words")
@@ -387,7 +389,15 @@ public record LobbyConfig(
                 List.copyOf(words),
                 c.getBoolean("realm-selector.status.hide-down-realms", true),
                 c.getBoolean("realm-selector.auto-center", true),
-                c.getBoolean("realm-selector.custom-gui", false));
+                c.getBoolean("realm-selector.custom-gui", true));
+    }
+
+    /** A resource-pack item model like "fractal:survival", or null for none. */
+    private static NamespacedKey itemModel(String value, String path, Logger log) {
+        if (value == null || value.isBlank()) return null;
+        NamespacedKey key = NamespacedKey.fromString(value.trim().toLowerCase(java.util.Locale.ROOT));
+        if (key == null) log.warning("config.yml " + path + " is not a model name like fractal:survival; ignoring it");
+        return key;
     }
 
     /** Hotbar slot 1-9 in the config → inventory index 0-8. */
