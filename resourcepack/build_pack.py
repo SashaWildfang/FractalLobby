@@ -941,3 +941,46 @@ src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skins', 'src
 for f in os.listdir(src_dir):
     if f.endswith('.png'): shutil.copy(os.path.join(src_dir, f), f'{npc_dir}/{f}')
 print('npc skins', sorted(os.listdir(npc_dir)))
+
+# 25. the parkour guide: a glowing frame on the next block (fractal:parkour/target, a 3D model) and the orbs along the
+#     jump (fractal:parkour/dot, a sprite), shown to the runner by display entities
+for dd in ('textures/item/parkour', 'models/item/parkour', 'items/parkour'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
+PURPLE, PINK = hexc('#B266FF'), hexc('#FF7BE5')
+def mix(a, b, t): return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
+# the frame's texture: purple to pink along its length, a bright line along the middle
+frame = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+for x in range(16):
+    for y in range(16):
+        c = mix(PURPLE, PINK, x / 15)
+        if y in (7, 8): c = mix(c, (255, 255, 255), 0.55)
+        frame.putpixel((x, y), c + (255,))
+frame.save(f'{OUT}/assets/fractal/textures/item/parkour/target.png')
+# the orb: a white core fading to pink, then purple, with a soft see-through edge
+orb = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+for x in range(16):
+    for y in range(16):
+        d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5 / 7.5
+        if d > 1: continue
+        c = mix((255, 255, 255), PINK, min(1, d / 0.45)) if d < 0.45 else mix(PINK, PURPLE, (d - 0.45) / 0.55)
+        a = 255 if d < 0.7 else round(255 * (1 - (d - 0.7) / 0.3) ** 0.8)
+        if a > 8: orb.putpixel((x, y), c + (a,))
+orb.save(f'{OUT}/assets/fractal/textures/item/parkour/dot.png')
+json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": "fractal:item/parkour/dot"}},
+          open(f'{OUT}/assets/fractal/models/item/parkour/dot.json', 'w'))
+
+def box(f, t):
+    faces = {side: {"uv": [0, 6, 16, 10], "texture": "#frame"} for side in ('north', 'south', 'east', 'west', 'up', 'down')}
+    return {"from": f, "to": t, "shade": False, "light_emission": 15, "faces": faces}
+T, H, LO, HI = 16.05, 16.65, -0.4, 16.4   # top of the block, height of the frame, its outer edges
+W = 0.9                                   # bar width
+elements = [box([LO, T, LO], [HI, H, LO + W]), box([LO, T, HI - W], [HI, H, HI]),
+            box([LO, T, LO + W], [LO + W, H, HI - W]), box([HI - W, T, LO + W], [HI, H, HI - W])]
+for cx in (LO, HI - 2.2):        # corner brackets, a little taller
+    for cz in (LO, HI - 2.2):
+        elements.append(box([cx, T, cz], [cx + 2.2, H + 0.9, cz + 2.2]))
+json.dump({"textures": {"frame": "fractal:item/parkour/target", "particle": "fractal:item/parkour/target"}, "elements": elements},
+          open(f'{OUT}/assets/fractal/models/item/parkour/target.json', 'w'))
+for name in ('dot', 'target'):
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/parkour/{name}"}},
+              open(f'{OUT}/assets/fractal/items/parkour/{name}.json', 'w'))
+print('parkour guide: target, dot')

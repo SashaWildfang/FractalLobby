@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 26
+messages-version: 27
 
 theme:
   primary: "#B266FF"
@@ -534,7 +534,7 @@ parkour:
   area-set: "<prefix><good>Parkour <which> set. <muted>Area: <white><size></white> blocks."   # <which> <size>
   # The run itself. <score> <time> <best>
   game:
-    start: "<prefix><secondary>Parkour started! <muted>Your best is <white><best></white>. Jump to the sparkling block!"
+    start: "<prefix><secondary>Parkour started! <muted>Your best is <white><best></white>. Jump to the glowing block!"
     fell: "<prefix><secondary>You fell! <muted>Score <white><score></white> in <white><time></white>."
     idle: "<prefix><secondary>Run over: you stood still too long. <muted>Score <white><score></white>."
     left: "<prefix><secondary>Run over. <muted>Score <white><score></white>."

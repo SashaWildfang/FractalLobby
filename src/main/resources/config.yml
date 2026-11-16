@@ -243,6 +243,10 @@ parkour:
     - MAGENTA_WOOL
   # A run ends after this long without reaching a new block.
   idle-seconds: 30
+  # How the next jump is shown to the runner: "pack" = a glowing frame on the
+  # next block and glowing orbs along the jump (needs FractalLobby.zip),
+  # "particles" = sparkles and a dotted line of particles (no pack needed).
+  guide: pack
   # Jump lengths (centre to centre, 2-5 blocks) get longer as the score
   # goes up: easy until medium-from, then medium, hard, expert.
   jumps:

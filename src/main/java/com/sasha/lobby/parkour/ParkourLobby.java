@@ -128,15 +128,28 @@ public final class ParkourLobby implements Listener {
         npc = npcs.create(NPC_NAME, at);
         var builtIn = com.sasha.lobby.npc.Npc.builtIn(plugin, NPC_NAME);
         if (builtIn != null) npc.copyLook(builtIn);
-        else npc.actions.put("ANY_CLICK", new ArrayList<>(List.of("parkour")));
+        else npc.actions.put("RIGHT_CLICK", new ArrayList<>(List.of("parkour")));
         npcs.changed(npc);
         npcs.save();
     }
 
     static final String NPC_NAME = "Parkour";
 
+    /** The Parkour NPC starts runs on a right click only (it used to be any click). */
+    private void rightClickOnly() {
+        var npc = plugin.npcs().get(NPC_NAME);
+        if (npc == null) return;
+        List<String> any = npc.actions.get("ANY_CLICK");
+        if (any == null || !any.remove("parkour")) return;
+        if (any.isEmpty()) npc.actions.remove("ANY_CLICK");
+        npc.actions.computeIfAbsent("RIGHT_CLICK", k -> new ArrayList<>()).add("parkour");
+        plugin.npcs().changed(npc);
+        plugin.npcs().save();
+    }
+
     /** Takes away an old start plate (and its hologram), with the Parkour NPC standing there instead. */
     private void replacePlate() {
+        rightClickOnly();
         Location plate = readLocation("plate");
         if (plate == null && !data.contains("hologram")) return;
         if (plate != null) {

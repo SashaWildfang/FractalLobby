@@ -75,6 +75,7 @@ public final class ParkourGame implements Listener {
         Block current;
         Block next;
         int bestBefore;
+        Guide guide;
 
         Run(Player player) {
             this.player = player;
@@ -102,6 +103,7 @@ public final class ParkourGame implements Listener {
         this.plugin = plugin;
         this.parkour = parkour;
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 2L, 2L);
+        Guide.clearStray(plugin);
     }
 
     public boolean playing(Player player) {
@@ -333,8 +335,20 @@ public final class ParkourGame implements Listener {
         }
     }
 
-    /** Sparkles around the top of the next block and a dotted arc from here to there, for the runner only. */
+    /**
+     * Shows the runner where to jump: with the resource pack's guide (parkour.guide: pack) a glowing frame on the next
+     * block and orbs along the jump, else (particles) sparkles and a dotted arc. Only the runner sees it.
+     */
     private void guide(Run run) {
+        if (!"particles".equalsIgnoreCase(plugin.getConfig().getString("parkour.guide", "pack"))) {
+            if (run.guide == null) run.guide = new Guide(plugin, run.player);
+            run.guide.update(run.current, run.next, ticks / 2);
+            return;
+        }
+        if (run.guide != null) {
+            run.guide.remove();
+            run.guide = null;
+        }
         Player player = run.player;
         Block next = run.next;
         World world = next.getWorld();
@@ -380,6 +394,7 @@ public final class ParkourGame implements Listener {
     public void end(Player player, String reason, boolean sendBack) {
         Run run = runs.remove(player.getUniqueId());
         if (run == null) return;
+        if (run.guide != null) run.guide.remove();
         unplace(run.current);
         unplace(run.next);
         int seconds = run.seconds();
