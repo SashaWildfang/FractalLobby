@@ -74,6 +74,8 @@ public final class ParkourGame implements Listener {
         float heading;
         Block current;
         Block next;
+        /** The block after next (not placed yet): shown as a ghost so the runner can plan ahead. */
+        Block after;
         int bestBefore;
         Guide guide;
 
@@ -139,6 +141,7 @@ public final class ParkourGame implements Listener {
             return;
         }
         place(run.next);
+        run.after = peek(run, area);
         runs.put(player.getUniqueId(), run);
 
         Location stand = first.getLocation().add(0.5, 1.0, 0.5);
@@ -190,6 +193,21 @@ public final class ParkourGame implements Listener {
         return new int[] {min, max};
     }
 
+    /** The block that will come after run.next, worked out now (the run's heading is left as it was). */
+    private Block peek(Run run, Area area) {
+        Block current = run.current;
+        float heading = run.heading;
+        run.current = run.next;
+        run.score++;
+        try {
+            return nextBlock(run, area);
+        } finally {
+            run.score--;
+            run.current = current;
+            run.heading = heading;
+        }
+    }
+
     /** Picks the next block: roughly ahead (turning a little each time), inside the area, and always makeable. */
     private Block nextBlock(Run run, Area area) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -224,9 +242,14 @@ public final class ParkourGame implements Listener {
         return null;
     }
 
-    /** Empty, with room to stand above, and not touching another run's blocks. */
+    /** Empty, with room to stand above, and not touching another run's blocks (placed, or a ghost still to come). */
     private boolean free(Block block) {
         for (int up = 0; up <= 2; up++) if (!block.getRelative(0, up, 0).getType().isAir()) return false;
+        for (Run other : runs.values()) {
+            Block ghost = other.after;
+            if (ghost != null && ghost.getWorld().equals(block.getWorld()) && Math.abs(ghost.getX() - block.getX()) <= 1
+                    && Math.abs(ghost.getZ() - block.getZ()) <= 1 && Math.abs(ghost.getY() - block.getY()) <= 2) return false;
+        }
         for (Block other : placed) {
             if (other.getWorld().equals(block.getWorld()) && Math.abs(other.getX() - block.getX()) <= 1
                     && Math.abs(other.getZ() - block.getZ()) <= 1 && Math.abs(other.getY() - block.getY()) <= 2) return false;
@@ -286,7 +309,15 @@ public final class ParkourGame implements Listener {
         run.lastProgress = System.currentTimeMillis();
         unplace(run.current);
         run.current = run.next;
-        run.next = nextBlock(run, area);
+        // The ghost becomes the real next block (if nothing has taken its place since).
+        Block ghost = run.after;
+        run.after = null;
+        if (ghost != null && free(ghost)) {
+            run.heading = yawTowards(run.current.getX(), run.current.getZ(), ghost.getX(), ghost.getZ());
+            run.next = ghost;
+        } else {
+            run.next = nextBlock(run, area);
+        }
         if (run.next == null) {
             // Boxed in: start a fresh line from somewhere else in the area, keeping the score.
             Block restart = startBlock(area);
@@ -297,6 +328,7 @@ public final class ParkourGame implements Listener {
             run.next = restart;
         }
         place(run.next);
+        run.after = peek(run, area);
 
         Player player = run.player;
         Location spot = run.next.getLocation().add(0.5, 0.5, 0.5);
@@ -327,7 +359,7 @@ public final class ParkourGame implements Listener {
                 end(player, "parkour.game.idle", true);
                 continue;
             }
-            if (ticks % 2 == 0) guide(run);
+            guide(run);
             if (ticks % 10 == 0) {
                 if (!plugin.display().hasSidebarOverride(player)) plugin.display().setSidebarOverride(player, () -> sidebar(run));
                 else plugin.display().refreshSidebar(player); // the time ticks on
@@ -342,7 +374,7 @@ public final class ParkourGame implements Listener {
     private void guide(Run run) {
         if (!"particles".equalsIgnoreCase(plugin.getConfig().getString("parkour.guide", "pack"))) {
             if (run.guide == null) run.guide = new Guide(plugin, run.player);
-            run.guide.update(run.current, run.next, ticks / 2);
+            run.guide.update(run.current, run.next, run.after, ticks);
             return;
         }
         if (run.guide != null) {

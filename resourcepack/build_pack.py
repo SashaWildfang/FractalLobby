@@ -978,9 +978,29 @@ for x in range(16):
         a = 255 if d < 0.7 else round(255 * (1 - (d - 0.7) / 0.3) ** 0.8)
         if a > 8: orb.putpixel((x, y), c + (a,))
 orb.save(f'{OUT}/assets/fractal/textures/item/parkour/dot.png')
+# the ghost of the block after next: a see-through white wireframe cube (12 thin edges), slightly bigger than a block
+ghost = Image.new('RGBA', (16, 16), (255, 255, 255, 150))
+for y in range(16):
+    for x in range(16):
+        if x in (7, 8) or y in (7, 8): ghost.putpixel((x, y), (255, 255, 255, 200))
+ghost.save(f'{OUT}/assets/fractal/textures/item/parkour/ghost.png')
+def bar(f, t):
+    return {"from": f, "to": t, "shade": False, "light_emission": 15,
+            "faces": {side: {"uv": [6, 6, 10, 10], "texture": "#edge"} for side in ('north', 'south', 'east', 'west', 'up', 'down')}}
+LO, HI, E = -0.25, 16.25, 0.55   # outer corners, edge thickness
+edges = []
+for a1 in (LO, HI - E):
+    for b1 in (LO, HI - E):
+        edges.append(bar([a1, LO, b1], [a1 + E, HI, b1 + E]))           # upright edges
+        edges.append(bar([LO, a1, b1], [HI, a1 + E, b1 + E]))           # edges along x
+        edges.append(bar([a1, b1, LO], [a1 + E, b1 + E, HI]))           # edges along z
+json.dump({"textures": {"edge": "fractal:item/parkour/ghost", "particle": "fractal:item/parkour/ghost"}, "elements": edges},
+          open(f'{OUT}/assets/fractal/models/item/parkour/ghost.json', 'w'))
+json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/parkour/ghost"}},
+          open(f'{OUT}/assets/fractal/items/parkour/ghost.json', 'w'))
 for name in ('dot', 'arrow'):
     json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/parkour/{name}"}},
               open(f'{OUT}/assets/fractal/models/item/parkour/{name}.json', 'w'))
     json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/parkour/{name}"}},
               open(f'{OUT}/assets/fractal/items/parkour/{name}.json', 'w'))
-print('parkour guide: arrow, dot')
+print('parkour guide: arrow, dot, ghost')

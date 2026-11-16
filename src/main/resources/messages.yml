@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 28
+messages-version: 29
 
 theme:
   primary: "#B266FF"
@@ -552,7 +552,7 @@ parkour:
       - "<muted>Your best: <primary><best>"
       - "<muted>Record: <accent><record>"
       - ""
-      - "<dark_gray>Fall to end your run"
+      - "<#C9B8EE>Fall to end your run"
   # The leaderboard hologram (/lobbyparkour leaderboard).
   leaderboard:
     title: "<brand><bold>Parkour Leaderboard</bold></brand>"
