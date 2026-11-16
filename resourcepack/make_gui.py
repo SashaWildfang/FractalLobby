@@ -128,7 +128,8 @@ for rows in range(1, 7):
         providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256,
                           "chars": [chr(0xF100 + rows * 16 + count)]})
 # settings: Lobby on rows 1-2, a groove through the empty middle row, Network on rows 4-5, a groove above the bottom row
-for code, name, word, dividers in ((0xF170, 'settings', 'SETTINGS', (62, 106)), (0xF171, 'ignored', 'IGNORED', (70, 106))):
+for code, name, word, dividers in ((0xF170, 'settings', 'SETTINGS', (62, 106)), (0xF171, 'ignored', 'IGNORED', (70, 106)),
+                                   (0xF172, 'friends', 'FRIENDS', (106,))):
     background(6, [], word, dividers=dividers).save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
     providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256, "chars": [chr(code)]})
 def add(code, name, img):

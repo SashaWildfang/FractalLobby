@@ -41,9 +41,22 @@ public final class CoreLink implements PluginMessageListener, Listener {
     public static final String SOCIAL_SPY = "social-spy";
     public static final String COMMAND_SPY = "command-spy";
     public static final String VANISH = "vanish";
+    public static final String FRIEND_REQUESTS_OFF = "friend-requests-off";
+    public static final String FRIEND_NOTIFY_OFF = "friend-notify-off";
 
-    /** A player's network settings as Core last sent them: the toggles they may change, and who they ignore. */
-    public record State(Map<String, Boolean> toggles, Map<UUID, String> ignored, long playtime, long receivedAt) {
+    /** A friend as Core last sent them: their name, the server they're on ("" when offline), since when friends. */
+    public record Friend(String name, String server, long since) {
+        public boolean online() {
+            return !server.isEmpty();
+        }
+    }
+
+    /**
+     * A player's network settings as Core last sent them: the toggles they may change, who they ignore, their
+     * network playtime and their friends.
+     */
+    public record State(Map<String, Boolean> toggles, Map<UUID, String> ignored, long playtime, long receivedAt,
+                        Map<UUID, Friend> friends) {
         /** Network playtime right now in milliseconds, or -1 if Core didn't send it (an older Core). */
         public long playtimeNow() {
             return playtime < 0 ? -1 : playtime + (System.currentTimeMillis() - receivedAt);
@@ -123,7 +136,8 @@ public final class CoreLink implements PluginMessageListener, Listener {
         if (state == null || !state.has(toggle)) return;
         Map<String, Boolean> toggles = new LinkedHashMap<>(state.toggles());
         toggles.put(toggle, on);
-        states.put(player.getUniqueId(), new State(Collections.unmodifiableMap(toggles), state.ignored(), state.playtime(), state.receivedAt()));
+        states.put(player.getUniqueId(), new State(Collections.unmodifiableMap(toggles), state.ignored(), state.playtime(),
+                state.receivedAt(), state.friends()));
         send(player, "Set", out -> {
             out.writeUTF(toggle);
             out.writeBoolean(on);
@@ -135,8 +149,31 @@ public final class CoreLink implements PluginMessageListener, Listener {
         if (state == null) return;
         Map<UUID, String> list = new LinkedHashMap<>(state.ignored());
         list.remove(ignored);
-        states.put(player.getUniqueId(), new State(state.toggles(), Collections.unmodifiableMap(list), state.playtime(), state.receivedAt()));
+        states.put(player.getUniqueId(), new State(state.toggles(), Collections.unmodifiableMap(list), state.playtime(),
+                state.receivedAt(), state.friends()));
         send(player, "Unignore", out -> out.writeUTF(ignored.toString()));
+    }
+
+    /** Asks Core to end a friendship (from the friends menu). */
+    public void unfriend(Player player, UUID friend) {
+        State state = states.get(player.getUniqueId());
+        if (state == null) return;
+        Map<UUID, Friend> list = new LinkedHashMap<>(state.friends());
+        list.remove(friend);
+        states.put(player.getUniqueId(), new State(state.toggles(), state.ignored(), state.playtime(), state.receivedAt(),
+                Collections.unmodifiableMap(list)));
+        send(player, "Unfriend", out -> out.writeUTF(friend.toString()));
+    }
+
+    /** Asks Core to send the player to the server their friend is on. */
+    public void joinFriend(Player player, UUID friend) {
+        send(player, "Goto", out -> out.writeUTF(friend.toString()));
+    }
+
+    /** Whether the two are friends (as the viewer's state from Core says). */
+    public boolean friends(Player viewer, Player other) {
+        State state = states.get(viewer.getUniqueId());
+        return state != null && state.friends().containsKey(other.getUniqueId());
     }
 
     private interface Body {
@@ -223,8 +260,14 @@ public final class CoreLink implements PluginMessageListener, Listener {
             Map<UUID, String> ignored = new LinkedHashMap<>();
             for (int i = in.readInt(); i > 0; i--) ignored.put(UUID.fromString(in.readUTF()), in.readUTF());
             long playtime = in.available() >= 8 ? in.readLong() : -1; // older Cores don't send it
+            Map<UUID, Friend> friends = new LinkedHashMap<>();
+            if (in.available() >= 4) { // Core 1.5 and later
+                for (int i = in.readInt(); i > 0; i--) {
+                    friends.put(UUID.fromString(in.readUTF()), new Friend(in.readUTF(), in.readUTF(), in.readLong()));
+                }
+            }
             return new Decoded(player, new State(Collections.unmodifiableMap(toggles), Collections.unmodifiableMap(ignored),
-                    playtime, System.currentTimeMillis()));
+                    playtime, System.currentTimeMillis(), Collections.unmodifiableMap(friends)));
         } catch (IOException | IllegalArgumentException e) {
             return null;
         }

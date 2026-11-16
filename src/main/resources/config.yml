@@ -160,6 +160,10 @@ join-messages:
   first-join: "&7ᴡᴇʟᴄᴏᴍᴇ %luckperms_prefix%&c%player% &7ᴛᴏ ᴛʜᴇ ꜱᴇʀᴠᴇʀ!"
   join-message: "&a+ &7%luckperms_prefix%%player%"
   quit-message: "&c- &7%luckperms_prefix%%player%"
+  # What a player's friends see instead (friends come from Core on the proxy):
+  # %lobby_friend_tag% is the green FRIEND badge. "" = friends see the normal one.
+  friend-join-message: "&a+ %lobby_friend_tag% &a%player%"
+  friend-quit-message: "&c- %lobby_friend_tag% &a%player%"
   # Sounds everyone hears when a staff member or donor joins or leaves
   # (who counts as which: see ranks below). "" for no sound.
   sounds:
@@ -243,9 +247,8 @@ parkour:
     - MAGENTA_WOOL
   # A run ends after this long without reaching a new block.
   idle-seconds: 30
-  # How the next jump is shown to the runner: "pack" = an arrow bouncing over
-  # the next block, a dotted line to it and a ghost of the block after (needs
-  # FractalLobby.zip),
+  # How the next jump is shown to the runner: "pack" = a dotted line to the
+  # next block and a ghost of the block after (needs FractalLobby.zip),
   # "particles" = sparkles and a dotted line of particles (no pack needed).
   guide: pack
   # Jump lengths (centre to centre, 2-5 blocks) get longer as the score

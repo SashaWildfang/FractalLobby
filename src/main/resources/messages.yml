@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 29
+messages-version: 30
 
 theme:
   primary: "#B266FF"
@@ -275,6 +275,16 @@ settings:
     lore:
       - "<muted>A ping when a private"
       - "<muted>message arrives."
+  friend-requests:
+    name: "<primary>Friend Requests"
+    lore:
+      - "<muted>Whether players can send"
+      - "<muted>you friend requests."
+  friend-notify:
+    name: "<primary>Friend Alerts"
+    lore:
+      - "<muted>A message when a friend"
+      - "<muted>joins or leaves the network."
   social-spy:
     name: "<primary>Social Spy"
     lore:
@@ -323,7 +333,7 @@ settings:
     back:
       name: "<secondary>← Back"
       lore:
-        - "<muted>Back to your settings."
+        - "<muted>Back to your friends."
     removed: "<prefix><secondary>You unignored <primary><player></primary>."
 
 
@@ -354,6 +364,66 @@ playtime:
     top-line: "<muted>#<position> <white><name-rank><name> <dark_gray>- <primary><time>"
     empty: "<muted>Loading…"
     you: "<secondary>Your playtime: <primary><time>"   # <time>
+
+# Friends (from Core on the proxy): the green FRIEND badge in friends' join and
+# leave messages (join-messages in config.yml), and the friends menu (profile).
+friends:
+  tag: "<white>\uE2A1</white>"
+  menu:
+    title: "<brand><bold>Friends</bold></brand>"
+    # An online friend. <player> <server> <since>
+    online:
+      name: "<#5BE37C><player>"
+      lore:
+        - "<#5BE37C>● <white>Online <muted>on <white><server>"
+        - "<muted>Friends for <white><since>"
+        - ""
+        - "<accent><left-click></accent> <muted>to join them"
+        - "<accent><shift> <right-click></accent> <muted>to remove"
+    # A friend who's offline. <player> <since>
+    offline:
+      name: "<gray><player>"
+      lore:
+        - "<dark_gray>● <gray>Offline"
+        - "<muted>Friends for <white><since>"
+        - ""
+        - "<accent><shift> <right-click></accent> <muted>to remove"
+    empty:
+      name: "<secondary>No friends yet"
+      lore:
+        - "<muted>Type <white>/f add [name]</white> <muted>in chat"
+        - "<muted>to send someone a request."
+    more:
+      name: "<gray>…and <count> more"
+      lore:
+        - "<muted>See them all with <white>/f list"
+    # The buttons along the bottom
+    add:
+      name: "<primary>Add a Friend"
+      lore:
+        - "<muted>Type <white>/f add [name]</white> <muted>in chat."
+        - "<muted>They get a request to accept."
+        - ""
+        - "<accent><click></accent> <muted>to start typing it"
+    requests:
+      name: "<primary>Friend Requests"
+      lore:
+        - "<muted>See requests waiting"
+        - "<muted>for an answer."
+        - ""
+        - "<accent><click></accent> <muted>to list them in chat"
+    removed: "<prefix><secondary>You removed <primary><player></primary> <secondary>from your friends."
+    no-core: "<prefix><bad>Friends aren't available right now."
+  # The Friends button in the profile. <online> <count>
+  button:
+    name: "<primary>Friends"
+    lore:
+      - "<muted>Your friends across"
+      - "<muted>the network."
+      - ""
+      - "<white>Online: <#5BE37C><online></#5BE37C> <dark_gray>/ <white><count>"
+      - ""
+      - "<accent><click></accent> <muted>to open"
 
 # The profile menu (the player's head in the hotbar).
 # The head shows: <player> <rank> <joined> <playtime> <parkour-best> <parkour-rank> <chat-color> <trail> <glow>

@@ -61,13 +61,15 @@ public final class ChatListener implements Listener {
         String sound = plugin.settings().isStaff(player) ? messages.staffJoinSound()
                 : plugin.settings().isDonor(player) ? messages.donorJoinSound() : "";
         if (!plugin.coreLink().coreSeen()) {
-            broadcast(player, plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, sound, false);
+            broadcast(player, plugin.playerFormat().render(player, format), friendLine(player, "friend-join-message"),
+                    Settings.Setting.JOIN_MESSAGES, sound, false);
             return;
         }
         // With Core on the proxy, wait a moment to hear whether they're vanished (then only staff are told).
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (!player.isOnline()) return;
-            broadcast(player, plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, sound, false);
+            broadcast(player, plugin.playerFormat().render(player, format), friendLine(player, "friend-join-message"),
+                    Settings.Setting.JOIN_MESSAGES, sound, false);
         }, 10L);
     }
 
@@ -79,17 +81,30 @@ public final class ChatListener implements Listener {
         if (messages.quit().isEmpty()) return;
         String sound = plugin.settings().isStaff(player) ? messages.staffLeaveSound()
                 : plugin.settings().isDonor(player) ? messages.donorLeaveSound() : "";
-        broadcast(player, plugin.playerFormat().render(player, messages.quit()), Settings.Setting.LEAVE_MESSAGES, sound, true);
+        broadcast(player, plugin.playerFormat().render(player, messages.quit()), friendLine(player, "friend-quit-message"),
+                Settings.Setting.LEAVE_MESSAGES, sound, true);
+    }
+
+    /**
+     * What the player's friends see instead (join-messages.friend-join-message / friend-quit-message): the green
+     * FRIEND badge (%lobby_friend_tag%) in place of the rank. Null when it's turned off ("").
+     */
+    private Component friendLine(Player player, String key) {
+        String format = plugin.getConfig().getString("join-messages." + key); // falls back to the built-in config
+        if (format == null || format.isEmpty()) return null;
+        return plugin.playerFormat().render(player, format.replace("%lobby_friend_tag%", plugin.messages().raw("friends.tag")));
     }
 
     /** Sends a join/leave message (and its sound) to everyone whose setting allows it, and to the console. */
-    private void broadcast(Player subject, Component message, Settings.Setting setting, String sound, boolean leaving) {
+    private void broadcast(Player subject, Component message, Component friendMessage, Settings.Setting setting, String sound,
+                           boolean leaving) {
         plugin.getServer().getConsoleSender().sendMessage(message);
         float volume = plugin.lobbyConfig().joinMessages().soundVolume();
         for (Player viewer : plugin.getServer().getOnlinePlayers()) {
             if (leaving && viewer == subject) continue;
             if (!plugin.settings().shows(viewer, setting, subject) || plugin.coreLink().hiddenFrom(viewer, subject)) continue;
-            viewer.sendMessage(message);
+            boolean friend = friendMessage != null && plugin.coreLink().friends(viewer, subject);
+            viewer.sendMessage(friend ? friendMessage : message);
             playSound(viewer, sound, volume, 1f);
         }
     }

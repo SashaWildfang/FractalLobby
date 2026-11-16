@@ -21,31 +21,24 @@ import java.util.List;
 /**
  * The runner's guide drawn with the lobby resource pack, which only the runner sees:
  * <ul>
- *   <li>an arrow bouncing over the next block, pointing down at it (fractal:parkour/arrow), squashing as it lands
- *   and stretching as it rises;</li>
  *   <li>a straight dotted line from the block they're on to the next one (fractal:parkour/dot), with a wave of light
  *   running along it;</li>
  *   <li>a ghost outline of the block after that (fractal:parkour/ghost), so they can plan the next jump.</li>
  * </ul>
- * Display entities, updated every 2 game ticks with matching interpolation, so everything moves smoothly.
+ * Display entities, updated every 2 game ticks with matching interpolation, so everything moves smoothly. The next
+ * block itself is marked by the dotted line ending on it.
  */
 final class Guide {
 
     static final String TAG = "lobby_parkour_guide";
     private static final int DOTS = 7;
-    private static final Key ARROW = Key.key("fractal", "parkour/arrow");
     private static final Key DOT = Key.key("fractal", "parkour/dot");
     private static final Key GHOST = Key.key("fractal", "parkour/ghost");
     /** The dots' size, and how much the wave along them grows and shrinks them. */
     private static final float DOT_SIZE = 0.2f, DOT_WAVE = 0.06f;
-    /** The arrow: its size, how high its middle is above the block's top at the lowest, and how high it bounces. */
-    private static final float ARROW_SIZE = 0.75f, ARROW_HEIGHT = 0.95f, BOUNCE = 0.45f;
-    /** One bounce, in updates (2 game ticks each): 9 = 0.9 seconds. */
-    private static final int BOUNCE_STEPS = 9;
 
     private final Plugin plugin;
     private final Player player;
-    private ItemDisplay arrow;
     private ItemDisplay ghost;
     private final List<ItemDisplay> dots = new ArrayList<>();
     private Block shownFor;
@@ -58,15 +51,11 @@ final class Guide {
 
     /** Called every 2 game ticks: the guide for the jump from {@code from} to {@code to}, with {@code after} (or null) next. */
     void update(Block from, Block to, Block after, long step) {
-        World world = to.getWorld();
-        Location arrowAt = to.getLocation().add(0.5, 1 + ARROW_HEIGHT, 0.5);
-        if (arrow == null || !arrow.isValid() || arrow.getWorld() != world) {
-            remove();
-            arrow = spawn(arrowAt, ARROW, Display.Billboard.VERTICAL, ARROW_SIZE);
+        if (dots.isEmpty() || !dots.getFirst().isValid() || dots.getFirst().getWorld() != to.getWorld()) {
+            removeDots();
             for (int i = 0; i < DOTS; i++) dots.add(spawn(line(from, to, i), DOT, Display.Billboard.CENTER, DOT_SIZE));
             shownFor = to;
         } else if (!to.equals(shownFor)) {
-            arrow.teleport(arrowAt);
             for (int i = 0; i < dots.size(); i++) dots.get(i).teleport(line(from, to, i));
             shownFor = to;
         }
@@ -84,7 +73,6 @@ final class Guide {
             ghostFor = after;
         }
 
-        bounce(step);
         // A wave of light runs along the dots towards the next block.
         for (int i = 0; i < dots.size(); i++) {
             double wave = Math.sin(step * 0.6 - i * 0.9);
@@ -96,31 +84,17 @@ final class Guide {
         }
     }
 
-    /**
-     * The arrow hops like a ball: up fast, slowing at the top, falling back faster, then squashing wide and short as
-     * it lands and stretching tall as it leaves.
-     */
-    private void bounce(long step) {
-        double p = (step % BOUNCE_STEPS) / (double) BOUNCE_STEPS;   // 0..1 through one bounce
-        double height = BOUNCE * 4 * p * (1 - p);                    // a hop: 0 at both ends, highest halfway
-        double squash = Math.max(0, 1 - Math.min(p, 1 - p) * BOUNCE_STEPS / 1.5); // 1 right at the ground, gone a step later
-        double stretch = Math.sin(Math.PI * p) * (1 - 2 * Math.abs(p - 0.5)) ; // a little tall on the way up and down
-        float wide = (float) (ARROW_SIZE * (1 + 0.18 * squash - 0.05 * stretch));
-        float tall = (float) (ARROW_SIZE * (1 - 0.22 * squash + 0.08 * stretch));
-        // Keep its bottom where it was while squashing, so it squashes onto the block rather than shrinking in the air.
-        float y = (float) (height - (ARROW_SIZE - tall) * 0.5);
-        set(arrow, new Vector3f(0, y, 0), new Vector3f(wide, tall, wide), 2);
+    void remove() {
+        if (ghost != null) ghost.remove();
+        ghost = null;
+        ghostFor = null;
+        removeDots();
     }
 
-    void remove() {
-        if (arrow != null) arrow.remove();
-        if (ghost != null) ghost.remove();
+    private void removeDots() {
         for (ItemDisplay dot : dots) dot.remove();
-        arrow = null;
-        ghost = null;
         dots.clear();
         shownFor = null;
-        ghostFor = null;
     }
 
     /** Where dot {@code i} sits on the straight line from one block's top to the other's. */

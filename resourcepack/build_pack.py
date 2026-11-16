@@ -942,32 +942,11 @@ for f in os.listdir(src_dir):
     if f.endswith('.png'): shutil.copy(os.path.join(src_dir, f), f'{npc_dir}/{f}')
 print('npc skins', sorted(os.listdir(npc_dir)))
 
-# 25. the parkour guide: an arrow over the next block (fractal:parkour/arrow) and the orbs along the jump
-#     (fractal:parkour/dot), both sprites, shown to the runner by display entities
+# 25. the parkour guide: the dots along the jump (fractal:parkour/dot, a sprite) and the ghost of the block after
+#     next (fractal:parkour/ghost), shown to the runner by display entities
 for dd in ('textures/item/parkour', 'models/item/parkour', 'items/parkour'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
 PURPLE, PINK = hexc('#B266FF'), hexc('#FF7BE5')
 def mix(a, b, t): return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
-# the arrow: three stacked chevrons pointing down (32x32), deep purple to pink, each with exact 45-degree arms,
-# a light edge along the top and its own dark outline
-DARK, WHITE = hexc('#3B1B66'), (255, 255, 255)
-arrow = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
-def chevron(top, colour, start=5, thick=4, rows=11):
-    pix = {}
-    for r in range(rows):
-        for x in range(start + r, start + r + thick):
-            if x > 15: continue
-            edge = x == start + r
-            pix[(x, top + r)] = mix(colour, WHITE, 0.5) if edge else colour
-            pix[(31 - x, top + r)] = mix(colour, WHITE, 0.2) if edge else mix(colour, DARK, 0.12)
-    return pix
-for top, colour in ((2, mix(PURPLE, (120, 70, 210), 0.3)), (10, mix(PURPLE, PINK, 0.5)), (18, PINK)):
-    pix = chevron(top, colour)
-    for (x, y) in list(pix):
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            q = (x + dx, y + dy)
-            if q not in pix and 0 <= q[0] < 32 and 0 <= q[1] < 32 and arrow.getpixel(q)[3] == 0: arrow.putpixel(q, DARK + (255,))
-    for q, c in pix.items(): arrow.putpixel(q, c + (255,))
-arrow.save(f'{OUT}/assets/fractal/textures/item/parkour/arrow.png')
 # the orb: a white core fading to pink, then purple, with a soft see-through edge
 orb = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
 for x in range(16):
@@ -998,9 +977,110 @@ json.dump({"textures": {"edge": "fractal:item/parkour/ghost", "particle": "fract
           open(f'{OUT}/assets/fractal/models/item/parkour/ghost.json', 'w'))
 json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/parkour/ghost"}},
           open(f'{OUT}/assets/fractal/items/parkour/ghost.json', 'w'))
-for name in ('dot', 'arrow'):
+for name in ('dot',):
     json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/parkour/{name}"}},
               open(f'{OUT}/assets/fractal/models/item/parkour/{name}.json', 'w'))
     json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/parkour/{name}"}},
               open(f'{OUT}/assets/fractal/items/parkour/{name}.json', 'w'))
-print('parkour guide: arrow, dot, ghost')
+print('parkour guide: dot, ghost')
+
+
+# 26. friends: the green FRIEND badge (U+E2A1, minecraft:default font, in place of a rank in friends' join messages)
+#     and icons for the friends menu and friend settings (fractal:menu/NAME)
+FW = 41
+FR_ART = [list('.' + 'a' * (FW - 2) + '.'), list('aa' + 'b' * (FW - 4) + 'aa')] \
+    + [list('a' + 'b' * (FW - 2) + 'a') for _ in range(3)] + [list('b' + 'd' * (FW - 2) + 'b') for _ in range(2)] \
+    + [list('bb' + 'd' * (FW - 4) + 'bb'), list('.' + 'b' * (FW - 2) + '.')]
+FR_LETTERS = {'F': ["#####", "#....", "####.", "#....", "#...."], 'R': ["####.", "#...#", "####.", "#..#.", "#...#"],
+              'I': ["###", ".#.", ".#.", ".#.", "###"], 'E': ["#####", "#....", "####.", "#....", "#####"],
+              'N': ["#...#", "##..#", "#.#.#", "#..##", "#...#"], 'D': ["####.", "#...#", "#...#", "#...#", "####."]}
+x0 = 4
+for letter in 'FRIEND':
+    rows = FR_LETTERS[letter]
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch == '#': FR_ART[2 + y][x0 + x] = 'c' if y < 3 else 'e'
+    x0 += len(rows[0]) + 1
+FR_COL = {'a': '#a6f5b5', 'b': '#5be37c', 'c': '#ffffff', 'd': '#2fb956', 'e': '#d9ffe1'}
+friend_badge = Image.new('RGBA', (FW, 9), (0, 0, 0, 0))
+for y, row in enumerate(FR_ART):
+    for x, ch in enumerate(row):
+        if ch in FR_COL: friend_badge.putpixel((x, y), hexc(FR_COL[ch]) + (255,))
+friend_badge.save(f'{OUT}/assets/minecraft/textures/gui/ranks/friend.png')
+default_font = json.load(open(f'{OUT}/assets/minecraft/font/default.json'))
+default_font['providers'].append({"type": "bitmap", "file": "minecraft:gui/ranks/friend.png", "ascent": 8, "height": 9, "chars": ["\ue2a1"]})
+json.dump(default_font, open(f'{OUT}/assets/minecraft/font/default.json', 'w'), ensure_ascii=False, indent=1)
+
+def art(rows, colours):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch in colours: img.putpixel((x, y), hexc(colours[ch]) + (255,))
+    return img
+FRIEND_COL = {'#': '#1a1b26', 'g': '#5be37c', 'G': '#2fb956', 'l': '#a6f5b5', 'w': '#ffffff', 'p': '#b266ff', 'P': '#7d3fc4',
+              'y': '#ffe680', 'Y': '#e0b84a', 'k': '#ff7be5'}
+# two friends side by side: the one in front green, the one behind purple
+model('friends', art([
+    "................",
+    "........###.....",
+    ".......#ppp#....",
+    "..###..#ppp#....",
+    ".#lgg#.#PPP#....",
+    ".#ggg#..###.....",
+    ".#GGG#.#ppp#....",
+    "..###.#ppppp#...",
+    ".#ggg#ppppppp#..",
+    "#ggggg#PPPPPP#..",
+    "#ggggggg#PPPP#..",
+    "#GGGGGGG#####...",
+    "#GGGGGGG#.......",
+    ".#######........",
+    "................",
+    "................"], FRIEND_COL))
+# friend requests: a letter with a green heart seal over its flap
+def letter_icon():
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    dark, paper, shade = hexc('#1a1b26'), hexc('#e8ddff'), hexc('#b8a9d9')
+    for y in range(3, 13):
+        for x in range(1, 15):
+            edge = y in (3, 12) or x in (1, 14)
+            img.putpixel((x, y), (dark if edge else paper) + (255,))
+    for k in range(6):  # the flap: two lines meeting in the middle
+        img.putpixel((2 + k, 4 + k), shade + (255,)); img.putpixel((13 - k, 4 + k), shade + (255,))
+    heart = [".gg.gg.", "glggggg", "ggggggg", ".GGGGG.", "..GGG..", "...G..."]
+    hc = {'g': hexc('#5be37c'), 'G': hexc('#2fb956'), 'l': hexc('#d9ffe1')}
+    for y, row in enumerate(heart):
+        for x, ch in enumerate(row):
+            if ch in hc: img.putpixel((4 + x, 7 + y), hc[ch] + (255,))
+    # a dark outline round the heart so it reads on the paper
+    out = img.copy()
+    for y, row in enumerate(heart):
+        for x, ch in enumerate(row):
+            if ch not in hc: continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                xx, yy = 4 + x + dx, 7 + y + dy
+                inside = 0 <= y + dy < len(heart) and 0 <= x + dx < 7 and heart[y + dy][x + dx] in hc
+                if not inside and 0 <= xx < 16 and 0 <= yy < 16: out.putpixel((xx, yy), dark + (255,))
+    return out
+model('friend-requests', letter_icon())
+# friend alerts: a bell with a green dot
+model('friend-notify', art([
+    "................",
+    ".......##.......",
+    "......#yy#..###.",
+    ".....#yyyy##ggg#",
+    "....#yyyyyy#lgg#",
+    "....#yyyyyy#GGG#",
+    "....#yyyyyy##GG#",
+    "...#yyyyyyyy###.",
+    "...#yyyyyyyy#...",
+    "..#yyyyyyyyyy#..",
+    "..#YYYYYYYYYY#..",
+    "..############..",
+    "......#yy#......",
+    ".......##.......",
+    "................",
+    "................"], FRIEND_COL))
+# add a friend: Survival's person with a plus
+model('add-friend', Image.open(f'{ICONS}/profile/friend.png').convert('RGBA'))
+print('friends: badge, icons')

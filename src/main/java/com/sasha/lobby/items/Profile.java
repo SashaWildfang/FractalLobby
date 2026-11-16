@@ -36,15 +36,15 @@ import java.time.Instant;
 public final class Profile implements Listener {
 
     /*
-     * Four rows: the player's head at the top with their status under it, an empty row, then the buttons: cosmetics (chat colour, trail, glow) bottom left, ignored
-     * players in the middle and everything else (parkour, settings, realms) bottom right.
+     * Four rows: the player's head at the top with their status under it, an empty row, then the buttons: cosmetics (chat colour, trail, glow) bottom left, friends
+     * in the middle (with the ignored list inside) and everything else (parkour, settings, realms) bottom right.
      */
     private static final int HEAD = 4;
     private static final int STATUS = 13;
     private static final int CHAT_COLOR = 28;
     private static final int TRAIL = 29;
     private static final int GLOW = 30;
-    private static final int IGNORED = 31;
+    private static final int FRIENDS = 31;
     private static final int PARKOUR = 32;
     private static final int SETTINGS = 33;
     private static final int REALMS = 34;
@@ -105,9 +105,9 @@ public final class Profile implements Listener {
         menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
         menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
         menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
-        // Who they ignore is kept by Core on the proxy; without it there's nothing to show.
+        // Friends (and who they ignore, inside) are kept by Core on the proxy; without it there's nothing to show.
         var network = plugin.coreLink().state(player);
-        if (network != null) menu.inventory.setItem(IGNORED, plugin.settings().ignoredButton(network));
+        if (network != null) menu.inventory.setItem(FRIENDS, plugin.friendsMenu().button(network));
         player.openInventory(menu.inventory);
     }
 
@@ -197,10 +197,10 @@ public final class Profile implements Listener {
                 click(player);
                 open(player);
             }
-            case IGNORED -> {
+            case FRIENDS -> {
                 if (plugin.coreLink().state(player) == null) return;
                 click(player);
-                plugin.settings().openIgnored(player);
+                plugin.friendsMenu().open(player);
             }
             case SETTINGS -> {
                 click(player);

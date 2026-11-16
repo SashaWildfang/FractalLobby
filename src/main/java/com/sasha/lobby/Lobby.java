@@ -79,6 +79,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private com.sasha.lobby.npc.Npcs npcs;
     private final com.sasha.lobby.help.CommandHelp help = new com.sasha.lobby.help.CommandHelp();
     private Profile profile;
+    private com.sasha.lobby.items.FriendsMenu friendsMenu;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
@@ -114,6 +115,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         coreLink.onUpdate(player -> {
             joinItems.refreshSeenBy(player);
             settings.refresh(player);
+            if (friendsMenu != null) friendsMenu.refresh(player);
         });
         parkour = new ParkourLobby(this);
         doubleJump = new DoubleJump(this);
@@ -123,10 +125,11 @@ public final class Lobby extends JavaPlugin implements Listener {
         holograms = new com.sasha.lobby.hologram.Holograms(this);
         npcs = new com.sasha.lobby.npc.Npcs(this);
         profile = new Profile(this);
+        friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -211,6 +214,10 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public com.sasha.lobby.items.Statuses statuses() {
         return statuses;
+    }
+
+    public com.sasha.lobby.items.FriendsMenu friendsMenu() {
+        return friendsMenu;
     }
 
     public Profile profile() {
