@@ -498,3 +498,48 @@ sword = Image.open(f'{VANILLA}/assets/minecraft/textures/item/iron_sword.png').c
 pick = Image.open(f'{VANILLA}/assets/minecraft/textures/item/iron_pickaxe.png').convert('RGBA').transpose(Image.FLIP_LEFT_RIGHT)
 tools = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); tools.alpha_composite(pick); tools.alpha_composite(sword)
 tools.save(f'{OUT}/assets/fractal/textures/item/survival.png')
+
+# 12. Radio genre icons (fractal:radio/genre/NAME), a "panel" blank, and the slate search glass is radio/search
+def genre(name, img):
+    for dd in ('textures/item/radio/genre', 'models/item/radio/genre', 'items/radio/genre'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
+    img.save(f'{OUT}/assets/fractal/textures/item/radio/genre/{name}.png')
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/radio/genre/{name}"}}, open(f'{OUT}/assets/fractal/models/item/radio/genre/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/radio/genre/{name}"}}, open(f'{OUT}/assets/fractal/items/radio/genre/{name}.json', 'w'))
+PINK, GOLD, SLATE_D = hexc('#FFC2F2'), hexc('#FFE680'), (0x3a, 0x3d, 0x52)
+genre('anime', art([".....PPP.....", "....PPPPP....", "....PPPPP....", ".PP..PPP..PP.", "PPPP.YYY.PPPP", "PPPPPYYYPPPPP", ".PPPPYYYPPPP.",
+                    "...PPPPPPP...", "..PPPP.PPPP..", ".PPPP...PPPP.", ".PPP.....PPP."], {'P': PINK, 'Y': GOLD}))
+genre('anthems', art(["#............", "#PPPPPPPP....", "#PPPPPPPPPP..", "#PPPPPPPPPPP.", "#PPPPPPPPPP..", "#PPPPPPPP....", "#............",
+                      "#............", "#............", "#............", "##..........."], {'#': (0xc9, 0xcc, 0xdb), 'P': hgrad('#8E2DE2', '#FF7BE5')}))
+genre('christmas', art(["......Y......", ".....YYY.....", "......G......", ".....GGG.....", "....GGRGG....", "...GGGGGGG...", "....GGGGG....",
+                        "...GGBGGGG...", "..GGGGGGGRG..", ".GGGGGGGGGGG.", "......T......", ".....TTT....."],
+                       {'G': (0x3f, 0xa3, 0x4d), 'R': hexc('#FF5A6E'), 'B': hexc('#7FA8FF'), 'Y': GOLD, 'T': (0x7a, 0x52, 0x30)}))
+genre('classical-jazz', art([".....##.....", "....####....", "...######...", "...######...", "..########..", "..########..", "..########..",
+                             ".##########.", "############", "............", ".....##....."], {'#': (0xf2, 0xc9, 0x4c)}))
+eq = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+for i, hgt in enumerate((5, 9, 6, 11, 7)):
+    for x in range(2 + i * 3, 4 + i * 3):
+        for y in range(14 - hgt, 14): eq.putpixel((x, y), mix(hexc('#7FE7FF'), hexc('#B266FF'), (14 - y) / 11) + (255,))
+genre('electronic', outline(eq))
+genre('games', art(["..##########..", ".#DDDDDDDDDD#.", "#DDWDDDDDDRDD#", "#DWWWDDDDGDBD#", "#DDWDDDDDDYDD#", "#DDDDD##DDDDD#", ".#DDD#..#DDD#.", "..###....###.."],
+                   {'#': SLATE_D, 'D': (0x8a, 0x8f, 0xae), 'W': (255, 255, 255), 'R': hexc('#FF5A6E'), 'G': hexc('#9BFFC4'), 'B': hexc('#7FA8FF'), 'Y': GOLD}))
+genre('hip-hop', art(["....####....", "...#WWWW#...", "...WWWWWW...", "...WGWGWW...", "...WWWWWW...", "...#WWWW#...", "....####....", ".....##.....",
+                      ".....##.....", "....####...."], {'#': SLATE_D, 'W': (0xe1, 0xe3, 0xee), 'G': (0x8a, 0x8f, 0xae)}))
+genre('memes', art(["...######...", "..########..", ".##########.", "##BB####BB##", "############", "############", "#BBBBBBBBBB#", ".#BWWWWWWB#.",
+                    "..#BBBBBB#..", "...######..."], {'#': (0xff, 0xd8, 0x4a), 'B': (0x4a, 0x2c, 0x10), 'W': (255, 255, 255)}))
+genre('pop', art([".##...##.", "####.####", "#########", "#########", ".#######.", "..#####..", "...###...", "....#...."], {'#': hexc('#FF7BE5')}))
+genre('rock', art(["..........NN", ".........NN.", "........NN..", ".......NN...", "......NN....", "..##.NN.....", ".#######....", "########....",
+                   ".######.....", "..######....", "...####....."], {'#': hexc('#FF5A6E'), 'N': (0x9a, 0x6a, 0x3c)}))
+genre('tv-film', art(["#W#W#W#W#W#", "W#W#W#W#W#W", "...........", "DDDDDDDDDDD", "DDDDDDDDDDD", "DDWWWWWWWDD", "DDDDDDDDDDD", "DDWWWWWDDDD", "DDDDDDDDDDD"],
+                     {'#': (0x22, 0x23, 0x30), 'W': (255, 255, 255), 'D': SLATE_D}, shade=False))
+genre('default', note2)
+# a panel-coloured square slightly bigger than a slot, to cover an unused well
+blank = Image.new('RGBA', (16, 16), (0x4b, 0x4f, 0x65, 255))
+for dd in ('textures/item/radio', 'models/item/radio', 'items/radio'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
+blank.save(f'{OUT}/assets/fractal/textures/item/radio/blank.png')
+json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": "fractal:item/radio/blank"},
+           "display": {"gui": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1.125, 1.125, 1.125]}}},
+          open(f'{OUT}/assets/fractal/models/item/radio/blank.json', 'w'))
+json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/radio/blank"}}, open(f'{OUT}/assets/fractal/items/radio/blank.json', 'w'))
+genre('hip-hop', art([".....####.....", "....#WWWW#....", "...#WGWGWW#...", "...#WWWWWW#...", "...#WGWGWW#...", "....#WWWW#....", ".....####.....",
+                      "......##......", "..##..##..##..", "...##.##.##...", "....######....", "......##......", ".....####....."],
+                     {'#': SLATE_D, 'W': (0xe1, 0xe3, 0xee), 'G': (0x8a, 0x8f, 0xae)}))
