@@ -25,6 +25,7 @@ permissions:
       lobby.build: true
       lobby.spawn: true
       lobby.cmd.glow: true
+      lobby.cmd.afk: true
       lobby.cmd.chatcolor: true
       lobby.chatcolor.gradients: true
       lobby.chatcolor.rainbow: true
@@ -61,6 +62,9 @@ permissions:
     default: false
   lobby.spawn:
     description: Use /spawn
+    default: true
+  lobby.cmd.afk:
+    description: Use /afk to show (or stop showing) that you're AFK
     default: true
   lobby.cmd.glow:
     description: Use /glow to glow in your rank colour

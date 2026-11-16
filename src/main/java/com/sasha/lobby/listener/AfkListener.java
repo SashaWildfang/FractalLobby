@@ -28,7 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AfkListener implements Listener {
 
+    public static final String PERMISSION = "lobby.cmd.afk";
+
     private final Lobby plugin;
+    /** Players who typed /afk: they stay AFK (whatever the timer says) until they do something. */
+    private final Set<UUID> manual = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> lastActive = new ConcurrentHashMap<>();
     private final Set<UUID> afk = ConcurrentHashMap.newKeySet();
     private BukkitTask task;
@@ -61,13 +65,29 @@ public final class AfkListener implements Listener {
         long now = System.currentTimeMillis();
         long timeout = timeoutMillis();
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            boolean idle = enabled() && now - lastActive.getOrDefault(player.getUniqueId(), now) >= timeout;
+            boolean idle = enabled() && (manual.contains(player.getUniqueId())
+                    || now - lastActive.getOrDefault(player.getUniqueId(), now) >= timeout);
             if (idle && afk.add(player.getUniqueId())) plugin.display().refreshAfk(player);
             else if (!idle && afk.remove(player.getUniqueId())) plugin.display().refreshAfk(player);
         }
     }
 
+    /** /afk: go AFK now, or come back if already AFK. Only the player is told. */
+    public void toggle(Player player) {
+        if (afk.contains(player.getUniqueId())) {
+            manual.remove(player.getUniqueId());
+            active(player);
+            plugin.messages().send(player, "afk.off");
+        } else {
+            manual.add(player.getUniqueId());
+            afk.add(player.getUniqueId());
+            plugin.display().refreshAfk(player);
+            plugin.messages().send(player, "afk.on");
+        }
+    }
+
     private void active(Player player) {
+        manual.remove(player.getUniqueId());
         lastActive.put(player.getUniqueId(), System.currentTimeMillis());
         if (afk.remove(player.getUniqueId())) {
             // Chat and commands arrive off the main thread; the name line is changed on it.
@@ -85,6 +105,7 @@ public final class AfkListener implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         lastActive.remove(event.getPlayer().getUniqueId());
         afk.remove(event.getPlayer().getUniqueId());
+        manual.remove(event.getPlayer().getUniqueId());
     }
 
     /** Walking or looking around. */
@@ -106,6 +127,9 @@ public final class AfkListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onCommand(PlayerCommandPreprocessEvent event) {
+        // /afk itself decides (otherwise it would always count as coming back first)
+        String label = event.getMessage().split(" ", 2)[0].toLowerCase(java.util.Locale.ROOT);
+        if (label.equals("/afk") || label.equals("/lobby:afk")) return;
         active(event.getPlayer());
     }
 

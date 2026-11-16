@@ -320,6 +320,12 @@ public final class Lobby extends JavaPlugin implements Listener {
                     }))
                     .build(), "Go to the lobby spawn", List.of());
 
+            commands.register(Commands.literal("afk")
+                    .requires(source -> source.getSender().hasPermission(com.sasha.lobby.listener.AfkListener.PERMISSION)
+                            && afk.enabled())
+                    .executes(context -> asPlayer(context.getSource(), afk::toggle))
+                    .build(), "Show or stop showing that you're AFK", List.of());
+
             commands.register(Commands.literal("glow")
                     .requires(source -> source.getSender().hasPermission(GlowListener.PERMISSION))
                     .executes(context -> asPlayer(context.getSource(), glow::toggle))

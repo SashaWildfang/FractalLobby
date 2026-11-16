@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 18
+messages-version: 19
 
 theme:
   primary: "#B266FF"
@@ -462,6 +462,9 @@ afk:
   below-name: "<icon> <#FF5A5A><bold>AFK</bold>"
   # In place of the rank above the head and in the tab list while AFK (\uE2A0 = the pack's light red AFK badge)
   tag: "<white>\uE2A0</white> "
+  # /afk (only the player sees these)
+  "on": "<prefix><secondary>You're now <#FF7590>AFK</#FF7590>. <muted>Move or type <white>/afk</white> to come back."
+  "off": "<prefix><secondary>Welcome back! You're no longer AFK."
 
 # The particle trail menu (from the profile). Trails are listed in config.yml.
 trails:

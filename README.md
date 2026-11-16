@@ -33,6 +33,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 | Command | Permission | Description |
 |---|---|---|
 | `/spawn` | `lobby.spawn` (everyone) | Go to spawn |
+| `/afk` | `lobby.cmd.afk` (everyone) | Show or stop showing that you're AFK |
 | `/glow` | `lobby.cmd.glow` (op) | Glow in your rank colour |
 | `/setspawn` | `lobby.admin` (op) | Set spawn to where you stand |
 | `/lobby reload` or `/lobbycore reload` | `lobby.admin` (op) | Reload config, messages and parkour (use `/lobbycore` if the proxy owns `/lobby`) |
@@ -45,6 +46,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 |---|---|---|
 | `lobby.staff` | op | Moving, dropping and swapping items |
 | `lobby.build` | nobody | Placing and breaking blocks (name set by `protection.build-permission`; ops can build when `allow-ops-to-build` is on) |
+| `lobby.cmd.afk` | everyone | `/afk` |
 | `lobby.cmd.glow` | op | `/glow` |
 | `lobby.spawn` | everyone | `/spawn` |
 | `lobby.admin` | op | `/setspawn`, `/lobby reload` |
