@@ -101,15 +101,26 @@ public final class RealmSelector implements Listener {
 
     private void draw(Menu menu) {
         Messages messages = plugin.messages();
+        LobbyConfig.Selector config = plugin.lobbyConfig().selector();
         ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
-        for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
+
+        // Which realms this player sees, in slot order.
+        List<LobbyConfig.SelectorServer> shown = new ArrayList<>();
+        for (LobbyConfig.SelectorServer realm : config.servers()) {
+            if (!hidden(menu.viewer, plugin.serverStatus().status(realm.server()).state())) shown.add(realm);
+        }
+        shown.sort(java.util.Comparator.comparingInt(LobbyConfig.SelectorServer::slot));
+        int[] slots = config.autoCenter() ? centered(shown.size(), config.rows()) : null;
+
+        // Clear where realms were last time (they move when one goes down or comes back).
+        for (int slot : menu.realms.keySet()) menu.inventory.setItem(slot, filler);
+        menu.realms.clear();
+
+        for (int i = 0; i < shown.size(); i++) {
+            LobbyConfig.SelectorServer realm = shown.get(i);
+            int slot = slots != null ? slots[i] : realm.slot();
             ServerStatus.State state = plugin.serverStatus().status(realm.server()).state();
-            if (hidden(menu.viewer, state)) {
-                menu.inventory.setItem(realm.slot(), filler);
-                menu.realms.remove(realm.slot());
-                continue;
-            }
             TagResolver args = args(realm);
             List<Component> lore = new ArrayList<>();
             for (String line : realm.description()) lore.add(messages.render("<!italic>" + line, args));
@@ -121,9 +132,24 @@ public final class RealmSelector implements Listener {
                 meta.lore(lore);
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             });
-            menu.inventory.setItem(realm.slot(), item);
-            menu.realms.put(realm.slot(), realm);
+            menu.inventory.setItem(slot, item);
+            menu.realms.put(slot, realm);
         }
+    }
+
+    /**
+     * Slots for this many realms, centred on the middle row: one gap between them while they fit
+     * (1 → the middle, 3 → 11 13 15 in a 3-row menu), side by side up to 9, or null for more
+     * (then each realm keeps its slot from config.yml).
+     */
+    static int[] centered(int count, int rows) {
+        if (count == 0 || count > 9) return count == 0 ? new int[0] : null;
+        int gap = count <= 5 ? 2 : 1;
+        int first = 4 - (count - 1) * gap / 2;
+        int row = (rows - 1) / 2;
+        int[] slots = new int[count];
+        for (int i = 0; i < count; i++) slots[i] = row * 9 + first + i * gap;
+        return slots;
     }
 
     /** Tags for a realm: <online> <max> <players> <server> <realm> <status> <action>. */

@@ -519,6 +519,10 @@ join-items:
 realm-selector:
   # Menu height in rows (1-6).
   rows: 3
+  # Lay out the realms a player can see centred on the middle row, so one
+  # realm sits in the middle and they close up when one is hidden. false =
+  # each realm stays in its own slot below.
+  auto-center: true
   # Each realm shows Online, Full, Maintenance or Offline. Lobby pings
   # each realm at the address the proxy has for it (or "address" below).
   # Offline and full realms can't be joined; lobby.bypass.full and

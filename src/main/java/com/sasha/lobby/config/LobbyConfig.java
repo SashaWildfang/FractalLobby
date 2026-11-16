@@ -147,7 +147,7 @@ public record LobbyConfig(
 
     public record Selector(int rows, List<SelectorServer> servers,
                            boolean statusEnabled, long statusRefreshTicks, List<String> maintenanceWords,
-                           boolean hideDownRealms) {
+                           boolean hideDownRealms, boolean autoCenter) {
     }
 
     /** address: "" = ask the proxy. maintenance: shown as under maintenance whatever the ping says. */
@@ -385,7 +385,8 @@ public record LobbyConfig(
                 c.getBoolean("realm-selector.status.enabled", true),
                 Math.max(20L, Math.round(c.getDouble("realm-selector.status.refresh-seconds", 3) * 20)),
                 List.copyOf(words),
-                c.getBoolean("realm-selector.status.hide-down-realms", true));
+                c.getBoolean("realm-selector.status.hide-down-realms", true),
+                c.getBoolean("realm-selector.auto-center", true));
     }
 
     /** Hotbar slot 1-9 in the config → inventory index 0-8. */
