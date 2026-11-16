@@ -481,3 +481,20 @@ for x in range(16):
 note2 = outline(note2)
 model('radio', note2)
 model('message-sounds', note2)
+
+# 11. Donors/Staff Only, nothing-here X, social spy eye, Survival's crossed tools
+CROWN = ["#....##....#", "##..####..##", "###.####.###", "############", "############", "#R##B##G##R#", "############"]
+model('audience-donors', art(CROWN, {'#': lambda x, y, w, h: mix(hexc('#FFE680'), hexc('#E0A030'), y / (h - 1)),
+                                     'R': hexc('#FF5A6E'), 'B': hexc('#7FA8FF'), 'G': hexc('#9BFFC4')}))
+BADGE = [".##########.", "############", "#####WW#####", "#####WW#####", "##WWWWWWWW##", "###WWWWWW###", "####WWWW####",
+         "###WWWWWW###", "###WW##WW###", ".##########.", "..########..", "...######...", "....####....", ".....##....."]
+model('audience-staff', art(BADGE, {'#': lambda x, y, w, h: hexc('#FFB36B') if x < w // 2 else hexc('#E8893A'), 'W': (255, 255, 255)}))
+model('none', art(["##.....##", "###...###", ".###.###.", "..#####..", "...###...", "..#####..", ".###.###.", "###...###", "##.....##"],
+                  {'#': (0xff, 0x75, 0x90)}))
+EYE = ["....######....", "..##WWWWWW##..", ".#WWWPPPPWWW#.", "#WWWPPKKPPWWW#", "#WWWPPKKPPWWW#", ".#WWWPPPPWWW#.", "..##WWWWWW##..", "....######...."]
+model('social-spy', art(EYE, {'#': (0x6a, 0x6f, 0x8d), 'W': (0xf2, 0xf3, 0xfa), 'P': hexc('#B266FF'), 'K': (0x1a, 0x1b, 0x26)}, shade=False))
+# Survival: an iron sword crossed with an iron pickaxe
+sword = Image.open(f'{VANILLA}/assets/minecraft/textures/item/iron_sword.png').convert('RGBA')
+pick = Image.open(f'{VANILLA}/assets/minecraft/textures/item/iron_pickaxe.png').convert('RGBA').transpose(Image.FLIP_LEFT_RIGHT)
+tools = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); tools.alpha_composite(pick); tools.alpha_composite(sword)
+tools.save(f'{OUT}/assets/fractal/textures/item/survival.png')

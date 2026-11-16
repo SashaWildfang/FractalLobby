@@ -34,7 +34,7 @@ public final class LuckPermsHook {
 
     /** Prefixes by lower-case name, for players who may be offline (leaderboards). */
     private static final java.util.Map<String, Cached> BY_NAME = new java.util.concurrent.ConcurrentHashMap<>();
-    private static final long KEEP_MILLIS = 5 * 60 * 1000;
+    private static final long KEEP_MILLIS = 30 * 60 * 1000;
 
     private record Cached(String prefix, long at) {
     }
@@ -55,12 +55,18 @@ public final class LuckPermsHook {
             users.lookupUniqueId(name)
                     .thenCompose(id -> id == null ? java.util.concurrent.CompletableFuture.completedFuture(null) : users.loadUser(id))
                     .thenAccept(user -> {
-                        String prefix = user == null ? null : user.getCachedData().getMetaData().getPrefix();
+                        if (user == null) return; // not found this time: keep what we had
+                        String prefix = user.getCachedData().getMetaData().getPrefix();
                         BY_NAME.put(key, new Cached(prefix == null ? "" : prefix, System.currentTimeMillis()));
                     })
                     .exceptionally(error -> null);
         }
         return cached == null ? "" : cached.prefix();
+    }
+
+    /** Remembers an online player's prefix by name (when they leave), so leaderboards have it straight away. */
+    public static void remember(Player player) {
+        BY_NAME.put(player.getName().toLowerCase(java.util.Locale.ROOT), new Cached(prefix(player), System.currentTimeMillis()));
     }
 
     private static CachedMetaData meta(Player player) {

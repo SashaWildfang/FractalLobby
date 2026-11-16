@@ -170,6 +170,12 @@ public final class ParkourLobby implements Listener {
 
     private void updateDisplays() {
         for (Hologram hologram : holograms) hologram.update();
+        // Look up the top 10's ranks ahead of time, so the leaderboard menu has them when it opens.
+        if (plugin.luckPerms() && leaderboard.available()) {
+            plugin.getServer().getOnlinePlayers().stream().findFirst().ifPresent(anyone -> {
+                for (Leaderboard.Entry entry : leaderboard.entries(anyone)) LuckPermsHook.prefix(entry.name());
+            });
+        }
     }
 
     // ---------------------------------------------------------------- hologram text
@@ -483,6 +489,8 @@ public final class ParkourLobby implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        // Keep a leaving player's rank for the leaderboards, which show offline players too.
+        if (plugin.luckPerms()) LuckPermsHook.remember(event.getPlayer());
         UUID id = event.getPlayer().getUniqueId();
         cooldowns.remove(id);
         lastOpened.remove(id);

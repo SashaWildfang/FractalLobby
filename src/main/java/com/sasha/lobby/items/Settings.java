@@ -410,7 +410,7 @@ public final class Settings implements Listener {
             meta.displayName(messages.item("settings.ignored.count", Messages.arg("count", ignored.size())));
             meta.lore(messages.lore("settings.ignored.hint"));
         });
-        menu.inventory.setItem(IGNORED_SLOT + 9, styled(pane, ignored.isEmpty() ? "on" : "middle"));
+        menu.inventory.setItem(IGNORED_SLOT + 9, styled(pane, ignored.isEmpty() ? "none" : "middle"));
         Action open = (who, click) -> {
             openIgnored(who, menu.fromProfile);
             click(who, 0);
@@ -425,7 +425,7 @@ public final class Settings implements Listener {
         CoreLink.State state = plugin.coreLink().state(player);
         Map<UUID, String> ignored = state == null ? Map.of() : state.ignored();
         if (ignored.isEmpty()) {
-            menu.inventory.setItem(22, styled(Profile.button(messages, Material.LIME_DYE, "settings.ignored-menu.empty"), "on"));
+            menu.inventory.setItem(22, styled(Profile.button(messages, Material.LIME_DYE, "settings.ignored-menu.empty"), "none"));
         }
         int slot = 0;
         for (Map.Entry<UUID, String> entry : ignored.entrySet()) {
