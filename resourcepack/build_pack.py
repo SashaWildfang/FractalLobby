@@ -947,39 +947,26 @@ print('npc skins', sorted(os.listdir(npc_dir)))
 for dd in ('textures/item/parkour', 'models/item/parkour', 'items/parkour'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
 PURPLE, PINK = hexc('#B266FF'), hexc('#FF7BE5')
 def mix(a, b, t): return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
-# the arrow: pointing down, purple at the top to pink at the tip, a white shine down its left, a dark outline
-ARROW = ["......####......",
-         "......#..#......",
-         "......#..#......",
-         "......#..#......",
-         "......#..#......",
-         "......#..#......",
-         "..#####..#####..",
-         "..#..........#..",
-         "...#........#...",
-         "....#......#....",
-         ".....#....#.....",
-         "......#..#......",
-         ".......##.......",
-         "................",
-         "................",
-         "................"]
-inside = set()
-for y, row in enumerate(ARROW):
-    xs = [x for x, ch in enumerate(row) if ch == '#']
-    if len(xs) >= 2:
-        for x in range(xs[0] + 1, xs[-1]): inside.add((x, y))
-arrow = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-for y, row in enumerate(ARROW):
-    for x, ch in enumerate(row):
-        if ch == '#': arrow.putpixel((x, y), hexc('#3B1B66') + (255,))
-for (x, y) in inside:
-    c = mix(PURPLE, PINK, y / 12)
-    left = min(xx for (xx, yy) in inside if yy == y)
-    if x == left: c = mix(c, (255, 255, 255), 0.6)
-    arrow.putpixel((x, y), c + (255,))
-# move it down so the picture is centred (the sprite's middle is the display's middle)
-arrow = arrow.transform(arrow.size, Image.AFFINE, (1, 0, 0, 0, 1, -1))
+# the arrow: three stacked chevrons pointing down (32x32), deep purple to pink, each with exact 45-degree arms,
+# a light edge along the top and its own dark outline
+DARK, WHITE = hexc('#3B1B66'), (255, 255, 255)
+arrow = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+def chevron(top, colour, start=5, thick=4, rows=11):
+    pix = {}
+    for r in range(rows):
+        for x in range(start + r, start + r + thick):
+            if x > 15: continue
+            edge = x == start + r
+            pix[(x, top + r)] = mix(colour, WHITE, 0.5) if edge else colour
+            pix[(31 - x, top + r)] = mix(colour, WHITE, 0.2) if edge else mix(colour, DARK, 0.12)
+    return pix
+for top, colour in ((2, mix(PURPLE, (120, 70, 210), 0.3)), (10, mix(PURPLE, PINK, 0.5)), (18, PINK)):
+    pix = chevron(top, colour)
+    for (x, y) in list(pix):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            q = (x + dx, y + dy)
+            if q not in pix and 0 <= q[0] < 32 and 0 <= q[1] < 32 and arrow.getpixel(q)[3] == 0: arrow.putpixel(q, DARK + (255,))
+    for q, c in pix.items(): arrow.putpixel(q, c + (255,))
 arrow.save(f'{OUT}/assets/fractal/textures/item/parkour/arrow.png')
 # the orb: a white core fading to pink, then purple, with a soft see-through edge
 orb = Image.new('RGBA', (16, 16), (0, 0, 0, 0))

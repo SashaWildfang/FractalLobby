@@ -135,14 +135,25 @@ public final class ParkourLobby implements Listener {
 
     static final String NPC_NAME = "Parkour";
 
-    /** The Parkour NPC starts runs on a right click only (it used to be any click). */
+    /** The Parkour NPC starts runs on a right click only (it used to be any click), and its label says so. */
     private void rightClickOnly() {
         var npc = plugin.npcs().get(NPC_NAME);
         if (npc == null) return;
+        boolean changed = false;
         List<String> any = npc.actions.get("ANY_CLICK");
-        if (any == null || !any.remove("parkour")) return;
-        if (any.isEmpty()) npc.actions.remove("ANY_CLICK");
-        npc.actions.computeIfAbsent("RIGHT_CLICK", k -> new ArrayList<>()).add("parkour");
+        if (any != null && any.remove("parkour")) {
+            if (any.isEmpty()) npc.actions.remove("ANY_CLICK");
+            npc.actions.computeIfAbsent("RIGHT_CLICK", k -> new ArrayList<>()).add("parkour");
+            changed = true;
+        }
+        // Its label showed the left-click mouse: now the right-click one.
+        for (var line : npc.lines) {
+            if (line.content.contains("\uF010") && line.content.contains("ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ") && !line.content.contains("ʀɪɢʜᴛ")) {
+                line.content = line.content.replace("\uF010", "\uF011").replace("ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ", "ʀɪɢʜᴛ ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ");
+                changed = true;
+            }
+        }
+        if (!changed) return;
         plugin.npcs().changed(npc);
         plugin.npcs().save();
     }

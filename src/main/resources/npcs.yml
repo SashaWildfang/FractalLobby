@@ -191,5 +191,5 @@ npcs:
         height: 0.28
       - content: '&#B8A9D9ʏᴏᴜʀ ʙᴇꜱᴛ: &f&l%lobby_parkour_best% &#8C7BB0(%lobby_parkour_rank%)'
         height: 0.28
-      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
+      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ʀɪɢʜᴛ ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
         height: 0.28
