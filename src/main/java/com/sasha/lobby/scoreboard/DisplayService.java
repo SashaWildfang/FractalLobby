@@ -7,7 +7,6 @@ import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.LegacyCodes;
 import com.sasha.lobby.config.LobbyConfig;
 import com.sasha.lobby.config.Messages;
-import com.sasha.lobby.hook.PlaceholderHook;
 import com.sasha.lobby.items.Settings;
 import com.sasha.lobby.proxy.ProxyCounts;
 import com.sasha.lobby.proxy.ServerStatus;
@@ -298,7 +297,7 @@ public final class DisplayService {
     }
 
     private String placeholders(Player player, String template) {
-        return plugin.placeholderApi() && template.indexOf('%') >= 0 ? PlaceholderHook.apply(player, template) : template;
+        return template.indexOf('%') >= 0 ? com.sasha.lobby.hook.Placeholders.apply(plugin, player, template) : template;
     }
 
     // ---------------------------------------------------------------- nametags

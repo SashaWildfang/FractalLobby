@@ -7,7 +7,6 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.hologram.Hologram;
 import com.sasha.lobby.hologram.HologramText;
-import com.sasha.lobby.hook.PlaceholderHook;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
@@ -368,7 +367,7 @@ public final class Npcs implements Listener {
 
     private String fill(String text, Player player) {
         String out = text.replace("{player}", player.getName());
-        return out.indexOf('%') >= 0 && plugin.placeholderApi() ? PlaceholderHook.apply(player, out) : out;
+        return com.sasha.lobby.hook.Placeholders.apply(plugin, player, out);
     }
 
     @EventHandler

@@ -48,8 +48,6 @@ public final class LobbyExpansion extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (!params.startsWith("online_")) return null;
-        String server = params.substring("online_".length());
-        if (server.equalsIgnoreCase("here")) return String.valueOf(plugin.getServer().getOnlinePlayers().size());
-        return String.valueOf(plugin.proxyCounts().count(server));
+        return Placeholders.online(plugin, params.substring("online_".length()));
     }
 }

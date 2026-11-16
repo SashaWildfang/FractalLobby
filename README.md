@@ -29,7 +29,7 @@ The lobby core for **Fractal Network**: a purple sidebar with live player counts
 - **AFK**: after 5 minutes idle (`afk.minutes`), a red "AFK" with a clock shows under the player's name in place of their status, and a light red AFK badge replaces their rank and their name (and glow) turns light red; nothing in chat. `/afk` does it straight away. Walking a block away, turning around, chatting or clicking brings everything back (small mouse movements and pressure plates don't)
 - **No crafting**: the inventory's crafting grid and recipe book are hidden and blocked (`join-items.no-crafting`)
 - **`/glow`**: glow in your rank colour without touching the sidebar
-- `&` colour codes, MiniMessage tags, `%luckperms_prefix%` and PlaceholderAPI placeholders all work in the config
+- `&` colour codes, MiniMessage tags and placeholders work in the config. Built in (no PlaceholderAPI needed): `%lobby_online_<realm|all|here>%`, `%luckperms_prefix%`, `%luckperms_suffix%`, `%player_name%`, `%player_ping%`, `%server_online%`. Other PlaceholderAPI placeholders work too when PlaceholderAPI is installed
 - Every message and label is editable in `messages.yml`, in tiny small-caps text or normal (`format.font`)
 
 ## Commands

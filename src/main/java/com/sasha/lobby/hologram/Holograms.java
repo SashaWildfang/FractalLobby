@@ -4,7 +4,6 @@
 package com.sasha.lobby.hologram;
 
 import com.sasha.lobby.Lobby;
-import com.sasha.lobby.hook.PlaceholderHook;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -414,7 +413,7 @@ public final class Holograms implements Listener {
     /** {player} and PlaceholderAPI placeholders, for this viewer. */
     private String fill(String content, Player viewer) {
         String text = content.replace("{player}", viewer.getName());
-        return text.indexOf('%') >= 0 && plugin.placeholderApi() ? PlaceholderHook.apply(viewer, text) : text;
+        return com.sasha.lobby.hook.Placeholders.apply(plugin, viewer, text);
     }
 
     private ItemStack item(String content, Player viewer) {

@@ -58,7 +58,7 @@ public final class PlayerFormat {
             if (text.contains("%luckperms_suffix%")) text = text.replace("%luckperms_suffix%", LuckPermsHook.suffix(player));
         }
         text = text.replace("%player%", "<player>");
-        if (plugin.placeholderApi() && text.indexOf('%') >= 0) text = PlaceholderHook.apply(player, text);
+        if (text.indexOf('%') >= 0) text = com.sasha.lobby.hook.Placeholders.apply(plugin, player, text);
         return text;
     }
 }
