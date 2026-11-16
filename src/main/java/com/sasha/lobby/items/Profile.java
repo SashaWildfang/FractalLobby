@@ -35,13 +35,17 @@ import java.time.Instant;
  */
 public final class Profile implements Listener {
 
+    /*
+     * Three rows: the player's head at the top; cosmetics (chat colour, trail, glow) bottom left and
+     * everything else (parkour, settings, realms) bottom right.
+     */
     private static final int HEAD = 4;
     private static final int CHAT_COLOR = 19;
-    private static final int TRAIL = 21;
-    private static final int GLOW = 23;
-    private static final int SETTINGS = 25;
-    private static final int PARKOUR = 31;
-    private static final int REALMS = 40;
+    private static final int TRAIL = 20;
+    private static final int GLOW = 21;
+    private static final int PARKOUR = 23;
+    private static final int SETTINGS = 24;
+    private static final int REALMS = 25;
 
     private final Lobby plugin;
 
@@ -70,9 +74,10 @@ public final class Profile implements Listener {
     public void open(Player player) {
         Messages messages = plugin.messages();
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, 45, messages.component("profile.title", Messages.name("player", player.getName())));
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        MenuStyle style = plugin.menuStyle();
+        menu.inventory = Bukkit.createInventory(menu, 27, style.title(MenuStyle.PROFILE,
+                messages.component("profile.title", Messages.name("player", player.getName()))));
+        ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         TagResolver info = info(player);
@@ -85,13 +90,13 @@ public final class Profile implements Listener {
         hideProfileLine(head);
         menu.inventory.setItem(HEAD, head);
 
-        menu.inventory.setItem(CHAT_COLOR, button(messages, Material.NAME_TAG, "profile.chat-color", info));
-        menu.inventory.setItem(TRAIL, button(messages, Material.BLAZE_POWDER, "profile.trail", info));
-        menu.inventory.setItem(GLOW, button(messages, Material.GLOWSTONE_DUST,
-                player.hasPermission(GlowListener.PERMISSION) ? "profile.glow" : "profile.glow-locked", info));
-        menu.inventory.setItem(SETTINGS, button(messages, Material.COMPARATOR, "profile.settings", info));
-        menu.inventory.setItem(PARKOUR, button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info));
-        menu.inventory.setItem(REALMS, button(messages, Material.COMPASS, "profile.realms", info));
+        menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
+        menu.inventory.setItem(TRAIL, style.icon(button(messages, Material.BLAZE_POWDER, "profile.trail", info), "trail"));
+        menu.inventory.setItem(GLOW, style.icon(button(messages, Material.GLOWSTONE_DUST,
+                player.hasPermission(GlowListener.PERMISSION) ? "profile.glow" : "profile.glow-locked", info), "glow"));
+        menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
+        menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
+        menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
         player.openInventory(menu.inventory);
     }
 

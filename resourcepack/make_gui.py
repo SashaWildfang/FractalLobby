@@ -50,6 +50,7 @@ by['Y'] = drawn(["#...#", ".#.#.", "..#..", "..#..", "..#.."])
 by['C'] = drawn([".####", "#....", "#....", "#....", ".####"])
 by['H'] = drawn(["#...#", "#...#", "#####", "#...#", "#...#"])
 by['K'] = drawn(["#...#", "#..#.", "###..", "#..#.", "#...#"])
+by['F'] = drawn(["#####", "#....", "####.", "#....", "#...."])
 by[' '] = (2, {})
 
 def plaque_title(img, word, centre=88):
@@ -139,5 +140,6 @@ for rows in range(3, 7):
     add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
 add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
+add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[19, 20, 21, 23, 24, 25]))
 add(0xF1B6, 'radio', background(6, [], "RADIO", cells=grid(6) + [0, 1, 2, 4, 6, 7, 8] + list(range(45, 54))))
 json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)

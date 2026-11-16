@@ -116,13 +116,14 @@ public final class JoinItems implements Listener {
         if (config.selector()) player.getInventory().setItem(selectorSlot, selectorItem());
         if (config.radio() && (config.radioRequiresPlugin().isEmpty()
                 || plugin.getServer().getPluginManager().isPluginEnabled(config.radioRequiresPlugin()))) {
-            player.getInventory().setItem(config.radioSlot(), joinItem(config.radioItem(), "items.radio", RADIO));
+            player.getInventory().setItem(config.radioSlot(), plugin.menuStyle().icon(joinItem(config.radioItem(), "items.radio", RADIO), "radio"));
         }
         int visibilitySlot = config.visibilitySlot();
         // An older config.yml may still have visibility in slot 8, where settings now go: it moves one over.
         if (config.settings() && visibilitySlot == config.settingsSlot()) visibilitySlot = visibilitySlot < 8 ? visibilitySlot + 1 : visibilitySlot - 1;
         if (config.visibility()) player.getInventory().setItem(visibilitySlot, visibilityItem(player));
-        if (config.settings()) player.getInventory().setItem(config.settingsSlot(), joinItem(config.settingsItem(), "items.settings", SETTINGS));
+        if (config.settings()) player.getInventory().setItem(config.settingsSlot(),
+                plugin.menuStyle().icon(joinItem(config.settingsItem(), "items.settings", SETTINGS), "header"));
         if (config.profile()) {
             ItemStack base = joinItem(org.bukkit.Material.PLAYER_HEAD, "items.profile", PROFILE);
             player.getInventory().setItem(config.profileSlot(), plugin.profile().hotbarItem(player, base));
@@ -155,17 +156,17 @@ public final class JoinItems implements Listener {
     private ItemStack visibilityItem(Player player) {
         LobbyConfig.JoinItems config = plugin.lobbyConfig().joinItems();
         return switch (plugin.settings().audience(player, Settings.Setting.PLAYER_VISIBILITY)) {
-            case EVERYONE -> joinItem(config.visibleItem(), "items.visibility-shown", VISIBILITY);
-            case NOBODY -> joinItem(config.hiddenItem(), "items.visibility-hidden", VISIBILITY);
-            case DONORS -> joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
-                    Placeholder.component("option", plugin.messages().component("settings.options.donors")));
-            case STAFF -> joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
-                    Placeholder.component("option", plugin.messages().component("settings.options.staff")));
+            case EVERYONE -> plugin.menuStyle().icon(joinItem(config.visibleItem(), "items.visibility-shown", VISIBILITY), "players-shown");
+            case NOBODY -> plugin.menuStyle().icon(joinItem(config.hiddenItem(), "items.visibility-hidden", VISIBILITY), "players-hidden");
+            case DONORS -> plugin.menuStyle().icon(joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
+                    Placeholder.component("option", plugin.messages().component("settings.options.donors"))), "players-shown");
+            case STAFF -> plugin.menuStyle().icon(joinItem(config.visibleItem(), "items.visibility-partial", VISIBILITY,
+                    Placeholder.component("option", plugin.messages().component("settings.options.staff"))), "players-shown");
         };
     }
 
     private ItemStack selectorItem() {
-        return joinItem(plugin.lobbyConfig().joinItems().selectorItem(), "items.realm-selector", SELECTOR);
+        return plugin.menuStyle().icon(joinItem(plugin.lobbyConfig().joinItems().selectorItem(), "items.realm-selector", SELECTOR), "realms");
     }
 
     private ItemStack joinItem(org.bukkit.Material material, String key, String type, TagResolver... args) {

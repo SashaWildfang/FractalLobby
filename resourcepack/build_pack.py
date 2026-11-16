@@ -187,3 +187,155 @@ def door_arrow(colour, light, pointing_in):
 model('join-messages', door_arrow((0x3c, 0xa0, 0x3c), (0x7f, 0xdb, 0x6a), True))
 model('leave-messages', door_arrow((0xb0, 0x30, 0x30), (0xe3, 0x5a, 0x5a), False))
 print('menu icons', len(MENU_ICONS) + 1)
+
+# 7. more icons: arrows, chat colours, trails, profile and hotbar items
+def outline(img, colour=(0x1a, 0x1b, 0x26)):
+    out = img.copy(); px = img.load()
+    for x in range(16):
+        for y in range(16):
+            if px[x, y][3]: continue
+            if any(0 <= x + dx < 16 and 0 <= y + dy < 16 and px[x + dx, y + dy][3] > 100 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.putpixel((x, y), colour + (255,))
+    return out
+def from_art(art, colours):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(art):
+        for x, ch in enumerate(row):
+            if ch in colours: img.putpixel((x, y), colours[ch] + (255,))
+    return img
+ARROW = ["................",
+         "................",
+         "......#.........",
+         ".....##.........",
+         "....###.........",
+         "...############.",
+         "..#############.",
+         ".##############.",
+         "..#############.",
+         "...############.",
+         "....###.........",
+         ".....##.........",
+         "......#.........",
+         "................",
+         "................",
+         "................"]
+def arrow(left):
+    art = [r[::-1] if not left else r for r in ARROW]
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(art):
+        for x, ch in enumerate(row):
+            if ch == '#': img.putpixel((x, y), (0xe9, 0xeb, 0xf5, 255) if y < 7 else (0xa9, 0xae, 0xc8, 255))
+    return outline(img)
+model('back', arrow(True))
+model('next', arrow(False))
+
+DROP = ["................",
+        "........o.......",
+        ".......ohf......",
+        ".......ohf......",
+        "......ohhfo.....",
+        "......ohffo.....",
+        ".....ohhffdo....",
+        ".....ohfffdo....",
+        "....ohhffffdo...",
+        "....ohfffffdo...",
+        "....ohffffddo...",
+        "....offfffddo...",
+        ".....offffdo....",
+        "......oddddo....",
+        ".......oooo.....",
+        "................"]
+def hexc(h): h = h.lstrip('#'); return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+def drop(colour_at):
+    """A paint drop; colour_at(t) gives the colour t of the way down (for gradients)."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(DROP):
+        base = colour_at(y / 15)
+        for x, ch in enumerate(row):
+            if ch == 'o': c = mix(base, (0x10, 0x10, 0x18), 0.75)
+            elif ch == 'h': c = mix(base, (255, 255, 255), 0.55)
+            elif ch == 'd': c = mix(base, (0, 0, 0), 0.3)
+            elif ch == 'f': c = base
+            else: continue
+            img.putpixel((x, y), c + (255,))
+    return img
+def gradient(*stops):
+    cols = [hexc(s) for s in stops]
+    def at(t):
+        t = min(max((t - 0.1) / 0.8, 0), 1) * (len(cols) - 1); i = min(int(t), len(cols) - 2)
+        return mix(cols[i], cols[i + 1], t - i)
+    return at
+import colorsys
+CHAT_COLOURS = {'white': '#FFFFFF', 'gray': '#AAAAAA', 'red': '#FF7590', 'orange': '#FFB36B', 'yellow': '#FFE680',
+                'green': '#9BFFC4', 'aqua': '#7FE7FF', 'blue': '#7FA8FF', 'purple': '#B266FF', 'lavender': '#E3C4FF',
+                'pink': '#FF7BE5'}
+def color_model(name, img):
+    for d in ('textures/item/color', 'models/item/color', 'items/color'): os.makedirs(f'{OUT}/assets/fractal/{d}', exist_ok=True)
+    img.save(f'{OUT}/assets/fractal/textures/item/color/{name}.png')
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/color/{name}"}}, open(f'{OUT}/assets/fractal/models/item/color/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/color/{name}"}}, open(f'{OUT}/assets/fractal/items/color/{name}.json', 'w'))
+for name, h in CHAT_COLOURS.items(): color_model(name, drop(lambda t, h=h: hexc(h)))
+color_model('fractal', drop(gradient('#8E2DE2', '#E58BFF')))
+color_model('sunset', drop(gradient('#FF7590', '#FFD27F')))
+color_model('ocean', drop(gradient('#4FC3F7', '#9BFFC4')))
+color_model('rainbow', drop(lambda t: tuple(round(v * 255) for v in colorsys.hsv_to_rgb(t * 0.85, 0.55, 1))))
+
+PARTICLES = f'{VANILLA}/assets/minecraft/textures/particle'
+SNOWFLAKE = ["...#....", ".#.#.#..", "..###...", "#######.", "..###...", ".#.#.#..", "...#....", "........"]
+def particle(src, tint=None):
+    if isinstance(src, list):
+        small = Image.new('RGBA', (8, 8), (0, 0, 0, 0))
+        for y, row in enumerate(src):
+            for x, ch in enumerate(row):
+                if ch == '#': small.putpixel((x, y), (255, 255, 255, 255))
+    else:
+        small = Image.open(f'{PARTICLES}/{src}.png').convert('RGBA').resize((8, 8), Image.NEAREST)
+    if tint:
+        t = hexc(tint); px = small.load()
+        for x in range(8):
+            for y in range(8):
+                r, g, b, a = px[x, y]
+                if a: px[x, y] = (r * t[0] // 255, g * t[1] // 255, b * t[2] // 255, a)
+    big = small.resize((16, 16), Image.NEAREST)
+    # shrink to 14x14 inside the icon so the outline fits
+    big = big.crop(big.getbbox()) if big.getbbox() else big
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    if big.width > 14 or big.height > 14: big = big.resize((min(14, big.width), min(14, big.height)), Image.NEAREST)
+    img.alpha_composite(big, ((16 - big.width) // 2, (16 - big.height) // 2))
+    return outline(img)
+TRAILS = {'notes': ('note', '#9BFFC4'), 'clouds': ('generic_7', None), 'sparkles': ('glint', '#9BFFC4'),
+          'hearts': ('heart', None), 'snowflakes': (SNOWFLAKE, '#E8F6FF'), 'flames': ('flame', None),
+          'soul-flames': ('soul_fire_flame', None), 'magic': ('spell_7', '#B266FF'), 'stars': ('glitter_7', '#FFE680'),
+          'enchanted': ('sga_a', '#C9A8FF'), 'blossom': ('cherry_0', None), 'sparks': ('spark_7', '#7FA8FF'),
+          'totem': ('glitter_5', '#C8FF80')}
+def trail_model(name, img):
+    for d in ('textures/item/trail', 'models/item/trail', 'items/trail'): os.makedirs(f'{OUT}/assets/fractal/{d}', exist_ok=True)
+    img.save(f'{OUT}/assets/fractal/textures/item/trail/{name}.png')
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/trail/{name}"}}, open(f'{OUT}/assets/fractal/models/item/trail/{name}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/trail/{name}"}}, open(f'{OUT}/assets/fractal/items/trail/{name}.json', 'w'))
+for name, (src, tint) in TRAILS.items(): trail_model(name, particle(src, tint))
+
+# profile and hotbar
+model('chat-color', drop(gradient('#8E2DE2', '#E58BFF')))
+model('trail', particle('glitter_7', '#FFE680'))
+model('glow', particle('glow', '#FFE680'))
+model('parkour', Image.open(f'{ICONS}/guide/rank.png').convert('RGBA'))
+model('realms', Image.open(f'{ICONS}/guide/worlds.png').convert('RGBA'))
+model('radio', note)
+model('players-shown', Image.open(f'{ICONS}/guide/profile.png').convert('RGBA'))
+hidden = Image.open(f'{ICONS}/guide/profile.png').convert('RGBA'); px = hidden.load()
+for x in range(16):
+    for y in range(16):
+        r, g, b, a = px[x, y]
+        if a: v = (r * 3 + g * 6 + b) // 10; px[x, y] = (v * 3 // 5, v * 3 // 5, v * 2 // 3, a)
+model('players-hidden', hidden)
+
+# a quieter hotbar selection: a thin light frame
+sel = Image.new('RGBA', (24, 23), (0, 0, 0, 0))
+for x in range(24):
+    for y in range(23):
+        edge = x in (0, 23) or y in (0, 22)
+        inner = x in (1, 22) or y in (1, 21)
+        if edge: sel.putpixel((x, y), (0x12, 0x13, 0x1c, 255))
+        elif inner: sel.putpixel((x, y), (0xd6, 0xd9, 0xea, 255))
+sel.save(f'{HUD}/hotbar_selection.png')

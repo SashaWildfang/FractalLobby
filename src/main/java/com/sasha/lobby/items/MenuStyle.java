@@ -17,7 +17,13 @@ import org.bukkit.inventory.ItemStack;
 public final class MenuStyle {
 
     /** The backgrounds, by menu (the pack's fractal:lobby font). */
-    public static final char SETTINGS = '', IGNORED = '', PARKOUR = '';
+    public static final char SETTINGS = '\uF170', IGNORED = '\uF171', PARKOUR = '\uF1A5', PROFILE = '\uF1C3';
+
+    /** Chat colours and trails the pack has an icon for (by their id in config.yml). */
+    private static final java.util.Set<String> COLOR_ICONS = java.util.Set.of("white", "gray", "red", "orange", "yellow",
+            "green", "aqua", "blue", "purple", "lavender", "pink", "fractal", "sunset", "ocean", "rainbow");
+    private static final java.util.Set<String> TRAIL_ICONS = java.util.Set.of("notes", "clouds", "sparkles", "hearts",
+            "snowflakes", "flames", "soul-flames", "magic", "stars", "enchanted", "blossom", "sparks", "totem");
 
     public static char chatColor(int rows) {
         return (char) (0xF180 + rows);
@@ -54,7 +60,21 @@ public final class MenuStyle {
 
     /** With the custom look, gives the item the pack's icon fractal:menu/NAME. */
     public ItemStack icon(ItemStack item, String name) {
-        if (custom() && item != null) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "menu/" + name)));
+        return model(item, "menu/" + name);
+    }
+
+    /** A chat colour's paint drop from the pack, if it has one for this colour. */
+    public ItemStack colorIcon(ItemStack item, String id) {
+        return COLOR_ICONS.contains(id) ? model(item, "color/" + id) : item;
+    }
+
+    /** A trail's particle icon from the pack, if it has one for this trail. */
+    public ItemStack trailIcon(ItemStack item, String id) {
+        return TRAIL_ICONS.contains(id) ? model(item, "trail/" + id) : item;
+    }
+
+    private ItemStack model(ItemStack item, String path) {
+        if (custom() && item != null) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", path)));
         return item;
     }
 }

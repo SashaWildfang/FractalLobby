@@ -189,7 +189,7 @@ public final class ChatColors implements Listener {
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
                 if (selected) meta.setEnchantmentGlintOverride(true);
             });
-            menu.inventory.setItem(slot, item);
+            menu.inventory.setItem(slot, style.colorIcon(item, colour.id()));
             menu.slots.put(slot, colour.id());
         }
 

@@ -134,7 +134,7 @@ public final class Trails implements Listener {
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
                 if (selected) meta.setEnchantmentGlintOverride(true);
             });
-            menu.inventory.setItem(slot, item);
+            menu.inventory.setItem(slot, style.trailIcon(item, trail.id()));
             menu.slots.put(slot, trail.id());
         }
 
@@ -142,7 +142,7 @@ public final class Trails implements Listener {
         menu.backSlot = bottom + 3;
         menu.noneSlot = bottom + 5;
         menu.inventory.setItem(menu.backSlot, style.icon(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
-        menu.inventory.setItem(menu.noneSlot, style.icon(Profile.button(messages, Material.BARRIER, "trails.none-item"), "off"));
+        menu.inventory.setItem(menu.noneSlot, style.icon(Profile.button(messages, Material.BARRIER, "trails.none-item"), "reset"));
         player.openInventory(menu.inventory);
     }
 

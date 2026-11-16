@@ -648,6 +648,15 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/profile.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1c3"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/radio.png",
    "ascent": 29,
    "height": 256,
