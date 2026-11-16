@@ -54,6 +54,8 @@ public final class DisplayService {
     private final Map<UUID, java.util.function.Supplier<java.util.Map.Entry<Component, List<Component>>>> overrides = new HashMap<>();
     /** Sidebars made only for an override (the player has the lobby scoreboard turned off). */
     private final java.util.Set<UUID> overrideOnly = new java.util.HashSet<>();
+    /** Glow colours for non-player entities (NPCs): scoreboard entry (the entity's UUID) → colour. */
+    private final Map<String, NamedTextColor> entityColours = new HashMap<>();
     private BukkitTask task;
 
     private record Nametag(Component prefix, Component suffix, NamedTextColor color, Component listName) {
@@ -96,6 +98,7 @@ public final class DisplayService {
             if (tag != null) applyTeam(board, other, tag);
         }
         refreshNametag(player, true);
+        for (Map.Entry<String, NamedTextColor> entry : entityColours.entrySet()) applyEntityColour(board, entry.getKey(), entry.getValue());
         for (Player other : plugin.getServer().getOnlinePlayers()) {
             if (other != player) applyStatus(board, other);
         }
@@ -396,6 +399,34 @@ public final class DisplayService {
         }
         score.setScore(0);
         score.numberFormat(io.papermc.paper.scoreboard.numbers.NumberFormat.fixed(pack ? Component.textOfChildren(line, BACKSPACE) : line));
+    }
+
+    /** Gives an entity (an NPC) a glow colour on everyone's board; null takes it away. */
+    public void setEntityColour(String entry, NamedTextColor colour) {
+        if (colour == null) {
+            if (entityColours.remove(entry) == null) return;
+            for (Scoreboard board : boards.values()) {
+                Team team = board.getTeam(entityTeam(entry));
+                if (team != null) team.unregister();
+            }
+            return;
+        }
+        entityColours.put(entry, colour);
+        for (Scoreboard board : boards.values()) applyEntityColour(board, entry, colour);
+    }
+
+    private static void applyEntityColour(Scoreboard board, String entry, NamedTextColor colour) {
+        String name = entityTeam(entry);
+        Team team = board.getTeam(name);
+        if (team == null) team = board.registerNewTeam(name);
+        team.color(colour);
+        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+        team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+        if (!team.hasEntry(entry)) team.addEntry(entry);
+    }
+
+    private static String entityTeam(String entry) {
+        return "lbe" + entry.replace("-", "").substring(0, 13);
     }
 
     /** Short, unique per player (team names are kept under 16 characters for older clients). */

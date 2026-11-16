@@ -76,6 +76,8 @@ public final class Lobby extends JavaPlugin implements Listener {
     private com.sasha.lobby.items.Statuses statuses;
     private com.sasha.lobby.listener.AfkListener afk;
     private com.sasha.lobby.hologram.Holograms holograms;
+    private com.sasha.lobby.npc.Npcs npcs;
+    private final com.sasha.lobby.help.CommandHelp help = new com.sasha.lobby.help.CommandHelp();
     private Profile profile;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -119,16 +121,18 @@ public final class Lobby extends JavaPlugin implements Listener {
         statuses = new com.sasha.lobby.items.Statuses(this);
         afk = new com.sasha.lobby.listener.AfkListener(this);
         holograms = new com.sasha.lobby.hologram.Holograms(this);
+        npcs = new com.sasha.lobby.npc.Npcs(this);
         profile = new Profile(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
         coreLink.start();
         holograms.start();
+        npcs.start();
         afk.start();
         display.start();
         border.apply();
@@ -153,7 +157,8 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
-        if (holograms != null) holograms.stop();
+        if (npcs != null) npcs.stop();
+        if (holograms != null) holograms.shutdown();
         if (serverStatus != null) serverStatus.stop();
         if (selector != null) selector.stop();
         if (doubleJump != null) doubleJump.stop();
@@ -186,6 +191,18 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public Trails trails() {
         return trails;
+    }
+
+    public com.sasha.lobby.hologram.Holograms holograms() {
+        return holograms;
+    }
+
+    public com.sasha.lobby.npc.Npcs npcs() {
+        return npcs;
+    }
+
+    public com.sasha.lobby.help.CommandHelp help() {
+        return help;
     }
 
     public com.sasha.lobby.listener.AfkListener afk() {
@@ -257,6 +274,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         proxyCounts.restartTask();
         serverStatus.start();
         holograms.start();
+        npcs.start();
         afk.start();
         display.start();
         for (Player player : getServer().getOnlinePlayers()) {
@@ -288,6 +306,10 @@ public final class Lobby extends JavaPlugin implements Listener {
                             reload();
                             return reply(context.getSource(), "general.reloaded");
                         }))
+                        .then(Commands.literal("help").executes(context -> {
+                            help.show(context.getSource().getSender(), "");
+                            return 1;
+                        }))
                         .build(), "Lobby admin commands", List.of());
             }
 
@@ -314,6 +336,25 @@ public final class Lobby extends JavaPlugin implements Listener {
                             .then(Commands.literal("return")
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.setArea(player, "return")))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
+
+            commands.register(new com.sasha.lobby.npc.NpcCommands(this, npcs).build(),
+                    "Make and edit the lobby's NPCs", List.of("lobbynpc"));
+
+            commands.register(Commands.literal("lobbyhelp")
+                    .executes(context -> {
+                        help.show(context.getSource().getSender(), "");
+                        return 1;
+                    })
+                    .then(Commands.argument("query", StringArgumentType.greedyString())
+                            .suggests((context, builder) -> {
+                                for (var topic : com.sasha.lobby.help.CommandHelp.TOPICS) builder.suggest(topic.id());
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> {
+                                help.show(context.getSource().getSender(), StringArgumentType.getString(context, "query"));
+                                return 1;
+                            }))
+                    .build(), "Help for every Lobby command", List.of("lhelp"));
 
             commands.register(new com.sasha.lobby.hologram.HologramCommands(this, holograms).build(),
                     "Make and edit the lobby's holograms", List.of("lobbyholo", "hologram"));

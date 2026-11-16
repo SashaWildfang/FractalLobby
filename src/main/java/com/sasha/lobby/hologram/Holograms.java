@@ -60,6 +60,8 @@ public final class Holograms implements Listener {
     private final Lobby plugin;
     private final File folder;
     private final Map<String, Live> live = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    /** Holograms that belong to something else (an NPC's label): not saved here, and kept across /holo reload. */
+    private final Map<String, Live> attached = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private BukkitTask task;
     private long ticks;
 
@@ -88,11 +90,59 @@ public final class Holograms implements Listener {
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 1L, STEP);
     }
 
+    /** Takes the file holograms down (attached ones stay; they're despawned only by {@link #shutdown}). */
     public void stop() {
         if (task != null) task.cancel();
         task = null;
         live.values().forEach(Live::despawn);
         live.clear();
+        attached.values().forEach(Live::despawn);
+    }
+
+    public void shutdown() {
+        stop();
+        attached.clear();
+    }
+
+    /** Shows a hologram owned by something else (an NPC), until {@link #detach}. Calling it again replaces it. */
+    public void attach(String key, Hologram holo) {
+        Live old = attached.put(key, new Live(holo));
+        if (old != null) old.despawn();
+    }
+
+    /** Moves an attached hologram (its displays follow on the next tick). */
+    public void moveAttached(String key, Location to) {
+        Live l = attached.get(key);
+        if (l == null || l.holo.location == null || !l.holo.location.getWorld().equals(to.getWorld())
+                || l.holo.location.distanceSquared(to) > 0.0001) {
+            if (l != null) {
+                l.holo.location = to;
+                l.despawn();
+            }
+        }
+    }
+
+    public void detach(String key) {
+        Live old = attached.remove(key);
+        if (old != null) old.despawn();
+    }
+
+    /**
+     * Takes a file hologram out (an NPC took its lines): it stops showing and its file is kept as NAME.yml.old.
+     * Returns its lines, or null if there's no such hologram file.
+     */
+    public Hologram absorb(String name) {
+        File file = new File(folder, name + ".yml");
+        if (!file.isFile()) {
+            File[] files = folder.listFiles((dir, n) -> n.equalsIgnoreCase(name + ".yml"));
+            if (files == null || files.length == 0) return null;
+            file = files[0];
+        }
+        Hologram holo = Hologram.load(file);
+        Live l = live.remove(holo.name);
+        if (l != null) l.despawn();
+        file.renameTo(new File(folder, file.getName() + ".old"));
+        return holo;
     }
 
     /** The first time: DecentHolograms' hologram files are copied over as they are. */
@@ -160,7 +210,7 @@ public final class Holograms implements Listener {
 
     private void tick() {
         ticks++;
-        for (Live l : live.values()) {
+        for (Live l : (Iterable<Live>) () -> java.util.stream.Stream.concat(live.values().stream(), attached.values().stream()).iterator()) {
             try {
                 l.tick();
             } catch (RuntimeException | LinkageError e) {
@@ -401,6 +451,7 @@ public final class Holograms implements Listener {
     private Live owner(Entity entity) {
         if (!(entity instanceof Interaction)) return null;
         for (Live l : live.values()) if (l.clickBox != null && l.clickBox.equals(entity)) return l;
+        for (Live l : attached.values()) if (l.clickBox != null && l.clickBox.equals(entity)) return l;
         return null;
     }
 
@@ -468,6 +519,7 @@ public final class Holograms implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         for (Live l : live.values()) l.forget(event.getPlayer().getUniqueId());
+        for (Live l : attached.values()) l.forget(event.getPlayer().getUniqueId());
         lastClick.remove(event.getPlayer().getUniqueId());
     }
 

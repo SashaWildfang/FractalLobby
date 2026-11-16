@@ -280,7 +280,7 @@ public final class HologramCommands {
     }
 
     private int help(CommandSender sender) {
-        for (String line : messages().lines("holo.help")) sender.sendMessage(messages().render(line));
+        plugin.help().show(sender, "holograms");
         return 1;
     }
 }

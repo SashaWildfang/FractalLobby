@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 21
+messages-version: 22
 
 theme:
   primary: "#B266FF"
@@ -619,3 +619,19 @@ holo:
     - "<white>/holo action <name> <click> <TYPE:value></white> <muted>- MESSAGE, COMMAND, CONSOLE, CONNECT, SOUND, TELEPORT, NEXT_PAGE"
     - "<white>/holo addpage <name></white> <muted>| <white>/holo list</white> | <white>/holo near</white> | <white>/holo reload</white>"
     - "<muted>Text: & codes, hex colours, MiniMessage, {player}, placeholders, and DecentHolograms' gradients and animations"
+
+# /npc: the lobby's NPCs (npcs.yml)
+npc:
+  created: "<prefix><good>NPC <white><name></white> made where you stand, with your skin. <muted>/lobbyhelp npcs"
+  removed: "<prefix><secondary>NPC <white><name></white> removed."
+  saved: "<prefix><good>NPC <white><name></white> saved."
+  moved: "<prefix><good>NPC <white><name></white> moved to where you're standing."
+  reloaded: "<prefix><good>NPCs reloaded (<white><count></white>)."
+  exists: "<prefix><bad>There's already an NPC called <white><name></white>."
+  unknown: "<prefix><bad>There's no NPC called <white><name></white>. <muted>/npc list"
+  no-line: "<prefix><bad>Its hologram has no such line. <muted>/npc info <name>"
+  bad-slot: "<prefix><bad>Slots: mainhand, offhand, head, chest, legs, feet."
+  bad-colour: "<prefix><bad>That's not a colour. <muted>Try light_purple, aqua, gold..."
+  list-header: "<prefix><secondary>NPCs (<white><count></white>):"
+  list-line: "<muted> • <white><name></white> <dark_gray><where>"
+  info: "<prefix><secondary>NPC <white><name></white> <muted>skin: <white><skin></white>, clicks: <white><actions>"
