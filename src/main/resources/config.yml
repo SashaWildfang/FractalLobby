@@ -232,6 +232,17 @@ parkour:
   rank-search: 100
 
 
+# ── Playtime leaderboard ────────────────────────────────────────
+# /lobbyplaytime          puts a hologram of the longest network
+#                          playtimes where you stand
+# /lobbyplaytime move     moves it to exactly where you stand
+# /lobbyplaytime remove   takes it away
+# The times come from Core on the proxy (Core 1.2.0 or newer).
+playtime:
+  # How many players the hologram lists (1-20).
+  hologram-top: 10
+
+
 # ── Punching ────────────────────────────────────────────────────
 # Players with lobby.punch can punch staff to launch them into the sky
 # (it never hurts). Staff with lobby.punch.immune can't be punched.

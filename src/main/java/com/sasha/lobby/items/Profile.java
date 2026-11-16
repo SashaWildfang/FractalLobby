@@ -110,9 +110,11 @@ public final class Profile implements Listener {
         String prefix = plugin.playerFormat().prefix(player);
         Component rank = prefix.isBlank() ? messages.component("profile.no-rank") : plugin.playerFormat().render(player, prefix.trim());
 
+        // Network playtime from Core on the proxy; without Core, the time spent on this server.
+        var network = plugin.coreLink().state(player);
+        long networkPlaytime = network == null ? -1 : network.playtimeNow();
         long ticks = player.getStatistic(Statistic.PLAY_ONE_MINUTE); // despite the name, it's in ticks
-        long minutes = ticks / 20 / 60;
-        String playtime = minutes >= 60 ? (minutes / 60) + "h " + (minutes % 60) + "m" : minutes + "m";
+        String playtime = com.sasha.lobby.proxy.CoreLink.duration(networkPlaytime >= 0 ? networkPlaytime : ticks * 50);
         LobbyConfig.Scoreboard board = plugin.lobbyConfig().scoreboard();
         String joined = board.dateFormat().format(Instant.ofEpochMilli(player.getFirstPlayed()).atZone(board.timeZone()));
 

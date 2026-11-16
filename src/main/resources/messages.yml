@@ -321,6 +321,18 @@ punch:
   punched: "<prefix><accent><puncher></accent> <secondary>punched you into the sky!"
   cooldown: "<muted>You can punch again in <white><seconds>s"
 
+# The network playtime leaderboard hologram (/lobbyplaytime). Times come from Core on the proxy.
+playtime:
+  placed: "<prefix><good>Playtime leaderboard hologram placed here."
+  moved: "<prefix><good>Playtime leaderboard hologram moved to where you're standing."
+  removed: "<prefix><secondary>Playtime leaderboard hologram removed."
+  hologram:
+    title: "<brand><bold>Top Playtime</bold></brand>"
+    # One per player (how many: playtime.hologram-top in config.yml). <position> <name-rank> <name> <time>
+    top-line: "<muted>#<position> <white><name-rank><name> <dark_gray>- <primary><time>"
+    empty: "<muted>Loading…"
+    you: "<secondary>Your playtime: <primary><time>"   # <time>
+
 # The profile menu (the player's head in the hotbar).
 # The head shows: <player> <rank> <joined> <playtime> <parkour-best> <parkour-rank> <chat-color> <trail> <glow>
 profile:

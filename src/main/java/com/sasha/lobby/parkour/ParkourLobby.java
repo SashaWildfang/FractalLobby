@@ -76,6 +76,9 @@ public final class ParkourLobby implements Listener {
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, Long> lastOpened = new HashMap<>();
     private final List<Hologram> holograms;
+    /** The network playtime leaderboard (from Core on the proxy); kept apart, as clicking it opens nothing. */
+    private final Hologram playtime;
+    private int playtimeAsked;
     private final BukkitTask displayTask;
 
     public ParkourLobby(Lobby plugin) {
@@ -86,6 +89,7 @@ public final class ParkourLobby implements Listener {
         holograms = List.of(
                 new Hologram("hologram", "fractal_lobby_parkour_holo_", this::plateText),
                 new Hologram("leaderboard", "fractal_lobby_parkour_board_", this::leaderboardText));
+        playtime = new Hologram("playtime", "fractal_lobby_playtime_board_", this::playtimeText);
         displayTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::updateDisplays, 1L, 20L);
     }
 
@@ -133,7 +137,8 @@ public final class ParkourLobby implements Listener {
         save();
         hologram(which).remove();
         updateDisplays();
-        plugin.messages().send(admin, which.equals("leaderboard") ? "parkour.leaderboard-moved" : "parkour.hologram-moved");
+        plugin.messages().send(admin, which.equals("playtime") ? "playtime.moved"
+                : which.equals("leaderboard") ? "parkour.leaderboard-moved" : "parkour.hologram-moved");
     }
 
     /** Takes a hologram away ("hologram" or "leaderboard"); /lobbyparkour setup or leaderboard puts it back. */
@@ -141,11 +146,46 @@ public final class ParkourLobby implements Listener {
         data.set(which, null);
         save();
         hologram(which).remove();
-        plugin.messages().send(admin, which.equals("leaderboard") ? "parkour.leaderboard-removed" : "parkour.hologram-removed");
+        plugin.messages().send(admin, which.equals("playtime") ? "playtime.removed"
+                : which.equals("leaderboard") ? "parkour.leaderboard-removed" : "parkour.hologram-removed");
     }
 
     private Hologram hologram(String which) {
-        return which.equals("leaderboard") ? holograms.get(1) : holograms.getFirst();
+        return which.equals("playtime") ? playtime : which.equals("leaderboard") ? holograms.get(1) : holograms.getFirst();
+    }
+
+    /** Puts the playtime leaderboard hologram where the admin stands (centred on the block). */
+    public void setupPlaytime(Player admin) {
+        saveLocation("playtime", admin.getLocation().getBlock().getLocation().add(0.5, 0.0, 0.5));
+        save();
+        playtime.remove();
+        playtimeAsked = 0;
+        updateDisplays();
+        plugin.messages().send(admin, "playtime.placed");
+    }
+
+    /** The playtime leaderboard: the longest network playtimes, then the viewer's own. */
+    private List<Component> playtimeText(Player viewer) {
+        Messages messages = plugin.messages();
+        List<Component> lines = new ArrayList<>();
+        lines.add(messages.component("playtime.hologram.title"));
+        var top = plugin.coreLink().topPlaytime();
+        if (top.isEmpty()) lines.add(messages.component("playtime.hologram.empty"));
+        int position = 1;
+        for (var entry : top) {
+            String rank = plugin.luckPerms()
+                    ? LegacyCodes.toMiniMessage(LuckPermsHook.prefix(entry.name())).replace("<reset>", "<reset><!italic>") : "";
+            lines.add(messages.component("playtime.hologram.top-line", Messages.arg("position", position++),
+                    Messages.name("name", entry.name()), Placeholder.parsed("name-rank", rank),
+                    Messages.arg("time", com.sasha.lobby.proxy.CoreLink.duration(entry.millis()))));
+        }
+        var state = plugin.coreLink().state(viewer);
+        if (state != null && state.playtimeNow() >= 0) {
+            lines.add(Component.empty());
+            lines.add(messages.component("playtime.hologram.you",
+                    Messages.arg("time", com.sasha.lobby.proxy.CoreLink.duration(state.playtimeNow()))));
+        }
+        return lines;
     }
 
     public Leaderboard leaderboard() {
@@ -160,16 +200,23 @@ public final class ParkourLobby implements Listener {
             if (file.exists()) plugin.getLogger().warning("Could not read parkour.yml: " + e.getMessage());
         }
         holograms.forEach(Hologram::remove);
+        playtime.remove();
         updateDisplays();
     }
 
     public void shutdown() {
         displayTask.cancel();
         holograms.forEach(Hologram::remove);
+        playtime.remove();
     }
 
     private void updateDisplays() {
         for (Hologram hologram : holograms) hologram.update();
+        playtime.update();
+        // Ask Core for the longest playtimes now and then (this runs every second).
+        if (readLocation("playtime") != null && playtimeAsked++ % 15 == 0) {
+            plugin.coreLink().requestTopPlaytime(Math.max(1, Math.min(20, plugin.getConfig().getInt("playtime.hologram-top", 10))));
+        }
         // Look up the top 10's ranks ahead of time, so the leaderboard menu has them when it opens.
         if (plugin.luckPerms() && leaderboard.available()) {
             plugin.getServer().getOnlinePlayers().stream().findFirst().ifPresent(anyone -> {
@@ -495,6 +542,7 @@ public final class ParkourLobby implements Listener {
         cooldowns.remove(id);
         lastOpened.remove(id);
         for (Hologram hologram : holograms) hologram.forget(id);
+        playtime.forget(id);
     }
 
     // ---------------------------------------------------------------- parkour.yml

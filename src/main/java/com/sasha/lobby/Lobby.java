@@ -289,6 +289,15 @@ public final class Lobby extends JavaPlugin implements Listener {
                                     .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "hologram")))))
                     .build(), "Set up the lobby parkour course and displays", List.of());
 
+            commands.register(Commands.literal("lobbyplaytime")
+                    .requires(source -> source.getSender().hasPermission("lobby.admin"))
+                    .executes(context -> asPlayer(context.getSource(), player -> parkour.setupPlaytime(player)))
+                    .then(Commands.literal("move")
+                            .executes(context -> asPlayer(context.getSource(), player -> parkour.moveHologram(player, "playtime"))))
+                    .then(Commands.literal("remove")
+                            .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "playtime"))))
+                    .build(), "Place, move or remove the playtime leaderboard hologram", List.of());
+
             commands.register(Commands.literal("spawn")
                     .requires(source -> source.getSender().hasPermission("lobby.spawn"))
                     .executes(context -> asPlayer(context.getSource(), player -> {

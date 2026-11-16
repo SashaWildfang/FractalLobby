@@ -683,3 +683,8 @@ model('double-jump', art(BOOT, {'B': hexc('#E0483C'), 'C': hexc('#FFE680'), 'S':
 BOOT = ["......TTTTT.....", "......BBBBB.....", ".W....BBBBB.....", "WWW...BBBBB.....", "WWWWW.BBBBB.....", ".WWWWWBBBBB.....", "..WWWWBBBBBBB...",
         "....WWBBBBBBBBB.", "......BBBBBBBBBB", "......BBBBBBBBBB", "......SSSSSSSSSS"]
 model('double-jump', art(BOOT, {'B': hexc('#E0483C'), 'T': hexc('#FFE680'), 'S': (0x6b, 0x40, 0x24), 'W': (0xf4, 0xf5, 0xfb)}, shade=False))
+# Double Jump: an original green boot on a spring
+BOOT = ["...TTTTTT.......", "...GGGGGG.......", "...GGGGGG.......", "...GLGGGG.......", "...GLGGGG.......", "...GGGGGGGGG....", "...GGGGGGGGGGG..",
+        "...GGGGGGGGGGGG.", "...DDDDDDDDDDDD.", "....SSSSSSSS....", ".....SSSSSS.....", "....SSSSSSSS....", ".....SSSSSS....."]
+model('double-jump', art(BOOT, {'G': (0x4c, 0xb8, 0x3a), 'L': (0x9a, 0xe6, 0x7a), 'D': (0x2f, 0x7d, 0x28), 'T': (0xf4, 0xf5, 0xfb),
+                                'S': lambda x, y, w, h: (0xc9, 0xcc, 0xdb) if y % 2 else (0x8a, 0x8f, 0xae)}, shade=False))

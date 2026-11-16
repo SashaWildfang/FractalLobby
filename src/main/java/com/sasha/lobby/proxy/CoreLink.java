@@ -18,6 +18,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +43,12 @@ public final class CoreLink implements PluginMessageListener, Listener {
     public static final String VANISH = "vanish";
 
     /** A player's network settings as Core last sent them: the toggles they may change, and who they ignore. */
-    public record State(Map<String, Boolean> toggles, Map<UUID, String> ignored) {
+    public record State(Map<String, Boolean> toggles, Map<UUID, String> ignored, long playtime, long receivedAt) {
+        /** Network playtime right now in milliseconds, or -1 if Core didn't send it (an older Core). */
+        public long playtimeNow() {
+            return playtime < 0 ? -1 : playtime + (System.currentTimeMillis() - receivedAt);
+        }
+
         public boolean has(String toggle) {
             return toggles.containsKey(toggle);
         }
@@ -59,6 +65,7 @@ public final class CoreLink implements PluginMessageListener, Listener {
     };
     /** Whether Core has ever answered (then join messages wait a moment for vanish to be known). */
     private volatile boolean coreSeen;
+    private volatile List<TopPlaytime> topPlaytime = List.of();
 
     public CoreLink(Lobby plugin) {
         this.plugin = plugin;
@@ -116,7 +123,7 @@ public final class CoreLink implements PluginMessageListener, Listener {
         if (state == null || !state.has(toggle)) return;
         Map<String, Boolean> toggles = new LinkedHashMap<>(state.toggles());
         toggles.put(toggle, on);
-        states.put(player.getUniqueId(), new State(Collections.unmodifiableMap(toggles), state.ignored()));
+        states.put(player.getUniqueId(), new State(Collections.unmodifiableMap(toggles), state.ignored(), state.playtime(), state.receivedAt()));
         send(player, "Set", out -> {
             out.writeUTF(toggle);
             out.writeBoolean(on);
@@ -128,7 +135,7 @@ public final class CoreLink implements PluginMessageListener, Listener {
         if (state == null) return;
         Map<UUID, String> list = new LinkedHashMap<>(state.ignored());
         list.remove(ignored);
-        states.put(player.getUniqueId(), new State(state.toggles(), Collections.unmodifiableMap(list)));
+        states.put(player.getUniqueId(), new State(state.toggles(), Collections.unmodifiableMap(list), state.playtime(), state.receivedAt()));
         send(player, "Unignore", out -> out.writeUTF(ignored.toString()));
     }
 
@@ -153,6 +160,12 @@ public final class CoreLink implements PluginMessageListener, Listener {
     @Override
     public void onPluginMessageReceived(String channel, Player carrier, byte[] message) {
         if (!CHANNEL.equals(channel)) return;
+        List<TopPlaytime> top = decodeTop(message);
+        if (top != null) {
+            coreSeen = true;
+            topPlaytime = top;
+            return;
+        }
         Decoded decoded = decode(message);
         if (decoded == null) return;
         coreSeen = true;
@@ -165,6 +178,41 @@ public final class CoreLink implements PluginMessageListener, Listener {
     record Decoded(UUID player, State state) {
     }
 
+    /** One line of the network playtime leaderboard. */
+    public record TopPlaytime(String name, long millis) {
+    }
+
+    /** The longest playtimes on the network, most first (empty until Core answers). */
+    public List<TopPlaytime> topPlaytime() {
+        return topPlaytime;
+    }
+
+    /** Asks Core for the longest playtimes; the answer arrives a moment later. Needs someone online. */
+    public void requestTopPlaytime(int limit) {
+        plugin.getServer().getOnlinePlayers().stream().findFirst().ifPresent(carrier -> send(carrier, "Top", out -> out.writeInt(limit)));
+    }
+
+    /** A "Top" message from Core, or null for anything else. */
+    static List<TopPlaytime> decodeTop(byte[] message) {
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!"Top".equals(in.readUTF())) return null;
+            List<TopPlaytime> top = new java.util.ArrayList<>();
+            for (int i = in.readInt(); i > 0; i--) top.add(new TopPlaytime(in.readUTF(), in.readLong()));
+            return List.copyOf(top);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** A length of time like Core's /playtime shows it: "3d 4h 12m", "4h 12m", "12m". */
+    public static String duration(long millis) {
+        long seconds = Math.max(0, millis / 1000);
+        long days = seconds / 86400, hours = seconds % 86400 / 3600, minutes = seconds % 3600 / 60;
+        if (days > 0) return days + "d " + hours + "h " + minutes + "m";
+        if (hours > 0) return hours + "h " + minutes + "m";
+        return minutes + "m";
+    }
+
     /** A "State" message from Core, or null for anything else (like the older "Ignores"). */
     static Decoded decode(byte[] message) {
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
@@ -174,7 +222,9 @@ public final class CoreLink implements PluginMessageListener, Listener {
             for (int i = in.readInt(); i > 0; i--) toggles.put(in.readUTF(), in.readBoolean());
             Map<UUID, String> ignored = new LinkedHashMap<>();
             for (int i = in.readInt(); i > 0; i--) ignored.put(UUID.fromString(in.readUTF()), in.readUTF());
-            return new Decoded(player, new State(Collections.unmodifiableMap(toggles), Collections.unmodifiableMap(ignored)));
+            long playtime = in.available() >= 8 ? in.readLong() : -1; // older Cores don't send it
+            return new Decoded(player, new State(Collections.unmodifiableMap(toggles), Collections.unmodifiableMap(ignored),
+                    playtime, System.currentTimeMillis()));
         } catch (IOException | IllegalArgumentException e) {
             return null;
         }
