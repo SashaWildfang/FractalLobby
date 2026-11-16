@@ -575,3 +575,8 @@ dr.ellipse((8, 2, 12, 6), fill=(0xff, 0xb3, 0x6b, 255))
 dr.ellipse((9, 2, 10, 3), fill=(0xff, 0xf0, 0xd8, 255))
 staff = outline(staff)
 model('audience-staff', staff)
+# Donors Only: a bigger crown
+CROWN2 = ["#.....##.....#", "##....##....##", "###..####..###", "####.####.####", "##############", "##############",
+          "##RR##BB##GG##", "##############", "##############"]
+model('audience-donors', art(CROWN2, {'#': lambda x, y, w, h: mix(hexc('#FFE680'), hexc('#E0A030'), y / (h - 1)),
+                                      'R': hexc('#FF5A6E'), 'B': hexc('#7FA8FF'), 'G': hexc('#9BFFC4')}))
