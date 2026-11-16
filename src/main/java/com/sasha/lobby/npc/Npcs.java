@@ -87,9 +87,24 @@ public final class Npcs implements Listener {
             }
         }
         addNewDefaults();
+        dropClickWords();
         for (Entity old : allTagged()) old.remove();
         for (Npc npc : npcs.values()) attachHologram(npc);
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 1L, 2L);
+    }
+
+    /** The mouse icon already says which click: labels that also spelled it out ("right click to start") lose the words. */
+    private void dropClickWords() {
+        boolean changed = false;
+        for (Npc npc : npcs.values()) {
+            for (var line : npc.lines) {
+                if (line.content.contains("\uF011") && line.content.contains("ʀɪɢʜᴛ ᴄʟɪᴄᴋ ")) {
+                    line.content = line.content.replace("ʀɪɢʜᴛ ᴄʟɪᴄᴋ ", "");
+                    changed = true;
+                }
+            }
+        }
+        if (changed) save();
     }
 
     /** Built-in NPCs that came in later updates: each is added once (deleting it afterwards keeps it gone). */

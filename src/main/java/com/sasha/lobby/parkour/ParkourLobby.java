@@ -149,7 +149,7 @@ public final class ParkourLobby implements Listener {
         // Its label showed the left-click mouse: now the right-click one.
         for (var line : npc.lines) {
             if (line.content.contains("\uF010") && line.content.contains("ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ") && !line.content.contains("ʀɪɢʜᴛ")) {
-                line.content = line.content.replace("\uF010", "\uF011").replace("ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ", "ʀɪɢʜᴛ ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ");
+                line.content = line.content.replace("\uF010", "\uF011").replace("ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ", "ᴛᴏ ꜱᴛᴀʀᴛ");
                 changed = true;
             }
         }

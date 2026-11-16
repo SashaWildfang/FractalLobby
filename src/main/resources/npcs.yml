@@ -191,7 +191,7 @@ npcs:
         height: 0.28
       - content: '&#B8A9D9ʏᴏᴜʀ ʙᴇꜱᴛ: &f&l%lobby_parkour_best% &#8C7BB0(%lobby_parkour_rank%)'
         height: 0.28
-      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ʀɪɢʜᴛ ᴄʟɪᴄᴋ ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
+      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ꜱᴛᴀʀᴛ</#ANIM>'
         height: 0.28
   Discord:
     location:
@@ -230,5 +230,5 @@ npcs:
         height: 0.28
       - content: '&#9AA4FFdc.fractalsmp.net'
         height: 0.28
-      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ʀɪɢʜᴛ ᴄʟɪᴄᴋ ꜰᴏʀ ᴛʜᴇ ʟɪɴᴋ</#ANIM>'
+      - content: '<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ꜰᴏʀ ᴛʜᴇ ʟɪɴᴋ</#ANIM>'
         height: 0.28
