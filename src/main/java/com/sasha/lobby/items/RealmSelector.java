@@ -64,8 +64,13 @@ public final class RealmSelector implements Listener {
 
     /** The open menu; being the inventory's holder is how its clicks are recognised. */
     private static final class Menu implements InventoryHolder {
+        private final Player viewer;
         private Inventory inventory;
         private final Map<Integer, LobbyConfig.SelectorServer> realms = new HashMap<>();
+
+        Menu(Player viewer) {
+            this.viewer = viewer;
+        }
 
         @Override
         public Inventory getInventory() {
@@ -75,7 +80,7 @@ public final class RealmSelector implements Listener {
 
     public void open(Player player) {
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
-        Menu menu = new Menu();
+        Menu menu = new Menu(player);
         menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, plugin.messages().component("realm-selector.title"));
         ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
@@ -84,10 +89,27 @@ public final class RealmSelector implements Listener {
         player.openInventory(menu.inventory);
     }
 
+    /**
+     * Whether a realm is left out of the menu for this player: offline realms always (with hide-down-realms
+     * on), and realms under maintenance unless the player can join them anyway (lobby.bypass.maintenance).
+     */
+    private boolean hidden(Player viewer, ServerStatus.State state) {
+        if (!plugin.lobbyConfig().selector().hideDownRealms()) return false;
+        return state == ServerStatus.State.OFFLINE
+                || state == ServerStatus.State.MAINTENANCE && !viewer.hasPermission(BYPASS_MAINTENANCE);
+    }
+
     private void draw(Menu menu) {
         Messages messages = plugin.messages();
+        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
+        filler.editMeta(meta -> meta.setHideTooltip(true));
         for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
             ServerStatus.State state = plugin.serverStatus().status(realm.server()).state();
+            if (hidden(menu.viewer, state)) {
+                menu.inventory.setItem(realm.slot(), filler);
+                menu.realms.remove(realm.slot());
+                continue;
+            }
             TagResolver args = args(realm);
             List<Component> lore = new ArrayList<>();
             for (String line : realm.description()) lore.add(messages.render("<!italic>" + line, args));

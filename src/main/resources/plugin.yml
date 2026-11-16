@@ -9,6 +9,26 @@ softdepend: [PlaceholderAPI, LuckPerms]
 # Commands are registered in code through Paper's command API (see LobbyCommand).
 
 permissions:
+  lobby.*:
+    description: Every Lobby permission (give it in LuckPerms; nobody has it by default)
+    default: false
+    children:
+      lobby.staff: true
+      lobby.donor: true
+      lobby.punch: true
+      lobby.punch.immune: true
+      lobby.trail.donor: true
+      lobby.doublejump: true
+      lobby.bypass.maintenance: true
+      lobby.bypass.full: true
+      lobby.admin: true
+      lobby.build: true
+      lobby.spawn: true
+      lobby.cmd.glow: true
+      lobby.cmd.chatcolor: true
+      lobby.chatcolor.gradients: true
+      lobby.chatcolor.rainbow: true
+      lobby.cmd.flyingminecart: true
   lobby.staff:
     description: Counts as staff (settings, join sounds) and can move and drop items in the lobby
     default: op

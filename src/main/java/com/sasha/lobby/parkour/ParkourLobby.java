@@ -4,7 +4,9 @@
 package com.sasha.lobby.parkour;
 
 import com.sasha.lobby.Lobby;
+import com.sasha.lobby.config.LegacyCodes;
 import com.sasha.lobby.config.Messages;
+import com.sasha.lobby.hook.LuckPermsHook;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
@@ -168,9 +170,12 @@ public final class ParkourLobby implements Listener {
         return lines;
     }
 
-    private static TagResolver row(Leaderboard.Entry entry) {
+    /** A leaderboard row: <position> <name> <score>, and <name-rank> (the player's LuckPerms prefix). */
+    private TagResolver row(Leaderboard.Entry entry) {
+        String rank = plugin.luckPerms() ? LegacyCodes.toMiniMessage(LuckPermsHook.prefix(entry.name())) : "";
         return TagResolver.resolver(Messages.arg("position", entry.position()),
-                Messages.name("name", entry.name()), Messages.arg("score", entry.score()));
+                Messages.name("name", entry.name()), Messages.arg("score", entry.score()),
+                Placeholder.parsed("name-rank", rank));
     }
 
     /** The score and rank tags for the viewer themself. */

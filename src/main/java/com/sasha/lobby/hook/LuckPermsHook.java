@@ -32,6 +32,37 @@ public final class LuckPermsHook {
         return group == null ? 0 : group.getWeight().orElse(0);
     }
 
+    /** Prefixes by lower-case name, for players who may be offline (leaderboards). */
+    private static final java.util.Map<String, Cached> BY_NAME = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long KEEP_MILLIS = 5 * 60 * 1000;
+
+    private record Cached(String prefix, long at) {
+    }
+
+    /**
+     * A player's rank prefix by name, online or not. Offline players are looked up in the background, so
+     * the first call can return "" and the next ones the prefix (kept 5 minutes).
+     */
+    public static String prefix(String name) {
+        org.bukkit.entity.Player online = org.bukkit.Bukkit.getPlayerExact(name);
+        if (online != null) return prefix(online);
+        String key = name.toLowerCase(java.util.Locale.ROOT);
+        Cached cached = BY_NAME.get(key);
+        long now = System.currentTimeMillis();
+        if (cached == null || now - cached.at() > KEEP_MILLIS) {
+            BY_NAME.put(key, new Cached(cached == null ? "" : cached.prefix(), now)); // one lookup at a time
+            var users = LuckPermsProvider.get().getUserManager();
+            users.lookupUniqueId(name)
+                    .thenCompose(id -> id == null ? java.util.concurrent.CompletableFuture.completedFuture(null) : users.loadUser(id))
+                    .thenAccept(user -> {
+                        String prefix = user == null ? null : user.getCachedData().getMetaData().getPrefix();
+                        BY_NAME.put(key, new Cached(prefix == null ? "" : prefix, System.currentTimeMillis()));
+                    })
+                    .exceptionally(error -> null);
+        }
+        return cached == null ? "" : cached.prefix();
+    }
+
     private static CachedMetaData meta(Player player) {
         return LuckPermsProvider.get().getPlayerAdapter(Player.class).getMetaData(player);
     }

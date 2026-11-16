@@ -529,6 +529,9 @@ realm-selector:
     # A realm whose MOTD or version text has one of these is shown as
     # under maintenance (works with most maintenance plugins).
     maintenance-words: ["maintenance"]
+    # Leave offline realms out of the menu, and realms under maintenance
+    # too (except for players with lobby.bypass.maintenance).
+    hide-down-realms: true
   realms:
     survival:
       # Server name in the proxy config.

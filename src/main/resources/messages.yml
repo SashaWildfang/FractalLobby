@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 6
+messages-version: 7
 
 theme:
   primary: "#B266FF"
@@ -461,7 +461,8 @@ parkour:
   leaderboard:
     title: "<brand><bold>Parkour Leaderboard</bold></brand>"
     # One per best score (how many: parkour.hologram-top in config.yml). <position> <name> <score>
-    top-line: "<muted>#<position> <white><name> <dark_gray>- <primary><score>"
+    # <name-rank> is the player's rank prefix (LuckPerms); the name takes its colour.
+    top-line: "<muted>#<position> <white><name-rank><name> <dark_gray>- <primary><score>"
     no-scores: "<muted>No scores yet. Be the first!"
     you: "<secondary>Your best: <primary><score> <muted>(<rank>)"   # <score> <rank>
     hint: "<dark_gray>▸ <accent>Click</accent> <muted>to see the top 10"
@@ -469,7 +470,7 @@ parkour:
   unranked: "unranked"
   menu:
     title: "<brand><bold>Parkour Leaderboard</bold></brand>"
-    entry-name: "<primary>#<position> <white><name>"   # <position> <name> <score> <time>
+    entry-name: "<primary>#<position> <white><name-rank><name>"   # <position> <name-rank> <name> <score> <time>
     entry-lore:
       - "<muted>Best: <white><score> jumps"
       - "<muted>Time: <white><time>"
