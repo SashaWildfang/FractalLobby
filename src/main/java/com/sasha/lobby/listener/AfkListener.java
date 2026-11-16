@@ -62,8 +62,8 @@ public final class AfkListener implements Listener {
         long timeout = timeoutMillis();
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             boolean idle = enabled() && now - lastActive.getOrDefault(player.getUniqueId(), now) >= timeout;
-            if (idle && afk.add(player.getUniqueId())) plugin.display().refreshStatus(player);
-            else if (!idle && afk.remove(player.getUniqueId())) plugin.display().refreshStatus(player);
+            if (idle && afk.add(player.getUniqueId())) plugin.display().refreshAfk(player);
+            else if (!idle && afk.remove(player.getUniqueId())) plugin.display().refreshAfk(player);
         }
     }
 
@@ -71,8 +71,8 @@ public final class AfkListener implements Listener {
         lastActive.put(player.getUniqueId(), System.currentTimeMillis());
         if (afk.remove(player.getUniqueId())) {
             // Chat and commands arrive off the main thread; the name line is changed on it.
-            if (plugin.getServer().isPrimaryThread()) plugin.display().refreshStatus(player);
-            else plugin.getServer().getScheduler().runTask(plugin, () -> plugin.display().refreshStatus(player));
+            if (plugin.getServer().isPrimaryThread()) plugin.display().refreshAfk(player);
+            else plugin.getServer().getScheduler().runTask(plugin, () -> plugin.display().refreshAfk(player));
         }
     }
 

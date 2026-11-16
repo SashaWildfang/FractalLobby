@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 16
+messages-version: 17
 
 theme:
   primary: "#B266FF"
@@ -460,6 +460,8 @@ status:
 # Shown under a player's name instead of their status after afk.minutes idle (config.yml). <icon> = the pack's clock
 afk:
   below-name: "<icon> <#FF5A5A><bold>AFK</bold>"
+  # In place of the rank above the head and in the tab list while AFK
+  tag: "<#FF5A5A><bold>AFK</bold> "
 
 # The particle trail menu (from the profile). Trails are listed in config.yml.
 trails:

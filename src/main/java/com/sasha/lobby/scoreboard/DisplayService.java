@@ -262,20 +262,34 @@ public final class DisplayService {
 
         // The colour right before %player% colours the name itself (teams only take named colours).
         TextColor nameColour = LegacyCodes.lastColor(plugin.playerFormat().prepare(player, before));
-        Nametag tag = new Nametag(
-                !config.enabled() || before.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, before),
-                !config.enabled() || after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after),
-                nameColour == null ? null : NamedTextColor.nearestTo(nameColour),
-                config.enabled() && config.applyToTablist() ? plugin.playerFormat().render(player, format) : null);
+        Nametag tag;
+        if (plugin.afk().isAfk(player)) {
+            // AFK: a red AFK tag in place of the rank, above the head and in the tab list, until they move.
+            Component afkTag = plugin.messages().component("afk.tag");
+            Component rest = plugin.playerFormat().render(player, split < 0 ? "%player%" : format.substring(split));
+            if (nameColour != null) rest = rest.colorIfAbsent(nameColour);
+            tag = new Nametag(afkTag,
+                    !config.enabled() || after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after),
+                    nameColour == null ? null : NamedTextColor.nearestTo(nameColour),
+                    Component.textOfChildren(afkTag, rest));
+        } else {
+            tag = new Nametag(
+                    !config.enabled() || before.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, before),
+                    !config.enabled() || after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after),
+                    nameColour == null ? null : NamedTextColor.nearestTo(nameColour),
+                    config.enabled() && config.applyToTablist() ? plugin.playerFormat().render(player, format) : null);
+        }
 
         // Tab list order: higher LuckPerms weight first (the game sorts by this before anything else).
         int order = plugin.lobbyConfig().tablistSortByRank() ? Math.max(0, plugin.playerFormat().weight(player)) : 0;
         if (player.getPlayerListOrder() != order) player.setPlayerListOrder(order);
 
-        if (!force && Objects.equals(nametags.get(player.getUniqueId()), tag)) return;
+        Nametag old = nametags.get(player.getUniqueId());
+        if (!force && Objects.equals(old, tag)) return;
         nametags.put(player.getUniqueId(), tag);
         for (Scoreboard board : boards.values()) applyTeam(board, player, tag);
         if (tag.listName() != null) player.playerListName(tag.listName());
+        else if (old != null && old.listName() != null) player.playerListName(null); // back from AFK
     }
 
     private void applyTeam(Scoreboard board, Player player, Nametag tag) {
@@ -297,6 +311,12 @@ public final class DisplayService {
     private static final String STATUS = "lbstatus";
     /** Pulls the next text back 4px: cancels the space the game puts between the line and the objective's name. */
     private static final Component BACKSPACE = Component.text("\uF003").font(net.kyori.adventure.key.Key.key("fractal", "lobby"));
+
+    /** A player went AFK or came back: their rank tag (head and tab list) and the line under their name. */
+    public void refreshAfk(Player player) {
+        refreshNametag(player, false);
+        refreshStatus(player);
+    }
 
     /** Shows the player's status (or nothing) under their name, on everyone's board. */
     public void refreshStatus(Player player) {
