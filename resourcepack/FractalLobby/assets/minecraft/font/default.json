@@ -1,0 +1,319 @@
+{
+ "providers": [
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/member.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/guardian.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/champion.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/warlord.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/titan.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/king.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/twitch.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/tiktok.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/youtube.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/helper.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/builder.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/mod.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/srmod.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/dev.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/admin.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/sradmin.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/manager.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/owner.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/guardian.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/champion.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/warlord.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/titan.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/king.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/twitch.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/tiktok.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/youtube.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/helper.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/builder.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/mod.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/srmod.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/dev.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/admin.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/sradmin.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/manager.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "minecraft:gui/ranks/badges/owner.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    ""
+   ]
+  }
+ ]
+}
