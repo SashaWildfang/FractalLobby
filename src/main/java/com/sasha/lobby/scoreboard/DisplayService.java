@@ -265,12 +265,12 @@ public final class DisplayService {
         Nametag tag;
         if (plugin.afk().isAfk(player)) {
             // AFK: a red AFK tag in place of the rank, above the head and in the tab list, until they move.
+            // The name (and so the glow) goes light red (Minecraft's RED, the only light red a team can have).
             Component afkTag = plugin.messages().component("afk.tag");
-            Component rest = plugin.playerFormat().render(player, split < 0 ? "%player%" : format.substring(split));
-            if (nameColour != null) rest = rest.colorIfAbsent(nameColour);
+            Component rest = Component.text(player.getName(), NamedTextColor.RED);
             tag = new Nametag(afkTag,
                     !config.enabled() || after.isEmpty() ? Component.empty() : plugin.playerFormat().render(player, after),
-                    nameColour == null ? null : NamedTextColor.nearestTo(nameColour),
+                    NamedTextColor.RED,
                     Component.textOfChildren(afkTag, rest));
         } else {
             tag = new Nametag(
