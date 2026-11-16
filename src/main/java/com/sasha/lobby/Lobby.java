@@ -228,6 +228,7 @@ public final class Lobby extends JavaPlugin implements Listener {
      * colours, trails, punching and the menus read the config live, so they follow too.
      */
     public void reload() {
+        saveDefaultConfig(); // puts config.yml back if it was deleted (messages.yml does the same when loaded)
         reloadConfig();
         loadSettings();
         proxyCounts.restartTask();

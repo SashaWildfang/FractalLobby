@@ -256,11 +256,14 @@ public final class Settings implements Listener {
 
     private static final class Menu implements InventoryHolder {
         private final Page page;
+        /** Opened from the profile (then Back returns there); from the hotbar item there's no Back. */
+        private final boolean fromProfile;
         private final Map<Integer, Action> actions = new java.util.HashMap<>();
         private Inventory inventory;
 
-        Menu(Page page) {
+        Menu(Page page, boolean fromProfile) {
             this.page = page;
+            this.fromProfile = fromProfile;
         }
 
         @Override
@@ -269,15 +272,21 @@ public final class Settings implements Listener {
         }
     }
 
+    /** Opens settings from the hotbar item (no Back button). */
     public void open(Player player) {
-        Menu menu = new Menu(Page.SETTINGS);
+        open(player, false);
+    }
+
+    /** Opens settings; from the profile, a Back button returns there. */
+    public void open(Player player, boolean fromProfile) {
+        Menu menu = new Menu(Page.SETTINGS, fromProfile);
         menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
     }
 
-    private void openIgnored(Player player) {
-        Menu menu = new Menu(Page.IGNORED);
+    private void openIgnored(Player player, boolean fromProfile) {
+        Menu menu = new Menu(Page.IGNORED, fromProfile);
         menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.ignored-menu.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
@@ -321,8 +330,10 @@ public final class Settings implements Listener {
             drawIgnoredButton(menu, state);
         }
 
-        menu.inventory.setItem(BACK, Profile.button(messages, Material.ARROW, "profile.back"));
-        menu.actions.put(BACK, (who, click) -> plugin.profile().open(who));
+        if (menu.fromProfile) {
+            menu.inventory.setItem(BACK, Profile.button(messages, Material.ARROW, "profile.back"));
+            menu.actions.put(BACK, (who, click) -> plugin.profile().open(who));
+        }
         menu.inventory.setItem(RESET, Profile.button(messages, Material.TNT_MINECART, "settings.reset"));
         menu.actions.put(RESET, (who, click) -> {
             if (!click.isShiftClick()) return;
@@ -396,7 +407,7 @@ public final class Settings implements Listener {
         });
         menu.inventory.setItem(IGNORED_SLOT + 9, pane);
         Action open = (who, click) -> {
-            openIgnored(who);
+            openIgnored(who, menu.fromProfile);
             click(who, 0);
         };
         menu.actions.put(IGNORED_SLOT, open);
@@ -439,7 +450,7 @@ public final class Settings implements Listener {
         }
         menu.inventory.setItem(49, Profile.button(messages, Material.ARROW, "settings.ignored-menu.back"));
         menu.actions.put(49, (who, click) -> {
-            open(who);
+            open(who, menu.fromProfile);
             click(who, 0);
         });
     }

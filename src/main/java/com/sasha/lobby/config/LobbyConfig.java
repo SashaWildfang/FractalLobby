@@ -153,6 +153,15 @@ public record LobbyConfig(
                                  String address, boolean maintenance) {
     }
 
+    /**
+     * A section from the file, or from the plugin's built-in config.yml when the file doesn't have it.
+     * (Bukkit's getConfigurationSection would make an empty section in the file instead, which then gets
+     * saved, leaving realms, colours and trails blank.)
+     */
+    static ConfigurationSection section(FileConfiguration c, String path) {
+        return c.get(path) instanceof ConfigurationSection section ? section : null;
+    }
+
     public static LobbyConfig load(FileConfiguration c, Logger log) {
         return new LobbyConfig(
                 new Spawn(
@@ -249,7 +258,7 @@ public record LobbyConfig(
                         slot(c.getInt("join-items.profile.slot", 2))),
                 selector(c, log),
                 new Border(
-                        c.getBoolean("border.enabled", true),
+                        c.getBoolean("border.enabled", false),
                         Math.max(5, c.getDouble("border.radius", 100)),
                         Math.max(0, c.getInt("border.warning-distance", 5))),
                 new FlyingMinecarts(
@@ -289,7 +298,7 @@ public record LobbyConfig(
 
     private static Trails trails(FileConfiguration c, Logger log) {
         List<Trail> trails = new ArrayList<>();
-        ConfigurationSection section = c.getConfigurationSection("trails.trails");
+        ConfigurationSection section = section(c, "trails.trails");
         if (section != null) {
             for (String id : section.getKeys(false)) {
                 String path = "trails.trails." + id;
@@ -317,7 +326,7 @@ public record LobbyConfig(
 
     private static ChatColors chatColors(FileConfiguration c, Logger log) {
         List<ChatColor> colors = new ArrayList<>();
-        ConfigurationSection section = c.getConfigurationSection("chat-color.colors");
+        ConfigurationSection section = section(c, "chat-color.colors");
         if (section != null) {
             for (String id : section.getKeys(false)) {
                 String path = "chat-color.colors." + id;
@@ -348,7 +357,7 @@ public record LobbyConfig(
     private static Selector selector(FileConfiguration c, Logger log) {
         int rows = Math.max(1, Math.min(6, c.getInt("realm-selector.rows", 3)));
         List<SelectorServer> servers = new ArrayList<>();
-        ConfigurationSection section = c.getConfigurationSection("realm-selector.realms");
+        ConfigurationSection section = section(c, "realm-selector.realms");
         if (section != null) {
             for (String id : section.getKeys(false)) {
                 String path = "realm-selector.realms." + id;

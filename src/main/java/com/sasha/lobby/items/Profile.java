@@ -174,7 +174,7 @@ public final class Profile implements Listener {
             }
             case SETTINGS -> {
                 click(player);
-                plugin.settings().open(player);
+                plugin.settings().open(player, true);
             }
             case PARKOUR -> plugin.parkour().openLeaderboard(player);
             case REALMS -> {

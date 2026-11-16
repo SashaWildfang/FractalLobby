@@ -115,7 +115,7 @@ void-rescue:
 # point (it moves with /setspawn). Turning it off removes it again
 # (then /lobby reload or a restart).
 border:
-  enabled: true
+  enabled: false
   # Blocks from spawn to each edge (100 = a 200 x 200 square).
   radius: 100
   # The screen tints red this many blocks from the border (0 = never).
