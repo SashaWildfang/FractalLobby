@@ -433,3 +433,33 @@ trail_model('totem', Image.open(f'{VANILLA}/assets/minecraft/textures/item/totem
 # Radio close button: a red X
 radio_model('close', art(["##.....##", "###...###", ".###.###.", "..#####..", "...###...", "..#####..", ".###.###.", "###...###", "##.....##"],
                          {'#': (0xff, 0x75, 0x90)}))
+
+# 9. more redraws: enchanted, blossom, electric; audience choices; Radio search; no hover highlight
+trail_model('enchanted', Image.open(f'{VANILLA}/assets/minecraft/textures/item/enchanted_book.png').convert('RGBA'))
+trail_model('blossom', Image.open(f'{VANILLA}/assets/minecraft/textures/item/pink_petals.png').convert('RGBA'))
+bolt = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(bolt)
+dr.polygon([(9, 1), (3, 8), (7, 8), (5, 14), (12, 6), (8, 6), (11, 1)], fill=(0xd8, 0xee, 0xff, 255))
+dr.line([(9, 2), (5, 7)], fill=(255, 255, 255, 255))
+trail_model('sparks', outline(bolt, (0x2b, 0x5f, 0xe0)))
+
+# Who you see things from (Everyone / Donors Only / Staff Only / Nobody): not on/off switches
+model('audience-everyone', Image.open(f'{ICONS}/guide/worlds.png').convert('RGBA'))
+GEM = ["...######...", "..########..", ".##########.", "############", ".##########.", "..########..", "...######...", "....####....", ".....##....."]
+model('audience-donors', art(GEM, {'#': lambda x, y, w, h: mix(hexc('#FFE680'), hexc('#E0A030'), y / (h - 1))}))
+SHIELD = ["############"] * 5 + [".##########.", ".##########.", "..########..", "..########..", "...######...", "....####....", ".....##....."]
+model('audience-staff', art(SHIELD, {'#': lambda x, y, w, h: hexc('#FFC98B') if x < w // 2 else hexc('#E8893A')}, shade=False))
+nobody = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(nobody)
+dr.ellipse((2, 2, 13, 13), outline=(0xff, 0x5a, 0x6e, 255), width=2)
+dr.line([(4, 11), (11, 4)], fill=(0xff, 0x5a, 0x6e, 255), width=2)
+model('audience-nobody', outline(nobody))
+
+glass = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); dr = ImageDraw.Draw(glass)
+dr.ellipse((2, 2, 10, 10), fill=(0x9f, 0xd8, 0xff, 255), outline=LIGHT + (255,), width=2)
+dr.point([(5, 4), (4, 5)], fill=(255, 255, 255, 255))
+dr.line([(9, 9), (13, 13)], fill=SHADE + (255,), width=3)
+radio_model('search', outline(glass))
+
+# no white highlight over the slot under the mouse
+for f in ('slot_highlight_back', 'slot_highlight_front'):
+    Image.new('RGBA', (24, 24), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/container/{f}.png') \
+        if os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/container', exist_ok=True) is None else None

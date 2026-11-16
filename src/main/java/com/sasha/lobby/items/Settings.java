@@ -499,12 +499,15 @@ public final class Settings implements Listener {
         return item;
     }
 
-    /** The switch icon for an option: on (green), off (red), or in between (Donors/Staff Only). */
+    /**
+     * The icon under a setting: an on/off switch, or for "whose ... you see" settings a picture of the
+     * choice (a globe for Everyone, a gem for Donors Only, a shield for Staff Only, a no sign for Nobody).
+     */
     private static String paneModel(String option) {
         return switch (option) {
-            case "everyone", "on" -> "on";
-            case "donors", "staff" -> "middle";
-            default -> "off";
+            case "on" -> "on";
+            case "off" -> "off";
+            default -> "audience-" + option;
         };
     }
 
