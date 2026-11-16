@@ -47,6 +47,10 @@ by['O'] = drawn([".###.", "#...#", "#...#", "#...#", ".###."])
 by['D'] = drawn(["####.", "#...#", "#...#", "#...#", "####."])
 by['P'] = drawn(["####.", "#...#", "####.", "#....", "#...."])
 by['Y'] = drawn(["#...#", ".#.#.", "..#..", "..#..", "..#.."])
+by['C'] = drawn([".####", "#....", "#....", "#....", ".####"])
+by['H'] = drawn(["#...#", "#...#", "#####", "#...#", "#...#"])
+by['K'] = drawn(["#...#", "#..#.", "###..", "#..#.", "#...#"])
+by[' '] = (2, {})
 
 def plaque_title(img, word, centre=88):
     # wipe the old title (copy each row's plain plaque colour across)
@@ -75,7 +79,15 @@ def tile(img, cx, cy):
             c = (0x31, 0x35, 0x4b) if edge else (0x6a, 0x6f, 0x8d) if light and not dark else (0x38, 0x3b, 0x4f) if dark else (0x40, 0x44, 0x5c)
             img.putpixel((x, y), c + (255,))
 
-def background(rows, slots, word="REALMS", dividers=()):
+def cell(img, cx, cy):
+    """A slot-sized well behind an item at (cx, cy), like the inventory's slots."""
+    x0, y0, x1, y1 = cx - 1, cy - 1, cx + 16, cy + 16
+    for x in range(x0, x1 + 1):
+        for y in range(y0, y1 + 1):
+            c = (0x23, 0x25, 0x36) if x == x0 or y == y0 else (0x6a, 0x6f, 0x8d) if x == x1 or y == y1 else (0x38, 0x3b, 0x4f)
+            img.putpixel((x, y), c + (255,))
+
+def background(rows, slots, word="REALMS", dividers=(), cells=()):
     top = warps.crop((0, 0, W, 29))
     middle = warps.crop((0, 25, W, 26))
     bottom = warps.crop((0, 116, W, 127))
@@ -92,6 +104,9 @@ def background(rows, slots, word="REALMS", dividers=()):
     for slot in slots:
         r, c = divmod(slot, 9)
         tile(img, 8 + c * 18, 16 + 18 + r * 18)  # 16 = how far the picture starts above the menu
+    for slot in cells:
+        r, c = divmod(slot, 9)
+        cell(img, 8 + c * 18, 16 + 18 + r * 18)
     return img
 
 def centred(count, rows):
@@ -114,4 +129,15 @@ for rows in range(1, 7):
 for code, name, word in ((0xF170, 'settings', 'SETTINGS'), (0xF171, 'ignored', 'IGNORED')):
     background(6, [], word, dividers=(70, 106)).save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
     providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256, "chars": [chr(code)]})
+def add(code, name, img):
+    img.save(f'{OUT}/assets/fractal/textures/gui/{name}.png')
+    providers.append({"type": "bitmap", "file": f"fractal:gui/{name}.png", "ascent": 29, "height": 256, "chars": [chr(code)]})
+def grid(rows):  # 7 across, one row in from each side, above the bottom row
+    return [(1 + r) * 9 + 1 + c for r in range(rows - 2) for c in range(7)]
+for rows in range(3, 7):
+    bottom = (rows - 1) * 9
+    add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
+    add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
+add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
+add(0xF1B6, 'radio', background(6, [], "RADIO", cells=grid(6) + [0, 1, 2, 4, 6, 7, 8] + list(range(45, 54))))
 json.dump({"providers": providers}, open(f'{OUT}/assets/fractal/font/lobby.json', 'w'), indent=1)

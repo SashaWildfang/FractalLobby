@@ -67,6 +67,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private ProtectionListener protection;
     private ChatColors chatColors;
     private Settings settings;
+    private com.sasha.lobby.items.MenuStyle menuStyle;
     private CoreLink coreLink;
     private ServerStatus serverStatus;
     private RealmSelector selector;
@@ -102,6 +103,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         flyingMinecarts = new FlyingMinecarts(this);
         protection = new ProtectionListener(this);
         chatColors = new ChatColors(this);
+        menuStyle = new com.sasha.lobby.items.MenuStyle(this);
         settings = new Settings(this);
         coreLink = new CoreLink(this);
         coreLink.onUpdate(player -> {
@@ -199,6 +201,10 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public Settings settings() {
         return settings;
+    }
+
+    public com.sasha.lobby.items.MenuStyle menuStyle() {
+        return menuStyle;
     }
 
     public CoreLink coreLink() {

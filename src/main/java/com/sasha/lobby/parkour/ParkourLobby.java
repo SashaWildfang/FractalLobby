@@ -371,9 +371,10 @@ public final class ParkourLobby implements Listener {
             return;
         }
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, 45, messages.component("parkour.menu.title"));
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        var style = plugin.menuStyle();
+        menu.inventory = Bukkit.createInventory(menu, 45,
+                style.title(com.sasha.lobby.items.MenuStyle.PARKOUR, messages.component("parkour.menu.title")));
+        ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         List<Leaderboard.Entry> top = leaderboard.entries(player);

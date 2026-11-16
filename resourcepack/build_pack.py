@@ -130,12 +130,12 @@ bar('experience_bar_progress', lambda t, y, edge: (0x2a, 0x17, 0x40) if edge els
 ICONS = sys.argv[5]  # CrazySurvival assets/minecraft/textures/item
 MENU_ICONS = {
     'header': 'guide/settings', 'lobby': 'guide/home', 'network': 'guide/worlds',
-    'join-messages': 'guide/dungeons', 'leave-messages': 'guide/next', 'chat': 'guide/chat',
+     'chat': 'guide/chat',
     'player-visibility': 'guide/profile', 'mentions': 'guide/emoji', 'double-jump': 'guide/souls',
     'scoreboard': 'guide/dailyquest', 'private-messages': 'profile/friend', 'ignored': 'profile/game',
     'social-spy': 'guide/quests', 'command-spy': 'guide/auction', 'vanish': 'guide/warps',
     'unavailable': 'guide/afk', 'reset': 'guide/trading', 'back': 'guide/back', 'more': 'settings/scrolldown',
-    'on': 'settings/enabled', 'off': 'settings/disabled', 'middle': 'settings/middle',
+    'on': 'settings/enabled', 'next': 'guide/next', 'search': 'guide/quests', 'off': 'settings/disabled', 'middle': 'settings/middle',
 }
 NOTE = ["................",
         ".....#########..",
@@ -168,4 +168,22 @@ for y, row in enumerate(NOTE):
         if c == '#': note.putpixel((x, y), (0x2a, 0x17, 0x40, 255))
         elif c == 'O': note.putpixel((x, y), (0xb2, 0x66, 0xff, 255) if y < 9 else (0xe5, 0x8b, 0xff, 255))
 model('message-sounds', note)
+
+# join and leave messages: the door with a green arrow going in, or a red one coming out
+door = Image.open(f'{ICONS}/guide/dungeons.png').convert('RGBA')
+def door_arrow(colour, light, pointing_in):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); img.alpha_composite(door, (-2, 0))
+    shape = ["..#....", ".##....", "#######", ".##....", "..#...."] if pointing_in else \
+            ["....#..", "....##.", "#######", "....##.", "....#.."]
+    ox, oy = 9, 9
+    for y in range(-1, 6):           # dark outline first
+        for x in range(-1, 8):
+            near = any(0 <= y + dy < 5 and 0 <= x + dx < 7 and shape[y + dy][x + dx] == '#' for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+            if near and 0 <= ox + x < 16 and 0 <= oy + y < 16: img.putpixel((ox + x, oy + y), (0x1a, 0x1b, 0x26, 255))
+    for y, row in enumerate(shape):
+        for x, ch in enumerate(row):
+            if ch == '#': img.putpixel((ox + x, oy + y), (light if y < 2 else colour) + (255,))
+    return img
+model('join-messages', door_arrow((0x3c, 0xa0, 0x3c), (0x7f, 0xdb, 0x6a), True))
+model('leave-messages', door_arrow((0xb0, 0x30, 0x30), (0xe3, 0x5a, 0x5a), False))
 print('menu icons', len(MENU_ICONS) + 1)

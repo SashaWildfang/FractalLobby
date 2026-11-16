@@ -167,10 +167,10 @@ public final class ChatColors implements Listener {
         Messages messages = plugin.messages();
         int colourRows = Math.max(1, Math.min(4, (colours.size() + 6) / 7));
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, (colourRows + 2) * 9, messages.component("chat-color.title"));
-
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        MenuStyle style = plugin.menuStyle();
+        menu.inventory = Bukkit.createInventory(menu, (colourRows + 2) * 9,
+                style.title(MenuStyle.chatColor(colourRows + 2), messages.component("chat-color.title")));
+        ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         LobbyConfig.ChatColor current = chosen(player);
@@ -199,9 +199,9 @@ public final class ChatColors implements Listener {
             meta.lore(messages.lore("chat-color.reset-item.lore"));
         });
         menu.resetSlot = menu.inventory.getSize() - 4;
-        menu.inventory.setItem(menu.resetSlot, reset);
+        menu.inventory.setItem(menu.resetSlot, style.icon(reset, "reset"));
         menu.backSlot = menu.inventory.getSize() - 6;
-        menu.inventory.setItem(menu.backSlot, Profile.button(plugin.messages(), Material.ARROW, "profile.back"));
+        menu.inventory.setItem(menu.backSlot, style.icon(Profile.button(plugin.messages(), Material.ARROW, "profile.back"), "back"));
         player.openInventory(menu.inventory);
     }
 

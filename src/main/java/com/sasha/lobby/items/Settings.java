@@ -281,7 +281,7 @@ public final class Settings implements Listener {
     public void open(Player player, boolean fromProfile) {
         Menu menu = new Menu(Page.SETTINGS, fromProfile);
         menu.inventory = Bukkit.createInventory(menu, 54, customGui()
-                ? RealmSelector.backgroundTitle('\uF170') : plugin.messages().component("settings.title"));
+                ? RealmSelector.backgroundTitle(MenuStyle.SETTINGS) : plugin.messages().component("settings.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
     }
@@ -289,7 +289,7 @@ public final class Settings implements Listener {
     private void openIgnored(Player player, boolean fromProfile) {
         Menu menu = new Menu(Page.IGNORED, fromProfile);
         menu.inventory = Bukkit.createInventory(menu, 54, customGui()
-                ? RealmSelector.backgroundTitle('\uF171') : plugin.messages().component("settings.ignored-menu.title"));
+                ? RealmSelector.backgroundTitle(MenuStyle.IGNORED) : plugin.messages().component("settings.ignored-menu.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
     }
@@ -490,7 +490,7 @@ public final class Settings implements Listener {
 
     /** Whether the menus use the resource pack's backgrounds and icons (settings-menu.custom-gui). */
     private boolean customGui() {
-        return plugin.getConfig().getBoolean("settings-menu.custom-gui", true);
+        return plugin.menuStyle().custom();
     }
 
     /** With the custom look, gives the item the resource pack's icon fractal:menu/NAME. */

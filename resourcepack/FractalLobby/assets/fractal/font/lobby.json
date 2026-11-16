@@ -564,6 +564,96 @@
    "chars": [
     "\uf171"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/chatcolor_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf183"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/trails_3.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf193"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/chatcolor_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf184"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/trails_4.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf194"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/chatcolor_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf185"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/trails_5.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf195"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/chatcolor_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf186"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/trails_6.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf196"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/parkour.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1a5"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/radio.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1b6"
+   ]
   }
  ]
 }

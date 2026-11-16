@@ -513,11 +513,11 @@ join-items:
     cooldown-seconds: 1.5
 
 
-# ── Settings menu ───────────────────────────────────────────────
-settings-menu:
-  # Draw the settings menu with the resource pack's background and icons
-  # (needs FractalLobby.zip, like realm-selector.custom-gui). false =
-  # black panes and normal items.
+# ── Menus ───────────────────────────────────────────────────────
+menus:
+  # Draw the settings, chat colour, trails and parkour menus with the
+  # resource pack's backgrounds and icons (needs FractalLobby.zip, like
+  # realm-selector.custom-gui). false = black panes and normal items.
   custom-gui: true
 
 

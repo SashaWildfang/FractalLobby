@@ -4,7 +4,7 @@
 it in `plugins/Nexo/pack/external_packs/FractalLobby.zip`. It has:
 
 - the rank icons and badges (`minecraft:default` font, from the Fractal pack),
-- the realm selector and settings menu backgrounds (`fractal:lobby` font),
+- the backgrounds for the realm selector, settings, chat colour, trails, parkour and Radio menus (`fractal:lobby` font),
 - the settings menu icons (item models `fractal:menu/NAME`, most from Survival's pack),
 - the Survival realm icon (item model `fractal:survival`),
 - slate inventory, chest and hotbar textures, a purple XP bar, no "Inventory" label

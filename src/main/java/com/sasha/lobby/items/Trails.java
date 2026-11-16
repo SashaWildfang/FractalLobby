@@ -115,9 +115,10 @@ public final class Trails implements Listener {
         Messages messages = plugin.messages();
         int rows = Math.max(1, Math.min(4, (trails.size() + 6) / 7));
         Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, (rows + 2) * 9, messages.component("trails.title"));
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
+        MenuStyle style = plugin.menuStyle();
+        menu.inventory = Bukkit.createInventory(menu, (rows + 2) * 9,
+                style.title(MenuStyle.trails(rows + 2), messages.component("trails.title")));
+        ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         LobbyConfig.Trail current = chosen(player);
@@ -140,8 +141,8 @@ public final class Trails implements Listener {
         int bottom = menu.inventory.getSize() - 9;
         menu.backSlot = bottom + 3;
         menu.noneSlot = bottom + 5;
-        menu.inventory.setItem(menu.backSlot, Profile.button(messages, Material.ARROW, "profile.back"));
-        menu.inventory.setItem(menu.noneSlot, Profile.button(messages, Material.BARRIER, "trails.none-item"));
+        menu.inventory.setItem(menu.backSlot, style.icon(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
+        menu.inventory.setItem(menu.noneSlot, style.icon(Profile.button(messages, Material.BARRIER, "trails.none-item"), "off"));
         player.openInventory(menu.inventory);
     }
 
