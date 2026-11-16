@@ -182,6 +182,35 @@ settings:
   hint:
     - "<dark_gray>▸ <accent>Left-click</accent> <muted>for the next option"
     - "<dark_gray>▸ <accent>Right-click</accent> <muted>to go back"
+  toggle-hint:
+    - "<dark_gray>▸ <accent>Click</accent> <muted>to switch"
+  header:
+    name: "<brand><bold>Settings</bold></brand>"
+    lore:
+      - "<muted>Lobby settings only apply here."
+      - "<muted>Network settings follow you"
+      - "<muted>to every realm."
+  lobby-section:
+    name: "<primary>Lobby <dark_gray>→"
+    lore:
+      - "<muted>Only in the lobby."
+  network-section:
+    name: "<primary>Network <dark_gray>→"
+    lore:
+      - "<muted>Everywhere on the network."
+  network-unavailable:
+    name: "<bad>Network settings unavailable"
+    lore:
+      - "<muted>The proxy isn't answering."
+      - "<muted>Try again in a moment."
+  reset:
+    name: "<bad>Reset Lobby Settings"
+    lore:
+      - "<muted>Puts every lobby setting"
+      - "<muted>back to its default."
+      - ""
+      - "<dark_gray>▸ <accent>Shift-click</accent> <muted>to reset"
+    done: "<prefix><secondary>Your lobby settings are back to their defaults."
   join-messages:
     name: "<primary>Join Messages"
     lore:
@@ -215,6 +244,67 @@ settings:
     lore:
       - "<muted>The realm player counts"
       - "<muted>on the right of your screen."
+  # Network settings, kept by Core on the proxy (they show when Core is installed).
+  private-messages:
+    name: "<primary>Private Messages"
+    lore:
+      - "<muted>Whether players can /msg you."
+      - "<muted>Staff can always reach you."
+  message-sounds:
+    name: "<primary>Message Sounds"
+    lore:
+      - "<muted>A ping when a private"
+      - "<muted>message arrives."
+  social-spy:
+    name: "<primary>Social Spy"
+    lore:
+      - "<muted>See private messages"
+      - "<muted>between other players."
+      - "<dark_gray>Staff only"
+  command-spy:
+    name: "<primary>Command Spy"
+    lore:
+      - "<muted>See the commands"
+      - "<muted>other players type."
+      - "<dark_gray>Staff only"
+  vanish:
+    name: "<primary>Vanish"
+    lore:
+      - "<muted>Hidden from /glist, /find"
+      - "<muted>and players in the lobby."
+      - "<dark_gray>Staff only"
+  ignored:
+    name: "<primary>Ignored Players"
+    lore:
+      - "<muted>Players whose chat and"
+      - "<muted>messages you never see."
+    count: "<white>Ignoring: <accent><count>"
+    entry: "<dark_gray>  <gray><player>"
+    more: "<dark_gray>  …and <count> more"
+    none:
+      - "<dark_gray>  Nobody yet. Use <gray>/ignore <name>"
+    hint:
+      - "<dark_gray>▸ <accent>Click</accent> <muted>to manage"
+  ignored-menu:
+    title: "<brand><bold>Ignored Players</bold></brand>"
+    head:
+      name: "<primary><player>"
+      lore:
+        - "<dark_gray>▸ <accent>Click</accent> <muted>to unignore"
+    empty:
+      name: "<good>You're not ignoring anyone"
+      lore:
+        - "<muted>Type <white>/ignore <name></white> <muted>in chat"
+        - "<muted>to hide someone."
+    more:
+      name: "<gray>…and <count> more"
+      lore:
+        - "<muted>Use <white>/ignorelist</white> <muted>in chat."
+    back:
+      name: "<secondary>← Back"
+      lore:
+        - "<muted>Back to your settings."
+    removed: "<prefix><secondary>You unignored <primary><player></primary>."
 
 
 # ── Chat ────────────────────────────────────────────────────────

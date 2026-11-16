@@ -60,7 +60,15 @@ public final class ChatListener implements Listener {
         if (format.isEmpty()) return;
         String sound = plugin.settings().isStaff(player) ? messages.staffJoinSound()
                 : plugin.settings().isDonor(player) ? messages.donorJoinSound() : "";
-        broadcast(player, plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, sound, false);
+        if (!plugin.coreLink().coreSeen()) {
+            broadcast(player, plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, sound, false);
+            return;
+        }
+        // With Core on the proxy, wait a moment to hear whether they're vanished (then only staff are told).
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            broadcast(player, plugin.playerFormat().render(player, format), Settings.Setting.JOIN_MESSAGES, sound, false);
+        }, 10L);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -80,7 +88,7 @@ public final class ChatListener implements Listener {
         float volume = plugin.lobbyConfig().joinMessages().soundVolume();
         for (Player viewer : plugin.getServer().getOnlinePlayers()) {
             if (leaving && viewer == subject) continue;
-            if (!plugin.settings().shows(viewer, setting, subject)) continue;
+            if (!plugin.settings().shows(viewer, setting, subject) || plugin.coreLink().hiddenFrom(viewer, subject)) continue;
             viewer.sendMessage(message);
             playSound(viewer, sound, volume, 1f);
         }
@@ -101,8 +109,9 @@ public final class ChatListener implements Listener {
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         // Each player's Chat setting decides whose messages they see (their own always show).
+        // Nobody sees chat from players they /ignore (Core on the proxy keeps the list).
         event.viewers().removeIf(viewer -> viewer instanceof Player other
-                && !plugin.settings().shows(other, Settings.Setting.CHAT, player));
+                && (!plugin.settings().shows(other, Settings.Setting.CHAT, player) || plugin.coreLink().ignores(other, player)));
 
         String typed = PlainTextComponentSerializer.plainText().serialize(event.message());
         Set<UUID> highlighted = mentions(player, typed, event.viewers());

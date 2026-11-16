@@ -27,6 +27,7 @@ import com.sasha.lobby.listener.ProtectionListener;
 import com.sasha.lobby.parkour.ParkourLobby;
 import com.sasha.lobby.listener.SpawnListener;
 import com.sasha.lobby.listener.VoidRescueListener;
+import com.sasha.lobby.proxy.CoreLink;
 import com.sasha.lobby.proxy.ProxyCounts;
 import com.sasha.lobby.scoreboard.DisplayService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -66,6 +67,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private ProtectionListener protection;
     private ChatColors chatColors;
     private Settings settings;
+    private CoreLink coreLink;
     private ServerStatus serverStatus;
     private RealmSelector selector;
     private DoubleJump doubleJump;
@@ -101,17 +103,23 @@ public final class Lobby extends JavaPlugin implements Listener {
         protection = new ProtectionListener(this);
         chatColors = new ChatColors(this);
         settings = new Settings(this);
+        coreLink = new CoreLink(this);
+        coreLink.onUpdate(player -> {
+            joinItems.refreshSeenBy(player);
+            settings.refresh(player);
+        });
         parkour = new ParkourLobby(this);
         doubleJump = new DoubleJump(this);
         trails = new Trails(this);
         profile = new Profile(this);
 
-        for (Listener listener : List.of(this, settings, protection, chatColors, voidRescue, border, flyingMinecarts,
+        for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
                 trails, profile, new PunchListener(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
+        coreLink.start();
         display.start();
         border.apply();
         protection.applyWorlds();
@@ -131,6 +139,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (placeholderExpansion != null) ((LobbyExpansion) placeholderExpansion).unregister();
         if (display != null) display.stop();
         if (proxyCounts != null) proxyCounts.stop();
+        if (coreLink != null) coreLink.stop();
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
@@ -190,6 +199,10 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public Settings settings() {
         return settings;
+    }
+
+    public CoreLink coreLink() {
+        return coreLink;
     }
 
     public DisplayService display() {

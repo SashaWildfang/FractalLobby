@@ -137,7 +137,7 @@ public final class Profile implements Listener {
     }
 
     /** Without this, the game adds a line under a head's name about its skin ("Dynamic"). */
-    private static void hideProfileLine(ItemStack head) {
+    static void hideProfileLine(ItemStack head) {
         head.setData(io.papermc.paper.datacomponent.DataComponentTypes.TOOLTIP_DISPLAY,
                 io.papermc.paper.datacomponent.item.TooltipDisplay.tooltipDisplay()
                         .addHiddenComponents(io.papermc.paper.datacomponent.DataComponentTypes.PROFILE).build());

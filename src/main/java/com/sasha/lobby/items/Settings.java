@@ -5,6 +5,7 @@ package com.sasha.lobby.items;
 
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.Messages;
+import com.sasha.lobby.proxy.CoreLink;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -25,6 +26,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -35,9 +37,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Each player's lobby settings (the comparator join item). Some choose whose messages or players to see
- * (Everyone, Donors Only, Staff Only, Nobody); the rest are On or Off. Clicking a setting moves to its
- * next option (right-click goes back). Saved on the player.
+ * Each player's settings (the comparator join item). Lobby settings are saved on the player: some choose
+ * whose messages or players to see (Everyone, Donors Only, Staff Only, Nobody), the rest are On or Off.
+ * Clicking one moves to its next option (right-click goes back). Network settings (private messages,
+ * message sounds, who you ignore, and staff's social spy, command spy and vanish) belong to Core on the
+ * proxy, so they follow the player to every realm; they show when Core is installed.
  */
 public final class Settings implements Listener {
 
@@ -81,7 +85,7 @@ public final class Settings implements Listener {
         }
     }
 
-    private static final int BACK = 31;
+    private static final int BACK = 49;
 
     private final Lobby plugin;
     private final Map<Setting, NamespacedKey> keys = new EnumMap<>(Setting.class);
@@ -187,8 +191,7 @@ public final class Settings implements Listener {
         int index = options.indexOf(option(player, setting));
         int next = Math.floorMod(index + (back ? -1 : 1), options.size());
         set(player, setting, options.get(next));
-        player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 0.8f + next * 0.15f),
-                Sound.Emitter.self());
+        click(player, next);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -203,8 +206,62 @@ public final class Settings implements Listener {
 
     // ---------------------------------------------------------------- menu
 
+    /*
+     * Six rows: the header on top; Lobby settings (icons, then panes showing the choice); Network settings
+     * from Core (icons, then panes); Back and Reset at the bottom. Each row of icons starts with a label.
+     */
+    private static final int HEADER = 4;
+    private static final int LOBBY_LABEL = 9;
+    private static final int NETWORK_LABEL = 27;
+    private static final int NETWORK_UNAVAILABLE = 31;
+    private static final int RESET = 50;
+    private static final int IGNORED_SLOT = 30;
+    /** The ignored-players list shows this many heads (Core keeps the rest; /unignore reaches them). */
+    private static final int IGNORED_SHOWN = 45;
+
+    /** A network setting kept by Core: its id in messages.yml, Core's toggle, whether Core's toggle means "off". */
+    private enum NetworkSetting {
+        PRIVATE_MESSAGES("private-messages", Material.PAPER, 28, CoreLink.MESSAGES_OFF, true),
+        MESSAGE_SOUNDS("message-sounds", Material.BELL, 29, CoreLink.MESSAGE_SOUNDS_OFF, true),
+        SOCIAL_SPY("social-spy", Material.SPYGLASS, 32, CoreLink.SOCIAL_SPY, false),
+        COMMAND_SPY("command-spy", Material.COMMAND_BLOCK, 33, CoreLink.COMMAND_SPY, false),
+        VANISH("vanish", Material.PHANTOM_MEMBRANE, 34, CoreLink.VANISH, false);
+
+        final String id;
+        final Material icon;
+        final int slot;
+        final String toggle;
+        final boolean inverted;
+
+        NetworkSetting(String id, Material icon, int slot, String toggle, boolean inverted) {
+            this.id = id;
+            this.icon = icon;
+            this.slot = slot;
+            this.toggle = toggle;
+            this.inverted = inverted;
+        }
+
+        boolean on(CoreLink.State state) {
+            return state.on(toggle) != inverted;
+        }
+    }
+
+    private enum Page {
+        SETTINGS, IGNORED
+    }
+
+    private interface Action {
+        void click(Player player, ClickType click);
+    }
+
     private static final class Menu implements InventoryHolder {
+        private final Page page;
+        private final Map<Integer, Action> actions = new java.util.HashMap<>();
         private Inventory inventory;
+
+        Menu(Page page) {
+            this.page = page;
+        }
 
         @Override
         public Inventory getInventory() {
@@ -212,45 +269,207 @@ public final class Settings implements Listener {
         }
     }
 
-    /** Each setting as an icon listing its options (the current one marked), with a coloured pane under it. */
     public void open(Player player) {
-        Messages messages = plugin.messages();
-        Menu menu = new Menu();
-        menu.inventory = Bukkit.createInventory(menu, 36, messages.component("settings.title"));
+        Menu menu = new Menu(Page.SETTINGS);
+        menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.title"));
+        draw(player, menu);
+        player.openInventory(menu.inventory);
+    }
+
+    private void openIgnored(Player player) {
+        Menu menu = new Menu(Page.IGNORED);
+        menu.inventory = Bukkit.createInventory(menu, 54, plugin.messages().component("settings.ignored-menu.title"));
+        draw(player, menu);
+        player.openInventory(menu.inventory);
+    }
+
+    /** Redraws the player's open settings menu, if they have one (after Core sends new settings). */
+    public void refresh(Player player) {
+        if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof Menu menu) draw(player, menu);
+    }
+
+    /** Fills the menu in place (so the cursor stays where it is). */
+    private void draw(Player player, Menu menu) {
+        menu.actions.clear();
         ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
+        if (menu.page == Page.SETTINGS) drawSettings(player, menu);
+        else drawIgnored(player, menu);
+    }
+
+    private void drawSettings(Player player, Menu menu) {
+        Messages messages = plugin.messages();
+        menu.inventory.setItem(HEADER, Profile.button(messages, Material.COMPARATOR, "settings.header"));
+        menu.inventory.setItem(LOBBY_LABEL, Profile.button(messages, Material.GRASS_BLOCK, "settings.lobby-section"));
+        menu.inventory.setItem(NETWORK_LABEL, Profile.button(messages, Material.ENDER_PEARL, "settings.network-section"));
 
         for (Setting setting : Setting.values()) {
-            String current = option(player, setting);
-            List<Component> lore = new ArrayList<>(messages.lore("settings." + setting.id + ".lore"));
-            lore.add(Component.empty());
-            for (String option : setting.kind.options) {
-                Component name = messages.component("settings.options." + option);
-                lore.add(messages.item(option.equals(current) ? "settings.option-selected" : "settings.option",
-                        Placeholder.component("option", name)));
-            }
-            lore.add(Component.empty());
-            lore.addAll(messages.lore("settings.hint"));
-
-            ItemStack icon = ItemStack.of(setting.icon);
-            icon.editMeta(meta -> {
-                meta.displayName(messages.item("settings." + setting.id + ".name"));
-                meta.lore(lore);
-                meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-            });
-            menu.inventory.setItem(setting.slot, icon);
-
-            ItemStack pane = ItemStack.of(paneFor(current));
-            pane.editMeta(meta -> {
-                meta.displayName(messages.item("settings.current",
-                        Placeholder.component("option", messages.component("settings.options." + current))));
-                meta.lore(messages.lore("settings.hint"));
-            });
-            menu.inventory.setItem(setting.slot + 9, pane);
+            put(menu, setting.slot, setting.icon, setting.id, setting.kind.options, option(player, setting),
+                    (who, click) -> cycle(who, setting, back(click)));
         }
+
+        CoreLink.State state = plugin.coreLink().state(player);
+        if (state == null) {
+            menu.inventory.setItem(NETWORK_UNAVAILABLE, Profile.button(messages, Material.BARRIER, "settings.network-unavailable"));
+        } else {
+            for (NetworkSetting setting : NetworkSetting.values()) {
+                if (!state.has(setting.toggle)) continue; // staff settings only show for staff
+                put(menu, setting.slot, setting.icon, setting.id, Kind.TOGGLE.options, setting.on(state) ? "on" : "off",
+                        (who, click) -> flip(who, setting));
+            }
+            drawIgnoredButton(menu, state);
+        }
+
         menu.inventory.setItem(BACK, Profile.button(messages, Material.ARROW, "profile.back"));
-        player.openInventory(menu.inventory);
+        menu.actions.put(BACK, (who, click) -> plugin.profile().open(who));
+        menu.inventory.setItem(RESET, Profile.button(messages, Material.TNT_MINECART, "settings.reset"));
+        menu.actions.put(RESET, (who, click) -> {
+            if (!click.isShiftClick()) return;
+            reset(who);
+            draw(who, menu);
+        });
+    }
+
+    /** A setting's icon, listing its options with the current one marked, and a coloured pane under it. */
+    private void put(Menu menu, int slot, Material material, String id, List<String> options, String current, Action action) {
+        Messages messages = plugin.messages();
+        List<Component> lore = new ArrayList<>(messages.lore("settings." + id + ".lore"));
+        lore.add(Component.empty());
+        for (String option : options) {
+            Component name = messages.component("settings.options." + option);
+            lore.add(messages.item(option.equals(current) ? "settings.option-selected" : "settings.option",
+                    Placeholder.component("option", name)));
+        }
+        lore.add(Component.empty());
+        lore.addAll(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
+
+        ItemStack icon = ItemStack.of(material);
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("settings." + id + ".name"));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.values());
+        });
+        menu.inventory.setItem(slot, icon);
+
+        ItemStack pane = ItemStack.of(paneFor(current));
+        pane.editMeta(meta -> {
+            meta.displayName(messages.item("settings.current",
+                    Placeholder.component("option", messages.component("settings.options." + current))));
+            meta.lore(messages.lore(options.size() > 2 ? "settings.hint" : "settings.toggle-hint"));
+        });
+        menu.inventory.setItem(slot + 9, pane);
+        menu.actions.put(slot, action);
+        menu.actions.put(slot + 9, action);
+    }
+
+    private void drawIgnoredButton(Menu menu, CoreLink.State state) {
+        Messages messages = plugin.messages();
+        Map<UUID, String> ignored = state.ignored();
+        List<Component> lore = new ArrayList<>(messages.lore("settings.ignored.lore"));
+        lore.add(Component.empty());
+        if (ignored.isEmpty()) {
+            lore.addAll(messages.lore("settings.ignored.none"));
+        } else {
+            int shown = 0;
+            for (String name : ignored.values()) {
+                if (shown++ == 6) break;
+                lore.add(messages.item("settings.ignored.entry", Messages.name("player", name)));
+            }
+            if (ignored.size() > 6) lore.add(messages.item("settings.ignored.more", Messages.arg("count", ignored.size() - 6)));
+        }
+        lore.add(Component.empty());
+        lore.addAll(messages.lore("settings.ignored.hint"));
+
+        ItemStack icon = ItemStack.of(Material.SKELETON_SKULL);
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("settings.ignored.name"));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.values());
+        });
+        menu.inventory.setItem(IGNORED_SLOT, icon);
+
+        ItemStack pane = ItemStack.of(ignored.isEmpty() ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
+        pane.editMeta(meta -> {
+            meta.displayName(messages.item("settings.ignored.count", Messages.arg("count", ignored.size())));
+            meta.lore(messages.lore("settings.ignored.hint"));
+        });
+        menu.inventory.setItem(IGNORED_SLOT + 9, pane);
+        Action open = (who, click) -> {
+            openIgnored(who);
+            click(who, 0);
+        };
+        menu.actions.put(IGNORED_SLOT, open);
+        menu.actions.put(IGNORED_SLOT + 9, open);
+    }
+
+    /** Everyone the player ignores, as heads; clicking one unignores them. */
+    private void drawIgnored(Player player, Menu menu) {
+        Messages messages = plugin.messages();
+        CoreLink.State state = plugin.coreLink().state(player);
+        Map<UUID, String> ignored = state == null ? Map.of() : state.ignored();
+        if (ignored.isEmpty()) {
+            menu.inventory.setItem(22, Profile.button(messages, Material.LIME_DYE, "settings.ignored-menu.empty"));
+        }
+        int slot = 0;
+        for (Map.Entry<UUID, String> entry : ignored.entrySet()) {
+            if (slot == IGNORED_SHOWN) break;
+            UUID id = entry.getKey();
+            String name = entry.getValue();
+            ItemStack head = ItemStack.of(Material.PLAYER_HEAD);
+            Player online = plugin.getServer().getPlayer(id);
+            head.editMeta(SkullMeta.class, meta -> {
+                meta.setPlayerProfile(online != null ? online.getPlayerProfile() : Bukkit.createProfile(id, name));
+                meta.displayName(messages.item("settings.ignored-menu.head.name", Messages.name("player", name)));
+                meta.lore(messages.lore("settings.ignored-menu.head.lore", Messages.name("player", name)));
+            });
+            Profile.hideProfileLine(head);
+            menu.inventory.setItem(slot, head);
+            menu.actions.put(slot, (who, click) -> {
+                plugin.coreLink().unignore(who, id);
+                messages.send(who, "settings.ignored-menu.removed", Messages.name("player", name));
+                click(who, 1);
+                draw(who, menu);
+            });
+            slot++;
+        }
+        if (ignored.size() > IGNORED_SHOWN) {
+            menu.inventory.setItem(53, Profile.button(messages, Material.PAPER, "settings.ignored-menu.more",
+                    Messages.arg("count", ignored.size() - IGNORED_SHOWN)));
+        }
+        menu.inventory.setItem(49, Profile.button(messages, Material.ARROW, "settings.ignored-menu.back"));
+        menu.actions.put(49, (who, click) -> {
+            open(who);
+            click(who, 0);
+        });
+    }
+
+    private static boolean back(ClickType click) {
+        return click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT;
+    }
+
+    private static void click(Player player, int step) {
+        player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 0.8f + step * 0.15f),
+                Sound.Emitter.self());
+    }
+
+    /** Flips a network setting through Core. */
+    private void flip(Player player, NetworkSetting setting) {
+        CoreLink.State state = plugin.coreLink().state(player);
+        if (state == null) return;
+        boolean nowOn = !setting.on(state);
+        plugin.coreLink().set(player, setting.toggle, nowOn != setting.inverted);
+        click(player, nowOn ? 0 : 1);
+        if (setting == NetworkSetting.VANISH) plugin.joinItems().refreshSeenBy(player);
+    }
+
+    /** Puts every lobby setting back to its default. */
+    private void reset(Player player) {
+        for (Setting setting : Setting.values()) {
+            if (!option(player, setting).equals(setting.kind.options.getFirst())) set(player, setting, setting.kind.options.getFirst());
+        }
+        plugin.messages().send(player, "settings.reset.done");
+        player.playSound(Sound.sound(Key.key("entity.experience_orb.pickup"), Sound.Source.MASTER, 0.5f, 1f), Sound.Emitter.self());
     }
 
     private static Material paneFor(String option) {
@@ -264,21 +483,14 @@ public final class Settings implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onClick(InventoryClickEvent event) {
-        if (!(event.getView().getTopInventory().getHolder(false) instanceof Menu)) return;
+        if (!(event.getView().getTopInventory().getHolder(false) instanceof Menu menu)) return;
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (event.getRawSlot() == BACK) {
-            plugin.profile().open(player);
-            return;
-        }
-        for (Setting setting : Setting.values()) {
-            if (event.getRawSlot() == setting.slot || event.getRawSlot() == setting.slot + 9) {
-                cycle(player, setting, event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT);
-                open(player); // redraw with the new choice
-                return;
-            }
-        }
+        Action action = menu.actions.get(event.getRawSlot());
+        if (action == null) return;
+        action.click(player, event.getClick());
+        if (menu.page == Page.SETTINGS && player.getOpenInventory().getTopInventory() == menu.inventory) draw(player, menu);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

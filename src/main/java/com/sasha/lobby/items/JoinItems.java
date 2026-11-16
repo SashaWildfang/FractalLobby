@@ -74,10 +74,21 @@ public final class JoinItems implements Listener {
 
         // The newcomer sees whoever their visibility setting allows, and everyone else decides about them.
         applyVisibility(player);
+        refreshSeenBy(player);
+    }
+
+    /** Whether the viewer sees the subject: by the viewer's Player Visibility setting, and never vanished staff unless staff. */
+    public boolean sees(Player viewer, Player subject) {
+        return plugin.settings().shows(viewer, Settings.Setting.PLAYER_VISIBILITY, subject)
+                && !plugin.coreLink().hiddenFrom(viewer, subject);
+    }
+
+    /** Shows or hides the subject for everyone else (after they join or vanish). */
+    public void refreshSeenBy(Player subject) {
         for (Player other : plugin.getServer().getOnlinePlayers()) {
-            if (other == player) continue;
-            if (plugin.settings().shows(other, Settings.Setting.PLAYER_VISIBILITY, player)) other.showPlayer(plugin, player);
-            else other.hidePlayer(plugin, player);
+            if (other == subject) continue;
+            if (sees(other, subject)) other.showPlayer(plugin, subject);
+            else other.hidePlayer(plugin, subject);
         }
     }
 
@@ -85,7 +96,7 @@ public final class JoinItems implements Listener {
     public void applyVisibility(Player viewer) {
         for (Player other : plugin.getServer().getOnlinePlayers()) {
             if (other == viewer) continue;
-            if (plugin.settings().shows(viewer, Settings.Setting.PLAYER_VISIBILITY, other)) viewer.showPlayer(plugin, other);
+            if (sees(viewer, other)) viewer.showPlayer(plugin, other);
             else viewer.hidePlayer(plugin, other);
         }
         giveItems(viewer);
