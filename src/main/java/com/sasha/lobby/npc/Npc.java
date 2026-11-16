@@ -31,6 +31,9 @@ public final class Npc {
         public String value = "";
         public String signature = "";
         public boolean slim;
+        /** A skin and cape from the resource pack (e.g. fractal:entity/npc/survival); the skin above is the fallback. */
+        public String texture = "";
+        public String cape = "";
     }
 
     public final String name;
@@ -69,6 +72,8 @@ public final class Npc {
             npc.skin.value = skin.getString("value", "");
             npc.skin.signature = skin.getString("signature", "");
             npc.skin.slim = skin.getBoolean("slim", false);
+            npc.skin.texture = skin.getString("texture", "");
+            npc.skin.cape = skin.getString("cape", "");
         }
         ConfigurationSection equipment = c.getConfigurationSection("equipment");
         if (equipment != null) {
@@ -115,6 +120,8 @@ public final class Npc {
         c.set("skin.value", skin.value);
         c.set("skin.signature", skin.signature);
         c.set("skin.slim", skin.slim);
+        c.set("skin.texture", skin.texture);
+        c.set("skin.cape", skin.cape);
         c.set("equipment", null);
         for (Map.Entry<EquipmentSlot, ItemStack> entry : equipment.entrySet()) {
             c.set("equipment." + entry.getKey().name(), entry.getValue());

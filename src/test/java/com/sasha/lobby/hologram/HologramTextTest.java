@@ -45,4 +45,12 @@ class HologramTextTest {
         assertTrue(HologramText.perViewer("&a● %lobby_online_survival% playing"));
         assertFalse(HologramText.perViewer("&#C77DFF▸ Lost? Type /spawn"));
     }
+
+    @Test
+    void npcLabelLinesRender() {
+        assertEquals("✦ ꜱᴜʀᴠɪᴠᴀʟ ✦", plain("&#C77DFF✦ <gradient:#C77DFF:#FFC2F2><bold>ꜱᴜʀᴠɪᴠᴀʟ</bold></gradient> &#FFC2F2✦", 0));
+        assertEquals("\uF010 ᴄʟɪᴄᴋ ᴛᴏ ᴘʟᴀʏ",
+                plain("<white><font:fractal:lobby>\uF010</font></white> <#ANIM:wave:&#E8DDFF,&#FF7BE5>ᴄʟɪᴄᴋ ᴛᴏ ᴘʟᴀʏ</#ANIM>", 5));
+        assertEquals("◆ ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ ◆", plain("<#ANIM:colors:&#FFB36B,&#FFD27F,&#FFE680>◆ ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ ◆</#ANIM>", 9));
+    }
 }

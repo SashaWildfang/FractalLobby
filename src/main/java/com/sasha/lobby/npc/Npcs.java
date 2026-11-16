@@ -212,6 +212,15 @@ public final class Npcs implements Listener {
     /** The skin: the saved texture if there is one, else a texture link, else the player name (the game looks it up). */
     static ResolvableProfile profile(Npc npc) {
         ResolvableProfile.Builder builder = ResolvableProfile.resolvableProfile();
+        // A skin or cape from the resource pack is drawn instead (players without the pack see the skin below).
+        if (!npc.skin.texture.isBlank() || !npc.skin.cape.isBlank()) {
+            builder.skinPatch(patch -> {
+                Key body = key(npc.skin.texture), cape = key(npc.skin.cape);
+                if (body != null) patch.body(body);
+                if (cape != null) patch.cape(cape);
+                patch.model(npc.skin.slim ? org.bukkit.profile.PlayerTextures.SkinModel.SLIM : org.bukkit.profile.PlayerTextures.SkinModel.CLASSIC);
+            });
+        }
         if (!npc.skin.value.isBlank()) {
             return builder.uuid(UUID.nameUUIDFromBytes(("npc:" + npc.name).getBytes(StandardCharsets.UTF_8))).name(shortName(npc))
                     .addProperty(new ProfileProperty("textures", npc.skin.value,
@@ -225,6 +234,15 @@ public final class Npcs implements Listener {
         }
         if (!npc.skin.name.isBlank()) return builder.name(npc.skin.name).build();
         return Mannequin.defaultProfile();
+    }
+
+    private static Key key(String text) {
+        if (text == null || text.isBlank()) return null;
+        try {
+            return Key.key(text.trim());
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private static String shortName(Npc npc) {
@@ -357,6 +375,8 @@ public final class Npcs implements Listener {
                 case "player_command", "command" -> player.performCommand(value.startsWith("/") ? value.substring(1) : value);
                 case "console_command", "console" -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), value.startsWith("/") ? value.substring(1) : value);
                 case "send_to_server", "connect" -> plugin.proxyCounts().connect(player, value);
+                // Like clicking the realm in the realm selector: offline, full, maintenance and coming soon are checked.
+                case "realm" -> plugin.realmSelector().join(player, value);
                 case "play_sound", "sound" -> {
                     String[] parts = value.split("[: ]");
                     try {

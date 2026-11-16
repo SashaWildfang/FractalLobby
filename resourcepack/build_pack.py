@@ -928,3 +928,16 @@ afk_badge.save(f'{OUT}/assets/minecraft/textures/gui/ranks/afk.png')
 default_font = json.load(open(f'{OUT}/assets/minecraft/font/default.json'))
 default_font['providers'].append({"type": "bitmap", "file": "minecraft:gui/ranks/afk.png", "ascent": 8, "height": 9, "chars": [""]})
 json.dump(default_font, open(f'{OUT}/assets/minecraft/font/default.json', 'w'), ensure_ascii=False, indent=1)
+
+# 24. the NPC skins and cape (fractal:entity/npc/NAME), drawn by skins/make_skins.py
+npc_dir = f'{OUT}/assets/fractal/textures/entity/npc'
+os.makedirs(npc_dir, exist_ok=True)
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skins', 'make_skins.py'), npc_dir], check=True,
+               cwd=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skins'))
+for f in os.listdir(npc_dir):
+    if f.startswith('preview_'): os.remove(f'{npc_dir}/{f}')
+# The skins the NPCs actually wear (chosen on NameMC, in skins/src) replace the drawn ones; the cape stays available.
+src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skins', 'src')
+for f in os.listdir(src_dir):
+    if f.endswith('.png'): shutil.copy(os.path.join(src_dir, f), f'{npc_dir}/{f}')
+print('npc skins', sorted(os.listdir(npc_dir)))

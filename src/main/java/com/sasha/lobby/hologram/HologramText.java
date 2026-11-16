@@ -100,6 +100,15 @@ public final class HologramText {
                     out.append(Math.abs(i - at) <= 1 ? b : a).append(prefix).appendCodePoint(chars[i]);
                 }
             }
+            case "shimmer" -> {
+                // A gradient sliding back and forth across the text (colours as #RRGGBB or &#RRGGBB).
+                double phase = Math.sin(frame / 12.0);
+                StringBuilder tag = new StringBuilder("<gradient");
+                for (String c : colours) tag.append(':').append(c.replace("&", ""));
+                tag.append(':').append(colours.getFirst().replace("&", "")).append(':')
+                        .append(String.format(java.util.Locale.ROOT, "%.2f", phase)).append('>');
+                return tag + prefix + plain + "</gradient>";
+            }
             case "colors" -> out.append(colours.get((int) ((frame / 4) % colours.size()))).append(prefix).append(plain);
             case "typewriter" -> {
                 int shown = (int) Math.min(n, frame % (n + 20));

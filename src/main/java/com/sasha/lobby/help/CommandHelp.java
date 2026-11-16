@@ -111,7 +111,8 @@ public final class CommandHelp {
         e.add(new Entry("npcs", "/npc line <name> height <line> <blocks>", "Set the gap a line takes.", admin, List.of()));
         e.add(new Entry("npcs", "/npc line <name> offset <blocks>", "How far above its head the hologram starts (0.35 is normal).", admin, List.of()));
         e.add(new Entry("npcs", "/npc action <name> <any|left|right> add <type:value>", "Add something that happens when it's clicked.", admin,
-                List.of("message:<text>, player_command:spawn, console_command:say hi, send_to_server:survival,",
+                List.of("realm:survival (like the realm selector: checks offline, full, maintenance, coming soon),",
+                        "message:<text>, player_command:spawn, console_command:say hi, send_to_server:survival,",
                         "play_sound:entity.player.levelup, need_permission:some.perm (stops if missing), wait:1.5,",
                         "execute_random_action (runs one of the actions after it)")));
         e.add(new Entry("npcs", "/npc action <name> <any|left|right> clear", "Remove its click actions.", admin, List.of()));

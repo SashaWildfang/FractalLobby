@@ -63,6 +63,8 @@ public final class Holograms implements Listener {
     private final Map<String, Live> attached = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private BukkitTask task;
     private long ticks;
+    /** Per-viewer displays whose filled-in text is animated (so they're redrawn every step, not just on refresh). */
+    private final java.util.Set<UUID> animatedFill = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public Holograms(Lobby plugin) {
         this.plugin = plugin;
@@ -320,8 +322,15 @@ public final class Holograms implements Listener {
                         display = spawn(line, at.clone().add(0, vy[i], 0), viewer);
                         mine.put(i, display);
                     }
-                    if (display instanceof TextDisplay text && (fresh || refresh || HologramText.animated(line.content))) {
-                        text.text(HologramText.render(fill(line.content, viewer), ticks));
+                    if (display instanceof TextDisplay text) {
+                        // Placeholders can bring animations with them, so check the filled-in text.
+                        String filled = fresh || refresh || HologramText.animated(line.content) || animatedFill.contains(display.getUniqueId())
+                                ? fill(line.content, viewer) : null;
+                        if (filled != null) {
+                            if (HologramText.animated(filled)) animatedFill.add(display.getUniqueId());
+                            else animatedFill.remove(display.getUniqueId());
+                            text.text(HologramText.render(filled, ticks));
+                        }
                     }
                 }
                 for (Iterator<Integer> it = mine.keySet().iterator(); it.hasNext(); ) {

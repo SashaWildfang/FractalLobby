@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 public final class Placeholders {
 
     private static final Pattern ONLINE = Pattern.compile("%lobby_online_([A-Za-z0-9_.\\-]+)%");
+    private static final Pattern STATUS = Pattern.compile("%lobby_(status|action)_([A-Za-z0-9_.\\-]+)%");
 
     private Placeholders() {
     }
@@ -31,6 +32,13 @@ public final class Placeholders {
             m.appendTail(sb);
             out = sb.toString();
         }
+        if (out.contains("%lobby_status_") || out.contains("%lobby_action_")) {
+            Matcher m = STATUS.matcher(out);
+            StringBuilder sb = new StringBuilder();
+            while (m.find()) m.appendReplacement(sb, Matcher.quoteReplacement(realm(plugin, m.group(1), m.group(2))));
+            m.appendTail(sb);
+            out = sb.toString();
+        }
         if (player != null) {
             if (plugin.luckPerms()) {
                 if (out.contains("%luckperms_prefix%")) out = out.replace("%luckperms_prefix%", LuckPermsHook.prefix(player));
@@ -41,6 +49,37 @@ public final class Placeholders {
         out = out.replace("%server_online%", String.valueOf(plugin.getServer().getOnlinePlayers().size()));
         if (out.indexOf('%') >= 0 && plugin.placeholderApi()) out = PlaceholderHook.apply(player, out);
         return out;
+    }
+
+    /**
+     * For holograms and NPC labels: %lobby_status_REALM% says how a realm is doing ("● 12 playing now", full,
+     * maintenance, restarting, offline, coming soon) and %lobby_action_REALM% what a click does then
+     * (messages.yml realm-status and realm-action).
+     */
+    public static String realm(Lobby plugin, String which, String server) {
+        String state = state(plugin, server);
+        return plugin.messages().raw("realm-" + which + "." + state).replace("<count>", online(plugin, server));
+    }
+
+    /** online, full, maintenance, restarting, offline or coming-soon. */
+    public static String state(Lobby plugin, String server) {
+        if (comingSoon(plugin, server)) return "coming-soon";
+        return switch (plugin.serverStatus().status(server).state()) {
+            case FULL -> "full";
+            case MAINTENANCE -> "maintenance";
+            case OFFLINE -> plugin.serverStatus().restarting(server) ? "restarting" : "offline";
+            default -> "online";
+        };
+    }
+
+    /** A realm marked coming-soon: true in the realm selector (config.yml). */
+    private static boolean comingSoon(Lobby plugin, String server) {
+        var realms = plugin.getConfig().getConfigurationSection("realm-selector.realms");
+        if (realms == null) return false;
+        for (String id : realms.getKeys(false)) {
+            if (server.equalsIgnoreCase(realms.getString(id + ".server", id))) return realms.getBoolean(id + ".coming-soon", false);
+        }
+        return false;
     }
 
     /** Players on a realm (from the proxy), "all" for the whole network, "here" for this server. */

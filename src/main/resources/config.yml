@@ -229,8 +229,9 @@ chat:
 #   /lobbyparkour area return        where players go after a run
 #   /lobbyparkour leaderboard        the leaderboard hologram here
 parkour:
-  # How many of the best scores the leaderboard hologram lists (0-10).
-  hologram-top: 5
+  # How many places the leaderboard hologram lists (0-10); places nobody
+  # has taken yet show as empty.
+  hologram-top: 10
   # How far down the leaderboard to look for a player's rank.
   rank-search: 100
   # Blocks the course is made of (a random one each jump).
@@ -700,6 +701,9 @@ realm-selector:
     # shows once it's been checked, so one that's down never flashes up
     # (a realm the proxy doesn't know, with no "address", never shows).
     hide-down-realms: true
+    # A realm that goes down within this many seconds of being up shows as
+    # "restarting" on holograms and NPC labels (%lobby_status_REALM%).
+    restart-seconds: 180
   realms:
     survival:
       # Server name in the proxy config.
@@ -722,6 +726,8 @@ realm-selector:
       maintenance: false
     prison:
       server: prison
+      # Holograms and NPC labels show it as coming soon (set false when it opens).
+      coming-soon: true
       slot: 13
       item: IRON_BARS
       name: "<accent><bold>Prison"
@@ -733,6 +739,8 @@ realm-selector:
         - "<white>▪ <gray>Prestige and break out"
     ctf:
       server: ctf
+      # Holograms and NPC labels show it as coming soon (set false when it opens).
+      coming-soon: true
       slot: 15
       item: RED_BANNER
       name: "<secondary><bold>Capture the Flag"

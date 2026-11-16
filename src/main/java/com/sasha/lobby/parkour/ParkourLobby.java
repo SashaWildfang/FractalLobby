@@ -342,9 +342,12 @@ public final class ParkourLobby implements Listener {
         List<Component> lines = new ArrayList<>();
         lines.add(messages.component("parkour.leaderboard.title"));
         List<Leaderboard.Entry> top = leaderboard.entries(viewer);
-        int shown = Math.min(top.size(), plugin.lobbyConfig().parkour().hologramTop());
-        if (shown == 0) lines.add(messages.component("parkour.leaderboard.no-scores"));
-        for (int i = 0; i < shown; i++) lines.add(messages.component("parkour.leaderboard.top-line", row(top.get(i))));
+        int places = plugin.lobbyConfig().parkour().hologramTop();
+        // Every place is listed; the ones nobody has taken yet show as empty.
+        for (int i = 0; i < places; i++) {
+            lines.add(i < top.size() ? messages.component("parkour.leaderboard.top-line", row(top.get(i)))
+                    : messages.component("parkour.leaderboard.empty-line", Messages.arg("position", i + 1)));
+        }
         lines.add(Component.empty());
         lines.add(messages.component("parkour.leaderboard.you", you(viewer)));
         lines.add(messages.component("parkour.leaderboard.hint"));

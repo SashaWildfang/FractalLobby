@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 23
+messages-version: 25
 
 theme:
   primary: "#B266FF"
@@ -124,6 +124,8 @@ realm-selector:
     maintenance: "<dark_gray>✖ <muted>Being worked on, back soon"
     offline: "<dark_gray>✖ <muted>Down right now, back soon"
   connecting: "<prefix><secondary>Sending you to <realm><secondary>…"
+  # A realm marked coming-soon in config.yml.
+  coming-soon: "<prefix><realm> <secondary>is coming soon! <muted>Keep an eye on <keep:'/discord'>."
   # When a realm can't be joined. <realm> <server>
   offline: "<prefix><bad>Can't join <realm><bad>: it's offline right now. <muted>Try again soon!"
   maintenance: "<prefix><#FFB36B><realm> <#FFB36B>is down for maintenance. <muted>Check back soon!"
@@ -568,6 +570,8 @@ parkour:
     # <name-rank> is the player's rank prefix (LuckPerms); the name takes its colour.
     top-line: "<muted>#<position> <white><name-rank><name> <dark_gray>- <primary><score>"
     no-scores: "<muted>No scores yet. Be the first!"
+    # A place nobody has taken yet (the board always shows all of them). <position>
+    empty-line: "<dark_gray>#<position> <#5E4A86>- - -"
     you: "<secondary>Your best: <primary><score> <muted>(<rank>)"   # <score> <rank>
     hint: "<accent><click></accent> <muted>to see the top 10"
   rank: "#<position>"
@@ -636,3 +640,22 @@ npc:
   list-header: "<prefix><secondary>NPCs (<white><count></white>):"
   list-line: "<muted> • <white><name></white> <dark_gray><where>"
   info: "<prefix><secondary>NPC <white><name></white> <muted>skin: <white><skin></white>, clicks: <white><actions>"
+
+# For holograms and NPC labels (not turned into small caps: holograms keep their text as written).
+# %lobby_status_REALM% says how a realm is doing, %lobby_action_REALM% what a click does then.
+# <count> = players on it. Restarting = it was up in the last realm-selector.status.restart-seconds.
+# Coming soon = coming-soon: true on the realm in config.yml.
+realm-status:
+  online: "<#9BFFC4>● <white><bold><count></bold> <#B8A9D9>ᴘʟᴀʏɪɴɢ ɴᴏᴡ"
+  full: "<#FFE680>● <white><bold><count></bold> <#B8A9D9>ᴘʟᴀʏɪɴɢ <dark_gray>• <#FFE680>ꜰᴜʟʟ"
+  maintenance: "<#FFB36B>⚒ <#FFD8A8>ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ"
+  restarting: "<#ANIM:colors:&#FFE680,&#FFD27F,&#FFB36B,&#FFD27F>⟳ ʀᴇꜱᴛᴀʀᴛɪɴɢ</#ANIM>"
+  offline: "<#FF7590>● <#FFB3C1>ᴏꜰꜰʟɪɴᴇ"
+  coming-soon: "<#ANIM:shimmer:#FFB36B,#FFE680>◆ ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ ◆</#ANIM>"
+realm-action:
+  online: "<white><font:fractal:lobby></font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴄʟɪᴄᴋ ᴛᴏ ᴘʟᴀʏ</#ANIM>"
+  full: "<#8C7BB0>ᴛʀʏ ᴀɢᴀɪɴ ɪɴ ᴀ ᴍɪɴᴜᴛᴇ"
+  maintenance: "<#8C7BB0>ʙᴀᴄᴋ ꜱᴏᴏɴ <dark_gray>• <#8C7BB0>ᴄʜᴇᴄᴋ <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ"
+  restarting: "<#8C7BB0>ʙᴀᴄᴋ ɪɴ ᴀ ᴍᴏᴍᴇɴᴛ<#ANIM:typewriter:&#8C7BB0>...</#ANIM>"
+  offline: "<#8C7BB0>ᴄʜᴇᴄᴋ <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ <#8C7BB0>ꜰᴏʀ ɴᴇᴡꜱ"
+  coming-soon: "<#8C7BB0>ᴄʟɪᴄᴋ ꜰᴏʀ ɴᴇᴡꜱ <dark_gray>• <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ"

@@ -229,8 +229,27 @@ public final class RealmSelector implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         LobbyConfig.SelectorServer realm = menu.realms.get(event.getRawSlot());
         if (realm == null) return;
+        join(player, realm);
+    }
 
+    /** Sends a player to a realm by server name (NPCs use this), with the same checks as the menu. */
+    public void join(Player player, String server) {
+        for (LobbyConfig.SelectorServer realm : plugin.lobbyConfig().selector().servers()) {
+            if (realm.server().equalsIgnoreCase(server)) {
+                join(player, realm);
+                return;
+            }
+        }
+        plugin.proxyCounts().connect(player, server); // not in the realm selector: just send them
+    }
+
+    private void join(Player player, LobbyConfig.SelectorServer realm) {
         TagResolver args = args(realm);
+        if (com.sasha.lobby.hook.Placeholders.state(plugin, realm.server()).equals("coming-soon")) {
+            player.playSound(Sound.sound(Key.key("block.note_block.chime"), Sound.Source.MASTER, 0.6f, 1.2f), Sound.Emitter.self());
+            plugin.messages().send(player, "realm-selector.coming-soon", args);
+            return;
+        }
         String refusal = switch (plugin.serverStatus().status(realm.server()).state()) {
             case OFFLINE -> "realm-selector.offline";
             case MAINTENANCE -> player.hasPermission(BYPASS_MAINTENANCE) ? null : "realm-selector.maintenance";
@@ -242,7 +261,7 @@ public final class RealmSelector implements Listener {
             plugin.messages().send(player, refusal, args);
             return;
         }
-        player.closeInventory();
+        if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof Menu) player.closeInventory();
         player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 1.2f), Sound.Emitter.self());
         plugin.messages().send(player, "realm-selector.connecting", args);
         plugin.proxyCounts().connect(player, realm.server());

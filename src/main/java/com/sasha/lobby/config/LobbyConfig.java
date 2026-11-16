@@ -279,7 +279,7 @@ public record LobbyConfig(
                         c.getBoolean("flying-minecarts.explode-on-collision", true)),
                 chatColors(c, log),
                 new Parkour(
-                        Math.max(0, Math.min(10, c.getInt("parkour.hologram-top", 5))),
+                        Math.max(0, Math.min(10, c.getInt("parkour.hologram-top", 10))),
                         Math.max(10, Math.min(500, c.getInt("parkour.rank-search", 100)))),
                 new Ranks(
                         c.getString("ranks.donor-permission", "lobby.donor"),
@@ -439,7 +439,8 @@ public record LobbyConfig(
     }
 
     private static Material item(String name, Material fallback, String path, Logger log) {
-        Material material = name == null ? null : Material.matchMaterial(name.trim());
+        if (name == null || name.isBlank()) return fallback; // not set: the default, nothing to warn about
+        Material material = Material.matchMaterial(name.trim());
         if (material == null || !material.isItem()) {
             log.warning("config.yml " + path + ": '" + name + "' is not an item, using " + fallback.name());
             return fallback;

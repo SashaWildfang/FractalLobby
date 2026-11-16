@@ -125,6 +125,19 @@ public final class NpcCommands {
                             String skin = StringArgumentType.getString(ctx, "skin").trim();
                             setSkin(ctx, npc, skin);
                         })))))
+                .then(Commands.literal("cape").then(Commands.argument("name", StringArgumentType.word()).suggests(names)
+                        .then(Commands.argument("cape", StringArgumentType.greedyString())
+                                .suggests((context, builder) -> {
+                                    builder.suggest("fractal:entity/npc/cape");
+                                    builder.suggest("off");
+                                    return builder.buildFuture();
+                                })
+                                .executes(context -> edit(context, (ctx, npc) -> {
+                                    String cape = StringArgumentType.getString(ctx, "cape").trim();
+                                    npc.skin.cape = cape.equalsIgnoreCase("off") ? "" : cape;
+                                    npcs.changed(npc);
+                                    done(ctx, npc, "npc.saved");
+                                })))))
                 .then(Commands.literal("item").then(Commands.argument("name", StringArgumentType.word()).suggests(names)
                         .then(Commands.argument("slot", StringArgumentType.word()).suggests(slots).executes(context -> edit(context, (ctx, npc) -> {
                             Player player = player(ctx);
@@ -308,9 +321,16 @@ public final class NpcCommands {
         }
     }
 
-    /** A player name, a texture link (textures.minecraft.net/...), or @me for your own skin. */
+    /** A player name, a texture link (textures.minecraft.net/...), @me for your own skin, or pack:KEY for a pack skin. */
     private void setSkin(CommandContext<CommandSourceStack> context, Npc npc, String skin) {
         CommandSender sender = context.getSource().getSender();
+        if (skin.toLowerCase(Locale.ROOT).startsWith("pack:")) {
+            npc.skin.texture = skin.substring(5).trim();
+            npcs.changed(npc);
+            done(context, npc, "npc.saved");
+            return;
+        }
+        npc.skin.texture = "";
         npc.skin.name = "";
         npc.skin.url = "";
         npc.skin.value = "";

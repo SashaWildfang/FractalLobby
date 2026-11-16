@@ -48,6 +48,8 @@ public final class ServerStatus {
 
     private final Lobby plugin;
     private final Map<String, Status> statuses = new ConcurrentHashMap<>();
+    /** When each realm was last seen up (so a realm that just went down shows as restarting for a while). */
+    private final Map<String, Long> lastUp = new ConcurrentHashMap<>();
     /** Addresses the proxy gave, by server name. */
     private final Map<String, InetSocketAddress> proxyAddresses = new ConcurrentHashMap<>();
     private BukkitTask task;
@@ -75,6 +77,16 @@ public final class ServerStatus {
         LobbyConfig.SelectorServer realm = realm(server);
         if (realm != null && realm.maintenance()) return new Status(State.MAINTENANCE, statuses.getOrDefault(key(server), Status.UNKNOWN).max());
         return statuses.getOrDefault(key(server), Status.UNKNOWN);
+    }
+
+    /**
+     * A realm that's down now but was up within realm-selector.status.restart-seconds: most likely restarting.
+     */
+    public boolean restarting(String server) {
+        if (status(server).state() != State.OFFLINE) return false;
+        Long up = lastUp.get(key(server));
+        long window = Math.max(0, plugin.getConfig().getLong("realm-selector.status.restart-seconds", 180)) * 1000;
+        return up != null && System.currentTimeMillis() - up < window;
     }
 
     /** Servers whose address should be asked from the proxy (no address set in config.yml, none known yet). */
@@ -128,6 +140,7 @@ public final class ServerStatus {
                 status = plugin.proxyCounts().count(realm.server()) > 0 ? Status.UNKNOWN : new Status(State.OFFLINE, 0);
             }
             statuses.put(key(realm.server()), status);
+            if (status.state() != State.OFFLINE) lastUp.put(key(realm.server()), System.currentTimeMillis());
         }
     }
 
