@@ -254,7 +254,7 @@ public record LobbyConfig(
                         slot(c.getInt("join-items.realm-selector.slot", 1)),
                         item(c.getString("join-items.realm-selector.item"), Material.COMPASS, "join-items.realm-selector.item", log),
                         c.getBoolean("join-items.radio.enabled", true),
-                        slot(c.getInt("join-items.radio.slot", 5)),
+                        slot(c.getInt("join-items.radio.slot", 3)),
                         item(c.getString("join-items.radio.item"), Material.JUKEBOX, "join-items.radio.item", log),
                         c.getString("join-items.radio.command", "radio").trim().replaceFirst("^/", ""),
                         c.getString("join-items.radio.requires-plugin", "Radio").trim(),

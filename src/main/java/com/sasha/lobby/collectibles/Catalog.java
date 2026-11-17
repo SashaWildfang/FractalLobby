@@ -75,36 +75,63 @@ public final class Catalog {
         }
     }
 
-    /** A suit: the colour of each piece (helmet, chestplate, leggings, boots) and its full-set ability. */
-    public record Suit(Color helmet, Color chest, Color legs, Color boots, String ability) {
+    /**
+     * A suit: the colour of each piece (helmet, chestplate, leggings, boots; used for the item icons), its full-set
+     * ability, and whether the ability is passive (always on with the full set) or done with a right-click (or, for
+     * the frog, by holding sneak).
+     */
+    public record Suit(Color helmet, Color chest, Color legs, Color boots, String ability, boolean passive) {
     }
 
     /**
      * One collectible. key is the part after the colon. emoji: the status emoji an emote shows; suit: a suit's pieces.
      */
     public record Item(String id, Category category, String key, Season season, Rarity rarity, String name, String description,
-                       String emoji, Suit suit) {
+                       String emoji, Suit suit, String set, Piece piece) {
+    }
+
+    /** The four pieces of a suit, with the slot each goes in. */
+    public enum Piece {
+        HELMET, CHESTPLATE, LEGGINGS, BOOTS;
+
+        public String key() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    /** A suit's set: its name, its four pieces and its colours and ability. */
+    public record SuitSet(String key, String name, Season season, Rarity rarity, Suit suit, List<Item> pieces) {
     }
 
     public static final List<Item> ITEMS;
+    public static final List<SuitSet> SETS;
     private static final Map<String, Item> BY_ID = new LinkedHashMap<>();
 
     private static final List<Item> build = new ArrayList<>();
+
+    private static final List<SuitSet> setsBuild = new ArrayList<>();
 
     private static void hat(String key, Season season, Rarity rarity, String name, String description) {
         add(Category.HAT, key, season, rarity, name, description, null, null);
     }
 
+    /** A suit: four collectibles, one per piece (named in pieceNames: helmet, chestplate, leggings, boots). */
     private static void suit(String key, Season season, Rarity rarity, String name, String description, int helmet, int chest, int legs,
-                             int boots, String ability) {
-        add(Category.SUIT, key, season, rarity, name, description, null,
-                new Suit(Color.fromRGB(helmet), Color.fromRGB(chest), Color.fromRGB(legs), Color.fromRGB(boots), ability));
+                             int boots, String ability, boolean passive, String... pieceNames) {
+        Suit suit = new Suit(Color.fromRGB(helmet), Color.fromRGB(chest), Color.fromRGB(legs), Color.fromRGB(boots), ability, passive);
+        List<Item> pieces = new ArrayList<>();
+        for (Piece piece : Piece.values()) {
+            Item item = new Item("suit:" + key + "." + piece.key(), Category.SUIT, key + "." + piece.key(), season, rarity,
+                    pieceNames[piece.ordinal()], description, null, suit, key, piece);
+            build.add(item);
+            pieces.add(item);
+        }
+        setsBuild.add(new SuitSet(key, name, season, rarity, suit, List.copyOf(pieces)));
     }
 
     private static void add(Category category, String key, Season season, Rarity rarity, String name, String description, String emoji,
                             Suit suit) {
-        Item item = new Item(category.prefix() + ":" + key, category, key, season, rarity, name, description, emoji, suit);
-        build.add(item);
+        build.add(new Item(category.prefix() + ":" + key, category, key, season, rarity, name, description, emoji, suit, null, null));
     }
 
     static {
@@ -135,28 +162,46 @@ public final class Catalog {
         hat("devil_horns", W, RARE, "Devil Horns", "A little bit evil.");
         hat("cat_ears", W, RARE, "Black Cat Ears", "Bad luck? Never heard of it.");
         hat("pumpkin_head", W, EPIC, "Pumpkin Head", "A jack-o'-lantern with a grin.");
-        // ---- suits (helmet, chest, legs, boots colours)
-        suit("plumber", N, EPIC, "Plumber Suit", "It's-a you!", 0xE03A3A, 0xE03A3A, 0x2F5BD8, 0x6B3E1E, "fireball");
-        suit("ninja", N, RARE, "Ninja Suit", "Silent and swift.", 0x1C1C24, 0x1C1C24, 0x1C1C24, 0x2A2A36, "smoke_bomb");
-        suit("astronaut", N, EPIC, "Astronaut Suit", "One small step for a player.", 0xF2F2F2, 0xE6E6EA, 0xD0D0D8, 0x9A9AA6, "low_gravity");
-        suit("frog", N, RARE, "Frog Suit", "Ribbit!", 0x5BC24A, 0x4AA83C, 0x4AA83C, 0x3A8A2E, "super_leap");
-        suit("lifeguard", S, RARE, "Lifeguard Suit", "On duty at the beach.", 0xE03A3A, 0xE03A3A, 0xFFD23F, 0xFFD23F, "water_splash");
-        suit("tourist", S, EPIC, "Tourist Suit", "Hawaiian shirt and all.", 0xFF9F3F, 0x3FD7E0, 0xF2E6C8, 0xC8A87A, "beach_ball");
-        suit("santa", H, EPIC, "Santa Suit", "The big man himself.", 0xD62828, 0xD62828, 0xD62828, 0x1C1C24, "gift_toss");
-        suit("elf", H, RARE, "Elf Suit", "Busy in the workshop.", 0x2E9E4A, 0x2E9E4A, 0xD62828, 0xD62828, "jingle_dash");
-        suit("bunny", E, RARE, "Bunny Suit", "Fluffy from ears to toes.", 0xF5F0F0, 0xF5F0F0, 0xF2C4D8, 0xF2C4D8, "bunny_hop");
-        suit("chick", E, EPIC, "Chick Suit", "Fresh out of the egg.", 0xFFE14D, 0xFFE14D, 0xFFE14D, 0xFF9F3F, "egg_toss");
-        suit("skeleton", W, RARE, "Skeleton Suit", "Spooky, scary.", 0xE8E8E0, 0x2A2A2A, 0xE8E8E0, 0x2A2A2A, "bone_rattle");
-        suit("vampire", W, LEGENDARY, "Vampire Suit", "Creature of the night.", 0x1C1C24, 0x8B0000, 0x1C1C24, 0x1C1C24, "bat_swarm");
+        // ---- suits (helmet, chest, legs, boots colours; ability; passive; the four pieces' names)
+        suit("plumber", N, EPIC, "Plumber Suit", "It's-a you!", 0xE03A3A, 0xE03A3A, 0x2F5BD8, 0x6B3E1E, "fireball", false,
+                "Plumber Cap", "Plumber Shirt", "Plumber Overalls", "Plumber Boots");
+        suit("ninja", N, RARE, "Ninja Suit", "Silent and swift.", 0x1C1C24, 0x1C1C24, 0x1C1C24, 0x2A2A36, "smoke_bomb", false,
+                "Ninja Mask", "Ninja Gi", "Ninja Trousers", "Ninja Tabi");
+        suit("astronaut", N, EPIC, "Astronaut Suit", "One small step for a player.", 0xF2F2F2, 0xE6E6EA, 0xD0D0D8, 0x9A9AA6, "low_gravity", true,
+                "Space Helmet", "Space Suit", "Space Trousers", "Moon Boots");
+        suit("frog", N, RARE, "Frog Suit", "Ribbit!", 0x5BC24A, 0x4AA83C, 0x4AA83C, 0x3A8A2E, "super_leap", false,
+                "Frog Hood", "Frog Body", "Frog Legs", "Frog Feet");
+        suit("lifeguard", S, RARE, "Lifeguard Suit", "On duty at the beach.", 0xE03A3A, 0xE03A3A, 0xFFD23F, 0xFFD23F, "water_splash", false,
+                "Lifeguard Visor", "Lifeguard Vest", "Lifeguard Shorts", "Flip-Flops");
+        suit("tourist", S, EPIC, "Tourist Suit", "Hawaiian shirt and all.", 0xFF9F3F, 0x3FD7E0, 0xF2E6C8, 0xC8A87A, "beach_ball", false,
+                "Bucket Hat", "Hawaiian Shirt", "Cargo Shorts", "Sandals");
+        suit("santa", H, EPIC, "Santa Suit", "The big man himself.", 0xD62828, 0xD62828, 0xD62828, 0x1C1C24, "gift_toss", false,
+                "Santa's Hood", "Santa's Coat", "Santa's Trousers", "Santa's Boots");
+        suit("elf", H, RARE, "Elf Suit", "Busy in the workshop.", 0x2E9E4A, 0x2E9E4A, 0xD62828, 0xD62828, "jingle_dash", true,
+                "Elf Hood", "Elf Tunic", "Elf Tights", "Elf Shoes");
+        suit("bunny", E, RARE, "Bunny Suit", "Fluffy from ears to toes.", 0xF5F0F0, 0xF5F0F0, 0xF2C4D8, 0xF2C4D8, "bunny_hop", true,
+                "Bunny Hood", "Bunny Body", "Bunny Legs", "Bunny Paws");
+        suit("chick", E, EPIC, "Chick Suit", "Fresh out of the egg.", 0xFFE14D, 0xFFE14D, 0xFFE14D, 0xFF9F3F, "egg_toss", false,
+                "Chick Hood", "Chick Body", "Chick Legs", "Chick Feet");
+        suit("skeleton", W, RARE, "Skeleton Suit", "Spooky, scary.", 0xE8E8E0, 0x2A2A2A, 0xE8E8E0, 0x2A2A2A, "bone_rattle", false,
+                "Skull Mask", "Rib Cage", "Bone Legs", "Bone Feet");
+        suit("vampire", W, LEGENDARY, "Vampire Suit", "Creature of the night.", 0x1C1C24, 0x8B0000, 0x1C1C24, 0x1C1C24, "bat_swarm", false,
+                "Vampire Hair", "Vampire Coat", "Vampire Trousers", "Vampire Shoes");
         // ---- gadgets
         add(Category.GADGET, "party_popper", N, COMMON, "Party Popper", "Pop! Confetti everywhere.", null, null);
         add(Category.GADGET, "paintball_gun", N, COMMON, "Paintball Gun", "Splat colour on the lobby (for a moment).", null, null);
         add(Category.GADGET, "bubble_wand", N, RARE, "Bubble Wand", "Blow a stream of bubbles.", null, null);
         add(Category.GADGET, "firework_launcher", N, RARE, "Firework Launcher", "Light up the sky.", null, null);
-        add(Category.GADGET, "cookie_fountain", N, RARE, "Cookie Fountain", "Cookies for everyone! (Look, don't touch.)", null, null);
+        add(Category.GADGET, "cookie_fountain", N, RARE, "Cookie Fountain", "Place a fountain that sprays cookies for a while.", null, null);
         add(Category.GADGET, "bat_blaster", N, EPIC, "Bat Blaster", "Send a flock of bats flying.", null, null);
         add(Category.GADGET, "fake_tnt", N, EPIC, "Fake TNT", "It's fine. Probably.", null, null);
         add(Category.GADGET, "disco_ball", N, LEGENDARY, "Disco Ball", "Start a party wherever you are.", null, null);
+        add(Category.GADGET, "balloon", N, COMMON, "Balloon", "A balloon floats over you for a while.", null, null);
+        add(Category.GADGET, "melody_maker", N, COMMON, "Melody Maker", "Play a little tune for everyone.", null, null);
+        add(Category.GADGET, "magic_wand", N, RARE, "Magic Wand", "Cast a sparkling spell.", null, null);
+        add(Category.GADGET, "grappling_hook", N, RARE, "Grappling Hook", "Pull yourself to where you look.", null, null);
+        add(Category.GADGET, "blink_stick", N, EPIC, "Blink Stick", "Teleport a few blocks ahead.", null, null);
+        add(Category.GADGET, "trampoline", N, EPIC, "Trampoline", "Place a trampoline anyone can bounce on.", null, null);
         add(Category.GADGET, "snow_cannon", H, RARE, "Snow Cannon", "A volley of snowballs.", null, null);
         add(Category.GADGET, "pumpkin_launcher", W, RARE, "Pumpkin Launcher", "Lob a jack-o'-lantern.", null, null);
         // ---- cloaks (particles around you)
@@ -193,6 +238,7 @@ public final class Catalog {
         add(Category.GESTURE, "celebrate", N, EPIC, "Celebrate", "Victory!", null, null);
 
         ITEMS = List.copyOf(build);
+        SETS = List.copyOf(setsBuild);
         for (Item item : ITEMS) BY_ID.put(item.id(), item);
     }
 
@@ -205,6 +251,15 @@ public final class Catalog {
 
     public static List<Item> of(Category category) {
         return ITEMS.stream().filter(item -> item.category() == category).toList();
+    }
+
+    public static SuitSet set(String key) {
+        for (SuitSet set : SETS) if (set.key().equals(key)) return set;
+        return null;
+    }
+
+    public static List<SuitSet> sets(Season season) {
+        return SETS.stream().filter(set -> set.season() == season).toList();
     }
 
     public static List<Item> of(Category category, Season season) {

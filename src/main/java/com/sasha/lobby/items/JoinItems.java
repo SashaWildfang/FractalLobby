@@ -116,7 +116,8 @@ public final class JoinItems implements Listener {
         if (config.selector()) player.getInventory().setItem(selectorSlot, selectorItem());
         if (config.radio() && (config.radioRequiresPlugin().isEmpty()
                 || plugin.getServer().getPluginManager().isPluginEnabled(config.radioRequiresPlugin()))) {
-            player.getInventory().setItem(config.radioSlot(), plugin.menuStyle().icon(joinItem(config.radioItem(), "items.radio", RADIO), "radio"));
+            int radioSlot = com.sasha.lobby.collectibles.Collectibles.oldHotbar(plugin) ? 2 : config.radioSlot();
+            player.getInventory().setItem(radioSlot, plugin.menuStyle().icon(joinItem(config.radioItem(), "items.radio", RADIO), "radio"));
         }
         int visibilitySlot = config.visibilitySlot();
         // An older config.yml may still have visibility in slot 8, where settings now go: it moves one over.
@@ -257,5 +258,6 @@ public final class JoinItems implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
         if (offHandBlocked() || locked(event.getPlayer())) event.setCancelled(true);
+        if (plugin.collectibles() != null) plugin.collectibles().swapKey(event.getPlayer());
     }
 }

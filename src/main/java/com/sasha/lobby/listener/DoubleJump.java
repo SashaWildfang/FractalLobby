@@ -58,7 +58,8 @@ public final class DoubleJump implements Listener {
         return config.enabled() && player.hasPermission(PERMISSION)
                 && (mode == GameMode.SURVIVAL || mode == GameMode.ADVENTURE)
                 && player.getVehicle() == null && !(plugin.parkour() != null && plugin.parkour().game().playing(player))
-                && plugin.settings().on(player, Settings.Setting.DOUBLE_JUMP);
+                && plugin.settings().on(player, Settings.Setting.DOUBLE_JUMP)
+                && !(plugin.collectibles() != null && plugin.collectibles().blocksDoubleJump(player)); // astronauts float instead
     }
 
     /** Gives or takes away double jump to match the player's situation. */

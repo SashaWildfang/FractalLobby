@@ -640,7 +640,7 @@ join-items:
   # Opens the Radio menu (from the Radio plugin).
   radio:
     enabled: true
-    slot: 5
+    slot: 3
     item: JUKEBOX
     # Command run when it's right-clicked, without the /.
     command: radio
@@ -655,9 +655,11 @@ join-items:
 
   # Opens the Collectibles menu: hats, suits, gadgets, cloaks, emotes and
   # gestures (see collectibles below).
+  # (A config.yml from before 1.37 with the radio in 5 and this in 3 is
+  # treated as radio 3, collectibles 5: the collectibles go in the middle.)
   collectibles:
     enabled: true
-    slot: 3
+    slot: 5
 
   # Opens the settings menu: join messages, leave messages, chat and
   # the scoreboard, each on or off per player. Remembered between joins.
@@ -864,14 +866,16 @@ mystery-boxes:
 # Boxes or bought with Mystery Dust. Seasonal ones (Summer: Jun-Aug,
 # Halloween: Oct 1-Nov 7, Holiday: Dec 1-Jan 6, Easter: Mar 15-Apr 30) only
 # drop and sell in their season; found ones can be worn any time.
-# A full suit puts its ability in the hotbar. lobby.collectibles.all gives
-# everything (for staff to try things out).
+# Suits are found piece by piece (helmet, chestplate, leggings, boots);
+# wearing all four gives the suit's bonus: a right-click with an empty hand
+# on a block or the swap-hands key (F), or always on for some suits.
+# Only all-year (Normal) collectibles can be crafted with Mystery Dust.
+# lobby.collectibles.all gives everything (for staff to try things out).
 collectibles:
   enabled: true
-  # Hotbar slots (1-9) for the gadget you hold and your suit's ability.
+  # Hotbar slot (1-9) for the gadget you hold.
   gadget-slot: 4
-  ability-slot: 6
-  # Price in Mystery Dust, by rarity.
+  # Price in Mystery Dust, by rarity (a suit piece costs half).
   price:
     common: 100
     rare: 250

@@ -568,6 +568,15 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/friends.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf172"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/chatcolor_3.png",
    "ascent": 29,
    "height": 256,
@@ -636,6 +645,87 @@
    "height": 256,
    "chars": [
     "\uf196"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/mystery.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf173"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collection.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf174"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collectibles.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf175"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_hats.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf176"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_suits.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf177"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_gadgets.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf178"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_cloaks.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf179"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_emotes.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17a"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_gestures.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17b"
    ]
   },
   {

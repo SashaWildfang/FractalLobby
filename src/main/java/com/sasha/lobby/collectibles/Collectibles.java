@@ -103,7 +103,9 @@ public final class Collectibles implements Listener {
     }
 
     public boolean owns(Player player, Item item) {
-        return player.hasPermission(ALL) || data().get(player.getUniqueId()).owns(item.id());
+        if (player.hasPermission(ALL)) return true;
+        MysteryData.Stash stash = data().get(player.getUniqueId());
+        return stash.owns(item.id()) || item.set() != null && stash.owns("suit:" + item.set()); // a whole suit from 1.36
     }
 
     /** Whether it's that item's season now (Normal always is). */
@@ -113,13 +115,64 @@ public final class Collectibles implements Listener {
         return item.season().on(LocalDate.now(plugin.lobbyConfig().scoreboard().timeZone()));
     }
 
+    /** Mystery Dust to craft it (a suit piece costs half). */
     public long price(Item item) {
         long[] defaults = {100, 250, 600, 1500};
-        return Math.max(1, plugin.getConfig().getLong("collectibles.price." + item.rarity().key(), defaults[item.rarity().ordinal()]));
+        long price = Math.max(1, plugin.getConfig().getLong("collectibles.price." + item.rarity().key(), defaults[item.rarity().ordinal()]));
+        return item.piece() != null ? Math.max(1, price / 2) : price;
+    }
+
+    /** Only all-year collectibles can be crafted; seasonal ones only come from boxes in their season. */
+    public boolean craftable(Item item) {
+        return item.season() == Season.NORMAL;
     }
 
     private Item equipped(Player player, Category category) {
         return Catalog.get(data().get(player.getUniqueId()).equipped(category.prefix()));
+    }
+
+    private static String slotKey(Catalog.Piece piece) {
+        return "suit_" + piece.key();
+    }
+
+    /** The suit piece worn in a slot (if still owned). */
+    Item piece(Player player, Catalog.Piece piece) {
+        Item item = Catalog.get(data().get(player.getUniqueId()).equipped(slotKey(piece)));
+        return item != null && owns(player, item) ? item : null;
+    }
+
+    /** How many pieces of a set the player has on. */
+    int worn(Player player, String set) {
+        int count = 0;
+        for (Catalog.Piece piece : Catalog.Piece.values()) {
+            Item item = piece(player, piece);
+            if (item != null && set.equals(item.set())) count++;
+        }
+        return count;
+    }
+
+    /** The suit the player wears all four pieces of, or null. */
+    public Catalog.SuitSet fullSet(Player player) {
+        Item chest = piece(player, Catalog.Piece.CHESTPLATE);
+        if (chest == null || worn(player, chest.set()) < 4) return null;
+        return Catalog.set(chest.set());
+    }
+
+    /** Astronauts float instead of double jumping. */
+    public boolean blocksDoubleJump(Player player) {
+        Catalog.SuitSet set = enabled() ? fullSet(player) : null;
+        return set != null && set.key().equals("astronaut");
+    }
+
+    /** 1.36 kept a whole suit under "suit": it becomes its four pieces. */
+    private void migrate(Player player) {
+        MysteryData.Stash stash = data().get(player.getUniqueId());
+        String old = stash.equipped("suit");
+        if (old == null) return;
+        Catalog.SuitSet set = Catalog.set(old.substring(old.indexOf(':') + 1));
+        data().equip(player.getUniqueId(), "suit", null);
+        if (set == null) return;
+        for (Item piece : set.pieces()) data().equip(player.getUniqueId(), slotKey(piece.piece()), piece.id());
     }
 
     // ---------------------------------------------------------------- wearing
@@ -127,26 +180,47 @@ public final class Collectibles implements Listener {
     /** Puts on what the player has equipped (on join, after a reload, after parkour). */
     public void apply(Player player) {
         if (!enabled()) return;
+        migrate(player);
         PlayerInventory inventory = player.getInventory();
-        Item hat = equipped(player, Category.HAT), suit = equipped(player, Category.SUIT), gadget = equipped(player, Category.GADGET);
-        if (suit != null && owns(player, suit)) {
-            inventory.setHelmet(hat != null && owns(player, hat) ? hatItem(hat) : armour(suit, Material.LEATHER_HELMET, suit.suit().helmet()));
-            inventory.setChestplate(armour(suit, Material.LEATHER_CHESTPLATE, suit.suit().chest()));
-            inventory.setLeggings(armour(suit, Material.LEATHER_LEGGINGS, suit.suit().legs()));
-            inventory.setBoots(armour(suit, Material.LEATHER_BOOTS, suit.suit().boots()));
-        } else {
-            inventory.setHelmet(hat != null && owns(player, hat) ? hatItem(hat) : null);
-            inventory.setChestplate(null);
-            inventory.setLeggings(null);
-            inventory.setBoots(null);
-        }
-        int abilitySlot = slot("collectibles.ability-slot", 6), gadgetSlot = slot("collectibles.gadget-slot", 4);
-        boolean fullSuit = suit != null && owns(player, suit) && (hat == null || !owns(player, hat));
-        inventory.setItem(abilitySlot, fullSuit ? effects.abilityItem(suit, tag(suit.suit().ability(), "ability")) : null);
+        Item hat = equipped(player, Category.HAT), gadget = equipped(player, Category.GADGET);
+        if (hat != null && !owns(player, hat)) hat = null;
+        Item helmet = piece(player, Catalog.Piece.HELMET);
+        inventory.setHelmet(hat != null ? hatItem(player, hat) : helmet != null ? armour(player, helmet) : null);
+        inventory.setChestplate(armourOrNull(player, Catalog.Piece.CHESTPLATE));
+        inventory.setLeggings(armourOrNull(player, Catalog.Piece.LEGGINGS));
+        inventory.setBoots(armourOrNull(player, Catalog.Piece.BOOTS));
+        int gadgetSlot = slot("collectibles.gadget-slot", 4);
         inventory.setItem(gadgetSlot, gadget != null && owns(player, gadget) ? gadgetItem(gadget) : null);
-        if (plugin.getConfig().getBoolean("join-items.collectibles.enabled", true)) {
-            inventory.setItem(slot("join-items.collectibles.slot", 3), joinItem());
+        // The ability item from 1.36 is gone: abilities are a right-click with an empty hand now.
+        int oldAbility = slot("collectibles.ability-slot", 6);
+        ItemStack inOld = inventory.getItem(oldAbility);
+        if (inOld != null && inOld.hasItemMeta()) {
+            String what = inOld.getItemMeta().getPersistentDataContainer().get(itemKey, PersistentDataType.STRING);
+            if (what != null && what.startsWith("ability:")) inventory.setItem(oldAbility, null);
         }
+        if (plugin.getConfig().getBoolean("join-items.collectibles.enabled", true)) {
+            inventory.setItem(joinSlot(plugin), joinItem());
+        }
+        effects.worn(player);
+        if (plugin.doubleJump() != null) plugin.doubleJump().refresh(player);
+    }
+
+    private ItemStack armourOrNull(Player player, Catalog.Piece piece) {
+        Item item = piece(player, piece);
+        return item == null ? null : armour(player, item);
+    }
+
+    /** A config.yml from before 1.37 (radio in 5): the radio moves to 3 and the collectibles sit in the middle (5). */
+    public static boolean oldHotbar(org.bukkit.plugin.Plugin plugin) {
+        var config = plugin.getConfig();
+        int collectibles = config.getInt("join-items.collectibles.slot", 5);
+        // radio still in 5 with the collectibles in 3, or both in 5 (a config.yml without a collectibles section)
+        return config.getInt("join-items.radio.slot", 3) == 5 && (collectibles == 3 || collectibles == 5);
+    }
+
+    public static int joinSlot(org.bukkit.plugin.Plugin plugin) {
+        if (oldHotbar(plugin)) return 4;
+        return Math.max(0, Math.min(8, plugin.getConfig().getInt("join-items.collectibles.slot", 5) - 1));
     }
 
     private int slot(String path, int fallback) {
@@ -157,10 +231,13 @@ public final class Collectibles implements Listener {
         MysteryData data = data();
         UUID id = player.getUniqueId();
         switch (item.category()) {
-            case HAT -> data.equip(id, "hat", item.id());
+            case HAT -> {
+                data.equip(id, "hat", item.id());
+                data.equip(id, slotKey(Catalog.Piece.HELMET), null); // the hat goes where the helmet was
+            }
             case SUIT -> {
-                data.equip(id, "suit", item.id());
-                data.equip(id, "hat", null); // the suit's own helmet: the full set
+                data.equip(id, slotKey(item.piece()), item.id());
+                if (item.piece() == Catalog.Piece.HELMET) data.equip(id, "hat", null);
             }
             case GADGET -> data.equip(id, "gadget", item.id());
             case CLOAK -> data.equip(id, "cloak", item.id());
@@ -170,49 +247,134 @@ public final class Collectibles implements Listener {
         apply(player);
         plugin.messages().send(player, "collectibles.equipped", name(item));
         sound(player, "item.armor.equip_leather", 1.2f);
+        if (item.set() != null && worn(player, item.set()) == 4) {
+            Catalog.SuitSet set = Catalog.set(item.set());
+            plugin.messages().send(player, "collectibles.full-set", Placeholder.parsed("set", set.name()),
+                    Placeholder.parsed("ability", plugin.messages().raw("collectibles.ability." + set.suit().ability() + ".name")),
+                    Placeholder.parsed("how", plugin.messages().raw("collectibles.ability." + set.suit().ability() + ".how")));
+            sound(player, "block.beacon.power_select", 1.4f);
+        }
+    }
+
+    /** Wears every piece of a set the player owns. */
+    private void equipSet(Player player, Catalog.SuitSet set) {
+        for (Item piece : set.pieces()) if (owns(player, piece)) data().equip(player.getUniqueId(), slotKey(piece.piece()), piece.id());
+        data().equip(player.getUniqueId(), "hat", null);
+        Item last = set.pieces().get(1);
+        equip(player, owns(player, last) ? last : set.pieces().stream().filter(p -> owns(player, p)).findFirst().orElse(last));
     }
 
     private void takeOff(Player player, Category category) {
-        data().equip(player.getUniqueId(), category.prefix(), null);
+        if (category == Category.SUIT) {
+            for (Catalog.Piece piece : Catalog.Piece.values()) data().equip(player.getUniqueId(), slotKey(piece), null);
+        } else {
+            data().equip(player.getUniqueId(), category.prefix(), null);
+        }
         apply(player);
         plugin.messages().send(player, "collectibles.took-off", Placeholder.parsed("category",
                 plugin.messages().raw("collectibles.category." + category.key + ".name")));
         sound(player, "item.armor.equip_generic", 0.8f);
     }
 
+    private void takeOffPiece(Player player, Item item) {
+        data().equip(player.getUniqueId(), slotKey(item.piece()), null);
+        apply(player);
+        plugin.messages().send(player, "collectibles.took-off-piece", name(item));
+        sound(player, "item.armor.equip_generic", 0.8f);
+    }
+
     private void takeOffAll(Player player) {
-        for (Category category : Category.values()) if (!category.action()) data().equip(player.getUniqueId(), category.prefix(), null);
+        for (String key : List.of("hat", "gadget", "cloak")) data().equip(player.getUniqueId(), key, null);
+        for (Catalog.Piece piece : Catalog.Piece.values()) data().equip(player.getUniqueId(), slotKey(piece), null);
         apply(player);
         plugin.messages().send(player, "collectibles.took-off-all");
         sound(player, "item.armor.equip_generic", 0.8f);
     }
 
     /** The cloak the player wears now, if they still own it. */
+    Item hat(Player player) {
+        Item hat = equipped(player, Category.HAT);
+        return hat != null && owns(player, hat) ? hat : null;
+    }
+
+    /** Players in a parkour run can't use movement gadgets or suit bonuses. */
+    boolean inParkour(Player player) {
+        return plugin.parkour() != null && plugin.parkour().game().playing(player);
+    }
+
     Item cloak(Player player) {
         Item cloak = equipped(player, Category.CLOAK);
         return cloak != null && owns(player, cloak) ? cloak : null;
     }
 
-    /** A hat as an item (for the head and the menu). */
-    ItemStack hatItem(Item hat) {
+    /** A hat as worn: its picture, and its name and description when hovered. */
+    ItemStack hatItem(Player player, Item hat) {
         ItemStack item = ItemStack.of(Material.PAPER);
+        String model = hat.key().equals("propeller_cap") ? "hat/propeller_cap_base" : "hat/" + hat.key(); // the propeller spins on its own
         item.editMeta(meta -> {
-            meta.displayName(plugin.messages().item("collectibles.worn-name", name(hat)));
-            meta.setItemModel(new NamespacedKey("fractal", "hat/" + hat.key()));
+            meta.displayName(plugin.messages().item("collectibles.worn.name", name(hat)));
+            meta.lore(plugin.messages().lore("collectibles.worn.lore", wornTags(hat)));
+            meta.setItemModel(new NamespacedKey("fractal", model));
             meta.addItemFlags(ItemFlag.values());
         });
         return item;
     }
 
-    private ItemStack armour(Item suit, Material material, Color colour) {
+    /** A suit piece as worn: the suit's own armour look, no armour points, and the set and its bonus when hovered. */
+    private ItemStack armour(Player player, Item piece) {
+        Material material = switch (piece.piece()) {
+            case HELMET -> Material.LEATHER_HELMET;
+            case CHESTPLATE -> Material.LEATHER_CHESTPLATE;
+            case LEGGINGS -> Material.LEATHER_LEGGINGS;
+            case BOOTS -> Material.LEATHER_BOOTS;
+        };
+        Catalog.SuitSet set = Catalog.set(piece.set());
+        int on = worn(player, piece.set());
+        Color colour = switch (piece.piece()) {
+            case HELMET -> set.suit().helmet();
+            case CHESTPLATE -> set.suit().chest();
+            case LEGGINGS -> set.suit().legs();
+            case BOOTS -> set.suit().boots();
+        };
         ItemStack item = ItemStack.of(material);
         item.editMeta(LeatherArmorMeta.class, meta -> {
             meta.setColor(colour);
-            meta.displayName(plugin.messages().item("collectibles.worn-name", name(suit)));
+            meta.displayName(plugin.messages().item("collectibles.worn.name", name(piece)));
+            List<Component> lore = new ArrayList<>(plugin.messages().lore("collectibles.worn.lore", wornTags(piece)));
+            lore.addAll(plugin.messages().lore(on == 4 ? "collectibles.worn.set-complete" : "collectibles.worn.set", setTags(set, on)));
+            meta.lore(lore);
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.values());
+            if (plugin.menuStyle().custom()) meta.setItemModel(new NamespacedKey("fractal", "suit/" + piece.set() + "/" + piece.piece().key()));
         });
+        item.setData(io.papermc.paper.datacomponent.DataComponentTypes.ATTRIBUTE_MODIFIERS,
+                io.papermc.paper.datacomponent.item.ItemAttributeModifiers.itemAttributes().build()); // no armour points
+        if (plugin.menuStyle().custom()) {
+            org.bukkit.inventory.EquipmentSlot slot = switch (piece.piece()) {
+                case HELMET -> org.bukkit.inventory.EquipmentSlot.HEAD;
+                case CHESTPLATE -> org.bukkit.inventory.EquipmentSlot.CHEST;
+                case LEGGINGS -> org.bukkit.inventory.EquipmentSlot.LEGS;
+                case BOOTS -> org.bukkit.inventory.EquipmentSlot.FEET;
+            };
+            item.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
+                    io.papermc.paper.datacomponent.item.Equippable.equippable(slot).assetId(Key.key("fractal", "suit_" + piece.set())).build());
+        }
         return item;
+    }
+
+    private TagResolver wornTags(Item item) {
+        return TagResolver.resolver(name(item), Placeholder.parsed("rarity", plugin.mystery().rarityLabel(item.rarity())),
+                Placeholder.parsed("description", item.description()),
+                Placeholder.parsed("season", plugin.messages().raw("collectibles.season." + item.season().key())));
+    }
+
+    /** &lt;set&gt; &lt;count&gt; &lt;ability&gt; &lt;bonus&gt; &lt;how&gt; for a suit. */
+    private TagResolver setTags(Catalog.SuitSet set, int on) {
+        String ability = set.suit().ability();
+        return TagResolver.resolver(Placeholder.parsed("set", plugin.mystery().rarityColourTag(set.rarity()) + set.name()),
+                Messages.arg("count", on), Placeholder.parsed("ability", plugin.messages().raw("collectibles.ability." + ability + ".name")),
+                Placeholder.parsed("bonus", plugin.messages().raw("collectibles.ability." + ability + ".description")),
+                Placeholder.parsed("how", plugin.messages().raw("collectibles.ability." + ability + ".how")));
     }
 
     private ItemStack gadgetItem(Item gadget) {
@@ -224,10 +386,6 @@ public final class Collectibles implements Listener {
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, "gadget:" + gadget.key());
         });
         return item;
-    }
-
-    private String tag(String value, String kind) {
-        return kind + ":" + value;
     }
 
     NamespacedKey itemKey() {
@@ -256,7 +414,12 @@ public final class Collectibles implements Listener {
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         ItemStack held = event.getItem();
-        if (held == null || !held.hasItemMeta()) return;
+        if (held == null || held.getType().isAir()) {
+            // An empty hand (the game only tells us when it's on a block; the swap-hands key works anywhere).
+            triggerAbility(event.getPlayer());
+            return;
+        }
+        if (!held.hasItemMeta()) return;
         String what = held.getItemMeta().getPersistentDataContainer().get(itemKey, PersistentDataType.STRING);
         if (what == null) return;
         event.setCancelled(true);
@@ -268,9 +431,23 @@ public final class Collectibles implements Listener {
         }
         int colon = what.indexOf(':');
         String kind = what.substring(0, colon), key = what.substring(colon + 1);
-        if (!ready(player, what, kind.equals("gadget") ? gadgetCooldown(key) : effects.abilityCooldown(key))) return;
-        if (kind.equals("gadget")) effects.gadget(player, key);
-        else effects.ability(player, key);
+        if (!kind.equals("gadget")) return;
+        if (inParkour(player)) return;
+        if (!ready(player, what, gadgetCooldown(key))) return;
+        effects.gadget(player, key);
+    }
+
+    /** The swap-hands key (F): the full suit's ability. */
+    public void swapKey(Player player) {
+        triggerAbility(player);
+    }
+
+    /** The full suit's right-click ability (passive suits and the frog's sneak-leap don't use this). */
+    private void triggerAbility(Player player) {
+        Catalog.SuitSet set = enabled() && !inParkour(player) ? fullSet(player) : null;
+        if (set == null || set.suit().passive() || set.key().equals("frog")) return;
+        String ability = set.suit().ability();
+        if (ready(player, "ability:" + ability, effects.abilityCooldown(ability))) effects.ability(player, ability);
     }
 
     /** Cooldowns, shown in the action bar while waiting. True when it can be used now (and starts the cooldown). */
@@ -289,8 +466,10 @@ public final class Collectibles implements Listener {
 
     private double gadgetCooldown(String key) {
         return switch (key) {
-            case "disco_ball" -> 20;
-            case "fake_tnt", "bat_blaster", "cookie_fountain" -> 8;
+            case "disco_ball", "cookie_fountain", "trampoline" -> 25;
+            case "balloon" -> 30;
+            case "fake_tnt", "bat_blaster", "melody_maker" -> 8;
+            case "grappling_hook", "blink_stick", "magic_wand" -> 3;
             case "firework_launcher", "snow_cannon", "pumpkin_launcher" -> 3;
             case "party_popper", "bubble_wand" -> 2;
             default -> 0.6; // paintball gun
@@ -311,6 +490,7 @@ public final class Collectibles implements Listener {
         private final Season season;
         private final Map<Integer, Item> items = new HashMap<>();
         private final Map<Integer, Season> tabs = new HashMap<>();
+        private final Map<Integer, Catalog.SuitSet> sets = new HashMap<>();
         private Inventory inventory;
 
         Menu(Category category, Season season) {
@@ -377,7 +557,7 @@ public final class Collectibles implements Listener {
             for (int i = 0; i < seasons.length; i++) {
                 Season tab = seasons[i];
                 boolean chosen = tab == season;
-                boolean now = tab == Season.NORMAL || inSeason(new Item("", category, "", tab, Reward.Rarity.COMMON, "", "", null, null));
+                boolean now = tab == Season.NORMAL || inSeason(new Item("", category, "", tab, Reward.Rarity.COMMON, "", "", null, null, null, null));
                 ItemStack icon = button(Material.PAPER, "season/" + tab.key(), null, TagResolver.empty());
                 icon.editMeta(meta -> {
                     meta.displayName(messages.item("collectibles.season." + tab.key()));
@@ -389,13 +569,30 @@ public final class Collectibles implements Listener {
             }
         }
         List<Item> items = category.seasonal() ? Catalog.of(category, season) : Catalog.of(category);
-        Item worn = category.action() ? null : equipped(player, category);
-        int slot = FIRST_ITEM;
-        for (Item item : items) {
-            if (slot > LAST_ITEM) break;
-            menu.inventory.setItem(slot, entry(player, item, worn != null && worn.id().equals(item.id())));
-            menu.items.put(slot, item);
-            slot++;
+        if (category == Category.SUIT) {
+            // One suit a row: its four pieces, then the whole set.
+            int row = 1;
+            for (Catalog.SuitSet set : Catalog.sets(season)) {
+                if (row > 4) break;
+                for (Item piece : set.pieces()) {
+                    int at = row * 9 + 1 + piece.piece().ordinal();
+                    Item on = piece(player, piece.piece());
+                    menu.inventory.setItem(at, entry(player, piece, on != null && on.id().equals(piece.id())));
+                    menu.items.put(at, piece);
+                }
+                menu.inventory.setItem(row * 9 + 6, setEntry(player, set));
+                menu.sets.put(row * 9 + 6, set);
+                row++;
+            }
+        } else {
+            Item worn = category.action() ? null : equipped(player, category);
+            int slot = FIRST_ITEM;
+            for (Item item : items) {
+                if (slot > LAST_ITEM) break;
+                menu.inventory.setItem(slot, entry(player, item, worn != null && worn.id().equals(item.id())));
+                menu.items.put(slot, item);
+                slot++;
+            }
         }
         if (items.isEmpty()) {
             menu.inventory.setItem(22, button(Material.GRAY_DYE, "mystery/locked", "collectibles.empty", TagResolver.empty()));
@@ -423,15 +620,38 @@ public final class Collectibles implements Listener {
         icon.editMeta(meta -> {
             meta.displayName(messages.item(owned ? "collectibles.entry.name" : "collectibles.entry.locked-name", tags));
             List<Component> lore = new ArrayList<>(messages.lore("collectibles.entry.lore", tags));
-            if (item.suit() != null) lore.addAll(messages.lore("collectibles.entry.suit", tags));
+            if (item.set() != null) {
+                Catalog.SuitSet set = Catalog.set(item.set());
+                lore.addAll(messages.lore("collectibles.entry.suit", setTags(set, worn(player, item.set()))));
+            }
             lore.add(Component.empty());
             String state;
             if (owned) state = worn ? "collectibles.entry.worn" : item.category().action() ? "collectibles.entry.use" : "collectibles.entry.equip";
-            else if (!season) state = "collectibles.entry.out-of-season";
+            else if (!craftable(item)) state = season ? "collectibles.entry.boxes-only" : "collectibles.entry.out-of-season";
             else state = dust >= price ? "collectibles.entry.buy" : "collectibles.entry.cant-afford";
             lore.addAll(messages.lore(state, tags));
             meta.lore(lore);
             if (worn) meta.setEnchantmentGlintOverride(true);
+            meta.addItemFlags(ItemFlag.values());
+        });
+        return icon;
+    }
+
+    /** A suit's whole set: how many pieces are found and worn, the bonus, and a click to wear them all. */
+    private ItemStack setEntry(Player player, Catalog.SuitSet set) {
+        Messages messages = plugin.messages();
+        int found = (int) set.pieces().stream().filter(p -> owns(player, p)).count();
+        int on = worn(player, set.key());
+        ItemStack icon = modelled(Material.ARMOR_STAND, "suit/" + set.key() + "/set");
+        TagResolver tags = TagResolver.resolver(setTags(set, on), Messages.arg("found", found),
+                Placeholder.parsed("rarity", plugin.mystery().rarityLabel(set.rarity())));
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("collectibles.set.name", tags));
+            List<Component> lore = new ArrayList<>(messages.lore("collectibles.set.lore", tags));
+            lore.add(Component.empty());
+            lore.addAll(messages.lore(found == 0 ? "collectibles.set.none" : on == found ? "collectibles.set.worn" : "collectibles.set.wear", tags));
+            meta.lore(lore);
+            if (on == 4) meta.setEnchantmentGlintOverride(true);
             meta.addItemFlags(ItemFlag.values());
         });
         return icon;
@@ -484,9 +704,21 @@ public final class Collectibles implements Listener {
             openPage(player, menu.category, tab);
             return;
         }
+        Season season = menu.season == null ? Season.NORMAL : menu.season;
+        Catalog.SuitSet set = menu.sets.get(slot);
+        if (set != null) {
+            boolean any = set.pieces().stream().anyMatch(p -> owns(player, p));
+            if (!any) {
+                sound(player, "entity.villager.no", 1f);
+                return;
+            }
+            if (worn(player, set.key()) == set.pieces().stream().filter(p -> owns(player, p)).count()) takeOff(player, Category.SUIT);
+            else equipSet(player, set);
+            openPage(player, menu.category, season);
+            return;
+        }
         Item item = menu.items.get(slot);
         if (item == null) return;
-        Season season = menu.season == null ? Season.NORMAL : menu.season;
         if (!owns(player, item)) {
             buy(player, item, event.isShiftClick());
             if (player.getOpenInventory().getTopInventory() == menu.inventory) openPage(player, menu.category, season);
@@ -496,6 +728,12 @@ public final class Collectibles implements Listener {
             case EMOTE, GESTURE -> {
                 player.closeInventory();
                 use(player, item);
+            }
+            case SUIT -> {
+                Item on = piece(player, item.piece());
+                if (on != null && on.id().equals(item.id())) takeOffPiece(player, item);
+                else equip(player, item);
+                openPage(player, menu.category, season);
             }
             default -> {
                 Item worn = equipped(player, item.category());
@@ -534,8 +772,8 @@ public final class Collectibles implements Listener {
 
     /** Buying with Mystery Dust: a shift-click, in season, with enough dust. */
     private void buy(Player player, Item item, boolean shift) {
-        if (!inSeason(item)) {
-            plugin.messages().send(player, "collectibles.out-of-season", name(item),
+        if (!craftable(item)) {
+            plugin.messages().send(player, inSeason(item) ? "collectibles.boxes-only" : "collectibles.out-of-season", name(item),
                     Placeholder.parsed("season", plugin.messages().raw("collectibles.season." + item.season().key())));
             sound(player, "entity.villager.no", 1f);
             return;
@@ -576,11 +814,7 @@ public final class Collectibles implements Listener {
     public ItemStack icon(Item item) {
         return switch (item.category()) {
             case HAT -> modelled(Material.LEATHER_HELMET, "hat/" + item.key());
-            case SUIT -> {
-                ItemStack chest = ItemStack.of(Material.LEATHER_CHESTPLATE);
-                chest.editMeta(LeatherArmorMeta.class, meta -> meta.setColor(item.suit().chest()));
-                yield chest;
-            }
+            case SUIT -> modelled(Material.LEATHER_CHESTPLATE, "suit/" + item.set() + "/" + item.piece().key());
             case GADGET -> modelled(Material.FIREWORK_STAR, "gadget/" + item.key());
             case CLOAK -> modelled(Material.PHANTOM_MEMBRANE, "cloak/" + item.key());
             case EMOTE -> modelled(Material.PLAYER_HEAD, "status/" + item.emoji());

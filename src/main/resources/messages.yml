@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 34
+messages-version: 35
 
 theme:
   primary: "#B266FF"
@@ -875,8 +875,8 @@ collectibles:
       single: "Suit"
       title: "<brand><bold>Suits</bold></brand>"
       lore:
-        - "<muted>Full outfits. Wear the whole set"
-        - "<muted>for a special ability!"
+        - "<muted>Found piece by piece. Wear the"
+        - "<muted>whole set for a special bonus!"
     gadgets:
       name: "<primary>Gadgets"
       single: "Gadget"
@@ -888,7 +888,8 @@ collectibles:
       single: "Cloak"
       title: "<brand><bold>Cloaks</bold></brand>"
       lore:
-        - "<muted>Particles that follow you around."
+        - "<muted>Halos, wings and auras that"
+        - "<muted>follow you around."
     emotes:
       name: "<primary>Emotes"
       single: "Emote"
@@ -900,7 +901,8 @@ collectibles:
       single: "Gesture"
       title: "<brand><bold>Gestures</bold></brand>"
       lore:
-        - "<muted>Wave, clap, spin and more."
+        - "<muted>A copy of you waves, claps,"
+        - "<muted>spins and more."
   # Under each category button. <found> <total> <wearing>
   category-footer:
     - ""
@@ -937,7 +939,7 @@ collectibles:
   take-off-all:
     name: "<bad>Take Everything Off"
     lore:
-      - "<muted>Hat, suit, gadget and cloak."
+      - "<muted>Hat, suit pieces, gadget and cloak."
   take-off:
     name: "<bad>Take Off"
     lore:
@@ -971,8 +973,10 @@ collectibles:
     lore:
       - "<rarity> <dark_gray>• <season>"
       - "<muted><description>"
+    # Under a suit piece. <set> <count> (pieces worn) <ability> <bonus> <how>
     suit:
       - ""
+      - "<muted>Part of the <set><muted>: <white><count></white><dark_gray>/4 worn"
       - "<#FFD27F>Full set: <white><ability>"
     worn:
       - "<#9BFFC4>✔ Wearing"
@@ -989,63 +993,113 @@ collectibles:
       - "<muted>buy for <#FFD27F><price> Mystery Dust"
       - "<bad>You need <white><need></white> more"
     out-of-season:
-      - "<muted>Out of season: only found and"
-      - "<muted>sold during <season><muted>."
+      - "<muted>Out of season: only found in"
+      - "<muted>Mystery Boxes during <season><muted>."
+    boxes-only:
+      - "<muted>Seasonal: only found in Mystery"
+      - "<muted>Boxes (it can't be crafted)."
+  # A whole suit, next to its four pieces. <set> <found> <count> <ability> <bonus> <how> <rarity>
+  set:
+    name: "<set>"
+    lore:
+      - "<rarity>"
+      - "<muted>Pieces found: <white><found></white><dark_gray>/4"
+      - "<muted>Wearing: <white><count></white><dark_gray>/4"
+      - ""
+      - "<#FFD27F>Full set bonus: <white><ability>"
+      - "<muted><bonus>"
+      - "<dark_gray><how>"
+    wear:
+      - "<accent><click></accent> <muted>to wear every piece you have"
+    worn:
+      - "<#9BFFC4>✔ Wearing"
+      - "<accent><click></accent> <muted>to take it off"
+    none:
+      - "<muted>Find its pieces in Mystery Boxes."
+  # What you see when you hover over something you're wearing.
+  worn:
+    name: "<name>"
+    lore:
+      - "<rarity> <dark_gray>• <season>"
+      - "<muted><description>"
+    set:
+      - ""
+      - "<set> <dark_gray>(<white><count></white>/4)"
+      - "<dark_gray>Full set bonus: <gray><ability>"
+      - "<dark_gray><bonus>"
+    set-complete:
+      - ""
+      - "<set> <#9BFFC4>(<count>/4) ✔"
+      - "<#FFD27F>Full set bonus: <white><ability>"
+      - "<muted><bonus>"
+      - "<accent><how>"
   # Hotbar items
   gadget-item:
     name: "<name> <muted>(Right-click)"
     lore:
       - "<muted><description>"
-  ability-item:
-    name: "<#FFD27F><ability> <muted>(Right-click)"
-    lore:
-      - "<muted><description>"
-      - "<dark_gray>From your <name>"
+  # Full-set bonuses. <how> says how to use it.
   ability:
     fireball:
       name: "Fireball"
       description: 'Throw a fireball (it doesn''t burn anything).'
+      how: "Right-click a block with an empty hand, or press F"
     smoke_bomb:
       name: "Smoke Bomb"
       description: 'Vanish in smoke and dash forward.'
+      how: "Right-click a block with an empty hand, or press F"
     low_gravity:
       name: "Low Gravity"
-      description: 'Jump high and float down for 8s.'
+      description: 'Always on: jump higher and float down slowly. No double jump in space!'
+      how: "Always on while you wear the full suit"
     super_leap:
       name: "Super Leap"
-      description: 'A huge frog jump.'
+      description: 'A huge frog jump, much farther than a double jump.'
+      how: "Hold sneak to charge, let go to leap"
+      charge: "<#5BC24A>Leap <bar>"
     water_splash:
       name: "Water Splash"
       description: 'Make a big splash.'
+      how: "Right-click a block with an empty hand, or press F"
     beach_ball:
       name: "Beach Ball"
       description: 'Throw a bouncy beach ball.'
+      how: "Right-click a block with an empty hand, or press F"
     gift_toss:
       name: "Gift Toss"
       description: 'Throw a present that bursts into confetti.'
+      how: "Right-click a block with an empty hand, or press F"
     jingle_dash:
       name: "Jingle Dash"
-      description: 'Run fast with jingling bells.'
+      description: 'Always on: run faster, with jingling bells.'
+      how: "Always on while you wear the full suit"
     bunny_hop:
       name: "Bunny Hop"
-      description: 'Hop like a bunny.'
+      description: 'Always on: hop higher like a bunny.'
+      how: "Always on while you wear the full suit"
     egg_toss:
       name: "Egg Toss"
       description: 'Throw an egg (no chicks, promise).'
+      how: "Right-click a block with an empty hand, or press F"
     bone_rattle:
       name: "Bone Rattle"
       description: 'Rattle your bones.'
+      how: "Right-click a block with an empty hand, or press F"
     bat_swarm:
       name: "Bat Swarm"
       description: 'Turn into a swarm of bats for 3s.'
+      how: "Right-click a block with an empty hand, or press F"
   cooldown: "<muted>Ready in <white><seconds>s"
   equipped: "<prefix><secondary>Now wearing <name><secondary>."
   took-off: "<prefix><muted>Took off your <category>."
   took-off-all: "<prefix><muted>Took everything off."
+  took-off-piece: "<prefix><muted>Took off your <name><muted>."
+  full-set: "<prefix><#FFD27F>Full <set><#FFD27F>! <white><ability></white> <muted>(<how>)"
+  boxes-only: "<prefix><bad><name> <bad>is seasonal: it only comes from Mystery Boxes."
   bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price> Mystery Dust</#FFD27F><secondary>!"
   shift-to-buy: "<prefix><muted>Shift-click to buy <name> <muted>for <#FFD27F><price> Mystery Dust<muted>."
   cant-afford: "<prefix><bad>You need <white><need></white> more Mystery Dust for <name><bad>."
-  out-of-season: "<prefix><bad><name> <bad>is only around during <season><bad>."
+  out-of-season: "<prefix><bad><name> <bad>is only found during <season><bad>."
   not-owned: "<prefix><bad>You haven't found <name> <bad>yet."
   unknown: "<prefix><bad>There's no <white><input></white>."
   no-chat-colours: "<prefix><bad>Chat colours come with a rank, or from Mystery Boxes."

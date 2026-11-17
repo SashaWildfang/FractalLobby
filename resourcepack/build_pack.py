@@ -1279,3 +1279,10 @@ print('mystery boxes: 5 boxes, vault, dust, icons')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art'))
 import hats as _hats, sprites as _sprites
 print('collectibles:', len(_hats.build(OUT)), 'hats,', len(_sprites.build(OUT)), 'icons')
+
+# 29. Collectibles in HD (1.37): 32x32 icons, suits with their own armour textures (fractal:suit_<set>), cloak
+#     pieces, gadget models; and no armour bar (cosmetic armour gives no armour points anyway)
+import models as _models
+print('collectibles HD:', _models.build(OUT), 'icons')
+for f in ('armor_full', 'armor_half', 'armor_empty'):
+    Image.new('RGBA', (9, 9), (0, 0, 0, 0)).save(f'{HUD}/{f}.png')

@@ -6,25 +6,36 @@ package com.sasha.lobby.collectibles;
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.collectibles.Catalog.Item;
 import com.sasha.lobby.items.MenuStyle;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.DyedItemColor;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Bat;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.TextDisplay;
@@ -34,29 +45,34 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerEggThrowEvent;
-import org.bukkit.inventory.ItemFlag;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.AxisAngle4f;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * What collectibles do: gadgets, suit abilities, cloaks (particles around the wearer, every 2 ticks), emotes (a big
- * emoji over the head) and gestures (the player waves, claps, spins...). Nothing here can hurt anyone or change the
- * world: thrown things are cancelled on hit, paint is only shown to players for a few seconds, the TNT is fake.
+ * What collectibles do: gadgets, suit bonuses (right-click or passive), cloaks (textured pieces riding the wearer, with
+ * a few particles), the spinning propeller, emotes (a big emoji over the head) and gestures (a copy of the player that
+ * does the gesture in front of them). Nothing here can hurt anyone or change the world: thrown things are cancelled on
+ * hit, paint is only shown to players for a few seconds, the TNT is fake.
  */
 final class Effects implements Listener {
 
@@ -64,17 +80,49 @@ final class Effects implements Listener {
     private final Lobby plugin;
     private final Collectibles collectibles;
     private final NamespacedKey effectKey;
+    private final NamespacedKey bonusKey;
     private BukkitTask task;
     private long tick;
     /** Each player's emote display (one at a time). */
     private final Map<UUID, TextDisplay> emotes = new HashMap<>();
+    /** The pieces of each player's cloak. */
+    private final Map<UUID, Rig> rigs = new HashMap<>();
+    private final Map<UUID, ItemDisplay> propellers = new HashMap<>();
+    private final Map<UUID, Mannequin> clones = new HashMap<>();
+    private final Map<UUID, ItemDisplay> balloons = new HashMap<>();
+    private final Map<UUID, Placed> placed = new HashMap<>();
+    /** Frogs charging a leap: when they started. */
+    private final Map<UUID, Long> charging = new HashMap<>();
+    /** Which passive bonus each player has on now. */
+    private final Map<UUID, String> passives = new HashMap<>();
     private static final Color[] PARTY = {Color.fromRGB(0xFF7BE5), Color.fromRGB(0xB266FF), Color.fromRGB(0x7FA8FF),
             Color.fromRGB(0x5BE37C), Color.fromRGB(0xFFD27F), Color.fromRGB(0xFF7590)};
+
+    private static final class Rig {
+        final String key;
+        final List<ItemDisplay> parts = new ArrayList<>();
+
+        Rig(String key) {
+            this.key = key;
+        }
+    }
+
+    /** Something placed on the ground (a cookie fountain or trampoline): one per player. */
+    private static final class Placed {
+        final ItemDisplay display;
+        final BukkitTask task;
+
+        Placed(ItemDisplay display, BukkitTask task) {
+            this.display = display;
+            this.task = task;
+        }
+    }
 
     Effects(Lobby plugin, Collectibles collectibles) {
         this.plugin = plugin;
         this.collectibles = collectibles;
         this.effectKey = new NamespacedKey(plugin, "collectible_effect");
+        this.bonusKey = new NamespacedKey(plugin, "suit_bonus");
     }
 
     void start() {
@@ -82,11 +130,22 @@ final class Effects implements Listener {
         for (World world : plugin.getServer().getWorlds()) {
             for (Entity entity : world.getEntities()) if (entity.getScoreboardTags().contains(TAG)) entity.remove();
         }
+        for (Player player : plugin.getServer().getOnlinePlayers()) worn(player);
         task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             tick += 2;
             for (Player player : plugin.getServer().getOnlinePlayers()) {
+                boolean shown = !player.isInvisible() && player.getGameMode() != GameMode.SPECTATOR;
                 Item cloak = collectibles.cloak(player);
-                if (cloak != null && !player.isInvisible() && player.getGameMode() != org.bukkit.GameMode.SPECTATOR) cloak(player, cloak.key());
+                if (cloak != null && shown) cloak(player, cloak.key());
+                Rig rig = rigs.get(player.getUniqueId());
+                if (rig != null) pose(player, rig, shown);
+                ItemDisplay propeller = propellers.get(player.getUniqueId());
+                if (propeller != null) spin(player, propeller, shown);
+                ItemDisplay balloon = balloons.get(player.getUniqueId());
+                if (balloon != null) floatBalloon(player, balloon);
+                passive(player);
+                charge(player);
+                if (tick % 20 == 0) viewers(player);
             }
         }, 2L, 2L);
     }
@@ -96,11 +155,56 @@ final class Effects implements Listener {
         task = null;
         for (TextDisplay display : emotes.values()) display.remove();
         emotes.clear();
+        for (UUID id : new ArrayList<>(rigs.keySet())) unrig(id);
+        propellers.values().forEach(Entity::remove);
+        propellers.clear();
+        clones.values().forEach(Entity::remove);
+        clones.clear();
+        balloons.values().forEach(Entity::remove);
+        balloons.clear();
+        for (UUID id : new ArrayList<>(placed.keySet())) unplace(id);
+        for (Player player : plugin.getServer().getOnlinePlayers()) bonus(player, null);
+        passives.clear();
+        charging.clear();
     }
 
     void quit(Player player) {
-        TextDisplay emote = emotes.remove(player.getUniqueId());
+        UUID id = player.getUniqueId();
+        TextDisplay emote = emotes.remove(id);
         if (emote != null) emote.remove();
+        unrig(id);
+        ItemDisplay propeller = propellers.remove(id);
+        if (propeller != null) propeller.remove();
+        Mannequin clone = clones.remove(id);
+        if (clone != null) clone.remove();
+        ItemDisplay balloon = balloons.remove(id);
+        if (balloon != null) balloon.remove();
+        unplace(id);
+        bonus(player, null);
+        passives.remove(id);
+        charging.remove(id);
+    }
+
+    /** After the player's collectibles change: their cloak pieces and propeller. */
+    void worn(Player player) {
+        Item cloak = collectibles.cloak(player);
+        Rig rig = rigs.get(player.getUniqueId());
+        String want = cloak == null ? null : cloak.key();
+        if (rig != null && !rig.key.equals(want)) {
+            unrig(player.getUniqueId());
+            rig = null;
+        }
+        if (rig == null && want != null && plugin.menuStyle().custom()) rig(player, want);
+        Item hat = collectibles.hat(player);
+        boolean propeller = hat != null && hat.key().equals("propeller_cap") && plugin.menuStyle().custom();
+        ItemDisplay spinning = propellers.get(player.getUniqueId());
+        if (propeller && (spinning == null || !spinning.isValid())) {
+            ItemDisplay display = rider(player, "hat/propeller");
+            propellers.put(player.getUniqueId(), display);
+        } else if (!propeller && spinning != null) {
+            spinning.remove();
+            propellers.remove(player.getUniqueId());
+        }
     }
 
     // ---------------------------------------------------------------- helpers
@@ -118,16 +222,18 @@ final class Effects implements Listener {
     }
 
     /** Runs something every tick for a while. */
-    private void every(int ticks, java.util.function.IntConsumer step, Runnable end) {
+    private BukkitTask every(int ticks, java.util.function.IntConsumer step, Runnable end) {
         int[] t = {0};
-        plugin.getServer().getScheduler().runTaskTimer(plugin, task -> {
+        BukkitTask[] self = new BukkitTask[1];
+        self[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             if (t[0] >= ticks) {
-                task.cancel();
+                self[0].cancel();
                 if (end != null) end.run();
                 return;
             }
             step.accept(t[0]++);
         }, 1L, 1L);
+        return self[0];
     }
 
     private void later(int ticks, Runnable run) {
@@ -147,6 +253,14 @@ final class Effects implements Listener {
         return item;
     }
 
+    private double rand(double spread) {
+        return ThreadLocalRandom.current().nextDouble(-spread, spread);
+    }
+
+    private boolean parkour(Player player) {
+        return collectibles.inParkour(player);
+    }
+
     /** Throws something that only makes a show where it lands. */
     private Snowball toss(Player player, ItemStack look, String effect, double speed) {
         Snowball ball = player.launchProjectile(Snowball.class, player.getEyeLocation().getDirection().multiply(speed));
@@ -155,9 +269,9 @@ final class Effects implements Listener {
     }
 
     /** A few non-pickup items bursting out of a spot, gone after a moment. */
-    private void burstItems(Location at, Material material, int count, double power, int lifeTicks) {
+    private void burstItems(Location at, ItemStack look, int count, double power, int lifeTicks) {
         for (int i = 0; i < count; i++) {
-            org.bukkit.entity.Item item = at.getWorld().dropItem(at, ItemStack.of(material), drop -> {
+            org.bukkit.entity.Item item = at.getWorld().dropItem(at, look.clone(), drop -> {
                 drop.setCanPlayerPickup(false);
                 drop.setCanMobPickup(false);
                 drop.setPickupDelay(Integer.MAX_VALUE);
@@ -175,6 +289,46 @@ final class Effects implements Listener {
         }
     }
 
+    /** An item display riding the player (it sits on top of their head; transformations move it from there). */
+    private ItemDisplay rider(Player player, String model) {
+        ItemDisplay display = player.getWorld().spawn(player.getLocation().add(0, 1.8, 0), ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.PAPER, model));
+            d.setRotation(0, 0);
+            d.setInterpolationDuration(3);
+            d.setViewRange(0.6f);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+        });
+        tagged(display, "rider");
+        player.addPassenger(display);
+        return display;
+    }
+
+    private static void move(Display display, Matrix4f matrix) {
+        display.setInterpolationDelay(0);
+        display.setInterpolationDuration(3);
+        display.setTransformationMatrix(matrix);
+    }
+
+    /** Players who have the wearer hidden don't see what rides them either. */
+    private void viewers(Player wearer) {
+        List<Entity> riders = new ArrayList<>();
+        Rig rig = rigs.get(wearer.getUniqueId());
+        if (rig != null) riders.addAll(rig.parts);
+        ItemDisplay propeller = propellers.get(wearer.getUniqueId());
+        if (propeller != null) riders.add(propeller);
+        ItemDisplay balloon = balloons.get(wearer.getUniqueId());
+        if (balloon != null) riders.add(balloon);
+        if (riders.isEmpty()) return;
+        for (Player viewer : wearer.getWorld().getPlayers()) {
+            if (viewer == wearer) continue;
+            boolean see = viewer.canSee(wearer);
+            for (Entity rider : riders) {
+                if (see) viewer.showEntity(plugin, rider);
+                else viewer.hideEntity(plugin, rider);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- gadgets
 
     void gadget(Player player, String key) {
@@ -184,26 +338,31 @@ final class Effects implements Listener {
         switch (key) {
             case "party_popper" -> {
                 Location from = eye.clone().add(look.clone().multiply(0.6));
-                for (int i = 0; i < 70; i++) {
+                for (int i = 0; i < 90; i++) {
                     Vector v = look.clone().multiply(0.6).add(new Vector(rand(0.35), rand(0.35) + 0.15, rand(0.35)));
                     world.spawnParticle(Particle.DUST, from.clone().add(v.clone().multiply(ThreadLocalRandom.current().nextDouble(1, 5))),
-                            1, 0, 0, 0, 0, dust(party(), 1.2f));
+                            1, 0, 0, 0, 0, dust(party(), 1.3f));
                 }
+                Location fall = from.clone().add(look.clone().multiply(3));
+                every(30, t -> {
+                    if (t % 2 == 0) world.spawnParticle(Particle.DUST_COLOR_TRANSITION, fall.clone().add(rand(1.4), 1 - t * 0.05, rand(1.4)), 2,
+                            0.05, 0.05, 0.05, 0, new Particle.DustTransition(party(), party(), 1f));
+                }, null);
                 world.spawnParticle(Particle.FIREWORK, from, 15, 0.1, 0.1, 0.1, 0.12);
                 sound(from, "entity.firework_rocket.blast", 0.8f, 1.6f);
                 sound(from, "entity.player.levelup", 0.4f, 2f);
             }
             case "paintball_gun" -> {
-                toss(player, ItemStack.of(Material.SNOWBALL), "paint", 2.2);
+                toss(player, modelled(Material.SNOWBALL, "gadget/paintball"), "paint", 2.2);
                 sound(eye, "entity.chicken.egg", 0.6f, 1.6f);
             }
             case "bubble_wand" -> {
                 sound(eye, "block.bubble_column.upwards_inside", 0.8f, 1.2f);
-                every(30, t -> {
-                    Location at = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(1 + t * 0.12));
-                    world.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 3, 0.15, 0.15, 0.15, 0,
-                            new Particle.DustTransition(Color.fromRGB(0xBFEFFF), Color.fromRGB(0xFFFFFF), 1.4f));
-                    world.spawnParticle(Particle.BUBBLE_POP, at, 2, 0.2, 0.2, 0.2, 0.02);
+                every(36, t -> {
+                    Location at = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(1 + t * 0.14));
+                    world.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 4, 0.2, 0.2, 0.2, 0,
+                            new Particle.DustTransition(Color.fromRGB(0xBFEFFF), Color.fromRGB(0xFFB8F0), 1.6f));
+                    world.spawnParticle(Particle.BUBBLE_POP, at, 3, 0.25, 0.25, 0.25, 0.02);
                     if (t % 6 == 0) sound(at, "block.bubble_column.bubble_pop", 0.5f, 1.4f);
                 }, null);
             }
@@ -217,14 +376,7 @@ final class Effects implements Listener {
                 });
                 tagged(firework, "firework");
             }
-            case "cookie_fountain" -> {
-                Location at = player.getLocation().add(0, 1.2, 0);
-                sound(at, "entity.generic.eat", 0.8f, 1.2f);
-                every(20, t -> {
-                    if (t % 2 == 0) burstItems(at, Material.COOKIE, 2, 0.25, 50);
-                    if (t % 5 == 0) sound(at, "entity.item.pickup", 0.6f, 1 + t * 0.03f);
-                }, null);
-            }
+            case "cookie_fountain" -> cookieFountain(player);
             case "bat_blaster" -> {
                 sound(eye, "entity.bat.takeoff", 1f, 1f);
                 for (int i = 0; i < 8; i++) {
@@ -257,23 +409,275 @@ final class Effects implements Listener {
                 toss(player, ItemStack.of(Material.JACK_O_LANTERN), "pumpkin", 1.3);
                 sound(eye, "entity.witch.throw", 1f, 1f);
             }
+            case "balloon" -> balloon(player);
+            case "melody_maker" -> melody(player);
+            case "magic_wand" -> magicWand(player);
+            case "grappling_hook" -> {
+                Snowball hook = toss(player, modelled(Material.SNOWBALL, "gadget/grappling_hook_head"), "hook", 2.4);
+                sound(eye, "item.crossbow.shoot", 0.8f, 1.3f);
+                every(30, t -> {
+                    if (!hook.isValid() || !player.isOnline()) return;
+                    Location hand = player.getLocation().add(0, 1.2, 0);
+                    Vector line = hook.getLocation().toVector().subtract(hand.toVector());
+                    int steps = (int) Math.min(30, line.length() * 3);
+                    for (int i = 1; i < steps; i += 1) {
+                        world.spawnParticle(Particle.DUST, hand.clone().add(line.clone().multiply(i / (double) steps)), 1, 0, 0, 0, 0,
+                                dust(Color.fromRGB(0x8A6A45), 0.5f));
+                    }
+                }, () -> {
+                    if (hook.isValid()) hook.remove();
+                });
+            }
+            case "blink_stick" -> blink(player);
+            case "trampoline" -> trampoline(player);
             default -> {
             }
         }
     }
 
-    private double rand(double spread) {
-        return ThreadLocalRandom.current().nextDouble(-spread, spread);
+    /** Where to put something on the ground: the block looked at (within 5), else just in front. */
+    private Location ground(Player player) {
+        Block target = player.getTargetBlockExact(5);
+        Location at;
+        if (target != null && target.getType().isSolid() && target.getRelative(0, 1, 0).isPassable()) {
+            at = target.getLocation().add(0.5, 1, 0.5);
+        } else {
+            at = player.getLocation().add(player.getLocation().getDirection().setY(0).normalize().multiply(2));
+            at.setY(Math.floor(at.getY()));
+        }
+        at.setYaw(0);
+        at.setPitch(0);
+        return at;
+    }
+
+    private void unplace(UUID id) {
+        Placed old = placed.remove(id);
+        if (old == null) return;
+        old.task.cancel();
+        old.display.remove();
+    }
+
+    /** A cookie fountain on the ground, spraying cookies for eight seconds, then sinking away. */
+    private void cookieFountain(Player player) {
+        unplace(player.getUniqueId());
+        Location at = ground(player);
+        ItemDisplay fountain = at.getWorld().spawn(at, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.COOKIE, "gadget/cookie_fountain_3d"));
+            d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        tagged(fountain, "fountain");
+        later(1, () -> {
+            fountain.setInterpolationDelay(0);
+            fountain.setInterpolationDuration(8);
+            fountain.setTransformation(new Transformation(new Vector3f(0, 0.75f, 0), new AxisAngle4f(), new Vector3f(1.5f), new AxisAngle4f()));
+        });
+        sound(at, "block.stone.place", 1f, 0.9f);
+        sound(at, "entity.player.levelup", 0.4f, 1.8f);
+        ItemStack cookie = modelled(Material.COOKIE, "gadget/cookie");
+        Location top = at.clone().add(0, 1.45, 0);
+        BukkitTask run = every(180, t -> {
+            if (t < 10) return;
+            if (t < 160) {
+                if (t % 3 == 0) burstItems(top, cookie, 1, 0.16, 45);
+                if (t % 4 == 0) at.getWorld().spawnParticle(Particle.DUST, top, 2, 0.15, 0.1, 0.15, 0, dust(Color.fromRGB(0xC98A4B), 1.1f));
+                if (t % 12 == 0) sound(top, "entity.item.pickup", 0.5f, 0.8f + (t % 48) / 48f);
+            } else if (t == 160) {
+                fountain.setInterpolationDelay(0);
+                fountain.setInterpolationDuration(15);
+                fountain.setTransformation(new Transformation(new Vector3f(0, 0.4f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+                sound(at, "block.stone.break", 0.8f, 1.1f);
+            }
+        }, () -> {
+            at.getWorld().spawnParticle(Particle.POOF, at.clone().add(0, 0.4, 0), 12, 0.3, 0.2, 0.3, 0.02);
+            fountain.remove();
+            placed.remove(player.getUniqueId());
+        });
+        placed.put(player.getUniqueId(), new Placed(fountain, run));
+    }
+
+    /** A trampoline on the ground for fifteen seconds; anyone who lands on it bounces high. */
+    private void trampoline(Player player) {
+        unplace(player.getUniqueId());
+        Location at = ground(player);
+        ItemDisplay trampoline = at.getWorld().spawn(at, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.SLIME_BLOCK, "gadget/trampoline_3d"));
+            d.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        tagged(trampoline, "trampoline");
+        later(1, () -> {
+            trampoline.setInterpolationDelay(0);
+            trampoline.setInterpolationDuration(6);
+            trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(2f, 1f, 2f), new AxisAngle4f()));
+        });
+        sound(at, "block.wool.place", 1f, 0.8f);
+        Map<UUID, Integer> bounced = new HashMap<>();
+        BukkitTask run = every(300, t -> {
+            if (t < 6 || t >= 290) {
+                if (t == 290) {
+                    trampoline.setInterpolationDelay(0);
+                    trampoline.setInterpolationDuration(8);
+                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+                }
+                return;
+            }
+            for (Player jumper : at.getWorld().getPlayers()) {
+                Location feet = jumper.getLocation();
+                double dx = feet.getX() - at.getX(), dz = feet.getZ() - at.getZ(), dy = feet.getY() - at.getY();
+                if (dx * dx + dz * dz > 1.1 * 1.1 || dy < -0.1 || dy > 0.7 || parkour(jumper)) continue;
+                if (jumper.getVelocity().getY() > 0.2) continue;
+                Integer last = bounced.get(jumper.getUniqueId());
+                if (last != null && t - last < 6) continue;
+                bounced.put(jumper.getUniqueId(), t);
+                jumper.setVelocity(jumper.getVelocity().setY(1.25));
+                jumper.setFallDistance(0);
+                sound(at, "entity.slime.jump", 1f, 0.8f + ThreadLocalRandom.current().nextFloat() * 0.3f);
+                at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.5, 0), 12, 0.6, 0.05, 0.6, 0, dust(Color.fromRGB(0x5BC0FF), 1f));
+                trampoline.setInterpolationDelay(0);
+                trampoline.setInterpolationDuration(2);
+                trampoline.setTransformation(new Transformation(new Vector3f(0, 0.2f, 0), new AxisAngle4f(), new Vector3f(2.1f, 0.65f, 2.1f), new AxisAngle4f()));
+                later(3, () -> {
+                    if (!trampoline.isValid()) return;
+                    trampoline.setInterpolationDelay(0);
+                    trampoline.setInterpolationDuration(5);
+                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(2f, 1f, 2f), new AxisAngle4f()));
+                });
+            }
+        }, () -> {
+            at.getWorld().spawnParticle(Particle.POOF, at.clone().add(0, 0.3, 0), 12, 0.6, 0.1, 0.6, 0.02);
+            trampoline.remove();
+            placed.remove(player.getUniqueId());
+        });
+        placed.put(player.getUniqueId(), new Placed(trampoline, run));
+    }
+
+    /** A balloon tied to the player for thirty seconds (in a random colour). */
+    private void balloon(Player player) {
+        ItemDisplay old = balloons.remove(player.getUniqueId());
+        if (old != null) old.remove();
+        if (!plugin.menuStyle().custom()) return;
+        ItemDisplay balloon = rider(player, "gadget/balloon_3d");
+        ItemStack look = modelled(Material.LEATHER_HORSE_ARMOR, "gadget/balloon_3d");
+        look.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(party()));
+        balloon.setItemStack(look);
+        balloons.put(player.getUniqueId(), balloon);
+        sound(player.getLocation(), "entity.chicken.egg", 0.5f, 0.6f);
+        later(600, () -> {
+            if (balloons.get(player.getUniqueId()) != balloon) return;
+            balloons.remove(player.getUniqueId());
+            Location at = balloon.getLocation().add(0.45, 1.6, 0);
+            at.getWorld().spawnParticle(Particle.DUST, at, 20, 0.25, 0.25, 0.25, 0, dust(Color.WHITE, 1f));
+            sound(at, "entity.firework_rocket.blast", 0.6f, 2f);
+            balloon.remove();
+        });
+    }
+
+    private void floatBalloon(Player player, ItemDisplay balloon) {
+        if (!balloon.isValid()) {
+            balloons.remove(player.getUniqueId());
+            return;
+        }
+        double yaw = Math.toRadians(player.getBodyYaw());
+        float sway = (float) Math.sin(tick * 0.06) * 0.12f;
+        // to the player's right and a little behind, swaying
+        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw)).multiply(0.55);
+        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(0.25 + sway);
+        Vector3f at = new Vector3f((float) (right.getX() + back.getX()), 0.75f + (float) Math.sin(tick * 0.09) * 0.08f,
+                (float) (right.getZ() + back.getZ()));
+        move(balloon, new Matrix4f().translate(at).rotateY((float) -yaw).rotateZ(sway * 0.8f).scale(0.9f));
+        if (tick % 4 == 0) {
+            Location hand = player.getLocation().add(0, 0.95, 0).add(right.clone().multiply(0.7));
+            Location knot = player.getLocation().add(0, 1.8 + at.y - 0.35, 0).add(at.x, 0, at.z);
+            Vector line = knot.toVector().subtract(hand.toVector());
+            for (int i = 1; i < 8; i++) {
+                player.getWorld().spawnParticle(Particle.DUST, hand.clone().add(line.clone().multiply(i / 8.0)), 1, 0, 0, 0, 0,
+                        dust(Color.fromRGB(0xEEEEEE), 0.35f));
+            }
+        }
+    }
+
+    /** A little tune with notes floating up. */
+    private void melody(Player player) {
+        int[][] tunes = {{0, 4, 7, 12, 11, 7, 9, 12}, {7, 9, 7, 5, 4, 5, 7, 0}, {12, 7, 9, 4, 5, 7, 12, 16}};
+        String[] instruments = {"block.note_block.harp", "block.note_block.bell", "block.note_block.flute", "block.note_block.chime"};
+        int[] tune = tunes[ThreadLocalRandom.current().nextInt(tunes.length)];
+        String instrument = instruments[ThreadLocalRandom.current().nextInt(instruments.length)];
+        every(tune.length * 5, t -> {
+            if (t % 5 != 0) return;
+            int note = tune[t / 5];
+            Location head = player.getLocation().add(0, 2.3, 0);
+            sound(head, instrument, 0.9f, (float) Math.pow(2, (note - 12) / 12.0));
+            player.getWorld().spawnParticle(Particle.NOTE, head.clone().add(rand(0.6), rand(0.2), rand(0.6)), 0, note / 24.0, 0, 0, 1);
+        }, null);
+    }
+
+    /** A beam of sparkles to where the player looks, bursting into stars. */
+    private void magicWand(Player player) {
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        RayTraceResult hit = player.getWorld().rayTraceBlocks(eye, look, 16);
+        double length = hit == null ? 16 : hit.getHitPosition().distance(eye.toVector());
+        sound(eye, "block.amethyst_block.resonate", 1f, 1.6f);
+        sound(eye, "entity.illusioner.cast_spell", 0.6f, 1.6f);
+        every(8, t -> {
+            for (double d = t * 2; d < Math.min(length, t * 2 + 2); d += 0.25) {
+                Location at = eye.clone().add(look.clone().multiply(d));
+                player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 1, 0.03, 0.03, 0.03, 0,
+                        new Particle.DustTransition(Color.fromRGB(0xC77DFF), Color.fromRGB(0xFFF3B0), 0.9f));
+                if (ThreadLocalRandom.current().nextInt(4) == 0) player.getWorld().spawnParticle(Particle.END_ROD, at, 0, 0, 0, 0, 0);
+            }
+        }, () -> {
+            Location end = eye.clone().add(look.clone().multiply(length - 0.3));
+            player.getWorld().spawnParticle(Particle.FIREWORK, end, 25, 0.1, 0.1, 0.1, 0.12);
+            player.getWorld().spawnParticle(Particle.ENCHANT, end, 40, 0.4, 0.4, 0.4, 0.6);
+            player.getWorld().spawnParticle(Particle.DUST, end, 20, 0.4, 0.4, 0.4, 0, dust(Color.fromRGB(0xFFE680), 1.2f));
+            sound(end, "entity.firework_rocket.twinkle", 0.8f, 1.4f);
+        });
+    }
+
+    /** A short teleport forward (never into a wall). */
+    private void blink(Player player) {
+        Location from = player.getLocation();
+        Vector look = from.getDirection().setY(0);
+        if (look.lengthSquared() < 0.01) return;
+        look.normalize();
+        if (from.getPitch() < -35) look.setY(0.45).normalize(); // looking up: blink up a little too
+        Location body = from.clone().add(0, 1, 0);
+        RayTraceResult wall = player.getWorld().rayTraceBlocks(body, look, 7.5, org.bukkit.FluidCollisionMode.NEVER, true);
+        double max = wall == null ? 7 : wall.getHitPosition().distance(body.toVector()) - 0.7;
+        Location to = null;
+        for (double d = max; d >= 1; d -= 0.5) {
+            Location test = from.clone().add(look.clone().multiply(d));
+            Block feet = test.getBlock(), head = feet.getRelative(0, 1, 0);
+            if (feet.isPassable() && head.isPassable()) {
+                to = test;
+                break;
+            }
+        }
+        if (to == null) {
+            sound(from, "entity.enderman.hurt", 0.4f, 1.6f);
+            return;
+        }
+        player.getWorld().spawnParticle(Particle.REVERSE_PORTAL, from.clone().add(0, 1, 0), 40, 0.3, 0.6, 0.3, 0.05);
+        Vector line = to.toVector().subtract(from.toVector());
+        for (int i = 0; i < 12; i++) {
+            player.getWorld().spawnParticle(Particle.DUST, from.clone().add(0, 1, 0).add(line.clone().multiply(i / 12.0)), 1, 0.05, 0.05, 0.05, 0,
+                    dust(Color.fromRGB(0x9B5CFF), 0.9f));
+        }
+        Vector velocity = player.getVelocity();
+        player.teleport(to);
+        player.setVelocity(velocity);
+        player.setFallDistance(0);
+        player.getWorld().spawnParticle(Particle.PORTAL, to.clone().add(0, 1, 0), 40, 0.3, 0.6, 0.3, 0.4);
+        sound(to, "entity.enderman.teleport", 0.7f, 1.4f);
     }
 
     /** A TNT block that hisses and flashes, then "explodes" (just particles and sound). */
     private void fakeTnt(Player player) {
-        Block target = player.getTargetBlockExact(5);
-        Location at = target != null ? target.getLocation().add(0.5, 1, 0.5) : player.getLocation().add(player.getLocation().getDirection().setY(0).normalize().multiply(2));
-        at.setY(Math.floor(at.getY()));
-        ItemDisplay tnt = at.getWorld().spawn(at.clone().add(0, 0.5, 0), ItemDisplay.class, d -> {
-            d.setItemStack(ItemStack.of(Material.TNT));
-            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+        Location at = ground(player);
+        Location corner = at.clone();
+        BlockDisplay tnt = at.getWorld().spawn(corner, BlockDisplay.class, d -> {
+            d.setBlock(Material.TNT.createBlockData());
+            d.setTransformation(new Transformation(new Vector3f(-0.5f, 0, -0.5f), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
         });
         tagged(tnt, "tnt");
         sound(at, "entity.tnt.primed", 1f, 1f);
@@ -284,7 +688,8 @@ final class Effects implements Listener {
                 tnt.setInterpolationDelay(0);
                 tnt.setInterpolationDuration(4);
                 float s = flash ? 1.08f + t * 0.004f : 1f;
-                tnt.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(s), new AxisAngle4f()));
+                // grows from its centre, so it never leans
+                tnt.setTransformation(new Transformation(new Vector3f(-s / 2, (1 - s) / 2, -s / 2), new AxisAngle4f(), new Vector3f(s), new AxisAngle4f()));
             }
             at.getWorld().spawnParticle(Particle.SMOKE, at.clone().add(0, 1.05, 0), 1, 0.05, 0, 0.05, 0.01);
         }, () -> {
@@ -336,53 +741,19 @@ final class Effects implements Listener {
         });
     }
 
-    // ---------------------------------------------------------------- suit abilities
+    // ---------------------------------------------------------------- suit bonuses
 
     double abilityCooldown(String key) {
         return switch (key) {
-            case "low_gravity", "bat_swarm" -> 15;
-            case "jingle_dash" -> 10;
+            case "bat_swarm" -> 15;
             case "smoke_bomb", "bone_rattle" -> 6;
             case "water_splash" -> 5;
-            case "super_leap" -> 4;
-            case "bunny_hop" -> 1.2;
+            case "super_leap" -> 1.5;
             default -> 1.5;
         };
     }
 
-    /** The ability item put in the hotbar while a full suit is worn. */
-    ItemStack abilityItem(Item suit, String tag) {
-        String ability = suit.suit().ability();
-        Material material = switch (ability) {
-            case "fireball" -> Material.FIRE_CHARGE;
-            case "smoke_bomb" -> Material.FIREWORK_STAR;
-            case "low_gravity" -> Material.PHANTOM_MEMBRANE;
-            case "super_leap" -> Material.SLIME_BALL;
-            case "water_splash" -> Material.HEART_OF_THE_SEA;
-            case "beach_ball" -> Material.SNOWBALL;
-            case "gift_toss" -> Material.PAPER;
-            case "jingle_dash" -> Material.GOLD_NUGGET;
-            case "bunny_hop" -> Material.RABBIT_FOOT;
-            case "egg_toss" -> Material.EGG;
-            case "bone_rattle" -> Material.BONE;
-            default -> Material.ECHO_SHARD; // bat swarm
-        };
-        ItemStack item = ability.equals("gift_toss") || ability.equals("beach_ball")
-                ? modelled(material, ability.equals("gift_toss") ? "mystery/box_2" : "gadget/beach_ball") : ItemStack.of(material);
-        var messages = plugin.messages();
-        var tags = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(collectibles.name(suit),
-                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("ability", messages.raw("collectibles.ability." + ability + ".name")),
-                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("description", messages.raw("collectibles.ability." + ability + ".description")));
-        item.editMeta(meta -> {
-            meta.displayName(messages.item("collectibles.ability-item.name", tags));
-            meta.lore(messages.lore("collectibles.ability-item.lore", tags));
-            meta.addItemFlags(ItemFlag.values());
-            meta.setEnchantmentGlintOverride(true);
-            meta.getPersistentDataContainer().set(collectibles.itemKey(), PersistentDataType.STRING, tag);
-        });
-        return item;
-    }
-
+    /** A right-click bonus. */
     void ability(Player player, String key) {
         Location eye = player.getEyeLocation();
         Vector look = eye.getDirection();
@@ -404,19 +775,6 @@ final class Effects implements Listener {
                 sound(at, "entity.generic.extinguish_fire", 1f, 0.8f);
                 player.setVelocity(look.clone().setY(0).normalize().multiply(1.4).setY(0.35));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 40, 0, false, false, false));
-            }
-            case "low_gravity" -> {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 160, 2, false, false, true));
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 160, 0, false, false, true));
-                sound(eye, "block.beacon.activate", 0.8f, 1.6f);
-                every(160, t -> {
-                    if (t % 4 == 0) world.spawnParticle(Particle.END_ROD, player.getLocation().add(0, 0.2, 0), 2, 0.3, 0.1, 0.3, 0.01);
-                }, null);
-            }
-            case "super_leap" -> {
-                player.setVelocity(look.clone().setY(0).normalize().multiply(0.9).setY(1.05));
-                world.spawnParticle(Particle.ITEM_SLIME, player.getLocation(), 25, 0.4, 0.1, 0.4, 0.1);
-                sound(eye, "entity.frog.long_jump", 1f, 1f);
             }
             case "water_splash" -> {
                 Location at = player.getLocation().add(0, 0.2, 0);
@@ -441,18 +799,6 @@ final class Effects implements Listener {
                 toss(player, modelled(Material.PAPER, "mystery/box_2"), "gift", 1.1);
                 sound(eye, "entity.snowball.throw", 1f, 1.2f);
             }
-            case "jingle_dash" -> {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 80, 2, false, false, true));
-                every(80, t -> {
-                    if (t % 10 == 0) sound(player.getLocation(), "block.note_block.chime", 0.6f, 1.2f + (t % 20 == 0 ? 0.3f : 0));
-                    world.spawnParticle(Particle.SNOWFLAKE, player.getLocation().add(0, 0.3, 0), 2, 0.2, 0.1, 0.2, 0.01);
-                }, null);
-            }
-            case "bunny_hop" -> {
-                player.setVelocity(look.clone().setY(0).normalize().multiply(0.65).setY(0.78));
-                world.spawnParticle(Particle.HEART, player.getLocation().add(0, 0.4, 0), 3, 0.3, 0.1, 0.3, 0);
-                sound(eye, "entity.rabbit.jump", 1f, 1.2f);
-            }
             case "egg_toss" -> {
                 Egg egg = player.launchProjectile(Egg.class, look.clone().multiply(1.4));
                 tagged(egg, "egg");
@@ -464,7 +810,7 @@ final class Effects implements Listener {
                     int n = i;
                     later(i * 5, () -> sound(at, "entity.skeleton.ambient", 1f, 0.9f + n * 0.15f));
                 }
-                burstItems(at, Material.BONE, 8, 0.25, 40);
+                burstItems(at, ItemStack.of(Material.BONE), 8, 0.25, 40);
                 world.spawnParticle(Particle.DUST, at, 30, 0.5, 0.6, 0.5, 0, dust(Color.fromRGB(0xE8E8E0), 1.2f));
             }
             case "bat_swarm" -> {
@@ -490,7 +836,114 @@ final class Effects implements Listener {
         }
     }
 
-    // ---------------------------------------------------------------- things landing
+    /** The passive bonus of the full suit the player wears (astronaut, elf, bunny), kept on while they wear it. */
+    private void passive(Player player) {
+        Catalog.SuitSet set = collectibles.enabled() && !parkour(player) ? collectibles.fullSet(player) : null;
+        String want = set != null && set.suit().passive() ? set.suit().ability() : null;
+        String now = passives.get(player.getUniqueId());
+        if (want == null ? now != null : !want.equals(now)) {
+            bonus(player, want);
+            if (want == null) passives.remove(player.getUniqueId());
+            else passives.put(player.getUniqueId(), want);
+        }
+        if (want == null) return;
+        Location feet = player.getLocation();
+        boolean ground = ((Entity) player).isOnGround();
+        switch (want) {
+            case "low_gravity" -> {
+                if (!ground && tick % 4 == 0) {
+                    show(player, Particle.END_ROD, feet.clone().add(0, 0.1, 0), 1, 0.15, 0, 0.15, 0.005, null);
+                    show(player, Particle.DUST, feet.clone().add(0, 0.2, 0), 1, 0.2, 0.05, 0.2, 0, dust(Color.fromRGB(0xBFD7FF), 0.8f));
+                }
+            }
+            case "jingle_dash" -> {
+                boolean moving = player.getVelocity().setY(0).lengthSquared() > 0.003 || player.isSprinting();
+                if (moving && ground && tick % 8 == 0) {
+                    sound(feet, "block.note_block.chime", 0.35f, 1.4f + (tick % 16 == 0 ? 0.3f : 0));
+                    show(player, Particle.SNOWFLAKE, feet.clone().add(0, 0.2, 0), 2, 0.2, 0.05, 0.2, 0.01, null);
+                }
+            }
+            case "bunny_hop" -> {
+                if (!ground && player.getVelocity().getY() > 0.35 && tick % 4 == 0) {
+                    show(player, Particle.DUST, feet.clone().add(0, 0.1, 0), 4, 0.2, 0.05, 0.2, 0, dust(Color.fromRGB(0xF2C4D8), 1f));
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    /** Puts the attribute changes of a passive bonus on the player (or takes them all off for null). */
+    private void bonus(Player player, String ability) {
+        for (Attribute attribute : List.of(Attribute.GRAVITY, Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH, Attribute.SAFE_FALL_DISTANCE)) {
+            AttributeInstance instance = player.getAttribute(attribute);
+            if (instance != null) instance.removeModifier(bonusKey);
+        }
+        if (ability == null) return;
+        switch (ability) {
+            case "low_gravity" -> {
+                add(player, Attribute.GRAVITY, -0.62, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+                add(player, Attribute.SAFE_FALL_DISTANCE, 20, AttributeModifier.Operation.ADD_NUMBER);
+            }
+            case "jingle_dash" -> add(player, Attribute.MOVEMENT_SPEED, 0.3, AttributeModifier.Operation.ADD_SCALAR);
+            case "bunny_hop" -> {
+                add(player, Attribute.JUMP_STRENGTH, 0.25, AttributeModifier.Operation.ADD_NUMBER);
+                add(player, Attribute.SAFE_FALL_DISTANCE, 4, AttributeModifier.Operation.ADD_NUMBER);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void add(Player player, Attribute attribute, double amount, AttributeModifier.Operation operation) {
+        AttributeInstance instance = player.getAttribute(attribute);
+        if (instance != null) instance.addTransientModifier(new AttributeModifier(bonusKey, amount, operation, EquipmentSlotGroup.ANY));
+    }
+
+    private boolean frog(Player player) {
+        Catalog.SuitSet set = collectibles.enabled() && !parkour(player) ? collectibles.fullSet(player) : null;
+        return set != null && set.key().equals("frog");
+    }
+
+    /** Frogs: hold sneak on the ground to charge a leap, let go to jump. */
+    @EventHandler(ignoreCancelled = true)
+    public void onSneak(PlayerToggleSneakEvent event) {
+        Player player = event.getPlayer();
+        if (event.isSneaking()) {
+            if (frog(player) && ((Entity) player).isOnGround()) charging.put(player.getUniqueId(), tick);
+            return;
+        }
+        Long started = charging.remove(player.getUniqueId());
+        if (started == null || !frog(player)) return;
+        double power = Math.min(1, (tick - started) / 24.0);
+        player.sendActionBar(Component.empty());
+        if (power < 0.25 || !collectibles.ready(player, "ability:super_leap", abilityCooldown("super_leap"))) return;
+        Vector look = player.getLocation().getDirection().setY(0);
+        if (look.lengthSquared() > 0) look.normalize();
+        player.setVelocity(look.multiply(0.5 + 1.25 * power).setY(0.55 + 0.75 * power));
+        player.setFallDistance(0);
+        player.getWorld().spawnParticle(Particle.ITEM_SLIME, player.getLocation(), (int) (15 + 25 * power), 0.4, 0.1, 0.4, 0.1);
+        sound(player.getLocation(), "entity.frog.long_jump", 1f, 1.2f - (float) power * 0.4f);
+    }
+
+    /** The charge bar of a frog's leap. */
+    private void charge(Player player) {
+        Long started = charging.get(player.getUniqueId());
+        if (started == null) return;
+        if (!player.isSneaking() || !frog(player)) {
+            charging.remove(player.getUniqueId());
+            return;
+        }
+        double power = Math.min(1, (tick - started) / 24.0);
+        int filled = (int) Math.round(power * 10);
+        String bar = "<#5BC24A>" + "|".repeat(filled) + "<dark_gray>" + "|".repeat(10 - filled);
+        player.sendActionBar(plugin.messages().component("collectibles.ability.super_leap.charge", Placeholder.parsed("bar", bar)));
+        if (tick % 4 == 0) {
+            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(0, 0.1, 0), 3, 0.3, 0, 0.3, 0,
+                    dust(Color.fromRGB(0x5BC24A), 0.6f + (float) power));
+            if (filled == 10 && tick % 8 == 0) sound(player.getLocation(), "entity.frog.ambient", 0.6f, 1.4f);
+        }
+    }
 
     @EventHandler
     public void onHit(ProjectileHitEvent event) {
@@ -503,6 +956,17 @@ final class Effects implements Listener {
         projectile.remove();
         switch (effect.contains(":") ? effect.substring(0, effect.indexOf(':')) : effect) {
             case "paint" -> paint(event.getHitBlock(), at);
+            case "hook" -> {
+                if (!(projectile.getShooter() instanceof Player player) || !player.isOnline() || parkour(player)) return;
+                Vector pull = at.toVector().subtract(player.getLocation().toVector());
+                double distance = pull.length();
+                if (distance < 1.5 || distance > 40) return;
+                player.setVelocity(pull.normalize().multiply(Math.min(2.4, 0.6 + distance * 0.11)).add(new Vector(0, 0.35, 0)));
+                player.setFallDistance(0);
+                world.spawnParticle(Particle.CRIT, at, 12, 0.1, 0.1, 0.1, 0.2);
+                sound(at, "block.chain.place", 1f, 1.2f);
+                sound(player.getLocation(), "entity.fishing_bobber.retrieve", 1f, 0.9f);
+            }
             case "fireball" -> {
                 world.spawnParticle(Particle.FLAME, at, 30, 0.3, 0.3, 0.3, 0.06);
                 world.spawnParticle(Particle.LAVA, at, 6, 0.2, 0.2, 0.2, 0);
@@ -556,21 +1020,37 @@ final class Effects implements Listener {
                 Material.YELLOW_CONCRETE, Material.ORANGE_CONCRETE, Material.MAGENTA_CONCRETE, Material.CYAN_CONCRETE};
         BlockData paint = colours[ThreadLocalRandom.current().nextInt(colours.length)].createBlockData();
         List<Block> splat = new ArrayList<>();
-        for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
+        int radius = Math.max(1, plugin.getConfig().getInt("collectibles.paintball-radius", 3));
+        for (int x = -radius; x <= radius; x++) for (int y = -radius; y <= radius; y++) for (int z = -radius; z <= radius; z++) {
+            double distance = Math.sqrt(x * x + y * y + z * z);
+            if (distance > radius + 0.3) continue;
+            // the edge is ragged, like a real splat
+            if (distance > radius - 0.7 && ThreadLocalRandom.current().nextInt(3) == 0) continue;
             Block block = hit.getRelative(x, y, z);
-            if (Math.abs(x) + Math.abs(y) + Math.abs(z) > 2 || !block.getType().isSolid() || block.getType().isInteractable()) continue;
-            if (!block.getRelative(0, 1, 0).getType().isSolid() || x == 0 && y == 0 && z == 0) splat.add(block);
+            if (!block.getType().isSolid() || block.getType().isInteractable()) continue;
+            if (exposed(block)) splat.add(block);
         }
         List<Player> viewers = at.getWorld().getPlayers().stream().filter(p -> p.getLocation().distanceSquared(at) < 64 * 64).toList();
         for (Player viewer : viewers) for (Block block : splat) viewer.sendBlockChange(block.getLocation(), paint);
-        at.getWorld().spawnParticle(Particle.BLOCK, at, 20, 0.3, 0.3, 0.3, 0, paint);
-        sound(at, "entity.slime.squish_small", 1f, 1.2f);
-        later(100, () -> {
+        at.getWorld().spawnParticle(Particle.BLOCK, at, 45, 0.6, 0.6, 0.6, 0, paint);
+        at.getWorld().spawnParticle(Particle.DUST, at, 30, 0.8, 0.8, 0.8, 0,
+                dust(paint.getMaterial() == Material.PINK_CONCRETE ? Color.fromRGB(0xFF7BE5) : party(), 1.4f));
+        sound(at, "entity.slime.squish", 1f, 1.3f);
+        sound(at, "entity.slime.squish_small", 1f, 0.9f);
+        later(120, () -> {
             for (Player viewer : viewers) {
                 if (!viewer.isOnline()) continue;
                 for (Block block : splat) viewer.sendBlockChange(block.getLocation(), block.getBlockData());
             }
         });
+    }
+
+    private static boolean exposed(Block block) {
+        for (org.bukkit.block.BlockFace face : List.of(org.bukkit.block.BlockFace.UP, org.bukkit.block.BlockFace.DOWN, org.bukkit.block.BlockFace.NORTH,
+                org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.WEST)) {
+            if (!block.getRelative(face).getType().isOccluding()) return true;
+        }
+        return false;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -596,19 +1076,145 @@ final class Effects implements Listener {
         }
     }
 
+    /** The textured pieces of each cloak (models under fractal:cloak/part/). */
+    private static List<String> parts(String key) {
+        return switch (key) {
+            case "sparkle_aura" -> List.of("sparkle", "sparkle", "sparkle", "sparkle", "sparkle");
+            case "halo" -> List.of("halo");
+            case "rain_cloud" -> List.of("cloud");
+            case "orbit" -> List.of("orb_blue", "orb_pink", "orb_gold");
+            case "flame_ring" -> List.of("flame", "flame", "flame", "flame", "flame", "flame");
+            case "angel_wings" -> List.of("wing_left", "wing_right");
+            case "sun_rays" -> List.of("sun");
+            case "snow_globe" -> List.of("snowflake", "snowflake", "snowflake", "snowflake", "snowflake", "snowflake");
+            case "blossom_aura" -> List.of("petal", "petal", "petal", "petal", "petal", "petal");
+            case "spooky_aura" -> List.of("ghost", "ghost", "pumpkin_light");
+            default -> List.of();
+        };
+    }
+
+    private void rig(Player player, String key) {
+        Rig rig = new Rig(key);
+        for (String part : parts(key)) {
+            ItemDisplay display = rider(player, "cloak/part/" + part);
+            display.setBrightness(new Display.Brightness(15, 15));
+            rig.parts.add(display);
+        }
+        rigs.put(player.getUniqueId(), rig);
+    }
+
+    private void unrig(UUID id) {
+        Rig rig = rigs.remove(id);
+        if (rig != null) rig.parts.forEach(Entity::remove);
+    }
+
+    /**
+     * Moves each cloak piece. Riders sit on top of the head: (0, 0, 0) is the head's top, (0, -1.8, 0) the feet.
+     * Pieces that belong to the body (wings, the sun) turn with the body.
+     */
+    private void pose(Player player, Rig rig, boolean shown) {
+        for (ItemDisplay part : rig.parts) {
+            if (!part.isValid()) {
+                unrig(player.getUniqueId());
+                rig(player, rig.key);
+                return;
+            }
+        }
+        double t = tick;
+        float yaw = (float) Math.toRadians(player.getBodyYaw());
+        float sneak = player.isSneaking() ? 0.3f : 0;
+        int n = rig.parts.size();
+        for (int i = 0; i < n; i++) {
+            Matrix4f m = new Matrix4f();
+            double phase = Math.PI * 2 * i / n;
+            switch (rig.key) {
+                case "sparkle_aura" -> {
+                    double a = t * 0.05 + phase;
+                    float y = -1.2f + (float) ((i * 0.37 + t * 0.02) % 1.4) + sneak;
+                    float s = 0.18f + 0.1f * (float) Math.abs(Math.sin(t * 0.15 + i));
+                    m.translate((float) Math.cos(a) * 0.7f, y, (float) Math.sin(a) * 0.7f).rotateY((float) (t * 0.1)).scale(s);
+                }
+                case "halo" -> m.translate(0, 0.28f + (float) Math.sin(t * 0.08) * 0.04f, 0).rotateY((float) (t * 0.03)).scale(0.62f);
+                case "rain_cloud" -> m.translate(0, 0.85f + (float) Math.sin(t * 0.06) * 0.06f, 0).rotateY(-yaw).scale(1.15f);
+                case "orbit" -> {
+                    double a = t * 0.11 + phase;
+                    float tilt = (float) Math.sin(a + i) * 0.35f;
+                    m.translate((float) Math.cos(a) * 0.95f, -0.85f + tilt + sneak, (float) Math.sin(a) * 0.95f).rotateY((float) (t * 0.2)).scale(0.32f);
+                }
+                case "flame_ring" -> {
+                    double a = t * 0.07 + phase;
+                    float flicker = 0.38f + 0.06f * (float) Math.sin(t * 0.5 + i * 2);
+                    m.translate((float) Math.cos(a) * 0.85f, -1.6f + flicker / 2 + sneak, (float) Math.sin(a) * 0.85f).rotateY((float) -a).scale(flicker);
+                }
+                case "angel_wings" -> {
+                    float side = i == 0 ? 1 : -1; // left, right
+                    float flap = (float) Math.toRadians(18 + 14 * Math.sin(t * 0.09));
+                    m.rotateY(-yaw).translate(0, -0.62f + sneak * 0.5f, -0.22f).rotateX(sneak * 0.8f)
+                            .rotateY(side * (float) Math.toRadians(20) + side * flap).translate(side * 0.55f, 0.05f, -0.05f).scale(1.15f);
+                }
+                case "sun_rays" -> m.rotateY(-yaw).translate(0, -0.2f, -0.32f).rotateZ((float) (t * 0.03)).scale(1.05f);
+                case "snow_globe" -> {
+                    double a = t * 0.03 + phase;
+                    float fall = (float) ((t * 0.035 + i * 0.41) % 2.4);
+                    float r = 0.65f + (i % 3) * 0.22f;
+                    m.translate((float) Math.cos(a) * r, 0.4f - fall, (float) Math.sin(a) * r).rotateY((float) (t * 0.08 + i)).scale(0.22f);
+                }
+                case "blossom_aura" -> {
+                    double a = t * 0.045 + phase;
+                    float y = -0.3f - (float) ((t * 0.02 + i * 0.29) % 1.6);
+                    m.translate((float) Math.cos(a) * 0.8f, y + sneak, (float) Math.sin(a) * 0.8f)
+                            .rotateY((float) (t * 0.12 + i)).rotateX((float) Math.sin(t * 0.1 + i) * 0.6f).scale(0.2f);
+                }
+                case "spooky_aura" -> {
+                    if (i < 2) {
+                        double a = t * 0.06 + phase;
+                        float bob = (float) Math.sin(t * 0.12 + i * 2) * 0.12f;
+                        m.translate((float) Math.cos(a) * 0.95f, -0.55f + bob + sneak, (float) Math.sin(a) * 0.95f).rotateY((float) (-a + Math.PI)).scale(0.42f);
+                    } else {
+                        m.translate(0, -1.75f + sneak, 0).rotateY((float) (t * 0.02)).scale(0.5f);
+                    }
+                }
+                default -> m.scale(0);
+            }
+            if (!shown) m = new Matrix4f().scale(0);
+            move(rig.parts.get(i), m);
+        }
+    }
+
+    /** The propeller on the propeller cap: on top of the head, turning with it, spinning. */
+    private void spin(Player player, ItemDisplay propeller, boolean shown) {
+        if (!propeller.isValid()) {
+            propellers.remove(player.getUniqueId());
+            worn(player);
+            return;
+        }
+        float yaw = (float) Math.toRadians(player.getLocation().getYaw());
+        float pitch = (float) Math.toRadians(player.getLocation().getPitch());
+        float speed = player.getVelocity().lengthSquared() > 0.01 ? 1.6f : 0.9f;
+        Matrix4f m = new Matrix4f().translate(0, -0.32f, 0).rotateY(-yaw).rotateX(pitch).translate(0, 0.66f, 0)
+                .rotateY(tick * speed % (float) (Math.PI * 2)).scale(shown ? 0.62f : 0);
+        propeller.setInterpolationDelay(0);
+        propeller.setInterpolationDuration(2);
+        propeller.setTransformationMatrix(m);
+    }
+
+    /** A few particles to go with the pieces (or, without the pack, instead of them). */
     private void cloak(Player player, String key) {
         Location base = player.getLocation();
         double t = tick;
-        boolean moving = player.getVelocity().setY(0).lengthSquared() > 0.003;
+        boolean pieces = plugin.menuStyle().custom();
         switch (key) {
             case "sparkle_aura" -> {
                 if (tick % 4 != 0) return;
-                for (int i = 0; i < 2; i++) {
-                    Location at = base.clone().add(rand(0.6), ThreadLocalRandom.current().nextDouble(0.1, 2), rand(0.6));
-                    show(player, Particle.DUST, at, 1, 0, 0, 0, 0, dust(i == 0 ? Color.fromRGB(0xFFFFFF) : Color.fromRGB(0xFF7BE5), 0.7f));
-                }
+                Location at = base.clone().add(rand(0.7), ThreadLocalRandom.current().nextDouble(0.1, 2), rand(0.7));
+                show(player, Particle.DUST, at, 1, 0, 0, 0, 0, dust(ThreadLocalRandom.current().nextBoolean() ? Color.WHITE : Color.fromRGB(0xFF7BE5), 0.8f));
+                if (!pieces) show(player, Particle.END_ROD, at, 0, 0, 0, 0, 0, null);
             }
             case "halo" -> {
+                if (pieces) {
+                    if (tick % 10 == 0) show(player, Particle.END_ROD, base.clone().add(rand(0.3), 2.2, rand(0.3)), 0, 0, -0.02, 0, 1, null);
+                    return;
+                }
                 Location centre = base.clone().add(0, 2.25, 0);
                 for (int i = 0; i < 10; i++) {
                     double a = Math.PI * 2 * i / 10 + t * 0.05;
@@ -617,66 +1223,51 @@ final class Effects implements Listener {
                 }
             }
             case "rain_cloud" -> {
-                Location cloud = base.clone().add(0, 2.7, 0);
-                show(player, Particle.CLOUD, cloud, 3, 0.35, 0.05, 0.35, 0, null);
-                if (tick % 4 == 0) show(player, Particle.FALLING_WATER, cloud.clone().add(0, -0.1, 0), 2, 0.3, 0, 0.3, 0, null);
+                Location cloud = base.clone().add(0, 2.55, 0);
+                if (!pieces) show(player, Particle.CLOUD, cloud, 3, 0.35, 0.05, 0.35, 0, null);
+                show(player, Particle.FALLING_WATER, cloud, 2, 0.3, 0, 0.3, 0, null);
+                if (tick % 6 == 0) show(player, Particle.DRIPPING_WATER, cloud, 1, 0.3, 0, 0.3, 0, null);
             }
             case "orbit" -> {
+                if (pieces && tick % 4 != 0) return;
                 Location centre = base.clone().add(0, 1, 0);
-                for (int ring = 0; ring < 2; ring++) {
-                    double a = t * 0.18 + ring * Math.PI;
-                    double tilt = ring == 0 ? 0.35 : -0.35;
-                    Location at = centre.clone().add(Math.cos(a) * 0.9, Math.sin(a) * tilt, Math.sin(a) * 0.9);
-                    show(player, Particle.DUST, at, 1, 0, 0, 0, 0, dust(ring == 0 ? Color.fromRGB(0x7FA8FF) : Color.fromRGB(0xFF7BE5), 1.1f));
-                    show(player, Particle.END_ROD, at, 0, 0, 0, 0, 0, null);
-                }
+                double a = t * 0.11;
+                show(player, Particle.END_ROD, centre.clone().add(Math.cos(a) * 0.95, 0, Math.sin(a) * 0.95), 0, 0, 0, 0, 0, null);
             }
             case "flame_ring" -> {
-                for (int i = 0; i < 3; i++) {
-                    double a = t * 0.12 + Math.PI * 2 * i / 3;
-                    show(player, Particle.FLAME, base.clone().add(Math.cos(a) * 0.8, 0.1, Math.sin(a) * 0.8), 1, 0, 0, 0, 0, null);
-                }
-                if (tick % 6 == 0) show(player, Particle.SMOKE, base.clone().add(0, 0.2, 0), 2, 0.5, 0, 0.5, 0, null);
+                if (tick % 4 == 0) show(player, Particle.FLAME, base.clone().add(rand(0.8), 0.15, rand(0.8)), 1, 0, 0.02, 0, 0.01, null);
+                if (tick % 8 == 0) show(player, Particle.SMOKE, base.clone().add(0, 0.2, 0), 2, 0.5, 0, 0.5, 0, null);
             }
             case "angel_wings" -> {
-                if (moving || tick % 4 != 0) return;
-                wings(player);
+                if (pieces) {
+                    if (tick % 8 == 0) show(player, Particle.END_ROD, base.clone().add(rand(0.5), 1.3, rand(0.5)), 0, 0, -0.03, 0, 1, null);
+                    return;
+                }
+                if (tick % 4 == 0) wings(player);
             }
             case "sun_rays" -> {
-                Location centre = base.clone().add(0, 2.1, 0);
-                for (int i = 0; i < 6; i++) {
-                    double a = t * 0.04 + Math.PI * 2 * i / 6;
-                    for (int s = 1; s <= 3; s++) {
-                        show(player, Particle.DUST, centre.clone().add(Math.cos(a) * (0.35 + s * 0.18), 0, Math.sin(a) * (0.35 + s * 0.18)),
-                                1, 0, 0, 0, 0, dust(s == 1 ? Color.fromRGB(0xFFF1A8) : Color.fromRGB(0xFFC83D), 0.7f));
-                    }
-                }
+                if (tick % 6 == 0) show(player, Particle.DUST, base.clone().add(rand(0.6), 1.9 + rand(0.3), rand(0.6)), 1, 0, 0, 0, 0,
+                        dust(Color.fromRGB(0xFFC83D), 0.8f));
             }
             case "snow_globe" -> {
                 if (tick % 2 != 0) return;
-                for (int i = 0; i < 3; i++) {
-                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r = ThreadLocalRandom.current().nextDouble(0.4, 1.3);
-                    show(player, Particle.SNOWFLAKE, base.clone().add(Math.cos(a) * r, 2.4, Math.sin(a) * r), 0, 0, -0.08, 0, 1, null);
-                }
+                double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r = ThreadLocalRandom.current().nextDouble(0.4, 1.3);
+                show(player, Particle.SNOWFLAKE, base.clone().add(Math.cos(a) * r, 2.4, Math.sin(a) * r), 0, 0, -0.08, 0, 1, null);
             }
             case "blossom_aura" -> {
-                if (tick % 4 != 0) return;
-                show(player, Particle.CHERRY_LEAVES, base.clone().add(0, 2, 0), 2, 0.6, 0.2, 0.6, 0, null);
+                if (tick % 6 != 0) return;
+                show(player, Particle.CHERRY_LEAVES, base.clone().add(0, 2, 0), 1, 0.6, 0.2, 0.6, 0, null);
             }
             case "spooky_aura" -> {
-                double a = t * 0.15;
-                double y = (tick % 40) / 20.0;
-                show(player, Particle.SOUL_FIRE_FLAME, base.clone().add(Math.cos(a) * 0.7, y, Math.sin(a) * 0.7), 1, 0, 0, 0, 0, null);
-                show(player, Particle.DUST, base.clone().add(Math.cos(a + Math.PI) * 0.7, y, Math.sin(a + Math.PI) * 0.7), 1, 0, 0, 0, 0,
-                        dust(Color.fromRGB(0xFF8A1F), 0.9f));
-                if (tick % 10 == 0) show(player, Particle.SOUL, base.clone().add(0, 1, 0), 1, 0.4, 0.4, 0.4, 0.01, null);
+                if (tick % 6 == 0) show(player, Particle.SOUL_FIRE_FLAME, base.clone().add(rand(0.8), 0.2, rand(0.8)), 0, 0, 0.03, 0, 1, null);
+                if (tick % 12 == 0) show(player, Particle.SOUL, base.clone().add(0, 1, 0), 1, 0.4, 0.4, 0.4, 0.01, null);
             }
             default -> {
             }
         }
     }
 
-    /** Wings of light behind the player, flapping slowly. */
+    /** Wings of light behind the player (only without the resource pack). */
     private void wings(Player player) {
         String[] shape = {
                 "....xx.",
@@ -688,8 +1279,8 @@ final class Effects implements Listener {
                 "..x...."};
         Location base = player.getLocation();
         double yaw = Math.toRadians(base.getYaw());
-        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(0.32);   // behind the player
-        Vector side = new Vector(Math.cos(yaw), 0, Math.sin(yaw));                     // to their left
+        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(0.32);
+        Vector side = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
         double flap = Math.toRadians(25 + 15 * Math.sin(tick * 0.12));
         Location spine = base.clone().add(0, 1.55, 0).add(back);
         for (int row = 0; row < shape.length; row++) {
@@ -709,7 +1300,8 @@ final class Effects implements Listener {
 
     /** A big emoji pops up over the player's head for a few seconds. */
     void emote(Player player, Item item) {
-        quit(player);
+        TextDisplay old = emotes.remove(player.getUniqueId());
+        if (old != null) old.remove();
         char glyph = MenuStyle.emoji(item.emoji());
         Component face = glyph == 0 ? Component.text(item.name())
                 : Component.text(String.valueOf(glyph)).font(Key.key("fractal", "lobby")).color(net.kyori.adventure.text.format.NamedTextColor.WHITE);
@@ -772,74 +1364,118 @@ final class Effects implements Listener {
         }
     }
 
-    /** The player does a gesture: their arms and head move for a moment. */
+    /**
+     * A gesture: a copy of the player (their skin and outfit) appears in front of them, facing them, does the gesture
+     * and vanishes in a puff. The player themselves can keep moving.
+     */
     void gesture(Player player, String key) {
-        switch (key) {
-            case "wave" -> every(24, t -> {
-                if (t % 4 == 0) player.swingMainHand();
-                if (t == 0) sound(player.getLocation(), "entity.villager.ambient", 0.6f, 1.6f);
-            }, null);
-            case "clap" -> every(24, t -> {
-                if (t % 4 == 0) {
-                    if ((t / 4) % 2 == 0) player.swingMainHand();
-                    else player.swingOffHand();
-                    sound(player.getLocation(), "block.note_block.snare", 0.7f, 1.4f);
+        Mannequin old = clones.remove(player.getUniqueId());
+        if (old != null) old.remove();
+        Location from = player.getLocation();
+        Vector ahead = from.getDirection().setY(0);
+        if (ahead.lengthSquared() < 0.01) ahead = new Vector(0, 0, 1);
+        ahead.normalize();
+        Location at = from.clone().add(ahead.clone().multiply(2.2));
+        // stand it on the ground in front (or level with the player)
+        for (int down = 0; down < 3 && at.getBlock().getRelative(0, -1, 0).isPassable(); down++) at.add(0, -1, 0);
+        while (!at.getBlock().isPassable() && at.getY() < from.getY() + 2) at.add(0, 1, 0);
+        float yaw = from.getYaw() + 180;
+        at.setYaw(yaw);
+        at.setPitch(0);
+        World world = player.getWorld();
+        Mannequin clone = world.spawn(at, Mannequin.class, m -> {
+            m.setProfile(ResolvableProfile.resolvableProfile(player.getPlayerProfile()));
+            m.setDescription(null);
+            m.setImmovable(true);
+            m.setInvulnerable(true);
+            m.setGravity(false);
+            m.setSilent(true);
+            m.setCollidable(false);
+            m.setCustomNameVisible(false);
+            var mine = player.getEquipment();
+            var its = m.getEquipment();
+            its.setHelmet(mine.getHelmet());
+            its.setChestplate(mine.getChestplate());
+            its.setLeggings(mine.getLeggings());
+            its.setBoots(mine.getBoots());
+        });
+        tagged(clone, "clone");
+        clones.put(player.getUniqueId(), clone);
+        world.spawnParticle(Particle.POOF, at.clone().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.02);
+        world.spawnParticle(Particle.DUST, at.clone().add(0, 1, 0), 20, 0.4, 0.8, 0.4, 0, dust(Color.fromRGB(0xB266FF), 1f));
+        sound(at, "entity.illusioner.mirror_move", 0.7f, 1.4f);
+        int length = 46;
+        Location centre = at.clone();
+        every(length, t -> {
+            if (!clone.isValid()) return;
+            switch (key) {
+                case "wave" -> {
+                    if (t % 5 == 0) clone.swingMainHand();
+                    look(clone, yaw + (float) Math.sin(t * 0.3) * 12, -8);
+                    if (t == 2) sound(centre, "entity.villager.ambient", 0.6f, 1.6f);
                 }
-            }, null);
-            case "bow" -> {
-                float yaw = player.getLocation().getYaw(), pitch = player.getLocation().getPitch();
-                every(30, t -> {
-                    float p = t < 10 ? t * 7f : t < 20 ? 70f : 70f - (t - 20) * 7f;
-                    look(player, yaw, Math.min(90, p));
-                }, () -> look(player, yaw, pitch));
-                sound(player.getLocation(), "block.note_block.harp", 0.6f, 0.8f);
-            }
-            case "spin" -> {
-                float yaw = player.getLocation().getYaw(), pitch = player.getLocation().getPitch();
-                every(20, t -> look(player, yaw + (t + 1) * 18f, pitch), null);
-                sound(player.getLocation(), "entity.player.attack.sweep", 0.6f, 1.4f);
-            }
-            case "facepalm" -> {
-                float yaw = player.getLocation().getYaw(), pitch = player.getLocation().getPitch();
-                look(player, yaw, 55);
-                player.swingMainHand();
-                sound(player.getLocation(), "entity.villager.no", 0.8f, 0.9f);
-                later(30, () -> look(player, yaw, pitch));
-            }
-            case "headbang" -> {
-                float yaw = player.getLocation().getYaw(), pitch = player.getLocation().getPitch();
-                every(32, t -> {
-                    look(player, yaw, (t / 4) % 2 == 0 ? 50 : -10);
-                    if (t % 8 == 0) sound(player.getLocation(), "block.note_block.basedrum", 0.8f, 1f);
-                    if (t % 8 == 4) sound(player.getLocation(), "block.note_block.snare", 0.6f, 1f);
-                }, () -> look(player, yaw, pitch));
-            }
-            case "celebrate" -> {
-                player.setVelocity(new Vector(0, 0.45, 0));
-                every(20, t -> {
-                    if (t % 4 == 0) {
-                        player.swingMainHand();
-                        player.swingOffHand();
+                case "clap" -> {
+                    if (t % 5 == 0) {
+                        if ((t / 5) % 2 == 0) clone.swingMainHand();
+                        else clone.swingOffHand();
+                        sound(centre, "block.note_block.snare", 0.7f, 1.4f);
                     }
-                }, null);
-                Location at = player.getLocation().add(0, 2, 0);
-                player.getWorld().spawnParticle(Particle.FIREWORK, at, 30, 0.3, 0.3, 0.3, 0.15);
-                confetti(at, 40, 0.8);
-                sound(at, "entity.player.levelup", 0.7f, 1.2f);
-                sound(at, "entity.firework_rocket.twinkle", 0.6f, 1f);
+                }
+                case "bow" -> {
+                    float p = t < 10 ? t * 7f : t < 30 ? 70f : Math.max(0, 70f - (t - 30) * 7f);
+                    look(clone, yaw, p);
+                    if (t == 6) clone.setPose(Pose.SNEAKING, true);
+                    if (t == 32) clone.setPose(Pose.STANDING, true);
+                    if (t == 6) sound(centre, "block.note_block.harp", 0.6f, 0.8f);
+                }
+                case "spin" -> {
+                    look(clone, yaw + (t + 1) * 16f, 0);
+                    if (t % 11 == 0) sound(centre, "entity.player.attack.sweep", 0.5f, 1.4f);
+                }
+                case "facepalm" -> {
+                    if (t == 2) {
+                        clone.swingMainHand();
+                        sound(centre, "entity.villager.no", 0.8f, 0.9f);
+                    }
+                    look(clone, yaw + (float) Math.sin(t * 0.25) * 18, t < 4 ? t * 14f : 55f);
+                }
+                case "headbang" -> {
+                    look(clone, yaw, (t / 4) % 2 == 0 ? 50 : -15);
+                    if (t % 8 == 0) sound(centre, "block.note_block.basedrum", 0.8f, 1f);
+                    if (t % 8 == 4) sound(centre, "block.note_block.snare", 0.6f, 1f);
+                }
+                case "celebrate" -> {
+                    if (t % 5 == 0) {
+                        clone.swingMainHand();
+                        clone.swingOffHand();
+                    }
+                    double hop = Math.abs(Math.sin(t * Math.PI / 12)) * 0.6;
+                    Location up = centre.clone().add(0, hop, 0);
+                    up.setYaw(yaw);
+                    clone.teleport(up);
+                    if (t == 6 || t == 18 || t == 30) {
+                        Location top = up.clone().add(0, 2.2, 0);
+                        world.spawnParticle(Particle.FIREWORK, top, 20, 0.3, 0.3, 0.3, 0.12);
+                        confetti(top, 30, 0.7);
+                        sound(top, "entity.firework_rocket.twinkle", 0.6f, 1f + t * 0.01f);
+                    }
+                }
+                default -> {
+                }
             }
-            default -> {
-            }
-        }
+        }, () -> {
+            if (!clone.isValid()) return;
+            Location end = clone.getLocation().add(0, 1, 0);
+            world.spawnParticle(Particle.POOF, end, 20, 0.3, 0.5, 0.3, 0.03);
+            world.spawnParticle(Particle.DUST, end, 20, 0.4, 0.8, 0.4, 0, dust(Color.fromRGB(0xB266FF), 1f));
+            sound(end, "entity.illusioner.mirror_move", 0.6f, 1.8f);
+            clone.remove();
+            clones.remove(player.getUniqueId(), clone);
+        });
     }
 
-    /** Turns the player's head (and view). */
-    private void look(Player player, float yaw, float pitch) {
-        if (!player.isOnline()) return;
-        Location at = player.getLocation();
-        at.setYaw(yaw);
-        at.setPitch(pitch);
-        player.teleport(at, io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_X, io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Y,
-                io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Z);
+    private static void look(Mannequin clone, float yaw, float pitch) {
+        clone.setRotation(yaw, Math.max(-90, Math.min(90, pitch)));
+        clone.setBodyYaw(yaw);
     }
 }

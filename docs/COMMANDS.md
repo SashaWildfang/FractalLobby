@@ -18,7 +18,7 @@ Commands every player can use.
 | `/lobbyhelp [topic\|command]` | everyone | This help.<br>Example: /lobbyhelp npcs<br>Example: /lobbyhelp npc skin |
 | `/collectibles` | everyone | Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.<br>Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar. |
 | `/emote <name>` | everyone | Do an emote you've found (a big emoji over your head). |
-| `/gesture <name>` | everyone | Do a gesture you've found (wave, clap, spin...). |
+| `/gesture <name>` | everyone | A copy of you does a gesture you've found (wave, clap, spin...). |
 
 ## Parkour
 

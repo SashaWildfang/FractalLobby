@@ -5,7 +5,7 @@ Coordinates are in the wearer's head pixels: x and z from -4 to 4 across the hea
 of the head (0) up; negative y goes down over the head. Each box has one colour; its top is drawn a little lighter
 and its underside darker, so the shapes read. Every hat gets its own palette texture (2x2 cells per shade).
 """
-import json, os
+import json, os, zlib
 from PIL import Image
 
 U = 1.6           # model units per head pixel (a worn item is drawn at 0.625 of a block)
@@ -31,8 +31,10 @@ B, BLACK, WHITE, GOLD, PURPLE = '#1c1c24', '#1c1c24', '#f5f5f5', '#ffd27f', '#b2
 HATS = {
     'top_hat': [(-5.5, -0.2, -5.5, 5.5, 0.6, 5.5, '#1c1c24'), (-3.5, 0.6, -3.5, 3.5, 6, 3.5, '#24242e'),
                 (-3.6, 0.6, -3.6, 3.6, 1.6, 3.6, PURPLE)],
-    'beanie': [(-4.4, -2, -4.4, 4.4, 1.4, 4.4, '#3fb8af'), (-4.6, -2.4, -4.6, 4.6, -0.9, 4.6, '#2e8c85'),
-               (-1.2, 1.4, -1.2, 1.2, 3.4, 1.2, WHITE)],
+    'beanie': [(-4.6, -2.6, -4.6, 4.6, -0.6, 4.6, '#2e8c85'), (-4.4, -0.6, -4.4, 4.4, 1.8, 4.4, '#3fb8af'),
+               (-4.45, 0.2, -4.45, 4.45, 0.9, 4.45, '#f5f5f5'), (-3.7, 1.8, -3.7, 3.7, 2.8, 3.7, '#3fb8af'),
+               (-2.6, 2.8, -2.6, 2.6, 3.4, 2.6, '#3fb8af'), (-1.5, 3.4, -1.5, 1.5, 5.8, 1.5, '#fafafa'),
+               (-1.9, 3.8, -1.0, 1.9, 5.4, 1.0, '#fafafa'), (-1.0, 3.8, -1.9, 1.0, 5.4, 1.9, '#fafafa')],
     'chef_hat': [(-4.3, -0.6, -4.3, 4.3, 1.6, 4.3, '#ffffff'), (-4.9, 1.6, -4.9, 4.9, 4.6, 4.9, '#f0f0f0'),
                  (-3.8, 4.6, -3.8, 3.8, 5.8, 3.8, '#fafafa')],
     'headphones': [(-4.7, 0, -0.8, 4.7, 1, 0.8, '#2a2a36'), (-5.3, -5, -0.8, -4.3, 0, 0.8, '#2a2a36'),
@@ -42,11 +44,15 @@ HATS = {
     'cowboy_hat': [(-6.5, -0.2, -5.5, 6.5, 0.6, 5.5, '#8b5a2b'), (-6.5, 0.6, -5.5, -5.5, 1.8, 5.5, '#8b5a2b'),
                    (5.5, 0.6, -5.5, 6.5, 1.8, 5.5, '#8b5a2b'), (-3.5, 0.6, -3, 3.5, 4.2, 3, '#7a4a22'),
                    (-3.6, 0.6, -3.1, 3.6, 1.4, 3.1, '#3a2410'), (-1.2, 3.8, -3.1, 1.2, 4.2, 3.1, '#6a3e1c')],
-    'wizard_hat': [(-6, -0.2, -6, 6, 0.6, 6, '#2b2f7a'), (-4, 0.6, -4, 4, 2.6, 4, '#353a94'),
-                   (-3, 2.6, -2.6, 3, 4.6, 3.2, '#353a94'), (-2, 4.6, -1.2, 2, 6.6, 2.8, '#3d43a8'),
-                   (-1.1, 6.6, 0, 1.1, 8.4, 2.2, '#3d43a8'), (-0.5, 8.4, 0.8, 0.5, 9.8, 1.8, GOLD),
-                   (-2.6, 1.2, -4.1, -1.6, 2.2, -3.9, GOLD), (1.4, 3, -2.7, 2.2, 3.8, -2.5, GOLD),
-                   (-1, 5.2, -1.3, -0.2, 6, -1.1, GOLD)],
+    'wizard_hat': [(-6.4, -0.2, -6.4, 6.4, 0.5, 6.4, '#262a6e'), (-4.1, 0.5, -4.1, 4.1, 1.4, 4.1, GOLD),
+                   (-4, 1.4, -4, 4, 2.8, 4, '#353a94'), (-3.1, 2.8, -2.8, 3.5, 4.4, 3.6, '#353a94'),
+                   (-2.1, 4.4, -1.4, 3.1, 5.9, 3.5, '#3d43a8'), (-1.0, 5.9, -0.1, 2.9, 7.2, 3.4, '#3d43a8'),
+                   (0.1, 7.2, 0.9, 2.9, 8.3, 3.2, '#454cbc'), (1.2, 8.1, 1.4, 3.6, 9.0, 3.0, '#454cbc'),
+                   (2.8, 7.5, 1.6, 4.8, 8.6, 2.8, '#454cbc'), (4.2, 6.4, 1.8, 5.4, 7.8, 2.6, '#4c54cc'),
+                   (4.5, 5.6, 1.9, 5.5, 6.5, 2.5, GOLD),
+                   (-2.6, 1.8, -4.15, -1.6, 2.6, -4.05, GOLD), (1.8, 3.2, -2.9, 2.6, 4.0, -2.8, GOLD),
+                   (-1.2, 4.8, -1.5, -0.4, 5.5, -1.4, GOLD), (3.6, 1.8, -1.0, 4.1, 2.4, 0.2, '#fff2a0'),
+                   (-4.1, 2.0, 0.6, -4.0, 2.6, 1.6, '#fff2a0')],
     'viking_helmet': [(-4.4, -1.2, -4.4, 4.4, 1.8, 4.4, '#9aa0a8'), (-4.6, -1.6, -4.6, 4.6, -0.6, 4.6, '#c9963a'),
                       (-0.5, -3.5, -4.8, 0.5, -0.6, -4.4, '#9aa0a8'),
                       (-7, 0, -0.8, -4.4, 1.6, 0.8, '#f2e6c8'), (-7.8, 1.6, -0.6, -6.2, 4, 0.6, '#f2e6c8'),
@@ -144,6 +150,97 @@ HATS = {
 }
 
 
+# What each hat is made of (by colour; '*' for the rest): knit, felt, fur, metal, straw, cloth, shine
+MATERIALS = {
+    'beanie': {'#fafafa': 'fur', '*': 'knit'},
+    'top_hat': {'#b266ff': 'shine', '*': 'felt'},
+    'chef_hat': {'*': 'cloth'},
+    'cowboy_hat': {'*': 'leather'},
+    'wizard_hat': {GOLD: 'metal', '#fff2a0': 'shine', '*': 'stars'},
+    'viking_helmet': {'#9aa0a8': 'metal', '#c9963a': 'metal', '*': 'bone'},
+    'propeller_cap': {'#9aa0a8': 'metal', '*': 'cloth'},
+    'crown': {'*': 'metal'},
+    'sun_hat': {'#e8c77a': 'straw', '#ddb868': 'straw', '*': 'cloth'},
+    'santa_hat': {WHITE: 'fur', '*': 'felt'},
+    'elf_hat': {GOLD: 'metal', '*': 'felt'},
+    'snowman_head': {'#f5f7ff': 'snow', '*': 'felt'},
+    'bunny_ears': {'*': 'fur'},
+    'chick_hat': {'*': 'fur'},
+    'witch_hat': {GOLD: 'metal', '*': 'felt'},
+    'pineapple': {'#e8b33a': 'scales', '#c98a24': 'scales', '*': 'leaf'},
+    'pumpkin_head': {'#f28c28': 'pumpkin', '#d9761c': 'pumpkin', '*': 'cloth'},
+    'reindeer_antlers': {'*': 'bone'},
+}
+
+
+def material_cell(rgb, kind, face, seed):
+    """An 8x8 texture cell for one colour: face 0 sides, 1 top, 2 underside."""
+    import random
+    r = random.Random(seed)
+    cell = Image.new('RGBA', (8, 8))
+    f = (1.0, 1.12, 0.7)[face]
+    for y in range(8):
+        for x in range(8):
+            k = f
+            if face == 0:
+                k *= 1.08 - y * 0.025          # lighter at the top of each side
+            if kind == 'knit':
+                k *= 1.08 if x % 2 == 0 else 0.9
+                k *= 0.95 if (y + (x % 2)) % 3 == 0 else 1
+            elif kind in ('felt', 'cloth', 'stars'):
+                k *= 1 + r.uniform(-0.05, 0.05)
+            elif kind in ('fur', 'snow'):
+                k *= 1 + r.uniform(-0.1, 0.07)
+            elif kind == 'metal':
+                k *= 1.25 if (x + y) % 7 == 0 else (1.1 if y < 3 else 0.92)
+            elif kind == 'shine':
+                k *= 1.2 if y < 2 else 1
+            elif kind == 'straw':
+                k *= 1.1 if (x + y) % 4 < 2 else 0.88
+            elif kind == 'leather':
+                k *= 1 + r.uniform(-0.08, 0.04)
+            elif kind == 'bone':
+                k *= 1 + r.uniform(-0.06, 0.03) - (0.1 if (x * 3 + y) % 11 == 0 else 0)
+            elif kind == 'scales':
+                k *= 0.82 if (x + y) % 4 == 0 or (x - y) % 4 == 0 else 1.06
+            elif kind == 'leaf':
+                k *= 1.12 if x in (3, 4) else 1 + r.uniform(-0.06, 0.04)
+            elif kind == 'pumpkin':
+                k *= 0.88 if x in (0, 4) else 1.04
+            cell.putpixel((x, y), shade(rgb, k) + (255,))
+    if kind == 'stars' and face != 2:
+        for _ in range(2):
+            sx, sy = r.randrange(1, 7), r.randrange(1, 7)
+            cell.putpixel((sx, sy), (255, 230, 140, 255))
+    return cell
+
+
+# The propeller cap as worn has no propeller: a separate model spins on top of it (the plugin turns it).
+HATS['propeller_cap_base'] = HATS['propeller_cap'][:4]
+
+
+def propeller(out_root):
+    tex = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    cols = {'blade_a': (255, 210, 63), 'blade_b': (63, 140, 255), 'tip': (224, 58, 58), 'hub': (154, 160, 168)}
+    cells = {}
+    for i, (k, c) in enumerate(cols.items()):
+        for dx in range(4):
+            for dy in range(4):
+                tex.putpixel((i * 4 + dx, dy), shade(c, 1.08 - dy * 0.06) + (255,))
+        cells[k] = [i * 4 + 0.5, 0.5, i * 4 + 3.5, 3.5]
+    tex.save(f'{out_root}/assets/fractal/textures/item/hat/propeller.png')
+
+    def box(f, t, k):
+        return {"from": f, "to": t, "faces": {d: {"uv": cells[k], "texture": "#t"} for d in ('north', 'south', 'east', 'west', 'up', 'down')}}
+    elements = [box([7.3, 2, 7.3], [8.7, 8.4, 8.7], 'hub'), box([6.8, 8.2, 6.8], [9.2, 9.4, 9.2], 'hub'),
+                box([1, 8.4, 7.2], [7, 9.0, 8.8], 'blade_a'), box([9, 8.4, 7.2], [15, 9.0, 8.8], 'blade_b'),
+                box([0, 8.4, 7.2], [1.2, 9.0, 8.8], 'tip'), box([14.8, 8.4, 7.2], [16, 9.0, 8.8], 'tip')]
+    json.dump({"textures": {"t": "fractal:item/hat/propeller", "particle": "fractal:item/hat/propeller"}, "elements": elements},
+              open(f'{out_root}/assets/fractal/models/item/hat/propeller.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/hat/propeller"}},
+              open(f'{out_root}/assets/fractal/items/hat/propeller.json', 'w'))
+
+
 def build(out_root):
     """Writes every hat's texture, model and item definition under out_root/assets/fractal."""
     for d in ('textures/item/hat', 'models/item/hat', 'items/hat'):
@@ -153,16 +250,17 @@ def build(out_root):
         for b in boxes:
             if b[6] not in colours:
                 colours.append(b[6])
-        tex = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+        tex = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
         cell = {}
+        mats = MATERIALS.get(name.replace('_base', ''), {})
         for i, c in enumerate(colours):
             rgb = hexc(c)
-            for j, f in enumerate((1.0, 1.15, 0.72)):          # sides, top, underside
-                x, y = (i * 2) % 16, ((i * 2) // 16) * 6 + j * 2
-                for dx in range(2):
-                    for dy in range(2):
-                        tex.putpixel((x + dx, y + dy), shade(rgb, f) + (255,))
-                cell[(c, j)] = [x + 0.5, y + 0.5, x + 1.5, y + 1.5]
+            kind = mats.get(c, mats.get('*', 'cloth'))
+            for j in range(3):                                  # sides, top, underside
+                k = i * 3 + j
+                x, y = (k % 8) * 8, (k // 8) * 8
+                tex.paste(material_cell(rgb, kind, j, zlib.crc32(f'{name}/{i}/{j}'.encode())), (x, y))
+                cell[(c, j)] = [x / 4, y / 4, (x + 8) / 4, (y + 8) / 4]
         tex.save(f'{out_root}/assets/fractal/textures/item/hat/{name}.png')
         elements = []
         lo = [99, 99, 99]
@@ -196,4 +294,5 @@ def build(out_root):
                   open(f'{out_root}/assets/fractal/models/item/hat/{name}.json', 'w'))
         json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/hat/{name}"}},
                   open(f'{out_root}/assets/fractal/items/hat/{name}.json', 'w'))
+    propeller(out_root)
     return list(HATS)
