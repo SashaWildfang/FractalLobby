@@ -155,7 +155,9 @@ add(0xF175, 'collectibles', background(6, [], "COLLECTIBLES", cells=[4, 19, 20, 
 for _code, _word, _tabs in ((0xF176, 'HATS', True), (0xF177, 'SUITS', True), (0xF178, 'GADGETS', False),
                             (0xF179, 'CLOAKS', False), (0xF17A, 'EMOTES', False), (0xF17B, 'GESTURES', False)):
     add(_code, 'collect_' + _word.lower(), background(6, [], _word,
-        cells=([2, 3, 4, 5, 6] if _tabs else []) + list(range(9, 45)) + [45] + ([] if _word in ('EMOTES', 'GESTURES') else [49])))
+        cells=([2, 3, 4, 5, 6] if _tabs else []) + list(range(9, 45)) + [45, 48, 50] + ([] if _word in ('EMOTES', 'GESTURES') else [49])))
+# one suit: its four pieces, the whole set, and back
+add(0xF17D, 'collect_suit', background(3, [], "SUIT", cells=[10, 11, 12, 13, 15, 18]))
 add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
 add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))  # before 1.18.1
 add(0xF1C4, 'profile_4', background(4, [4], "PROFILE", cells=[13, 28, 29, 30, 31, 32, 33, 34]))

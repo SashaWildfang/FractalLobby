@@ -739,6 +739,15 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/collect_suit.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17d"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/parkour.png",
    "ascent": 29,
    "height": 256,

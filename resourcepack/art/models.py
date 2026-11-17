@@ -320,8 +320,10 @@ def build(out):
     WOOD, WOOD2, GOLD_, STONE, STONE2, RUNE = '#4a2f72', '#3a2460', '#ffcf5a', '#3a3d56', '#4a4e6a', '#b266ff'
     body = [Box((0, 0, 0), (16, 2, 16), STONE, 'brick'), Box((1, 2, 1), (15, 3, 15), STONE2, 'solid'),
             Box((0.5, 1.4, 0.5), (15.5, 1.9, 15.5), RUNE, 'flat', glow=12),
-            Box((2, 3, 3), (14, 11, 13), WOOD, 'solid'),
-            Box((2.5, 10.9, 3.5), (13.5, 11, 12.5), '#f0e0ff', 'glow', glow=15),          # the glowing inside (seen when open)
+            Box((2, 3, 3), (14, 11, 13), WOOD, 'solid', faces=('north', 'south', 'east', 'west', 'down')),   # open at the top
+            Box((2.1, 10.2, 3.1), (13.9, 10.3, 12.9), '#f0e0ff', 'glow', glow=15, faces=('up',)),  # the glowing inside, below the rim
+            Box((2.4, 10.3, 3.0), (13.6, 11, 3.4), WOOD2, 'solid', faces=('south',)), Box((2.4, 10.3, 12.6), (13.6, 11, 13.0), WOOD2, 'solid', faces=('north',)),
+            Box((2.0, 10.3, 3.0), (2.4, 11, 13.0), WOOD2, 'solid', faces=('east',)), Box((13.6, 10.3, 3.0), (14.0, 11, 13.0), WOOD2, 'solid', faces=('west',)),
             Box((1.8, 3, 2.8), (3.2, 11, 4.2), GOLD_, 'metal'), Box((12.8, 3, 2.8), (14.2, 11, 4.2), GOLD_, 'metal'),
             Box((1.8, 3, 11.8), (3.2, 11, 13.2), GOLD_, 'metal'), Box((12.8, 3, 11.8), (14.2, 11, 13.2), GOLD_, 'metal'),
             Box((1.9, 6.2, 2.9), (14.1, 7.2, 13.1), GOLD_, 'metal'),

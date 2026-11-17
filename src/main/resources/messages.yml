@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 37
+messages-version: 38
 
 theme:
   primary: "#B266FF"
@@ -996,6 +996,19 @@ collectibles:
     name: "<secondary>← Back"
     lore:
       - "<muted>Back to your Collectibles."
+  previous:
+    name: "<secondary>← Page <page>"
+    lore: []
+  next:
+    name: "<secondary>Page <page> →"
+    lore: []
+  # One suit's own page (right-click a suit)
+  suit-page:
+    title: "<brand><bold><set></bold></brand>"
+    back:
+      name: "<secondary>← Back"
+      lore:
+        - "<muted>Back to all the suits."
   empty:
     name: "<dark_gray>Nothing here yet"
     lore:
@@ -1069,6 +1082,8 @@ collectibles:
       - "<accent><click></accent> <muted>to take it off"
     none:
       - "<muted>Find its pieces in Mystery Boxes."
+    pieces-hint:
+      - "<accent>Right-click</accent> <muted>to see its pieces"
   # What you see when you hover over something you're wearing.
   worn:
     name: "<name>"

@@ -131,9 +131,10 @@ public final class Vault implements Listener {
             if (lid == null || !lid.isValid()) return;
             lid.setInterpolationDelay(0);
             lid.setInterpolationDuration(open ? 16 : 10);
-            // hinge: the top back edge of the chest (model 8, 11, 3 -> 0, 0.1875, -0.3125 from the display's centre)
-            org.joml.Matrix4f m = new org.joml.Matrix4f().translate(0, 0.1875f, -0.3125f)
-                    .rotateX((float) Math.toRadians(open ? -105 : 0)).translate(0, -0.1875f, 0.3125f);
+            // hinge: the top back edge of the chest. An item display shows its model turned half round, so the model's
+            // back (z 3) is at +0.3125 from the display's centre, and the lid lifts with a positive turn.
+            org.joml.Matrix4f m = new org.joml.Matrix4f().translate(0, 0.1875f, 0.3125f)
+                    .rotateX((float) Math.toRadians(open ? 105 : 0)).translate(0, -0.1875f, -0.3125f);
             lid.setTransformationMatrix(m);
         }
     }

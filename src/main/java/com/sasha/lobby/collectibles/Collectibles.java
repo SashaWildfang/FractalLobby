@@ -66,7 +66,11 @@ public final class Collectibles implements Listener {
     private static final int[] CATEGORY_SLOTS = {19, 20, 21, 22, 23, 24};
     /** Category page: season tabs on top, items in the middle, the bottom row. */
     private static final int[] TAB_SLOTS = {2, 3, 4, 5, 6};
-    private static final int FIRST_ITEM = 9, LAST_ITEM = 44, BACK = 45, TAKE_OFF = 49;
+    private static final int FIRST_ITEM = 9, LAST_ITEM = 44, BACK = 45, PREVIOUS = 48, TAKE_OFF = 49, NEXT = 50;
+    private static final int PER_PAGE = LAST_ITEM - FIRST_ITEM + 1;
+    /** One suit's own page: its four pieces, the whole set, and back. */
+    private static final char SUIT_MENU = '\uF17D';
+    private static final int SUIT_FIRST_PIECE = 10, SUIT_SET = 15, SUIT_BACK = 18;
 
     private final Lobby plugin;
     private final NamespacedKey itemKey;
@@ -540,6 +544,11 @@ public final class Collectibles implements Listener {
         private final Map<Integer, Season> tabs = new HashMap<>();
         private final Map<Integer, Catalog.SuitSet> sets = new HashMap<>();
         private Inventory inventory;
+        /** Which page of the category (36 a page). */
+        private int page;
+        /** Set when this is one suit's own page. */
+        private Catalog.SuitSet suit;
+        private boolean more;
 
         Menu(Category category, Season season) {
             this.category = category;
@@ -591,11 +600,16 @@ public final class Collectibles implements Listener {
         player.openInventory(menu.inventory);
     }
 
-    /** A category page (for hats and suits, one season at a time). */
     private void openPage(Player player, Category category, Season season) {
+        openPage(player, category, season, 0);
+    }
+
+    /** A category page (for hats and suits, one season at a time); 36 things a page, with arrows when there are more. */
+    private void openPage(Player player, Category category, Season season, int page) {
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
         Menu menu = new Menu(category, category.seasonal() ? season : null);
+        menu.page = page;
         menu.inventory = Bukkit.createInventory(menu, 54, style.title(PAGE_MENU.get(category),
                 messages.component("collectibles.category." + category.key + ".title")));
         fill(menu);
@@ -616,32 +630,40 @@ public final class Collectibles implements Listener {
             }
         }
         List<Item> items = category.seasonal() ? Catalog.of(category, season) : Catalog.of(category);
+        int count;
         if (category == Category.SUIT) {
-            // One suit a row: its four pieces, then the whole set.
-            int row = 1;
-            for (Catalog.SuitSet set : Catalog.sets(season)) {
-                if (row > 4) break;
-                for (Item piece : set.pieces()) {
-                    int at = row * 9 + 1 + piece.piece().ordinal();
-                    Item on = piece(player, piece.piece());
-                    menu.inventory.setItem(at, entry(player, piece, on != null && on.id().equals(piece.id())));
-                    menu.items.put(at, piece);
-                }
-                menu.inventory.setItem(row * 9 + 6, setEntry(player, set));
-                menu.sets.put(row * 9 + 6, set);
-                row++;
+            // Every suit as one picture of the whole set: click to wear it, right-click to see its pieces.
+            List<Catalog.SuitSet> sets = Catalog.sets(season);
+            count = sets.size();
+            int slot = FIRST_ITEM;
+            for (int i = page * PER_PAGE; i < sets.size() && slot <= LAST_ITEM; i++, slot++) {
+                Catalog.SuitSet set = sets.get(i);
+                ItemStack icon = setEntry(player, set);
+                icon.editMeta(meta -> {
+                    List<Component> lore = new ArrayList<>(meta.lore() == null ? List.of() : meta.lore());
+                    lore.addAll(messages.lore("collectibles.set.pieces-hint"));
+                    meta.lore(lore);
+                });
+                menu.inventory.setItem(slot, icon);
+                menu.sets.put(slot, set);
             }
         } else {
+            count = items.size();
             Item worn = category.action() ? null : equipped(player, category);
             int slot = FIRST_ITEM;
-            for (Item item : items) {
-                if (slot > LAST_ITEM) break;
+            for (int i = page * PER_PAGE; i < items.size() && slot <= LAST_ITEM; i++, slot++) {
+                Item item = items.get(i);
                 menu.inventory.setItem(slot, entry(player, item, worn != null && worn.id().equals(item.id())));
                 menu.items.put(slot, item);
-                slot++;
             }
         }
-        if (items.isEmpty()) {
+        int pages = Math.max(1, (count + PER_PAGE - 1) / PER_PAGE);
+        if (page > 0) menu.inventory.setItem(PREVIOUS, style.icon(button(Material.ARROW, null, "collectibles.previous",
+                Messages.arg("page", page)), "back"));
+        menu.more = page < pages - 1;
+        if (menu.more) menu.inventory.setItem(NEXT, style.icon(button(Material.ARROW, null, "collectibles.next",
+                Messages.arg("page", page + 2)), "next"));
+        if (count == 0) {
             menu.inventory.setItem(22, button(Material.GRAY_DYE, "mystery/locked", "collectibles.empty", TagResolver.empty()));
         }
         menu.inventory.setItem(BACK, style.icon(button(Material.ARROW, null, "collectibles.back", TagResolver.empty()), "back"));
@@ -650,6 +672,35 @@ public final class Collectibles implements Listener {
                     Placeholder.parsed("category", messages.raw("collectibles.category." + category.key + ".name"))));
         }
         player.openInventory(menu.inventory);
+    }
+
+    /** One suit's own page: its four pieces to wear one by one, and the whole set. */
+    private void openSuit(Player player, Catalog.SuitSet set, Season season, int page) {
+        Messages messages = plugin.messages();
+        MenuStyle style = plugin.menuStyle();
+        Menu menu = new Menu(Category.SUIT, season);
+        menu.page = page;
+        menu.suit = set;
+        menu.inventory = Bukkit.createInventory(menu, 27, style.title(SUIT_MENU, messages.component("collectibles.suit-page.title",
+                Placeholder.parsed("set", set.name()))));
+        fill(menu);
+        for (Item piece : set.pieces()) {
+            int at = SUIT_FIRST_PIECE + piece.piece().ordinal();
+            Item on = piece(player, piece.piece());
+            menu.inventory.setItem(at, entry(player, piece, on != null && on.id().equals(piece.id())));
+            menu.items.put(at, piece);
+        }
+        menu.inventory.setItem(SUIT_SET, setEntry(player, set));
+        menu.sets.put(SUIT_SET, set);
+        menu.inventory.setItem(SUIT_BACK, style.icon(button(Material.ARROW, null, "collectibles.suit-page.back", TagResolver.empty()), "back"));
+        player.openInventory(menu.inventory);
+    }
+
+    /** Opens the page the player is on again (after something changed). */
+    private void reopen(Player player, Menu menu) {
+        Season season = menu.season == null ? Season.NORMAL : menu.season;
+        if (menu.suit != null) openSuit(player, menu.suit, season, menu.page);
+        else openPage(player, menu.category, season, menu.page);
     }
 
     /** One collectible in a category page: found or locked, worn, and what a click does. */
@@ -737,14 +788,24 @@ public final class Collectibles implements Listener {
             }
             return;
         }
-        if (slot == BACK) {
+        if (menu.suit != null && slot == SUIT_BACK) {
+            sound(player, "ui.button.click", 0.9f);
+            openPage(player, Category.SUIT, menu.season == null ? Season.NORMAL : menu.season, menu.page);
+            return;
+        }
+        if (menu.suit == null && slot == BACK) {
             sound(player, "ui.button.click", 0.9f);
             open(player);
             return;
         }
-        if (slot == TAKE_OFF && !menu.category.action()) {
+        if (menu.suit == null && (slot == PREVIOUS && menu.page > 0 || slot == NEXT && menu.more)) {
+            sound(player, "ui.button.click", 1.1f);
+            openPage(player, menu.category, menu.season == null ? Season.NORMAL : menu.season, menu.page + (slot == NEXT ? 1 : -1));
+            return;
+        }
+        if (menu.suit == null && slot == TAKE_OFF && !menu.category.action()) {
             takeOff(player, menu.category);
-            openPage(player, menu.category, menu.season == null ? Season.NORMAL : menu.season);
+            reopen(player, menu);
             return;
         }
         Season tab = menu.tabs.get(slot);
@@ -757,20 +818,25 @@ public final class Collectibles implements Listener {
         Catalog.SuitSet set = menu.sets.get(slot);
         if (set != null) {
             boolean any = set.pieces().stream().anyMatch(p -> owns(player, p));
+            if (menu.suit == null && (event.isRightClick() || !any)) {
+                sound(player, "ui.button.click", 1.1f);
+                openSuit(player, set, season, menu.page);
+                return;
+            }
             if (!any) {
                 sound(player, "entity.villager.no", 1f);
                 return;
             }
             if (worn(player, set.key()) == set.pieces().stream().filter(p -> owns(player, p)).count()) takeOff(player, Category.SUIT);
             else equipSet(player, set);
-            openPage(player, menu.category, season);
+            reopen(player, menu);
             return;
         }
         Item item = menu.items.get(slot);
         if (item == null) return;
         if (!owns(player, item)) {
             buy(player, item, event.isShiftClick());
-            if (player.getOpenInventory().getTopInventory() == menu.inventory) openPage(player, menu.category, season);
+            if (player.getOpenInventory().getTopInventory() == menu.inventory) reopen(player, menu);
             return;
         }
         switch (item.category()) {
@@ -782,13 +848,13 @@ public final class Collectibles implements Listener {
                 Item on = piece(player, item.piece());
                 if (on != null && on.id().equals(item.id())) takeOffPiece(player, item);
                 else equip(player, item);
-                openPage(player, menu.category, season);
+                reopen(player, menu);
             }
             default -> {
                 Item worn = equipped(player, item.category());
                 if (worn != null && worn.id().equals(item.id())) takeOff(player, item.category());
                 else equip(player, item);
-                openPage(player, menu.category, season);
+                reopen(player, menu);
             }
         }
     }
