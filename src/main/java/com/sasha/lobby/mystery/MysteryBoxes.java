@@ -501,10 +501,12 @@ public final class MysteryBoxes implements Listener {
             menu.boxes.put(GRID[i], box);
         }
         if (all.isEmpty()) menu.inventory.setItem(22, item(Material.GRAY_DYE, "mystery/locked", "mystery.menu.empty", TagResolver.empty()));
-        if (shown > 0) menu.inventory.setItem(PREVIOUS, style.icon(item(Material.ARROW, null, "mystery.menu.previous",
-                Messages.arg("page", shown)), "back"));
-        if (shown < pages - 1) menu.inventory.setItem(NEXT, style.icon(item(Material.ARROW, null, "mystery.menu.next",
-                Messages.arg("page", shown + 2)), "next"));
+        menu.inventory.setItem(PREVIOUS, shown > 0
+                ? style.icon(item(Material.ARROW, null, "mystery.menu.previous", Messages.arg("page", shown)), "back")
+                : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-previous", TagResolver.empty()), "back-off"));
+        menu.inventory.setItem(NEXT, shown < pages - 1
+                ? style.icon(item(Material.ARROW, null, "mystery.menu.next", Messages.arg("page", shown + 2)), "next")
+                : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-next", TagResolver.empty()), "next-off"));
         menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
                 TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
         int found = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible() && (owns(player, r.id()) || has(player, r))).count();

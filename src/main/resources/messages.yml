@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 38
+messages-version: 39
 
 theme:
   primary: "#B266FF"
@@ -824,6 +824,12 @@ mystery:
     next:
       name: "<secondary>Page <page> →"
       lore: []
+    no-previous:
+      name: "<dark_gray>← No page before"
+      lore: []
+    no-next:
+      name: "<dark_gray>No more pages →"
+      lore: []
     craft-button:
       name: "<secondary>Craft Boxes"
       lore:
@@ -1001,6 +1007,12 @@ collectibles:
     lore: []
   next:
     name: "<secondary>Page <page> →"
+    lore: []
+  no-previous:
+    name: "<dark_gray>← No page before"
+    lore: []
+  no-next:
+    name: "<dark_gray>No more pages →"
     lore: []
   # One suit's own page (right-click a suit)
   suit-page:

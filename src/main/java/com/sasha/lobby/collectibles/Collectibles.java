@@ -658,11 +658,13 @@ public final class Collectibles implements Listener {
             }
         }
         int pages = Math.max(1, (count + PER_PAGE - 1) / PER_PAGE);
-        if (page > 0) menu.inventory.setItem(PREVIOUS, style.icon(button(Material.ARROW, null, "collectibles.previous",
-                Messages.arg("page", page)), "back"));
         menu.more = page < pages - 1;
-        if (menu.more) menu.inventory.setItem(NEXT, style.icon(button(Material.ARROW, null, "collectibles.next",
-                Messages.arg("page", page + 2)), "next"));
+        menu.inventory.setItem(PREVIOUS, page > 0
+                ? style.icon(button(Material.ARROW, null, "collectibles.previous", Messages.arg("page", page)), "back")
+                : style.icon(button(Material.GRAY_DYE, null, "collectibles.no-previous", TagResolver.empty()), "back-off"));
+        menu.inventory.setItem(NEXT, menu.more
+                ? style.icon(button(Material.ARROW, null, "collectibles.next", Messages.arg("page", page + 2)), "next")
+                : style.icon(button(Material.GRAY_DYE, null, "collectibles.no-next", TagResolver.empty()), "next-off"));
         if (count == 0) {
             menu.inventory.setItem(22, button(Material.GRAY_DYE, "mystery/locked", "collectibles.empty", TagResolver.empty()));
         }

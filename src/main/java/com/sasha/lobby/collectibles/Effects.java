@@ -1388,7 +1388,7 @@ final class Effects implements Listener {
                     float flap = (float) Math.toRadians(deg);
                     // pivots on the shoulder blades, a little behind the back, so they stay out of your own view
                     m.rotateY(-yaw).translate(0, -0.72f + sneak * 0.5f, -0.3f).rotateX(sneak * 0.8f)
-                            .rotateY(side * flap).scale(0.8f);
+                            .rotateY(-side * flap).scale(0.8f);   // an item display shows its model turned half round
                 }
                 case "sun_rays" -> {
                     // a little sun floating over the head, pulsing, its rays turning around it

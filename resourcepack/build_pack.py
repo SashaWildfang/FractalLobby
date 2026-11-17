@@ -251,6 +251,16 @@ def arrow(left):
     return outline(img)
 model('back', arrow(True))
 model('next', arrow(False))
+def greyed(img):  # a page arrow with no page that way: dim and flat
+    img = img.copy(); px = img.load()
+    for x in range(img.width):
+        for y in range(img.height):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) != (0x1a, 0x1b, 0x26): px[x, y] = (0x5a, 0x5e, 0x76, a)
+            elif a: px[x, y] = (0x30, 0x33, 0x45, a)
+    return img
+model('back-off', greyed(arrow(True)))
+model('next-off', greyed(arrow(False)))
 
 DROP = ["................",
         "........o.......",

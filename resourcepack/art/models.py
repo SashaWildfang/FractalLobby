@@ -344,9 +344,31 @@ def build(out):
                                          Box((5, 0, 5), (11, 1, 11), '#5a6078', 'solid'), Box((7, 31.5, 7), (9, 32, 9), '#ffcf5a', 'flat')], scale=H)
     write(out, G + 'ball_orange', ball(8, 8, 8, 5, '#ff6a3a', 'solid', glow=None) + [Box((7.6, 2.8, 2.9), (8.4, 13.2, 3.1), '#ffffff', 'flat')], scale=H)
     write(out, G + 'pong_ball', ball(8, 8, 8, 4, '#ffe14d', 'solid', glow=10), scale=H)
-    bb = ball(8, 8, 8, 6.5, '#ffffff', 'flat', glow=None)
-    for box, col in zip(bb[1:], ('#ff4d4d', '#ffe14d', '#3f8bff')):   # each slab its own colour: a segmented beach ball
-        box.colour = col
+    def sphere_columns(cx, cy, cz, r, colour_at, step=1.0):
+        """A round ball built from upright columns (one per step x step cell inside the circle), each as tall as the
+        sphere is at that spot: round from every side, and every column can have its own colour."""
+        boxes = []
+        n = int(round(2 * r / step))
+        for i in range(n):
+            for k in range(n):
+                x0, z0 = cx - r + i * step, cz - r + k * step
+                mx, mz = x0 + step / 2 - cx, z0 + step / 2 - cz
+                d2 = mx * mx + mz * mz
+                if d2 > r * r * 0.97:
+                    continue
+                h = math.sqrt(max(0.0, r * r - d2))
+                h = round(h / (step / 2)) * (step / 2)      # whole half-steps: clean pixel edges
+                if h <= 0:
+                    continue
+                boxes.append(Box((x0, cy - h, z0), (x0 + step, cy + h, z0 + step), colour_at(mx, mz), 'flat'))
+        return boxes
+    GORES = ('#ff4d4d', '#ffffff', '#3f8bff', '#ffffff', '#ffd23a', '#ffffff')
+    def beach_colour(mx, mz):
+        if mx * mx + mz * mz < 2.3:                       # the white cap at the top and bottom
+            return '#ffffff'
+        a = (math.degrees(math.atan2(mz, mx)) + 360) % 360
+        return GORES[int(a // 60) % 6]
+    bb = sphere_columns(8, 8, 8, 6.5, beach_colour)
     write(out, G + 'beach_ball_3d', bb, scale=H)
     write(out, G + 'frisbee_3d', [Box((2, 7.4, 2), (14, 8.6, 14), '#ff5a4a', 'solid'), Box((3.5, 8.6, 3.5), (12.5, 9.0, 12.5), '#ff7a6a', 'flat'),
                                     Box((1.4, 7.2, 4), (14.6, 8.2, 12), '#c8322e', 'flat'), Box((4, 7.2, 1.4), (12, 8.2, 14.6), '#c8322e', 'flat')], scale=H)
