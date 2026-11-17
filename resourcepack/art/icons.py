@@ -1149,3 +1149,19 @@ def cloak_sun3():
 
 CLOAKS.update({'sparkle_aura': cloak_sparkle3, 'halo': cloak_halo3, 'angel_wings': cloak_wings3, 'sun_rays': cloak_sun3})
 GUNS = GUNS + ('party_popper',)
+
+
+def menu_take_off():
+    """Take off: an empty coat hanger with a red cross."""
+    c = Canvas()
+    c.shape('arc', ((13, 2, 19, 8), 180, 450), '#c9ccd8', width=1.6)        # the hook
+    c.line([(16, 8), (16, 10)], '#c9ccd8', 1.6)
+    c.line([(16, 10), (3, 20)], '#a8743a', 2.4)                             # the wooden bar
+    c.line([(16, 10), (29, 20)], '#a8743a', 2.4)
+    c.line([(3.5, 20.5), (28.5, 20.5)], '#8b5a2b', 1.8)
+    c.line([(6, 11.5), (14, 6)], '#d9a05a', 0.6, opacity=0.0)
+    c.shape('ellipse', (17, 17, 31, 31), '#c8322e')                        # red badge with a white X
+    c.shape('ellipse', (18, 17.5, 30, 29), '#e8443a')
+    c.line([(20.5, 20.5), (27.5, 27.5)], '#ffffff', 1.8)
+    c.line([(27.5, 20.5), (20.5, 27.5)], '#ffffff', 1.8)
+    return c.done()

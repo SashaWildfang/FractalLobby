@@ -94,8 +94,9 @@ def noise_tex(base, size=16, amount=0.08, seed=1, bricks=False):
 GUN_DISPLAY = {
     # Worked out from the game's own sword transforms: the muzzle (top right of the sprite, 40 degrees up) ends up
     # pointing straight ahead in first person, and out in front of the hand in third person.
-    "firstperson_righthand": {"rotation": [0, -78, -35], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
-    "firstperson_lefthand": {"rotation": [0, 78, 35], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+    # (first person: the hand's +Z points back at the camera, so the muzzle is turned to -Z)
+    "firstperson_righthand": {"rotation": [0, 100, -35], "translation": [1.13, 3.2, 1.13], "scale": [0.6, 0.6, 0.6]},
+    "firstperson_lefthand": {"rotation": [0, -100, 35], "translation": [1.13, 3.2, 1.13], "scale": [0.6, 0.6, 0.6]},
     "thirdperson_righthand": {"rotation": [0, -90, 55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
     "thirdperson_lefthand": {"rotation": [0, 90, -55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
 }
@@ -139,6 +140,7 @@ def build(out):
     for key, fn in icons.SEASONS.items():
         flat_item(out, f'season/{key}', fn()); n += 1
     flat_item(out, 'menu/collectibles', icons.menu_collectibles()); n += 1
+    flat_item(out, 'menu/take_off', icons.menu_take_off()); n += 1
     n += armor.build(out)
 
     # ------------------------------------------------ cloak pieces: blocky models, 32 pixels a block

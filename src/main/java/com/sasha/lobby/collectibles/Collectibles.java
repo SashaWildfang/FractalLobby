@@ -572,7 +572,7 @@ public final class Collectibles implements Listener {
         menu.inventory.setItem(CHAT_COLOURS, button(Material.NAME_TAG, "color/rainbow", "collectibles.chat-colours", TagResolver.empty()));
         menu.inventory.setItem(VAULT, button(Material.ENDER_CHEST, "mystery/box_5", "collectibles.vault",
                 TagResolver.resolver(Messages.arg("boxes", stash.totalBoxes()))));
-        menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "mystery/locked", "collectibles.take-off-all", TagResolver.empty()));
+        menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "menu/take_off", "collectibles.take-off-all", TagResolver.empty()));
         player.openInventory(menu.inventory);
     }
 
@@ -631,7 +631,7 @@ public final class Collectibles implements Listener {
         }
         menu.inventory.setItem(BACK, style.icon(button(Material.ARROW, null, "collectibles.back", TagResolver.empty()), "back"));
         if (!category.action()) {
-            menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "mystery/locked", "collectibles.take-off",
+            menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "menu/take_off", "collectibles.take-off",
                     Placeholder.parsed("category", messages.raw("collectibles.category." + category.key + ".name"))));
         }
         player.openInventory(menu.inventory);

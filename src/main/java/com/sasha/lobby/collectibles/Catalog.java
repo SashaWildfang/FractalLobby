@@ -155,7 +155,6 @@ public final class Catalog {
         hat("reindeer_antlers", H, RARE, "Reindeer Antlers", "Red nose sold separately.");
         hat("snowman_head", H, EPIC, "Snowman Head", "Cool as ice.");
         hat("bunny_ears", E, COMMON, "Bunny Ears", "Hop to it.");
-        hat("flower_bonnet", E, RARE, "Spring Bonnet", "Pretty in pastel.");
         hat("chick_hat", E, RARE, "Chick Hat", "Cheep cheep!");
         hat("egg_shell", E, EPIC, "Cracked Egg", "Just hatched.");
         hat("witch_hat", W, COMMON, "Witch Hat", "Double, double, toil and trouble.");
