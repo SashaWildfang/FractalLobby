@@ -88,6 +88,8 @@ final class Opening {
     void start() {
         boxes.vault().busy(player, spot);
         if (spot == null) player.lookAt(base.clone().add(0, 1.0, 0), io.papermc.paper.entity.LookAnchor.EYES);
+        // the chest is unlocked: a click, then the lid swings open with light pouring out
+        sound("block.iron_trapdoor.open", 0.8f, 1.4f);
         box = display(model("mystery/box_" + stars, Material.CHEST), base.clone().add(0, 0.35, 0), 0f);
         for (int i = 0; i < stars; i++) orbs.add(display(model("parkour/dot", Material.GLOWSTONE_DUST), base.clone().add(0, 0.6, 0), 0f));
         for (ItemDisplay orb : orbs) orb.setBillboard(Display.Billboard.CENTER);
@@ -116,7 +118,8 @@ final class Opening {
 
     private void rise() {
         if (tick == 1) set(box, 0.35f, 1.0f, 0, RISE);
-        world().spawnParticle(Particle.REVERSE_PORTAL, base.clone().add(0, 0.4, 0), 6, 0.3, 0.2, 0.3, 0.05);
+        world().spawnParticle(Particle.END_ROD, base.clone().add(0, 0.1, 0), 2, 0.25, 0.05, 0.25, 0.04);
+        world().spawnParticle(Particle.DUST, base.clone().add(0, 0.2, 0), 4, 0.3, 0.05, 0.3, 0, new Particle.DustOptions(Color.fromRGB(0xB266FF), 1.2f));
     }
 
     private void charge() {
@@ -193,6 +196,10 @@ final class Opening {
         sound("entity.firework_rocket.twinkle", 0.7f, 1.2f);
         switch (reward.rarity()) {
             case COMMON -> sound("entity.player.levelup", 0.6f, 1.6f);
+            case UNCOMMON -> {
+                sound("entity.player.levelup", 0.65f, 1.4f);
+                sound("block.note_block.chime", 0.6f, 1.5f);
+            }
             case RARE -> {
                 sound("entity.player.levelup", 0.7f, 1.2f);
                 sound("block.amethyst_block.resonate", 0.8f, 1.2f);

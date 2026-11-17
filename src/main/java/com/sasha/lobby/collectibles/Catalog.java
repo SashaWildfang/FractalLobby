@@ -18,6 +18,7 @@ import static com.sasha.lobby.mystery.Reward.Rarity.COMMON;
 import static com.sasha.lobby.mystery.Reward.Rarity.EPIC;
 import static com.sasha.lobby.mystery.Reward.Rarity.LEGENDARY;
 import static com.sasha.lobby.mystery.Reward.Rarity.RARE;
+import static com.sasha.lobby.mystery.Reward.Rarity.UNCOMMON;
 
 /**
  * Every collectible: hats, suits, gadgets, cloaks, emotes and gestures. Each has an id ("hat:top_hat"), a rarity
@@ -41,9 +42,14 @@ public final class Catalog {
             return this == HAT || this == SUIT;
         }
 
-        /** Emotes and gestures are done, not worn. */
+        /** Gestures are done, not worn (emotes are equipped like a gadget and right-clicked). */
         public boolean action() {
-            return this == EMOTE || this == GESTURE;
+            return this == GESTURE;
+        }
+
+        /** Gadgets and emotes share the hotbar slot (and the "gadget" equipped key). */
+        public String slotKey() {
+            return this == GADGET || this == EMOTE ? "gadget" : prefix();
         }
 
         public String prefix() {
@@ -186,6 +192,24 @@ public final class Catalog {
                 "Skull Mask", "Rib Cage", "Bone Legs", "Bone Feet");
         suit("vampire", W, LEGENDARY, "Vampire Suit", "Creature of the night.", 0x1C1C24, 0x8B0000, 0x1C1C24, 0x1C1C24, "bat_swarm", false,
                 "Vampire Hair", "Vampire Coat", "Vampire Trousers", "Vampire Shoes");
+        suit("speedster", N, EPIC, "Speedster Suit", "Faster than lightning.", 0xD8282C, 0xD8282C, 0xD8282C, 0xFFCF3A, "speed_force", true,
+                "Speedster Cowl", "Speedster Top", "Speedster Tights", "Lightning Boots");
+        suit("disco", N, EPIC, "Disco Suit", "Stayin' alive on the dance floor.", 0x3A2416, 0x8A3AD8, 0xFFFFFF, 0xFFCF3A, "disco_floor", false,
+                "Disco Afro", "Sequin Shirt", "Flared Trousers", "Platform Shoes");
+        suit("mermaid", S, EPIC, "Mermaid Suit", "Straight from under the sea.", 0xE8443A, 0x2FB8A8, 0x2FB8A8, 0x5BE0C8, "mermaid_grace", true,
+                "Mermaid Hair", "Shell Top", "Mermaid Tail", "Mermaid Fins");
+        suit("spooderman", N, LEGENDARY, "Spooderman Suit", "Your friendly neighbourhood hero.", 0xD8282C, 0xD8282C, 0x2A4AB8, 0xD8282C,
+                "web_swing", false, "Spooder Mask", "Spooder Suit", "Spooder Leggings", "Spooder Boots");
+        suit("warrior", N, RARE, "Warrior Suit", "Ready for battle.", 0xC8CCD8, 0xC8CCD8, 0x6B3E1E, 0x8A8EA0, "battle_cry", false,
+                "Horned Helm", "Warrior Chestplate", "Warrior Leggings", "Warrior Boots");
+        suit("necromancer", W, LEGENDARY, "Necromancer Suit", "Raise the dead.", 0x2A1F3A, 0x2A1F3A, 0x2A1F3A, 0x140E1E, "raise_dead", false,
+                "Necromancer Hood", "Necromancer Robe", "Necromancer Leggings", "Necromancer Boots");
+        suit("thor", N, LEGENDARY, "Thor Suit", "Bring the thunder.", 0xC8CCD8, 0x6A6E80, 0x2A2A36, 0x5A3A1E, "thunder_strike", false,
+                "Winged Helm", "Thunder Mail", "Thunder Leggings", "Thunder Boots");
+        suit("baker", N, UNCOMMON, "Baker Suit", "Fresh from the oven.", 0xFFFFFF, 0xF4F4FA, 0x2A2A36, 0x1A1B26, "bake_sale", false,
+                "Baker's Hat", "Baker's Jacket", "Baker's Trousers", "Baker's Shoes");
+        suit("bumblebee", N, UNCOMMON, "Bumblebee Suit", "Buzz buzz!", 0xFFD23A, 0xFFD23A, 0x1C1C24, 0x1C1C24, "bee_swarm", false,
+                "Bee Hood", "Bee Body", "Bee Leggings", "Bee Boots");
         // ---- gadgets
         add(Category.GADGET, "party_popper", N, COMMON, "Party Popper", "Pop! Confetti everywhere.", null, null);
         add(Category.GADGET, "paintball_gun", N, COMMON, "Paintball Gun", "Splat colour on the lobby (for a moment).", null, null);
@@ -202,6 +226,38 @@ public final class Catalog {
         add(Category.GADGET, "blink_stick", N, EPIC, "Blink Stick", "Teleport a few blocks ahead.", null, null);
         add(Category.GADGET, "trampoline", N, EPIC, "Trampoline", "Place a trampoline anyone can bounce on.", null, null);
         add(Category.GADGET, "snow_cannon", H, RARE, "Snow Cannon", "A volley of snowballs.", null, null);
+        add(Category.GADGET, "magic_8_ball", N, COMMON, "Magic 8 Ball", "Ask it anything.", null, null);
+        add(Category.GADGET, "fortune_cookie", N, COMMON, "Fortune Cookie", "Crack it open for your fortune.", null, null);
+        add(Category.GADGET, "rock_paper_shears", N, COMMON, "Rock Paper Shears", "Play the nearest player.", null, null);
+        add(Category.GADGET, "rainbow", N, UNCOMMON, "Rainbow", "Make a rainbow appear.", null, null);
+        add(Category.GADGET, "hot_potato", N, UNCOMMON, "Hot Potato", "Pass it on before it goes off!", null, null);
+        add(Category.GADGET, "catapult", N, UNCOMMON, "CATapult", "Launch some cats. They land on their feet.", null, null);
+        add(Category.GADGET, "mob_gun", N, UNCOMMON, "Mob Gun", "Fire baby animals. They're fine!", null, null);
+        add(Category.GADGET, "diamond_shower", N, UNCOMMON, "Diamond Shower", "Make it rain diamonds (they're fake).", null, null);
+        add(Category.GADGET, "pong", N, UNCOMMON, "Pong", "A ball anyone can hit back.", null, null);
+        add(Category.GADGET, "tetherball", N, RARE, "Tetherball", "Place a tetherball pole anyone can play.", null, null);
+        add(Category.GADGET, "pinata", N, RARE, "Piñata", "Hang a piñata; hit it till it bursts.", null, null);
+        add(Category.GADGET, "exploding_sheep", N, RARE, "Exploding Sheep", "A very colourful sheep. Stand back.", null, null);
+        add(Category.GADGET, "railgun", N, RARE, "Railgun", "A beam of pure light.", null, null);
+        add(Category.GADGET, "explosive_bow", N, RARE, "Explosive Bow", "Arrows that go boom.", null, null);
+        add(Category.GADGET, "rush_pearl", N, RARE, "Rush Pearl", "Ride an ender pearl.", null, null);
+        add(Category.GADGET, "swing", N, RARE, "Swing", "Place a swing anyone can ride.", null, null);
+        add(Category.GADGET, "tic_tac_toe", N, RARE, "Tic Tac Toe", "Place a board and play someone.", null, null);
+        add(Category.GADGET, "pigs_fly", N, EPIC, "When Pigs Fly", "A pig with wings circles you.", null, null);
+        add(Category.GADGET, "creeper_astronaut", N, EPIC, "Creeper Astronaut", "To the moon! Then boom.", null, null);
+        add(Category.GADGET, "jetpack", N, EPIC, "Jetpack", "Fly up for a few seconds. Sneak to fall.", null, null);
+        add(Category.GADGET, "dj_booth", N, LEGENDARY, "DJ Booth", "Drop the beat for the whole lobby.", null, null);
+        add(Category.GADGET, "duckling", E, UNCOMMON, "Ducklings", "A line of ducklings follows you.", null, null);
+        add(Category.GADGET, "beach_ball", S, UNCOMMON, "Beach Ball", "A big bouncy ball anyone can hit.", null, null);
+        add(Category.GADGET, "frisbee", S, UNCOMMON, "Frisbee", "Throw it; someone might catch it.", null, null);
+        add(Category.GADGET, "sand_castle", S, RARE, "Sand Castle", "Build a sand castle in seconds.", null, null);
+        add(Category.GADGET, "diving_board", S, RARE, "Diving Board", "Place a board that launches you.", null, null);
+        add(Category.GADGET, "ghost", W, UNCOMMON, "Ghost", "A friendly ghost floats around you. Boo!", null, null);
+        add(Category.GADGET, "pumpkin_rain", W, RARE, "Pumpkin Rain", "It's raining pumpkins.", null, null);
+        add(Category.GADGET, "scarecrow", W, RARE, "Scarecrow", "Place a scarecrow with crows overhead.", null, null);
+        add(Category.GADGET, "witch_cauldron", W, EPIC, "Witch's Cauldron", "A bubbling brew.", null, null);
+        add(Category.GADGET, "let_it_snow", H, RARE, "Let It Snow", "A little snow cloud follows you.", null, null);
+        add(Category.GADGET, "ice_skate", H, RARE, "Ice Skates", "Skate on ice wherever you go.", null, null);
         add(Category.GADGET, "pumpkin_launcher", W, RARE, "Pumpkin Launcher", "Lob a jack-o'-lantern.", null, null);
         // ---- cloaks (particles around you)
         add(Category.CLOAK, "sparkle_aura", N, COMMON, "Sparkle Aura", "A soft shimmer around you.", null, null);
@@ -235,6 +291,18 @@ public final class Catalog {
         add(Category.GESTURE, "facepalm", N, RARE, "Facepalm", "Really?", null, null);
         add(Category.GESTURE, "headbang", N, EPIC, "Headbang", "Rock out.", null, null);
         add(Category.GESTURE, "celebrate", N, EPIC, "Celebrate", "Victory!", null, null);
+        add(Category.GESTURE, "dab", N, COMMON, "Dab", "Hit the classic.", null, null);
+        add(Category.GESTURE, "floss", N, COMMON, "Floss", "Swing those arms.", null, null);
+        add(Category.GESTURE, "moonwalk", N, RARE, "Moonwalk", "Glide backwards, smooth as anything.", null, null);
+        add(Category.GESTURE, "zombie_walk", N, RARE, "Zombie Walk", "Braaains...", null, null);
+        add(Category.GESTURE, "sleep", N, RARE, "Nap Time", "Your copy takes a quick nap.", null, null);
+        add(Category.GESTURE, "swim", N, RARE, "Air Swim", "Swim through thin air.", null, null);
+        add(Category.GESTURE, "twirl_jump", N, EPIC, "Twirl Jump", "A big spinning jump.", null, null);
+        add(Category.GESTURE, "levitate", N, EPIC, "Levitate", "Float up on magic.", null, null);
+        add(Category.GESTURE, "tiny", N, EPIC, "Shrink", "Tiny you!", null, null);
+        add(Category.GESTURE, "magic_trick", N, EPIC, "Magic Trick", "Now you see it...", null, null);
+        add(Category.GESTURE, "giant", N, LEGENDARY, "Giant", "Grow huge and stomp around.", null, null);
+        add(Category.GESTURE, "explode", N, LEGENDARY, "Kaboom", "Your copy swells up and... boom.", null, null);
 
         ITEMS = List.copyOf(build);
         SETS = List.copyOf(setsBuild);

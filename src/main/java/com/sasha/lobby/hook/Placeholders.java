@@ -47,8 +47,8 @@ public final class Placeholders {
             if (out.contains("%lobby_dust%") || out.contains("%lobby_boxes%")) {
                 var mystery = plugin.mystery();
                 var stash = mystery == null ? null : mystery.stash(player.getUniqueId());
-                out = out.replace("%lobby_dust%", stash == null ? "0" : String.format(java.util.Locale.ROOT, "%,d", stash.dust()))
-                        .replace("%lobby_boxes%", stash == null ? "0" : String.valueOf(stash.totalBoxes()));
+                out = out.replace("%lobby_dust%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust()))
+                        .replace("%lobby_boxes%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes()));
             }
             if (out.contains("%lobby_parkour_")) {
                 var board = plugin.parkour().leaderboard();

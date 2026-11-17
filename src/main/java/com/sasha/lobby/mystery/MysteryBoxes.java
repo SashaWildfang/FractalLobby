@@ -30,7 +30,6 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -39,22 +38,28 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Mystery Boxes: boxes of 1 to 5 stars that give a random cosmetic (a trail, a chat colour, glowing) or a pile of
- * Mystery Dust. A cosmetic the player already has turns into Mystery Dust instead, and dust crafts new boxes.
+ * Mystery Boxes: boxes of 1 to 5 stars. Every box is different: when it's made it draws a handful of possible prizes
+ * (cosmetics of every rarity, or piles of Mystery Dust), shown when you hover over it, and opening it gives one of
+ * them by the box's odds. A cosmetic the player already has turns into Mystery Dust instead, and dust crafts new
+ * boxes (1 to 3 stars for everyone, 4 and 5 stars with lobby.mystery.craft.high).
  *
- * <p>Players get a 1-star box every day they join (a bigger one every streak-days in a row), and one for a new
- * parkour best; the store or a vote plugin gives more with /mysterybox give. Boxes are opened at the Mystery Vault
- * (/mysterybox vault set), with an animation everyone around can watch; without a vault they open in front of the
- * player.
+ * <p>Boxes only open at a Mystery Vault, one at a time per vault, with an animation everyone around can watch.
+ * Players with lobby.mystery.multi can open many at once: no animation, a summary in chat. Seasonal collectibles never
+ * come from these boxes. The store, votes and games give boxes with /mysterybox give.
  */
 public final class MysteryBoxes implements Listener {
 
     public static final int MAX_STARS = 5;
+    public static final String MULTI = "lobby.mystery.multi", CRAFT_HIGH = "lobby.mystery.craft.high";
     /** Background glyphs for the menus (resource pack). */
-    private static final char VAULT_MENU = '', COLLECTION_MENU = '';
-    /** Menu slots: the five boxes, the craft buttons under them, the stash, the collection. */
-    private static final int[] BOX_SLOTS = {11, 12, 13, 14, 15}, CRAFT_SLOTS = {20, 21, 22, 23, 24};
-    private static final int STASH = 4, COLLECTION = 40, BACK = 49;
+    private static final char VAULT_MENU = '\uF173', COLLECTION_MENU = '\uF174', CRAFT_MENU = '\uF17C';
+    /** The vault menu: stash on top, a grid of boxes (4 rows of 7), then previous, craft, collection, open all, next. */
+    private static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43};
+    private static final int STASH = 4, PREVIOUS = 45, CRAFT = 47, COLLECTION = 49, OPEN_ALL = 51, NEXT = 53;
+    /** The craft menu: 1 to 5 stars and back; the collection's back button. */
+    private static final int[] CRAFT_SLOTS = {11, 12, 13, 14, 15};
+    private static final int CRAFT_BACK = 22, BACK = 49;
 
     private final Lobby plugin;
     private final MysteryData data;
@@ -100,9 +105,9 @@ public final class MysteryBoxes implements Listener {
         }
     }
 
-    /** Whether a reward can drop now (seasonal collectibles only in their season). */
+    /** Whether a reward can be in a box: seasonal collectibles never are (they come from Seasonal Boxes). */
     private boolean available(Reward reward) {
-        return !reward.collectible() || plugin.collectibles() == null || plugin.collectibles().inSeason(reward.item());
+        return !reward.collectible() || reward.item() != null && reward.item().season() == com.sasha.lobby.collectibles.Catalog.Season.NORMAL;
     }
 
     public void stop() {
@@ -164,7 +169,7 @@ public final class MysteryBoxes implements Listener {
 
     // ---------------------------------------------------------------- getting boxes and dust
 
-    /** Gives boxes (online or not). */
+    /** Gives boxes (online or not), each with its own prizes. */
     public void give(UUID id, int stars, int amount) {
         data.addBoxes(id, stars, amount);
         refresh(id);
@@ -187,48 +192,36 @@ public final class MysteryBoxes implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        data.name(player.getUniqueId(), player.getName());
-        if (!enabled() || !plugin.getConfig().getBoolean("mystery-boxes.daily.enabled", true)) return;
-        LocalDate today = LocalDate.now(plugin.lobbyConfig().scoreboard().timeZone());
-        int streak = data.claimDaily(player.getUniqueId(), today);
-        if (streak == 0) return;
-        int every = Math.max(0, plugin.getConfig().getInt("mystery-boxes.daily.streak-days", 7));
-        boolean bonus = every > 0 && streak % every == 0;
-        int stars = clampStars(plugin.getConfig().getInt(bonus ? "mystery-boxes.daily.streak-stars" : "mystery-boxes.daily.stars", bonus ? 3 : 1));
-        give(player.getUniqueId(), stars, 1);
-        TagResolver tags = TagResolver.resolver(Messages.arg("streak", streak), starsTag(stars));
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            if (!player.isOnline()) return;
-            plugin.messages().send(player, bonus ? "mystery.daily-streak" : "mystery.daily", tags);
-            player.playSound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.MASTER, 0.5f, 1.4f), Sound.Emitter.self());
-        }, 60L);
+        data.name(event.getPlayer().getUniqueId(), event.getPlayer().getName());
     }
 
-    /** A new parkour personal best: a box, once a day, for a good enough score. */
+    /** (Parkour bests no longer give boxes.) */
     public void parkourBest(Player player, int score) {
-        if (!enabled() || !plugin.getConfig().getBoolean("mystery-boxes.parkour-best.enabled", true)) return;
-        if (score < plugin.getConfig().getInt("mystery-boxes.parkour-best.min-score", 10)) return;
-        String key = "parkour-" + LocalDate.now(plugin.lobbyConfig().scoreboard().timeZone());
-        if (!data.unlock(player.getUniqueId(), key)) return; // once a day
-        int stars = clampStars(plugin.getConfig().getInt("mystery-boxes.parkour-best.stars", 1));
-        give(player.getUniqueId(), stars, 1);
-        plugin.messages().send(player, "mystery.parkour-best", starsTag(stars));
+    }
+
+    /** Whether the player may craft boxes with this many stars (4 and 5 need lobby.mystery.craft.high). */
+    boolean canCraft(Player player, int stars) {
+        return stars <= 3 || player.hasPermission(CRAFT_HIGH);
     }
 
     /** Crafts a box from Mystery Dust. */
     private void craft(Player player, int stars) {
+        if (!canCraft(player, stars)) {
+            plugin.messages().send(player, "mystery.craft-locked", starsTag(stars));
+            sound(player, "entity.villager.no", 1f);
+            return;
+        }
         long cost = craftCost(stars);
         MysteryData.Stash stash = data.get(player.getUniqueId());
         if (stash.dust() < cost) {
-            plugin.messages().send(player, "mystery.craft-short", Messages.arg("cost", cost), Messages.arg("dust", stash.dust()),
-                    Messages.arg("need", cost - stash.dust()), starsTag(stars));
+            plugin.messages().send(player, "mystery.craft-short", Messages.arg("cost", compact(cost)), Messages.arg("dust", compact(stash.dust())),
+                    Messages.arg("need", compact(cost - stash.dust())), starsTag(stars));
             sound(player, "entity.villager.no", 1f);
             return;
         }
         data.addDust(player.getUniqueId(), -cost);
         data.addBoxes(player.getUniqueId(), stars, 1);
-        plugin.messages().send(player, "mystery.crafted", Messages.arg("cost", cost), starsTag(stars));
+        plugin.messages().send(player, "mystery.crafted", Messages.arg("cost", compact(cost)), starsTag(stars));
         sound(player, "block.smithing_table.use", 1.2f);
         refresh(player.getUniqueId());
     }
@@ -238,31 +231,12 @@ public final class MysteryBoxes implements Listener {
         return Math.max(1, plugin.getConfig().getLong("mystery-boxes.craft-cost." + stars, defaults[stars]));
     }
 
-    // ---------------------------------------------------------------- opening
-
-    /** Rolls a box: a rarity by the box's odds, then one of that rarity's rewards. */
-    Reward roll(int stars) {
-        Map<Reward.Rarity, Double> odds = odds(stars);
-        double total = odds.values().stream().mapToDouble(Double::doubleValue).sum();
-        double pick = ThreadLocalRandom.current().nextDouble(total);
-        Reward.Rarity rarity = Reward.Rarity.COMMON;
-        for (Map.Entry<Reward.Rarity, Double> entry : odds.entrySet()) {
-            pick -= entry.getValue();
-            if (pick < 0) {
-                rarity = entry.getKey();
-                break;
-            }
-        }
-        Reward.Rarity chosen = rarity;
-        List<Reward> pool = rewards.stream().filter(r -> r.rarity() == chosen && available(r)).toList();
-        if (pool.isEmpty()) pool = rewards.stream().filter(this::available).toList(); // nothing of that rarity: anything
-        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-    }
+    // ---------------------------------------------------------------- what's in a box
 
     /** The chance (percent) of each rarity for a box with this many stars, only rarities that have rewards. */
     Map<Reward.Rarity, Double> odds(int stars) {
-        double[][] defaults = {{}, {70, 25, 5, 0}, {50, 35, 13, 2}, {30, 40, 24, 6}, {10, 40, 38, 12}, {0, 25, 50, 25}};
-        List<Double> configured = plugin.getConfig().getDoubleList("mystery-boxes.odds." + stars);
+        double[][] defaults = {{}, {55, 30, 12, 3, 0}, {40, 32, 20, 7, 1}, {25, 30, 28, 13, 4}, {10, 22, 35, 24, 9}, {0, 10, 35, 35, 20}};
+        List<Double> configured = plugin.getConfig().getDoubleList("mystery-boxes.chances." + stars);
         Map<Reward.Rarity, Double> odds = new EnumMap<>(Reward.Rarity.class);
         for (Reward.Rarity rarity : Reward.Rarity.values()) {
             int i = rarity.ordinal();
@@ -273,48 +247,159 @@ public final class MysteryBoxes implements Listener {
         return odds;
     }
 
-    /** Opens one of the player's boxes: checks, then takes the box, gives the prize and plays the opening. */
-    private void open(Player player, int stars) {
-        MysteryData.Stash stash = data.get(player.getUniqueId());
-        if (stash.boxes(stars) <= 0) {
-            plugin.messages().send(player, "mystery.no-box", starsTag(stars));
-            sound(player, "entity.villager.no", 1f);
-            return;
+    private static Reward.Rarity pick(Map<Reward.Rarity, Double> odds, java.util.Random random) {
+        double total = odds.values().stream().mapToDouble(Double::doubleValue).sum();
+        double roll = random.nextDouble() * total;
+        for (Map.Entry<Reward.Rarity, Double> entry : odds.entrySet()) {
+            roll -= entry.getValue();
+            if (roll < 0) return entry.getKey();
         }
-        Vault.Place place = vault.place(player);
-        if (place == null) return; // told why (too far from a vault, or it's busy)
-        player.closeInventory();
-        data.addBoxes(player.getUniqueId(), stars, -1);
+        return odds.keySet().iterator().next();
+    }
+
+    /** What a box can give: 5 + stars different prizes drawn from its seed, rarest first. */
+    public List<Reward> contents(MysteryData.Box box) {
+        java.util.Random random = new java.util.Random(box.seed());
+        Map<Reward.Rarity, Double> odds = odds(box.stars());
+        int count = 5 + box.stars();
+        List<Reward> picked = new ArrayList<>();
+        for (int tries = 0; tries < count * 6 && picked.size() < count; tries++) {
+            Reward.Rarity rarity = pick(odds, random);
+            List<Reward> pool = rewards.stream().filter(r -> r.rarity() == rarity && available(r) && !picked.contains(r)).toList();
+            if (!pool.isEmpty()) picked.add(pool.get(random.nextInt(pool.size())));
+        }
+        picked.sort(java.util.Comparator.comparing(Reward::rarity).reversed());
+        return picked;
+    }
+
+    /** Opens a box: one of its prizes, each rarity as likely as the box's odds say. */
+    Reward roll(MysteryData.Box box) {
+        List<Reward> inside = contents(box);
+        if (inside.isEmpty()) return null;
+        Map<Reward.Rarity, Double> odds = odds(box.stars());
+        Map<Reward.Rarity, Double> present = new EnumMap<>(Reward.Rarity.class);
+        for (Reward reward : inside) present.put(reward.rarity(), odds.getOrDefault(reward.rarity(), 1.0));
+        Reward.Rarity rarity = pick(present, ThreadLocalRandom.current());
+        List<Reward> of = inside.stream().filter(r -> r.rarity() == rarity).toList();
+        return of.get(ThreadLocalRandom.current().nextInt(of.size()));
+    }
+
+    /** The result of opening one box (the prize is already given). */
+    record Prize(Reward reward, boolean duplicate, long dust) {
+    }
+
+    /** Takes the box and gives its prize (a duplicate cosmetic becomes Mystery Dust); null if they don't have it. */
+    private Prize claim(Player player, MysteryData.Box box) {
+        Reward reward = roll(box);
+        if (reward == null || !data.take(player.getUniqueId(), box)) return null;
         data.opened(player.getUniqueId());
-        Reward reward = roll(stars);
-        // The prize is given now, so nothing is lost if they leave during the animation.
-        boolean duplicate;
+        boolean duplicate = false;
         long dust;
         if (reward.dust()) {
-            duplicate = false;
             dust = reward.dustAmount();
         } else if (has(player, reward)) {
             duplicate = true;
             dust = duplicateDust(reward.rarity());
         } else {
-            duplicate = false;
             dust = 0;
             data.unlock(player.getUniqueId(), reward.id());
         }
         if (dust > 0) data.addDust(player.getUniqueId(), dust);
+        return new Prize(reward, duplicate, dust);
+    }
+
+    /** Opens one box at the vault the menu was opened from, with the full show. */
+    private void open(Player player, Vault.Spot spot, MysteryData.Box box) {
+        if (spot == null) {
+            plugin.messages().send(player, "mystery.vault-only");
+            sound(player, "entity.villager.no", 1f);
+            return;
+        }
+        if (!data.get(player.getUniqueId()).boxes.contains(box)) return;
+        Vault.Place place = vault.reserve(player, spot);
+        if (place == null) return; // told why (busy, or they're already opening one)
+        player.closeInventory();
+        Prize prize = claim(player, box);
+        if (prize == null) {
+            vault.free(player, spot);
+            return;
+        }
         refresh(player.getUniqueId());
-        new Opening(plugin, this, player, place, stars, reward, duplicate, dust).start();
+        new Opening(plugin, this, player, place, box.stars(), prize.reward(), prize.duplicate(), prize.dust()).start();
+    }
+
+    /** Opens many boxes at once, no show: a summary in chat (lobby.mystery.multi). */
+    private void openMany(Player player, Vault.Spot spot, List<MysteryData.Box> list) {
+        if (!player.hasPermission(MULTI)) {
+            plugin.messages().send(player, "mystery.multi-locked");
+            sound(player, "entity.villager.no", 1f);
+            return;
+        }
+        if (spot == null) {
+            plugin.messages().send(player, "mystery.vault-only");
+            return;
+        }
+        if (spot.busyFor != null && !player.getUniqueId().equals(spot.busyFor)) {
+            plugin.messages().send(player, "mystery.vault.busy", Messages.name("player", spot.busyName));
+            return;
+        }
+        if (list.isEmpty()) return;
+        player.closeInventory();
+        // what came out, rarest first: each prize with how many times, and whether it was new
+        Map<String, int[]> counts = new java.util.LinkedHashMap<>();   // id -> {times, new (1/0)}
+        Map<String, Reward> byId = new java.util.HashMap<>();
+        long dust = 0;
+        int opened = 0, fresh = 0;
+        for (MysteryData.Box box : list) {
+            Prize prize = claim(player, box);
+            if (prize == null) continue;
+            opened++;
+            dust += prize.dust();
+            boolean isNew = !prize.reward().dust() && !prize.duplicate();
+            if (isNew) fresh++;
+            byId.put(prize.reward().id(), prize.reward());
+            int[] c = counts.computeIfAbsent(prize.reward().id(), k -> new int[2]);
+            c[0]++;
+            if (isNew) c[1] = 1;
+            if (isNew && announced(prize.reward().rarity())) {
+                TagResolver tags = TagResolver.resolver(Placeholder.parsed("reward", prize.reward().name(plugin)),
+                        Placeholder.parsed("rarity", rarityName(prize.reward().rarity())), Messages.name("player", player.getName()),
+                        starsTag(box.stars()));
+                for (Player everyone : plugin.getServer().getOnlinePlayers()) plugin.messages().send(everyone, "mystery.announce", tags);
+            }
+        }
+        refresh(player.getUniqueId());
+        Messages messages = plugin.messages();
+        messages.send(player, "mystery.summary.header", Messages.arg("count", opened), Messages.arg("new", fresh));
+        List<Map.Entry<String, int[]>> lines = new ArrayList<>(counts.entrySet());
+        lines.sort(java.util.Comparator.comparing((Map.Entry<String, int[]> e) -> byId.get(e.getKey()).rarity()).reversed());
+        for (Map.Entry<String, int[]> line : lines) {
+            Reward reward = byId.get(line.getKey());
+            String key = reward.dust() ? "mystery.summary.dust-line" : line.getValue()[1] == 1 ? "mystery.summary.new-line" : "mystery.summary.dupe-line";
+            messages.send(player, key, Placeholder.parsed("reward", reward.name(plugin)), Placeholder.parsed("rarity", rarityName(reward.rarity())),
+                    Messages.arg("times", line.getValue()[0]));
+        }
+        messages.send(player, "mystery.summary.footer", Messages.arg("dust", compact(dust)),
+                Messages.arg("total", compact(data.get(player.getUniqueId()).dust())));
+        // a quick pop over the vault
+        Location top = spot.top();
+        top.getWorld().spawnParticle(org.bukkit.Particle.FIREWORK, top.clone().add(0, 0.6, 0), 40, 0.3, 0.3, 0.3, 0.25);
+        top.getWorld().spawnParticle(org.bukkit.Particle.TOTEM_OF_UNDYING, top.clone().add(0, 0.6, 0), 30, 0.3, 0.4, 0.3, 0.4);
+        sound(player, "ui.toast.challenge_complete", 1.2f);
+        sound(player, "entity.player.levelup", 1.4f);
     }
 
     long duplicateDust(Reward.Rarity rarity) {
-        long[] defaults = {10, 25, 60, 150};
+        long[] defaults = {10, 18, 25, 60, 150};
         return Math.max(0, plugin.getConfig().getLong("mystery-boxes.rarities." + rarity.key() + ".duplicate-dust", defaults[rarity.ordinal()]));
     }
 
+    private static final String[] RARITY_NAMES = {"<#C9B8EE>Common", "<#7FE39A>Uncommon", "<#7FA8FF>Rare", "<#C77DFF>Epic", "<#FFD27F>Legendary"};
+    private static final String[] RARITY_COLOURS = {"#C9B8EE", "#7FE39A", "#7FA8FF", "#C77DFF", "#FFD27F"};
+
     /** The rarity's name and colour from config.yml. */
     String rarityName(Reward.Rarity rarity) {
-        String[] defaults = {"<#C9B8EE>Common", "<#7FA8FF>Rare", "<#C77DFF>Epic", "<#FFD27F>Legendary"};
-        return plugin.getConfig().getString("mystery-boxes.rarities." + rarity.key() + ".name", defaults[rarity.ordinal()]);
+        return plugin.getConfig().getString("mystery-boxes.rarities." + rarity.key() + ".name", RARITY_NAMES[rarity.ordinal()]);
     }
 
     /** The rarity's name with its colour, as MiniMessage ("<#FFD27F>Legendary"). */
@@ -329,12 +414,11 @@ public final class MysteryBoxes implements Listener {
     }
 
     org.bukkit.Color rarityColor(Reward.Rarity rarity) {
-        String[] defaults = {"#C9B8EE", "#7FA8FF", "#C77DFF", "#FFD27F"};
-        String hex = plugin.getConfig().getString("mystery-boxes.rarities." + rarity.key() + ".color", defaults[rarity.ordinal()]);
+        String hex = plugin.getConfig().getString("mystery-boxes.rarities." + rarity.key() + ".color", RARITY_COLOURS[rarity.ordinal()]);
         try {
             return org.bukkit.Color.fromRGB(Integer.parseInt(hex.replace("#", ""), 16));
         } catch (NumberFormatException e) {
-            return org.bukkit.Color.fromRGB(Integer.parseInt(defaults[rarity.ordinal()].substring(1), 16));
+            return org.bukkit.Color.fromRGB(Integer.parseInt(RARITY_COLOURS[rarity.ordinal()].substring(1), 16));
         }
     }
 
@@ -344,14 +428,37 @@ public final class MysteryBoxes implements Listener {
         return from != null && rarity.ordinal() >= from.ordinal();
     }
 
+    /** 950, 1.2k, 5.2M, 1.1B. */
+    public static String compact(long n) {
+        long a = Math.abs(n);
+        if (a < 1000) return String.valueOf(n);
+        String[] units = {"k", "M", "B", "T"};
+        double v = n;
+        int u = -1;
+        while (Math.abs(v) >= 1000 && u < units.length - 1) {
+            v /= 1000;
+            u++;
+        }
+        String text = Math.abs(v) >= 100 ? String.valueOf((long) Math.floor(v)) : String.format(java.util.Locale.ROOT, "%.1f", Math.floor(v * 10) / 10);
+        if (text.endsWith(".0")) text = text.substring(0, text.length() - 2);
+        return text + units[u];
+    }
+
     // ---------------------------------------------------------------- menus
 
+    private enum Kind { MAIN, CRAFT, COLLECTION }
+
     private static final class Menu implements InventoryHolder {
-        private final boolean collection;
+        private final Kind kind;
+        private final Vault.Spot spot;
+        private final int page;
+        private final Map<Integer, MysteryData.Box> boxes = new java.util.HashMap<>();
         private Inventory inventory;
 
-        Menu(boolean collection) {
-            this.collection = collection;
+        Menu(Kind kind, Vault.Spot spot, int page) {
+            this.kind = kind;
+            this.spot = spot;
+            this.page = page;
         }
 
         @Override
@@ -360,60 +467,108 @@ public final class MysteryBoxes implements Listener {
         }
     }
 
-    /** The Mystery Vault menu: the player's boxes, crafting with dust, and their collection. */
+    /** The Mystery Boxes menu away from a vault: look at your boxes (they open at a vault). */
     public void openMenu(Player player) {
+        openMenu(player, null, 0);
+    }
+
+    /** The Mystery Vault menu: your stash, every box you have (with what it can give), crafting, the collection. */
+    public void openMenu(Player player, Vault.Spot spot, int page) {
         if (!enabled()) {
             plugin.messages().send(player, "mystery.disabled");
             return;
         }
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
-        Menu menu = new Menu(false);
-        menu.inventory = Bukkit.createInventory(menu, 45, style.title(VAULT_MENU, messages.component("mystery.menu.title")));
+        MysteryData.Stash stash = data.get(player.getUniqueId());
+        List<MysteryData.Box> all = stash.boxList();
+        int pages = Math.max(1, (all.size() + GRID.length - 1) / GRID.length);
+        int shown = Math.max(0, Math.min(page, pages - 1));
+        Menu menu = new Menu(Kind.MAIN, spot, shown);
+        menu.inventory = Bukkit.createInventory(menu, 54, style.title(VAULT_MENU, messages.component("mystery.menu.title")));
         ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
-        MysteryData.Stash stash = data.get(player.getUniqueId());
 
         menu.inventory.setItem(STASH, item(Material.GLOWSTONE_DUST, "mystery/dust", "mystery.menu.stash",
-                TagResolver.resolver(Messages.arg("dust", stash.dust()), Messages.arg("boxes", stash.totalBoxes()),
-                        Messages.arg("opened", stash.opened()), Messages.arg("streak", stash.streak()))));
-        for (int stars = 1; stars <= MAX_STARS; stars++) {
-            int count = stash.boxes(stars);
-            List<Component> lore = new ArrayList<>(messages.lore("mystery.menu.box.lore", Messages.arg("count", count)));
-            for (Map.Entry<Reward.Rarity, Double> odd : odds(stars).entrySet()) {
-                lore.add(messages.item("mystery.menu.box.odds", Placeholder.parsed("rarity", rarityName(odd.getKey())),
-                        Messages.arg("chance", trim(odd.getValue()))));
-            }
-            lore.add(Component.empty());
-            lore.addAll(messages.lore(count > 0 ? "mystery.menu.box.open-hint" : "mystery.menu.box.none-hint"));
-            TagResolver boxTags = TagResolver.resolver(starsTag(stars), Messages.arg("count", count));
-            ItemStack box = item(Material.CHEST, "mystery/box_" + stars, null, boxTags);
-            int shown = Math.max(1, Math.min(64, count));
-            box.setAmount(shown);
-            box.editMeta(meta -> {
-                meta.displayName(messages.item("mystery.menu.box.name", boxTags));
-                meta.lore(lore);
-            });
-            menu.inventory.setItem(BOX_SLOTS[stars - 1], box);
-
-            long cost = craftCost(stars);
-            boolean afford = stash.dust() >= cost;
-            menu.inventory.setItem(CRAFT_SLOTS[stars - 1], item(afford ? Material.LIME_DYE : Material.GRAY_DYE,
-                    afford ? "mystery/craft" : "mystery/craft_locked", afford ? "mystery.menu.craft" : "mystery.menu.craft-short",
-                    TagResolver.resolver(starsTag(stars), Messages.arg("cost", cost), Messages.arg("need", Math.max(0, cost - stash.dust())))));
+                TagResolver.resolver(Messages.arg("dust", compact(stash.dust())), Messages.arg("boxes", compact(stash.totalBoxes())),
+                        Messages.arg("opened", compact(stash.opened())))));
+        boolean multi = player.hasPermission(MULTI);
+        for (int i = 0; i < GRID.length; i++) {
+            int index = shown * GRID.length + i;
+            if (index >= all.size()) break;
+            MysteryData.Box box = all.get(index);
+            menu.inventory.setItem(GRID[i], boxIcon(box, spot != null, multi, stash.boxes(box.stars())));
+            menu.boxes.put(GRID[i], box);
         }
+        if (all.isEmpty()) menu.inventory.setItem(22, item(Material.GRAY_DYE, "mystery/locked", "mystery.menu.empty", TagResolver.empty()));
+        if (shown > 0) menu.inventory.setItem(PREVIOUS, style.icon(item(Material.ARROW, null, "mystery.menu.previous",
+                Messages.arg("page", shown)), "back"));
+        if (shown < pages - 1) menu.inventory.setItem(NEXT, style.icon(item(Material.ARROW, null, "mystery.menu.next",
+                Messages.arg("page", shown + 2)), "next"));
+        menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
+                TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
         int found = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible() && (owns(player, r.id()) || has(player, r))).count();
         int total = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible()).count();
         menu.inventory.setItem(COLLECTION, item(Material.BOOK, "mystery/collection", "mystery.menu.collection",
                 TagResolver.resolver(Messages.arg("found", found), Messages.arg("total", total))));
+        menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/box_5" : "mystery/locked",
+                multi ? "mystery.menu.open-all" : "mystery.menu.open-all-locked", TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
+        player.openInventory(menu.inventory);
+    }
+
+    /** A box in the menu: its stars, every prize it can give (by rarity) and how to open it. */
+    private ItemStack boxIcon(MysteryData.Box box, boolean atVault, boolean multi, int sameStars) {
+        Messages messages = plugin.messages();
+        TagResolver tags = TagResolver.resolver(starsTag(box.stars()), Messages.arg("count", sameStars));
+        List<Component> lore = new ArrayList<>(messages.lore("mystery.menu.box.lore", tags));
+        Reward.Rarity last = null;
+        for (Reward reward : contents(box)) {
+            if (reward.rarity() != last) {
+                last = reward.rarity();
+                lore.add(messages.item("mystery.menu.box.rarity", Placeholder.parsed("rarity", rarityName(last)),
+                        Messages.arg("chance", trim(odds(box.stars()).getOrDefault(last, 0.0)))));
+            }
+            lore.add(messages.item("mystery.menu.box.prize", Placeholder.parsed("reward", rarityColourTag(reward.rarity()) + reward.name(plugin))));
+        }
+        lore.add(Component.empty());
+        lore.addAll(messages.lore(!atVault ? "mystery.menu.box.go-to-vault" : multi ? "mystery.menu.box.open-hint-multi" : "mystery.menu.box.open-hint", tags));
+        ItemStack icon = item(Material.CHEST, "mystery/box_" + box.stars(), null, tags);
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("mystery.menu.box.name", tags));
+            meta.lore(lore);
+        });
+        return icon;
+    }
+
+    /** Crafting boxes with Mystery Dust. */
+    private void openCraft(Player player, Vault.Spot spot) {
+        Messages messages = plugin.messages();
+        MenuStyle style = plugin.menuStyle();
+        Menu menu = new Menu(Kind.CRAFT, spot, 0);
+        menu.inventory = Bukkit.createInventory(menu, 27, style.title(CRAFT_MENU, messages.component("mystery.craft-menu.title")));
+        ItemStack filler = style.filler();
+        for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
+        MysteryData.Stash stash = data.get(player.getUniqueId());
+        menu.inventory.setItem(4, item(Material.GLOWSTONE_DUST, "mystery/dust", "mystery.menu.stash",
+                TagResolver.resolver(Messages.arg("dust", compact(stash.dust())), Messages.arg("boxes", compact(stash.totalBoxes())),
+                        Messages.arg("opened", compact(stash.opened())))));
+        for (int stars = 1; stars <= MAX_STARS; stars++) {
+            long cost = craftCost(stars);
+            TagResolver tags = TagResolver.resolver(starsTag(stars), Messages.arg("cost", compact(cost)),
+                    Messages.arg("need", compact(Math.max(0, cost - stash.dust()))));
+            String key = !canCraft(player, stars) ? "mystery.craft-menu.locked" : stash.dust() >= cost ? "mystery.craft-menu.craft" : "mystery.craft-menu.short";
+            ItemStack icon = item(Material.CHEST, canCraft(player, stars) ? "mystery/box_" + stars : "mystery/locked", key, tags);
+            menu.inventory.setItem(CRAFT_SLOTS[stars - 1], icon);
+        }
+        menu.inventory.setItem(CRAFT_BACK, style.icon(item(Material.ARROW, null, "mystery.collection.back", TagResolver.empty()), "back"));
         player.openInventory(menu.inventory);
     }
 
     /** Every cosmetic a box can give: found ones in colour, the rest locked. */
-    private void openCollection(Player player) {
+    private void openCollection(Player player, Vault.Spot spot) {
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
-        Menu menu = new Menu(true);
+        Menu menu = new Menu(Kind.COLLECTION, spot, 0);
         menu.inventory = Bukkit.createInventory(menu, 54, style.title(COLLECTION_MENU, messages.component("mystery.collection.title")));
         ItemStack filler = style.filler();
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
@@ -458,27 +613,54 @@ public final class MysteryBoxes implements Listener {
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         int slot = event.getRawSlot();
-        if (menu.collection) {
-            if (slot == BACK) {
-                sound(player, "ui.button.click", 1f);
-                openMenu(player);
+        switch (menu.kind) {
+            case COLLECTION -> {
+                if (slot == BACK) {
+                    sound(player, "ui.button.click", 1f);
+                    openMenu(player, menu.spot, 0);
+                }
             }
-            return;
-        }
-        for (int i = 0; i < MAX_STARS; i++) {
-            if (slot == BOX_SLOTS[i]) {
-                open(player, i + 1);
-                return;
+            case CRAFT -> {
+                if (slot == CRAFT_BACK) {
+                    sound(player, "ui.button.click", 1f);
+                    openMenu(player, menu.spot, 0);
+                    return;
+                }
+                for (int i = 0; i < MAX_STARS; i++) {
+                    if (slot == CRAFT_SLOTS[i]) {
+                        craft(player, i + 1);
+                        if (player.getOpenInventory().getTopInventory() == menu.inventory) openCraft(player, menu.spot);
+                        return;
+                    }
+                }
             }
-            if (slot == CRAFT_SLOTS[i]) {
-                craft(player, i + 1);
-                if (player.getOpenInventory().getTopInventory() == menu.inventory) openMenu(player);
-                return;
+            case MAIN -> {
+                MysteryData.Box box = menu.boxes.get(slot);
+                if (box != null) {
+                    if (event.isShiftClick() && player.hasPermission(MULTI)) {
+                        int stars = box.stars();
+                        openMany(player, menu.spot, data.get(player.getUniqueId()).boxList().stream().filter(b -> b.stars() == stars).toList());
+                    } else {
+                        open(player, menu.spot, box);
+                    }
+                    return;
+                }
+                switch (slot) {
+                    case PREVIOUS -> openMenu(player, menu.spot, menu.page - 1);
+                    case NEXT -> openMenu(player, menu.spot, menu.page + 1);
+                    case CRAFT -> {
+                        sound(player, "ui.button.click", 1f);
+                        openCraft(player, menu.spot);
+                    }
+                    case COLLECTION -> {
+                        sound(player, "ui.button.click", 1f);
+                        openCollection(player, menu.spot);
+                    }
+                    case OPEN_ALL -> openMany(player, menu.spot, data.get(player.getUniqueId()).boxList());
+                    default -> {
+                    }
+                }
             }
-        }
-        if (slot == COLLECTION) {
-            sound(player, "ui.button.click", 1f);
-            openCollection(player);
         }
     }
 
@@ -515,7 +697,7 @@ public final class MysteryBoxes implements Listener {
         }
         giveDust(target.getUniqueId(), amount);
         plugin.messages().send(sender, "mystery.dust-given", Messages.name("player", target.getName() == null ? name : target.getName()),
-                Messages.arg("amount", amount), Messages.arg("dust", data.get(target.getUniqueId()).dust()));
+                Messages.arg("amount", compact(amount)), Messages.arg("dust", compact(data.get(target.getUniqueId()).dust())));
     }
 
     /** /mysterybox reset NAME: takes away everything (boxes, dust, unlocks). */
@@ -532,7 +714,7 @@ public final class MysteryBoxes implements Listener {
     /** /dust: how much Mystery Dust the player has. */
     public void showDust(Player player) {
         MysteryData.Stash stash = data.get(player.getUniqueId());
-        plugin.messages().send(player, "mystery.dust", Messages.arg("dust", stash.dust()), Messages.arg("boxes", stash.totalBoxes()));
+        plugin.messages().send(player, "mystery.dust", Messages.arg("dust", compact(stash.dust())), Messages.arg("boxes", compact(stash.totalBoxes())));
     }
 
     private OfflinePlayer find(String name) {

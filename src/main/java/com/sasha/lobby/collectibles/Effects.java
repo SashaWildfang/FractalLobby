@@ -101,6 +101,8 @@ final class Effects implements Listener {
     private static final class Rig {
         final String key;
         Double lastX, lastZ;
+        /** Our own body turn (the server doesn't keep a player's body turn): follows the head like the game does. */
+        Float body;
         final List<ItemDisplay> parts = new ArrayList<>();
 
         Rig(String key) {
@@ -124,7 +126,12 @@ final class Effects implements Listener {
         this.collectibles = collectibles;
         this.effectKey = new NamespacedKey(plugin, "collectible_effect");
         this.bonusKey = new NamespacedKey(plugin, "suit_bonus");
+        this.more = new MoreGadgets(plugin, this);
+        plugin.getServer().getPluginManager().registerEvents(more, plugin);
     }
+
+    /** The gadgets added in 1.41. */
+    private final MoreGadgets more;
 
     void start() {
         stop();
@@ -154,6 +161,7 @@ final class Effects implements Listener {
     void stop() {
         if (task != null) task.cancel();
         task = null;
+        if (more != null) more.stop();
         for (TextDisplay display : emotes.values()) display.remove();
         emotes.clear();
         for (UUID id : new ArrayList<>(rigs.keySet())) unrig(id);
@@ -171,6 +179,7 @@ final class Effects implements Listener {
 
     void quit(Player player) {
         UUID id = player.getUniqueId();
+        more.quit(player);
         TextDisplay emote = emotes.remove(id);
         if (emote != null) emote.remove();
         unrig(id);
@@ -210,20 +219,20 @@ final class Effects implements Listener {
 
     // ---------------------------------------------------------------- helpers
 
-    private void sound(Location at, String key, float volume, float pitch) {
+    void sound(Location at, String key, float volume, float pitch) {
         at.getWorld().playSound(Sound.sound(Key.key(key), Sound.Source.MASTER, volume, pitch), at.getX(), at.getY(), at.getZ());
     }
 
-    private Particle.DustOptions dust(Color colour, float size) {
+    Particle.DustOptions dust(Color colour, float size) {
         return new Particle.DustOptions(colour, size);
     }
 
-    private Color party() {
+    Color party() {
         return PARTY[ThreadLocalRandom.current().nextInt(PARTY.length)];
     }
 
     /** Runs something every tick for a while. */
-    private BukkitTask every(int ticks, java.util.function.IntConsumer step, Runnable end) {
+    BukkitTask every(int ticks, java.util.function.IntConsumer step, Runnable end) {
         int[] t = {0};
         BukkitTask[] self = new BukkitTask[1];
         self[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
@@ -237,40 +246,40 @@ final class Effects implements Listener {
         return self[0];
     }
 
-    private void later(int ticks, Runnable run) {
+    void later(int ticks, Runnable run) {
         plugin.getServer().getScheduler().runTaskLater(plugin, run, ticks);
     }
 
-    private <T extends Entity> T tagged(T entity, String effect) {
+    <T extends Entity> T tagged(T entity, String effect) {
         entity.addScoreboardTag(TAG);
         entity.setPersistent(false);
         entity.getPersistentDataContainer().set(effectKey, PersistentDataType.STRING, effect);
         return entity;
     }
 
-    private ItemStack modelled(Material material, String model) {
+    ItemStack modelled(Material material, String model) {
         ItemStack item = ItemStack.of(material);
         if (plugin.menuStyle().custom() && model != null) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", model)));
         return item;
     }
 
-    private double rand(double spread) {
+    double rand(double spread) {
         return ThreadLocalRandom.current().nextDouble(-spread, spread);
     }
 
-    private boolean parkour(Player player) {
+    boolean parkour(Player player) {
         return collectibles.inParkour(player);
     }
 
     /** Throws something that only makes a show where it lands. */
-    private Snowball toss(Player player, ItemStack look, String effect, double speed) {
+    Snowball toss(Player player, ItemStack look, String effect, double speed) {
         Snowball ball = player.launchProjectile(Snowball.class, player.getEyeLocation().getDirection().multiply(speed));
         ball.setItem(look);
         return tagged(ball, effect);
     }
 
     /** A few non-pickup items bursting out of a spot, gone after a moment. */
-    private void burstItems(Location at, ItemStack look, int count, double power, int lifeTicks) {
+    void burstItems(Location at, ItemStack look, int count, double power, int lifeTicks) {
         for (int i = 0; i < count; i++) {
             org.bukkit.entity.Item item = at.getWorld().dropItem(at, look.clone(), drop -> {
                 drop.setCanPlayerPickup(false);
@@ -284,14 +293,14 @@ final class Effects implements Listener {
         }
     }
 
-    private void confetti(Location at, int count, double spread) {
+    void confetti(Location at, int count, double spread) {
         for (int i = 0; i < count; i++) {
             at.getWorld().spawnParticle(Particle.DUST, at, 1, spread, spread, spread, 0, dust(party(), 1.1f));
         }
     }
 
     /** An item display riding the player (it sits on top of their head; transformations move it from there). */
-    private ItemDisplay rider(Player player, String model) {
+    ItemDisplay rider(Player player, String model) {
         ItemDisplay display = player.getWorld().spawn(player.getLocation().add(0, 1.8, 0), ItemDisplay.class, d -> {
             d.setItemStack(modelled(Material.PAPER, model));
             d.setRotation(0, 0);
@@ -471,13 +480,12 @@ final class Effects implements Listener {
             }
             case "blink_stick" -> blink(player);
             case "trampoline" -> trampoline(player);
-            default -> {
-            }
+            default -> more.use(player, key);
         }
     }
 
     /** Where to put something on the ground: the block looked at (within 5), else just in front. */
-    private Location ground(Player player) {
+    Location ground(Player player) {
         Block target = player.getTargetBlockExact(5);
         Location at;
         if (target != null && target.getType().isSolid() && target.getRelative(0, 1, 0).isPassable()) {
@@ -542,13 +550,13 @@ final class Effects implements Listener {
         Location at = ground(player);
         ItemDisplay trampoline = at.getWorld().spawn(at, ItemDisplay.class, d -> {
             d.setItemStack(modelled(Material.SLIME_BLOCK, "gadget/trampoline_3d"));
-            d.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+            d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
         });
         tagged(trampoline, "trampoline");
         later(1, () -> {
             trampoline.setInterpolationDelay(0);
             trampoline.setInterpolationDuration(6);
-            trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
+            trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
         });
         sound(at, "block.wool.place", 1f, 0.8f);
         Map<UUID, Integer> bounced = new HashMap<>();
@@ -557,14 +565,14 @@ final class Effects implements Listener {
                 if (t == 290) {
                     trampoline.setInterpolationDelay(0);
                     trampoline.setInterpolationDuration(8);
-                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
                 }
                 return;
             }
             for (Player jumper : at.getWorld().getPlayers()) {
                 Location feet = jumper.getLocation();
                 double dx = feet.getX() - at.getX(), dz = feet.getZ() - at.getZ(), dy = feet.getY() - at.getY();
-                if (dx * dx + dz * dz > 1.6 * 1.6 || dy < -0.1 || dy > 0.7 || parkour(jumper)) continue;
+                if (dx * dx + dz * dz > 1.6 * 1.6 || dy < -0.1 || dy > 1.0 || parkour(jumper)) continue;
                 if (jumper.getVelocity().getY() > 0.2) continue;
                 Integer last = bounced.get(jumper.getUniqueId());
                 if (last != null && t - last < 6) continue;
@@ -572,15 +580,15 @@ final class Effects implements Listener {
                 jumper.setVelocity(jumper.getVelocity().setY(1.25));
                 jumper.setFallDistance(0);
                 sound(at, "entity.slime.jump", 1f, 0.8f + ThreadLocalRandom.current().nextFloat() * 0.3f);
-                at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.5, 0), 18, 0.9, 0.05, 0.9, 0, dust(Color.fromRGB(0x5BC0FF), 1f));
+                at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.8, 0), 18, 0.9, 0.05, 0.9, 0, dust(Color.fromRGB(0x5BC0FF), 1f));
                 trampoline.setInterpolationDelay(0);
                 trampoline.setInterpolationDuration(2);
-                trampoline.setTransformation(new Transformation(new Vector3f(0, 0.2f, 0), new AxisAngle4f(), new Vector3f(3.15f, 0.65f, 3.15f), new AxisAngle4f()));
+                trampoline.setTransformation(new Transformation(new Vector3f(0, 0.45f, 0), new AxisAngle4f(), new Vector3f(3.15f, 0.65f, 3.15f), new AxisAngle4f()));
                 later(3, () -> {
                     if (!trampoline.isValid()) return;
                     trampoline.setInterpolationDelay(0);
                     trampoline.setInterpolationDuration(5);
-                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
+                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
                 });
             }
         }, () -> {
@@ -786,7 +794,11 @@ final class Effects implements Listener {
 
     double abilityCooldown(String key) {
         return switch (key) {
-            case "bat_swarm" -> 15;
+            case "bat_swarm", "raise_dead" -> 15;
+            case "disco_floor", "bee_swarm" -> 12;
+            case "thunder_strike", "battle_cry" -> 5;
+            case "web_swing" -> 1.5;
+            case "bake_sale" -> 3;
             case "smoke_bomb", "bone_rattle" -> 6;
             case "water_splash" -> 5;
             case "super_leap" -> 1.5;
@@ -854,6 +866,53 @@ final class Effects implements Listener {
                 burstItems(at, ItemStack.of(Material.BONE), 8, 0.25, 40);
                 world.spawnParticle(Particle.DUST, at, 30, 0.5, 0.6, 0.5, 0, dust(Color.fromRGB(0xE8E8E0), 1.2f));
             }
+            case "disco_floor" -> discoFloor(player);
+            case "web_swing" -> {
+                if (parkour(player)) return;
+                RayTraceResult hit = world.rayTraceBlocks(eye, look, 30);
+                if (hit == null) {
+                    sound(eye, "entity.spider.ambient", 0.6f, 1.6f);
+                    return;
+                }
+                Location to = hit.getHitPosition().toLocation(world);
+                Vector line = to.toVector().subtract(eye.toVector());
+                for (double d = 0; d < line.length(); d += 0.4) {
+                    world.spawnParticle(Particle.DUST, eye.clone().add(line.clone().normalize().multiply(d)), 1, 0, 0, 0, 0, dust(Color.WHITE, 0.6f));
+                }
+                world.spawnParticle(Particle.ITEM, to, 10, 0.2, 0.2, 0.2, 0.05, new ItemStack(Material.COBWEB));
+                player.setVelocity(line.normalize().multiply(Math.min(2.2, 0.8 + line.length() * 0.06)).add(new Vector(0, 0.3, 0)));
+                player.setFallDistance(0);
+                sound(eye, "entity.spider.step", 1f, 1.6f);
+                sound(eye, "item.crossbow.shoot", 0.6f, 1.8f);
+            }
+            case "battle_cry" -> {
+                sound(eye, "event.raid.horn", 1f, 1.2f);
+                Location at = player.getLocation().add(0, 1, 0);
+                for (int i = 0; i < 24; i++) {
+                    double a = Math.PI * 2 * i / 24;
+                    world.spawnParticle(Particle.SWEEP_ATTACK, at.clone().add(Math.cos(a) * 1.6, 0, Math.sin(a) * 1.6), 1);
+                }
+                world.spawnParticle(Particle.ANGRY_VILLAGER, at.clone().add(0, 1.2, 0), 5, 0.4, 0.2, 0.4, 0);
+                if (!parkour(player)) player.setVelocity(look.clone().setY(0).normalize().multiply(0.9).setY(0.45));
+            }
+            case "raise_dead" -> raiseDead(player);
+            case "thunder_strike" -> {
+                RayTraceResult hit = world.rayTraceBlocks(eye, look, 25);
+                Location strike = hit == null ? eye.clone().add(look.clone().multiply(12)) : hit.getHitPosition().toLocation(world);
+                world.strikeLightningEffect(strike);
+                world.spawnParticle(Particle.ELECTRIC_SPARK, strike, 40, 0.6, 0.6, 0.6, 0.3);
+                world.spawnParticle(Particle.FLASH, strike, 1, 0, 0, 0, 0, Color.WHITE);
+            }
+            case "bake_sale" -> {
+                sound(eye, "entity.generic.eat", 1f, 1.4f);
+                Location at = eye.clone().add(look.clone().multiply(0.8));
+                burstItems(at, new ItemStack(Material.CAKE), 2, 0.25, 40);
+                burstItems(at, new ItemStack(Material.BREAD), 3, 0.25, 40);
+                burstItems(at, new ItemStack(Material.PUMPKIN_PIE), 2, 0.25, 40);
+                burstItems(at, modelled(Material.COOKIE, "gadget/cookie"), 4, 0.25, 40);
+                world.spawnParticle(Particle.WHITE_ASH, at, 30, 0.4, 0.4, 0.4, 0.02);
+            }
+            case "bee_swarm" -> beeSwarm(player);
             case "bat_swarm" -> {
                 Location at = player.getLocation().add(0, 1, 0);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 60, 0, false, false, false));
@@ -875,6 +934,103 @@ final class Effects implements Listener {
             default -> {
             }
         }
+    }
+
+    /** Disco: the floor around you lights up in colours for a few seconds (only shown, nothing changes). */
+    private void discoFloor(Player player) {
+        Material[] floors = {Material.RED_STAINED_GLASS, Material.LIME_STAINED_GLASS, Material.LIGHT_BLUE_STAINED_GLASS,
+                Material.YELLOW_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.ORANGE_STAINED_GLASS};
+        Location centre = player.getLocation();
+        List<Block> tiles = new ArrayList<>();
+        for (int dx = -3; dx <= 3; dx++) for (int dz = -3; dz <= 3; dz++) {
+            if (dx * dx + dz * dz > 10) continue;
+            Block b = centre.clone().add(dx, -0.5, dz).getBlock();
+            if (b.getType().isOccluding()) tiles.add(b);
+        }
+        int[] tune = {0, 4, 7, 12, 7, 4};
+        every(120, t -> {
+            if (t % 5 == 0) {
+                for (int i = 0; i < tiles.size(); i++) {
+                    Block b = tiles.get(i);
+                    BlockData tile = floors[(i + t / 5) % floors.length].createBlockData();
+                    for (Player viewer : b.getWorld().getPlayers()) viewer.sendBlockChange(b.getLocation(), tile);
+                }
+                sound(centre, "block.note_block.bit", 0.6f, (float) Math.pow(2, (tune[(t / 5) % tune.length] - 6) / 12.0));
+                centre.getWorld().spawnParticle(Particle.NOTE, centre.clone().add(rand(2), 2.2, rand(2)), 0, ThreadLocalRandom.current().nextDouble(), 0, 0, 1);
+            }
+            if (t % 10 == 0) sound(centre, "block.note_block.basedrum", 0.8f, 0.8f);
+        }, () -> {
+            for (Player viewer : centre.getWorld().getPlayers()) for (Block b : tiles) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
+        });
+    }
+
+    /** Necromancer: three of the dead climb out of the ground around you, then crumble. */
+    private void raiseDead(Player player) {
+        String[] skins = {"MHF_Skeleton", "MHF_Zombie", "MHF_Skeleton"};
+        sound(player.getLocation(), "entity.zombie_villager.converted", 0.8f, 0.6f);
+        for (int i = 0; i < 3; i++) {
+            double a = Math.toRadians(player.getLocation().getYaw() + 90 + (i - 1) * 50);
+            Location at = player.getLocation().add(-Math.sin(a) * 2.2, -1.9, Math.cos(a) * 2.2);
+            at.setYaw(player.getLocation().getYaw() + 180);
+            String skin = skins[i];
+            Mannequin dead = player.getWorld().spawn(at, Mannequin.class, m -> {
+                m.setProfile(ResolvableProfile.resolvableProfile().name(skin).build());
+                m.setDescription(null);
+                m.setImmovable(true);
+                m.setInvulnerable(true);
+                m.setGravity(false);
+                m.setCollidable(false);
+            });
+            tagged(dead, "dead");
+            Location rise = at.clone();
+            every(80, t -> {
+                if (!dead.isValid()) return;
+                if (t < 20) {
+                    dead.teleport(rise.clone().add(0, t * 0.095, 0));
+                    dead.getWorld().spawnParticle(Particle.BLOCK, rise.clone().add(0, 1.9, 0), 4, 0.3, 0.05, 0.3, 0,
+                            rise.clone().add(0, 1.5, 0).getBlock().getBlockData().getMaterial().isSolid()
+                                    ? rise.clone().add(0, 1.5, 0).getBlock().getBlockData() : Material.DIRT.createBlockData());
+                } else if (t % 10 == 0) {
+                    dead.swingMainHand();
+                    dead.getWorld().spawnParticle(Particle.SOUL, dead.getLocation().add(0, 1.6, 0), 1, 0.2, 0.2, 0.2, 0.01);
+                }
+            }, () -> {
+                if (!dead.isValid()) return;
+                Location end = dead.getLocation().add(0, 1, 0);
+                end.getWorld().spawnParticle(Particle.ITEM, end, 16, 0.3, 0.5, 0.3, 0.08, new ItemStack(Material.BONE));
+                end.getWorld().spawnParticle(Particle.LARGE_SMOKE, end, 8, 0.3, 0.5, 0.3, 0.02);
+                sound(end, "entity.skeleton.death", 0.6f, 1.2f);
+                dead.remove();
+            });
+        }
+    }
+
+    /** Bumblebee: a swarm of bees buzzes around you for a few seconds. */
+    private void beeSwarm(Player player) {
+        List<org.bukkit.entity.Bee> bees = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            org.bukkit.entity.Bee bee = player.getWorld().spawn(player.getLocation().add(0, 1.5, 0), org.bukkit.entity.Bee.class, b -> {
+                b.setInvulnerable(true);
+                b.setAware(false);
+                b.setGravity(false);
+            });
+            tagged(bee, "bee");
+            bees.add(bee);
+        }
+        sound(player.getLocation(), "entity.bee.loop_aggressive", 1f, 1.2f);
+        every(100, t -> {
+            if (!player.isOnline()) return;
+            for (int i = 0; i < bees.size(); i++) {
+                double a = t * 0.18 + i * Math.PI / 3;
+                Location at = player.getLocation().add(Math.cos(a) * 1.4, 1.2 + Math.sin(t * 0.3 + i) * 0.4, Math.sin(a) * 1.4);
+                at.setYaw((float) Math.toDegrees(a));
+                bees.get(i).teleport(at);
+            }
+            if (t % 20 == 0) sound(player.getLocation(), "entity.bee.loop", 0.6f, 1.2f);
+        }, () -> bees.forEach(b -> {
+            b.getWorld().spawnParticle(Particle.FALLING_HONEY, b.getLocation(), 2, 0.1, 0.1, 0.1, 0);
+            b.remove();
+        }));
     }
 
     /** The passive bonus of the full suit the player wears (astronaut, elf, bunny), kept on while they wear it. */
@@ -904,6 +1060,16 @@ final class Effects implements Listener {
                     show(player, Particle.SNOWFLAKE, feet.clone().add(0, 0.2, 0), 2, 0.2, 0.05, 0.2, 0.01, null);
                 }
             }
+            case "speed_force" -> {
+                if (tick % 2 == 0 && (player.isSprinting() || player.getVelocity().setY(0).lengthSquared() > 0.01)) {
+                    show(player, Particle.ELECTRIC_SPARK, feet.clone().add(0, 0.6, 0), 2, 0.2, 0.3, 0.2, 0.02, null);
+                    show(player, Particle.DUST, feet.clone().add(0, 0.2, 0), 1, 0.1, 0.05, 0.1, 0, dust(Color.fromRGB(0xFFCF3A), 0.8f));
+                }
+            }
+            case "mermaid_grace" -> {
+                if (tick % 4 == 0) show(player, Particle.BUBBLE_POP, feet.clone().add(0, 0.6, 0), 2, 0.25, 0.4, 0.25, 0.01, null);
+                if (player.isInWater()) player.addPotionEffect(new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 0, false, false, false));
+            }
             case "bunny_hop" -> {
                 if (!ground && player.getVelocity().getY() > 0.35 && tick % 4 == 0) {
                     show(player, Particle.DUST, feet.clone().add(0, 0.1, 0), 4, 0.2, 0.05, 0.2, 0, dust(Color.fromRGB(0xF2C4D8), 1f));
@@ -916,7 +1082,8 @@ final class Effects implements Listener {
 
     /** Puts the attribute changes of a passive bonus on the player (or takes them all off for null). */
     private void bonus(Player player, String ability) {
-        for (Attribute attribute : List.of(Attribute.GRAVITY, Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH, Attribute.SAFE_FALL_DISTANCE)) {
+        for (Attribute attribute : List.of(Attribute.GRAVITY, Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH, Attribute.SAFE_FALL_DISTANCE,
+                Attribute.WATER_MOVEMENT_EFFICIENCY)) {
             AttributeInstance instance = player.getAttribute(attribute);
             if (instance != null) instance.removeModifier(bonusKey);
         }
@@ -927,6 +1094,11 @@ final class Effects implements Listener {
                 add(player, Attribute.SAFE_FALL_DISTANCE, 20, AttributeModifier.Operation.ADD_NUMBER);
             }
             case "jingle_dash" -> add(player, Attribute.MOVEMENT_SPEED, 0.3, AttributeModifier.Operation.ADD_SCALAR);
+            case "speed_force" -> add(player, Attribute.MOVEMENT_SPEED, 0.45, AttributeModifier.Operation.ADD_SCALAR);
+            case "mermaid_grace" -> {
+                add(player, Attribute.JUMP_STRENGTH, 0.1, AttributeModifier.Operation.ADD_NUMBER);
+                add(player, Attribute.WATER_MOVEMENT_EFFICIENCY, 1.0, AttributeModifier.Operation.ADD_NUMBER);
+            }
             case "bunny_hop" -> {
                 add(player, Attribute.JUMP_STRENGTH, 0.25, AttributeModifier.Operation.ADD_NUMBER);
                 add(player, Attribute.SAFE_FALL_DISTANCE, 4, AttributeModifier.Operation.ADD_NUMBER);
@@ -997,6 +1169,16 @@ final class Effects implements Listener {
         projectile.remove();
         switch (effect.contains(":") ? effect.substring(0, effect.indexOf(':')) : effect) {
             case "paint" -> paint(event.getHitBlock(), at);
+            case "rush" -> {
+                world.spawnParticle(Particle.PORTAL, at, 30, 0.3, 0.5, 0.3, 0.5);
+                sound(at, "entity.enderman.teleport", 0.6f, 1.4f);
+            }
+            case "boom" -> {
+                world.spawnParticle(Particle.EXPLOSION_EMITTER, at, 1);
+                world.spawnParticle(Particle.FIREWORK, at, 40, 0.2, 0.2, 0.2, 0.3);
+                confetti(at, 40, 0.8);
+                sound(at, "entity.generic.explode", 1f, 1.2f);
+            }
             case "hook" -> {
                 if (!(projectile.getShooter() instanceof Player player) || !player.isOnline() || parkour(player)) return;
                 Vector pull = at.toVector().subtract(player.getLocation().toVector());
@@ -1109,7 +1291,7 @@ final class Effects implements Listener {
     // ---------------------------------------------------------------- cloaks
 
     /** Particles shown to the players who can see the wearer. */
-    private void show(Player wearer, Particle particle, Location at, int count, double dx, double dy, double dz, double speed, Object data) {
+    void show(Player wearer, Particle particle, Location at, int count, double dx, double dy, double dz, double speed, Object data) {
         for (Player viewer : wearer.getWorld().getPlayers()) {
             if (viewer != wearer && !viewer.canSee(wearer)) continue;
             if (viewer.getLocation().distanceSquared(at) > 48 * 48) continue;
@@ -1126,10 +1308,10 @@ final class Effects implements Listener {
             case "orbit" -> List.of("orb_blue", "orb_pink", "orb_gold");
             case "flame_ring" -> List.of("flame", "flame", "flame", "flame", "flame", "flame");
             case "angel_wings" -> List.of("wing_left", "wing_right");
-            case "sun_rays" -> List.of("sun3d");
+            case "sun_rays" -> List.of("sun3d", "sun_ring");
             case "snow_globe" -> List.of("snowflake", "snowflake", "snowflake", "snowflake", "snowflake", "snowflake");
             case "blossom_aura" -> List.of("petal", "petal", "petal", "petal", "petal", "petal");
-            case "spooky_aura" -> List.of("ghost", "ghost", "pumpkin_light");
+            case "spooky_aura" -> List.of("bat", "bat", "bat");
             default -> List.of();
         };
     }
@@ -1139,6 +1321,7 @@ final class Effects implements Listener {
         for (String part : parts(key)) {
             ItemDisplay display = rider(player, "cloak/part/" + part);
             display.setBrightness(new Display.Brightness(15, 15));
+            if (part.equals("sun_ring")) display.setBillboard(Display.Billboard.CENTER);   // the rays always face you
             rig.parts.add(display);
         }
         rigs.put(player.getUniqueId(), rig);
@@ -1162,7 +1345,13 @@ final class Effects implements Listener {
             }
         }
         double t = tick;
-        float yaw = (float) Math.toRadians(player.getBodyYaw());
+        float head = player.getLocation().getYaw();
+        boolean walking = rig.lastX != null && Math.hypot(player.getX() - rig.lastX, player.getZ() - rig.lastZ) > 0.05;
+        if (rig.body == null) rig.body = head;
+        float diff = wrap(head - rig.body);
+        if (walking) rig.body += diff * 0.5f;                     // walking: the body turns to face where you go
+        else if (Math.abs(diff) > 45) rig.body += diff - Math.signum(diff) * 45; // standing: it lags up to 45 degrees
+        float yaw = (float) Math.toRadians(rig.body);
         float sneak = player.isSneaking() ? 0.3f : 0;
         int n = rig.parts.size();
         for (int i = 0; i < n; i++) {
@@ -1197,14 +1386,16 @@ final class Effects implements Listener {
                     else if (moved > 0.12) deg = 58 + 6 * Math.sin(t * (moved > 0.5 ? 0.45 : 0.28)); // swept back
                     else deg = 28 + 12 * Math.sin(t * 0.08);                              // open, breathing
                     float flap = (float) Math.toRadians(deg);
-                    m.rotateY(-yaw).translate(0, -0.68f + sneak * 0.5f, -0.2f).rotateX(sneak * 0.8f)
-                            .rotateY(side * flap).scale(0.85f);
+                    // pivots on the shoulder blades, a little behind the back, so they stay out of your own view
+                    m.rotateY(-yaw).translate(0, -0.72f + sneak * 0.5f, -0.3f).rotateX(sneak * 0.8f)
+                            .rotateY(side * flap).scale(0.8f);
                 }
                 case "sun_rays" -> {
-                    // a little sun floating over the head, turning and pulsing, rays blasting out
-                    float pulse = 0.5f + 0.06f * (float) Math.sin(t * 0.3);
-                    m.translate(0, 0.95f + (float) Math.sin(t * 0.07) * 0.06f, 0).rotateY((float) (t * 0.05))
-                            .rotateX((float) Math.sin(t * 0.04) * 0.3f).scale(pulse);
+                    // a little sun floating over the head, pulsing, its rays turning around it
+                    float pulse = (float) Math.sin(t * 0.25) * 0.05f;
+                    float y = 0.95f + (float) Math.sin(t * 0.07) * 0.06f;
+                    if (i == 0) m.translate(0, y, 0).rotateY((float) (t * 0.04)).scale(0.6f + pulse);
+                    else m.translate(0, y, 0).rotateZ((float) (t * 0.03)).scale(0.95f + pulse * 2);
                 }
                 case "snow_globe" -> {
                     double a = t * 0.03 + phase;
@@ -1219,21 +1410,29 @@ final class Effects implements Listener {
                             .rotateY((float) (t * 0.12 + i)).rotateX((float) Math.sin(t * 0.1 + i) * 0.6f).scale(0.2f);
                 }
                 case "spooky_aura" -> {
-                    if (i < 2) {
-                        double a = t * 0.06 + phase;
-                        float bob = (float) Math.sin(t * 0.12 + i * 2) * 0.12f;
-                        m.translate((float) Math.cos(a) * 0.95f, -0.55f + bob + sneak, (float) Math.sin(a) * 0.95f).rotateY((float) -(a + Math.PI / 2)).scale(0.5f); // faces outward
-                    } else {
-                        m.translate(0, -1.75f + sneak, 0).rotateY((float) (t * 0.02)).scale(0.5f);
-                    }
+                    // bats circling, flapping, at different heights
+                    double a = t * 0.09 + phase;
+                    float r = 0.8f + 0.12f * (float) Math.sin(t * 0.05 + i);
+                    float y = -0.35f - i * 0.35f + (float) Math.sin(t * 0.2 + i * 2) * 0.12f + sneak;
+                    float wings = 0.5f * (0.45f + 0.55f * (float) Math.abs(Math.sin(t * 0.7 + i)));
+                    m.translate((float) Math.cos(a) * r, y, (float) Math.sin(a) * r).rotateY((float) (Math.PI - a)).scale(wings, 0.5f, 0.5f);
                 }
                 default -> m.scale(0);
             }
             if (!shown) m = new Matrix4f().scale(0);
-            move(rig.parts.get(i), m);
+            ItemDisplay part = rig.parts.get(i);
+            if (part.getYaw() != 0 || part.getPitch() != 0) part.setRotation(0, 0); // only our matrix turns it
+            move(part, m);
         }
         rig.lastX = player.getX();
         rig.lastZ = player.getZ();
+    }
+
+    private static float wrap(float degrees) {
+        degrees %= 360;
+        if (degrees >= 180) degrees -= 360;
+        if (degrees < -180) degrees += 360;
+        return degrees;
     }
 
     /** The propeller on the propeller cap: on top of the head, turning with it, spinning. */
@@ -1280,8 +1479,7 @@ final class Effects implements Listener {
             case "rain_cloud" -> {
                 Location cloud = base.clone().add(0, 2.55, 0);
                 if (!pieces) show(player, Particle.CLOUD, cloud, 3, 0.35, 0.05, 0.35, 0, null);
-                show(player, Particle.FALLING_WATER, cloud, 2, 0.3, 0, 0.3, 0, null);
-                if (tick % 6 == 0) show(player, Particle.DRIPPING_WATER, cloud, 1, 0.3, 0, 0.3, 0, null);
+                if (tick % 4 == 0) show(player, Particle.FALLING_WATER, cloud, 1, 0.25, 0, 0.25, 0, null);   // a light drizzle
             }
             case "orbit" -> {
                 if (pieces && tick % 4 != 0) return;
@@ -1320,8 +1518,9 @@ final class Effects implements Listener {
                 show(player, Particle.CHERRY_LEAVES, base.clone().add(0, 2, 0), 1, 0.6, 0.2, 0.6, 0, null);
             }
             case "spooky_aura" -> {
-                if (tick % 6 == 0) show(player, Particle.SOUL_FIRE_FLAME, base.clone().add(rand(0.8), 0.2, rand(0.8)), 0, 0, 0.03, 0, 1, null);
-                if (tick % 12 == 0) show(player, Particle.SOUL, base.clone().add(0, 1, 0), 1, 0.4, 0.4, 0.4, 0.01, null);
+                if (tick % 4 == 0) show(player, Particle.DUST, base.clone().add(rand(0.7), ThreadLocalRandom.current().nextDouble(0.1, 1.9), rand(0.7)),
+                        1, 0, 0, 0, 0, dust(ThreadLocalRandom.current().nextBoolean() ? Color.fromRGB(0xFF8A1F) : Color.fromRGB(0xFFB347), 0.9f));
+                if (tick % 10 == 0) show(player, Particle.SMALL_FLAME, base.clone().add(rand(0.6), 0.1, rand(0.6)), 0, 0, 0.02, 0, 1, null);
             }
             default -> {
             }
@@ -1462,12 +1661,17 @@ final class Effects implements Listener {
         });
         tagged(clone, "clone");
         clones.put(player.getUniqueId(), clone);
-        say(clone, key);
+        int length = switch (key) {
+            case "moonwalk", "levitate", "giant", "sleep", "magic_trick", "zombie_walk", "swim" -> 62;
+            default -> 46;
+        };
+        say(clone, key, length);
         world.spawnParticle(Particle.POOF, at.clone().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.02);
         world.spawnParticle(Particle.DUST, at.clone().add(0, 1, 0), 20, 0.4, 0.8, 0.4, 0, dust(Color.fromRGB(0xB266FF), 1f));
         sound(at, "entity.illusioner.mirror_move", 0.7f, 1.4f);
-        int length = 46;
         Location centre = at.clone();
+        Vector away = ahead.clone();                     // from the player towards the copy
+        AttributeInstance size = clone.getAttribute(Attribute.SCALE);
         every(length, t -> {
             if (!clone.isValid()) return;
             switch (key) {
@@ -1522,6 +1726,140 @@ final class Effects implements Listener {
                         sound(top, "entity.firework_rocket.twinkle", 0.6f, 1f + t * 0.01f);
                     }
                 }
+                case "dab" -> {
+                    if (t == 6) {
+                        clone.swingMainHand();
+                        clone.swingOffHand();
+                        sound(centre, "entity.player.attack.sweep", 0.7f, 1.6f);
+                        world.spawnParticle(Particle.CRIT, centre.clone().add(0, 1.6, 0), 25, 0.4, 0.3, 0.4, 0.3);
+                    }
+                    if (t >= 6 && t < 34) look(clone, yaw - 35, 50);
+                    else look(clone, yaw, 0);
+                    if (t == 8) confetti(centre.clone().add(0, 2, 0), 25, 0.6);
+                }
+                case "floss" -> {
+                    if (t % 3 == 0) {
+                        if ((t / 3) % 2 == 0) clone.swingMainHand();
+                        else clone.swingOffHand();
+                    }
+                    look(clone, yaw + ((t / 3) % 2 == 0 ? 18 : -18), 0);
+                    if (t % 6 == 0) sound(centre, "block.note_block.hat", 0.6f, 1.2f + (t % 12) / 24f);
+                }
+                case "moonwalk" -> {
+                    // glides backwards (away from the player) while facing them
+                    double back = Math.min(t, 50) * 0.05;
+                    Location step = centre.clone().add(away.clone().multiply(back));
+                    step.setYaw(yaw);
+                    clone.teleport(step);
+                    look(clone, yaw, 0);
+                    if (t % 8 == 0) {
+                        sound(step, "block.note_block.bass", 0.8f, 0.8f + (t % 24) / 24f);
+                        world.spawnParticle(Particle.NOTE, step.clone().add(0, 2.3, 0), 0, (t % 24) / 24.0, 0, 0, 1);
+                    }
+                }
+                case "twirl_jump" -> {
+                    double h = t < 30 ? Math.sin(t / 30.0 * Math.PI) * 2.2 : 0;
+                    Location up = centre.clone().add(0, h, 0);
+                    up.setYaw(yaw + t * 24f);
+                    clone.teleport(up);
+                    look(clone, yaw + t * 24f, 0);
+                    if (t == 0) sound(centre, "entity.player.attack.sweep", 0.8f, 0.8f);
+                    if (t == 30) {
+                        world.spawnParticle(Particle.CLOUD, centre.clone().add(0, 0.1, 0), 20, 0.5, 0.05, 0.5, 0.05);
+                        sound(centre, "entity.generic.big_fall", 0.8f, 1f);
+                    }
+                }
+                case "levitate" -> {
+                    double h = t < 50 ? Math.min(1.6, t * 0.05) + Math.sin(t * 0.2) * 0.08 : Math.max(0, 1.6 - (t - 50) * 0.3);
+                    Location up = centre.clone().add(0, h, 0);
+                    up.setYaw(yaw);
+                    clone.teleport(up);
+                    look(clone, yaw, -20);
+                    if (t % 3 == 0) world.spawnParticle(Particle.DUST, centre.clone().add(rand(0.5), 0.1, rand(0.5)), 2, 0.1, 0, 0.1, 0,
+                            dust(Color.fromRGB(0x9B5CFF), 1.1f));
+                    if (t % 5 == 0) world.spawnParticle(Particle.ENCHANT, up.clone().add(0, 1, 0), 8, 0.4, 0.6, 0.4, 0.5);
+                    if (t == 2) sound(centre, "block.beacon.activate", 0.6f, 1.6f);
+                }
+                case "zombie_walk" -> {
+                    double fwd = Math.min(t, 55) * 0.025;
+                    Location step = centre.clone().add(away.clone().multiply(-fwd));
+                    step.setYaw(yaw);
+                    clone.teleport(step);
+                    look(clone, yaw + (float) Math.sin(t * 0.2) * 8, 15);
+                    if (t % 14 == 0) sound(step, "entity.zombie.ambient", 0.7f, 1.1f);
+                    if (t % 7 == 0) clone.swingMainHand();
+                }
+                case "explode" -> {
+                    if (size != null && t < 30) size.setBaseValue(1 + t * 0.025);
+                    if (t < 30 && t % 6 == 0) sound(centre, "entity.creeper.primed", 0.8f, 1f + t * 0.02f);
+                    if (t % 4 < 2 && t < 30) clone.setGlowing(true);
+                    else clone.setGlowing(false);
+                    if (t == 30) {
+                        world.spawnParticle(Particle.EXPLOSION_EMITTER, centre.clone().add(0, 1, 0), 1);
+                        world.spawnParticle(Particle.FIREWORK, centre.clone().add(0, 1, 0), 40, 0.3, 0.3, 0.3, 0.3);
+                        confetti(centre.clone().add(0, 1, 0), 60, 1.2);
+                        sound(centre, "entity.generic.explode", 1f, 1.2f);
+                        clone.remove();
+                    }
+                }
+                case "sleep" -> {
+                    if (t == 2) clone.setPose(Pose.SLEEPING, true);
+                    if (t % 14 == 0) {
+                        sound(centre, "entity.player.breath", 0.5f, 0.8f);
+                        TextDisplay z = world.spawn(centre.clone().add(0.3, 1.0, 0), TextDisplay.class, d -> {
+                            d.text(Component.text("Z", net.kyori.adventure.text.format.NamedTextColor.AQUA));
+                            d.setBillboard(Display.Billboard.CENTER);
+                            d.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+                            d.setTeleportDuration(20);
+                        });
+                        tagged(z, "z");
+                        later(1, () -> z.teleport(z.getLocation().add(0.5, 1.2, 0)));
+                        later(20, z::remove);
+                    }
+                }
+                case "swim" -> {
+                    if (t == 2) clone.setPose(Pose.SWIMMING, true);
+                    Location up = centre.clone().add(0, 0.6 + Math.sin(t * 0.25) * 0.15, 0);
+                    up.setYaw(yaw);
+                    clone.teleport(up);
+                    if (t % 3 == 0) world.spawnParticle(Particle.BUBBLE_POP, up.clone().add(0, 0.5, 0), 3, 0.4, 0.2, 0.4, 0.02);
+                    if (t % 10 == 0) sound(up, "entity.player.swim", 0.5f, 1.2f);
+                }
+                case "giant" -> {
+                    if (size != null) size.setBaseValue(t < 20 ? 1 + t * 0.075 : t < 48 ? 2.5 : Math.max(1, 2.5 - (t - 48) * 0.12));
+                    if (t >= 20 && t < 48 && t % 9 == 0) {
+                        world.spawnParticle(Particle.BLOCK, centre.clone().add(0, 0.1, 0), 30, 0.8, 0.05, 0.8, 0,
+                                centre.clone().add(0, -1, 0).getBlock().getBlockData());
+                        sound(centre, "entity.ravager.step", 1f, 0.7f);
+                        clone.swingMainHand();
+                    }
+                }
+                case "tiny" -> {
+                    if (size != null) size.setBaseValue(t < 10 ? 1 - t * 0.07 : t < 36 ? 0.3 : Math.min(1, 0.3 + (t - 36) * 0.07));
+                    if (t == 10) sound(centre, "entity.bat.ambient", 0.8f, 2f);
+                    if (t > 10 && t < 36) {
+                        Location hop = centre.clone().add(0, Math.abs(Math.sin(t * 0.5)) * 0.25, 0);
+                        hop.setYaw(yaw + (float) Math.sin(t * 0.4) * 30);
+                        clone.teleport(hop);
+                    }
+                }
+                case "magic_trick" -> {
+                    if (t < 20) look(clone, yaw + t * 18f, 0);
+                    if (t == 20) {
+                        world.spawnParticle(Particle.CLOUD, centre.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4, 0.03);
+                        world.spawnParticle(Particle.WITCH, centre.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4, 0.1);
+                        sound(centre, "entity.illusioner.prepare_mirror", 1f, 1.4f);
+                        clone.setInvisible(true);
+                    }
+                    if (t == 44) {
+                        Location pop = centre.clone().add(away.clone().multiply(-1.2));
+                        pop.setYaw(yaw);
+                        clone.teleport(pop);
+                        clone.setInvisible(false);
+                        world.spawnParticle(Particle.FIREWORK, pop.clone().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0.1);
+                        sound(pop, "entity.player.levelup", 0.6f, 1.8f);
+                    }
+                }
                 default -> {
                 }
             }
@@ -1537,7 +1875,7 @@ final class Effects implements Listener {
     }
 
     /** A speech bubble over the copy (a random line from messages.yml collectibles.gesture-say.KEY). */
-    private void say(Mannequin clone, String key) {
+    private void say(Mannequin clone, String key, int length) {
         List<Component> lines = plugin.messages().lore("collectibles.gesture-say." + key);
         if (lines.isEmpty()) return;
         Component line = lines.get(ThreadLocalRandom.current().nextInt(lines.size()));
@@ -1561,7 +1899,7 @@ final class Effects implements Listener {
             bubble.setInterpolationDuration(3);
             bubble.setTransformation(new Transformation(new Vector3f(0, 0.42f, 0), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
         });
-        later(44, bubble::remove);
+        later(length - 2, bubble::remove);
     }
 
     private static void look(Mannequin clone, float yaw, float pitch) {

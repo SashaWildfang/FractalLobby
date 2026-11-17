@@ -117,7 +117,7 @@ public final class Collectibles implements Listener {
 
     /** Mystery Dust to craft it (a suit piece costs half). */
     public long price(Item item) {
-        long[] defaults = {100, 250, 600, 1500};
+        long[] defaults = {100, 175, 250, 600, 1500};
         long price = Math.max(1, plugin.getConfig().getLong("collectibles.price." + item.rarity().key(), defaults[item.rarity().ordinal()]));
         return item.piece() != null ? Math.max(1, price / 2) : price;
     }
@@ -128,7 +128,8 @@ public final class Collectibles implements Listener {
     }
 
     private Item equipped(Player player, Category category) {
-        return Catalog.get(data().get(player.getUniqueId()).equipped(category.prefix()));
+        Item item = Catalog.get(data().get(player.getUniqueId()).equipped(category.slotKey()));
+        return item != null && item.category() == category ? item : null;
     }
 
     private static String slotKey(Catalog.Piece piece) {
@@ -182,7 +183,7 @@ public final class Collectibles implements Listener {
         if (!enabled()) return;
         migrate(player);
         PlayerInventory inventory = player.getInventory();
-        Item hat = equipped(player, Category.HAT), gadget = equipped(player, Category.GADGET);
+        Item hat = equipped(player, Category.HAT), gadget = Catalog.get(data().get(player.getUniqueId()).equipped("gadget"));
         if (hat != null && !owns(player, hat)) hat = null;
         Item helmet = piece(player, Catalog.Piece.HELMET);
         inventory.setHelmet(hat != null ? hatItem(player, hat) : helmet != null ? armour(player, helmet) : null);
@@ -250,13 +251,14 @@ public final class Collectibles implements Listener {
                 data.equip(id, slotKey(item.piece()), item.id());
                 if (item.piece() == Catalog.Piece.HELMET) data.equip(id, "hat", null);
             }
-            case GADGET -> data.equip(id, "gadget", item.id());
+            case GADGET, EMOTE -> data.equip(id, "gadget", item.id());   // one or the other in the hotbar
             case CLOAK -> data.equip(id, "cloak", item.id());
             default -> {
             }
         }
         apply(player);
-        plugin.messages().send(player, item.category() == Category.GADGET ? "collectibles.equipped-gadget" : "collectibles.equipped", name(item));
+        plugin.messages().send(player, item.category() == Category.GADGET ? "collectibles.equipped-gadget"
+                : item.category() == Category.EMOTE ? "collectibles.equipped-emote" : "collectibles.equipped", name(item));
         sound(player, "item.armor.equip_leather", 1.2f);
         if (item.set() != null && worn(player, item.set()) == 4) {
             Catalog.SuitSet set = Catalog.set(item.set());
@@ -279,10 +281,10 @@ public final class Collectibles implements Listener {
         if (category == Category.SUIT) {
             for (Catalog.Piece piece : Catalog.Piece.values()) data().equip(player.getUniqueId(), slotKey(piece), null);
         } else {
-            data().equip(player.getUniqueId(), category.prefix(), null);
+            data().equip(player.getUniqueId(), category.slotKey(), null);
         }
         apply(player);
-        plugin.messages().send(player, category == Category.GADGET ? "collectibles.unequipped-gadget" : "collectibles.took-off", Placeholder.parsed("category",
+        plugin.messages().send(player, category == Category.GADGET || category == Category.EMOTE ? "collectibles.unequipped-gadget" : "collectibles.took-off", Placeholder.parsed("category",
                 plugin.messages().raw("collectibles.category." + category.key + ".name")));
         sound(player, "item.armor.equip_generic", 0.8f);
     }
@@ -333,7 +335,8 @@ public final class Collectibles implements Listener {
 
     /** A suit piece as worn: the suit's own armour look, no armour points, and the set and its bonus when hovered. */
     /** Suits whose helmet has a shape armour can't (ears, eyes, a beak): it's worn like a hat. */
-    private static final java.util.Set<String> SHAPED_HELMETS = java.util.Set.of("bunny", "frog", "chick");
+    private static final java.util.Set<String> SHAPED_HELMETS = java.util.Set.of("bunny", "frog", "chick", "disco", "warrior", "thor",
+            "baker", "bumblebee");
 
     private boolean shapedHelmet(Item piece) {
         return piece.piece() == Catalog.Piece.HELMET && SHAPED_HELMETS.contains(piece.set()) && plugin.menuStyle().custom();
@@ -412,10 +415,12 @@ public final class Collectibles implements Listener {
     private ItemStack gadgetItem(Item gadget) {
         ItemStack item = icon(gadget);
         item.editMeta(meta -> {
-            meta.displayName(plugin.messages().item("collectibles.gadget-item.name", name(gadget)));
-            meta.lore(plugin.messages().lore("collectibles.gadget-item.lore", TagResolver.resolver(name(gadget),
+            String kind = gadget.category() == Category.EMOTE ? "emote-item" : "gadget-item";
+            meta.displayName(plugin.messages().item("collectibles." + kind + ".name", name(gadget)));
+            meta.lore(plugin.messages().lore("collectibles." + kind + ".lore", TagResolver.resolver(name(gadget),
                     Placeholder.parsed("description", gadget.description()))));
-            meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, "gadget:" + gadget.key());
+            meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, gadget.category() == Category.EMOTE
+                    ? "emote:" + gadget.key() : "gadget:" + gadget.key());
         });
         return item;
     }
@@ -463,6 +468,11 @@ public final class Collectibles implements Listener {
         }
         int colon = what.indexOf(':');
         String kind = what.substring(0, colon), key = what.substring(colon + 1);
+        if (kind.equals("emote")) {
+            Item emote = Catalog.get("emote:" + key);
+            if (emote != null && owns(player, emote) && ready(player, emote.id(), 4)) effects.emote(player, emote);
+            return;
+        }
         if (!kind.equals("gadget")) return;
         if (inParkour(player)) return;
         if (!ready(player, what, gadgetCooldown(key))) return;
@@ -499,6 +509,12 @@ public final class Collectibles implements Listener {
     private double gadgetCooldown(String key) {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
+            case "tetherball", "pinata", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe", "dj_booth",
+                 "pong", "beach_ball" -> 20;
+            case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "duckling", "ghost", "rainbow", "pumpkin_rain",
+                 "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
+            case "rock_paper_shears", "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;
+            case "mob_gun", "railgun", "explosive_bow" -> 2;
             case "balloon" -> 30;
             case "fake_tnt", "bat_blaster", "melody_maker" -> 8;
             case "grappling_hook", "blink_stick", "magic_wand" -> 3;
@@ -547,17 +563,16 @@ public final class Collectibles implements Listener {
         MysteryData.Stash stash = data().get(player.getUniqueId());
         int found = (int) Catalog.ITEMS.stream().filter(item -> owns(player, item)).count();
         menu.inventory.setItem(STASH, button(Material.GLOWSTONE_DUST, "mystery/dust", "collectibles.stash",
-                TagResolver.resolver(Messages.arg("dust", String.format(java.util.Locale.ROOT, "%,d", stash.dust())),
-                        Messages.arg("found", found), Messages.arg("total", Catalog.ITEMS.size()), Messages.arg("boxes", stash.totalBoxes()))));
+                TagResolver.resolver(Messages.arg("dust", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust())),
+                        Messages.arg("found", found), Messages.arg("total", Catalog.ITEMS.size()), Messages.arg("boxes", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes())))));
         Category[] categories = Category.values();
         for (int i = 0; i < categories.length; i++) {
             Category category = categories[i];
             List<Item> all = Catalog.of(category);
             long owned = all.stream().filter(item -> owns(player, item)).count();
-            Item worn = category.action() ? null : equipped(player, category);
+            Component wearing = wearingLine(player, category);
             TagResolver tags = TagResolver.resolver(Messages.arg("found", owned), Messages.arg("total", all.size()),
-                    Placeholder.component("wearing", worn != null && owns(player, worn)
-                            ? messages.component("collectibles.wearing", name(worn)) : messages.component("collectibles.wearing-nothing")));
+                    Placeholder.component("wearing", wearing));
             ItemStack icon = categoryIcon(category);
             icon.editMeta(meta -> {
                 meta.displayName(messages.item("collectibles.category." + category.key + ".name", tags));
@@ -568,10 +583,10 @@ public final class Collectibles implements Listener {
             });
             menu.inventory.setItem(CATEGORY_SLOTS[i], icon);
         }
-        menu.inventory.setItem(TRAILS, button(Material.BLAZE_POWDER, "trail/hearts", "collectibles.trails", TagResolver.empty()));
+        menu.inventory.setItem(TRAILS, button(Material.BLAZE_POWDER, "category/trails", "collectibles.trails", TagResolver.empty()));
         menu.inventory.setItem(CHAT_COLOURS, button(Material.NAME_TAG, "color/rainbow", "collectibles.chat-colours", TagResolver.empty()));
         menu.inventory.setItem(VAULT, button(Material.ENDER_CHEST, "mystery/box_5", "collectibles.vault",
-                TagResolver.resolver(Messages.arg("boxes", stash.totalBoxes()))));
+                TagResolver.resolver(Messages.arg("boxes", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes())))));
         menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "menu/take_off", "collectibles.take-off-all", TagResolver.empty()));
         player.openInventory(menu.inventory);
     }
@@ -658,7 +673,7 @@ public final class Collectibles implements Listener {
             }
             lore.add(Component.empty());
             String state;
-            boolean gadget = item.category() == Category.GADGET;
+            boolean gadget = item.category() == Category.GADGET || item.category() == Category.EMOTE;
             if (owned) state = worn ? (gadget ? "collectibles.entry.equipped" : "collectibles.entry.worn")
                     : item.category().action() ? "collectibles.entry.use" : gadget ? "collectibles.entry.equip-gadget" : "collectibles.entry.equip";
             else if (!craftable(item)) state = season ? "collectibles.entry.boxes-only" : "collectibles.entry.out-of-season";
@@ -759,7 +774,7 @@ public final class Collectibles implements Listener {
             return;
         }
         switch (item.category()) {
-            case EMOTE, GESTURE -> {
+            case GESTURE -> {
                 player.closeInventory();
                 use(player, item);
             }
@@ -857,14 +872,32 @@ public final class Collectibles implements Listener {
         };
     }
 
+    /** "Wearing: ..." under a category button (suits: the set with the most pieces on, and how many). */
+    private Component wearingLine(Player player, Category category) {
+        Messages messages = plugin.messages();
+        if (category.action()) return Component.empty();
+        boolean equip = category == Category.GADGET || category == Category.EMOTE;
+        if (category == Category.SUIT) {
+            java.util.Map<String, Integer> sets = new java.util.LinkedHashMap<>();
+            for (Catalog.Piece piece : Catalog.Piece.values()) {
+                Item on = piece(player, piece);
+                if (on != null) sets.merge(on.set(), 1, Integer::sum);
+            }
+            if (sets.isEmpty()) return messages.component("collectibles.wearing-nothing");
+            String best = sets.entrySet().stream().max(java.util.Map.Entry.comparingByValue()).get().getKey();
+            Catalog.SuitSet set = Catalog.set(best);
+            return messages.component("collectibles.wearing-suit", Placeholder.parsed("set", plugin.mystery().rarityColourTag(set.rarity()) + set.name()),
+                    Messages.arg("count", sets.get(best)), Messages.arg("more", sets.size() > 1 ? "+" : ""));
+        }
+        Item worn = equipped(player, category);
+        if (worn == null || !owns(player, worn)) return messages.component(equip ? "collectibles.equipped-nothing" : "collectibles.wearing-nothing");
+        return messages.component(equip ? "collectibles.equipped-line" : "collectibles.wearing", name(worn));
+    }
+
     private ItemStack categoryIcon(Category category) {
         return switch (category) {
             case HAT -> modelled(Material.LEATHER_HELMET, "hat/top_hat");
-            case SUIT -> {
-                ItemStack chest = ItemStack.of(Material.LEATHER_CHESTPLATE);
-                chest.editMeta(LeatherArmorMeta.class, meta -> meta.setColor(Color.fromRGB(0xE03A3A)));
-                yield chest;
-            }
+            case SUIT -> modelled(Material.LEATHER_CHESTPLATE, "category/suits");
             case GADGET -> modelled(Material.FIREWORK_STAR, "gadget/party_popper");
             case CLOAK -> modelled(Material.PHANTOM_MEMBRANE, "cloak/halo");
             case EMOTE -> modelled(Material.PLAYER_HEAD, "status/love");

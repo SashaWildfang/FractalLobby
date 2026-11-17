@@ -19,7 +19,7 @@ public record Reward(String id, String type, String value, Rarity rarity) {
 
     /** The rarities, rarest last. */
     public enum Rarity {
-        COMMON, RARE, EPIC, LEGENDARY;
+        COMMON, UNCOMMON, RARE, EPIC, LEGENDARY;
 
         public String key() {
             return name().toLowerCase(Locale.ROOT);
@@ -110,7 +110,11 @@ public record Reward(String id, String type, String value, Rarity rarity) {
             case "trail" -> trail(plugin).name() + " <gray>Trail";
             case "chatcolor" -> chatColor(plugin).name() + " <gray>Chat Colour";
             case "glow" -> plugin.messages().raw("mystery.glow-name");
-            case "collectible" -> item().name() + " <gray>" + plugin.messages().raw("collectibles.category." + item().category().key + ".single");
+            case "collectible" -> {
+                String single = plugin.messages().raw("collectibles.category." + item().category().key + ".single");
+                yield item().name().toLowerCase(java.util.Locale.ROOT).endsWith(single.toLowerCase(java.util.Locale.ROOT))
+                        ? item().name() : item().name() + " <gray>" + single;
+            }
             default -> plugin.messages().raw("mystery.dust-name").replace("<amount>", value);
         };
     }

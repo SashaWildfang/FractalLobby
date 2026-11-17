@@ -658,6 +658,15 @@
   },
   {
    "type": "bitmap",
+   "file": "fractal:gui/mystery_craft.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17c"
+   ]
+  },
+  {
+   "type": "bitmap",
    "file": "fractal:gui/collection.png",
    "ascent": 29,
    "height": 256,

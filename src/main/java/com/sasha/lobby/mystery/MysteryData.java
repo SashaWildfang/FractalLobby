@@ -24,11 +24,33 @@ import java.util.UUID;
  */
 public final class MysteryData {
 
+    /** One box: its stars and the seed its possible prizes are drawn from (so every box is different). */
+    public record Box(int stars, long seed) {
+        String text() {
+            return stars + ":" + seed;
+        }
+
+        static Box parse(String text) {
+            try {
+                int colon = text.indexOf(':');
+                int stars = MysteryBoxes.clampStars(Integer.parseInt(text.substring(0, colon)));
+                return new Box(stars, Long.parseLong(text.substring(colon + 1)));
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+
+        static Box random(int stars) {
+            return new Box(MysteryBoxes.clampStars(stars), java.util.concurrent.ThreadLocalRandom.current().nextLong());
+        }
+    }
+
     /** One player's stash. */
     public static final class Stash {
         String name = "";
         long dust;
-        final int[] boxes = new int[MysteryBoxes.MAX_STARS + 1];   // boxes[stars], index 0 unused
+        /** Every box they have, newest last. */
+        final java.util.List<Box> boxes = new ArrayList<>();
         final Set<String> owned = new LinkedHashSet<>();
         String lastDaily = "";
         /** What they're wearing or holding, by category ("hat" → "hat:top_hat"). */
@@ -41,13 +63,18 @@ public final class MysteryData {
         }
 
         public int boxes(int stars) {
-            return stars >= 1 && stars <= MysteryBoxes.MAX_STARS ? boxes[stars] : 0;
+            return (int) boxes.stream().filter(b -> b.stars() == stars).count();
         }
 
         public int totalBoxes() {
-            int total = 0;
-            for (int stars = 1; stars <= MysteryBoxes.MAX_STARS; stars++) total += boxes[stars];
-            return total;
+            return boxes.size();
+        }
+
+        /** Their boxes, best first. */
+        public java.util.List<Box> boxList() {
+            java.util.List<Box> list = new ArrayList<>(boxes);
+            list.sort(java.util.Comparator.comparingInt(Box::stars).reversed());
+            return list;
         }
 
         public boolean owns(String reward) {
@@ -96,7 +123,14 @@ public final class MysteryData {
                 Stash stash = new Stash();
                 stash.name = c.getString("name", "");
                 stash.dust = Math.max(0, c.getLong("dust"));
-                for (int stars = 1; stars <= MysteryBoxes.MAX_STARS; stars++) stash.boxes[stars] = Math.max(0, c.getInt("boxes." + stars));
+                for (String text : c.getStringList("box-list")) {
+                    Box box = Box.parse(text);
+                    if (box != null) stash.boxes.add(box);
+                }
+                // before 1.41 boxes were only counted by stars: each becomes its own box
+                for (int stars = 1; stars <= MysteryBoxes.MAX_STARS; stars++) {
+                    for (int i = Math.max(0, c.getInt("boxes." + stars)); i > 0; i--) stash.boxes.add(Box.random(stars));
+                }
                 stash.owned.addAll(c.getStringList("owned"));
                 stash.lastDaily = c.getString("daily", "");
                 stash.streak = c.getInt("streak");
@@ -120,7 +154,7 @@ public final class MysteryData {
             String p = "players." + entry.getKey() + ".";
             yaml.set(p + "name", s.name);
             yaml.set(p + "dust", s.dust);
-            for (int stars = 1; stars <= MysteryBoxes.MAX_STARS; stars++) if (s.boxes[stars] > 0) yaml.set(p + "boxes." + stars, s.boxes[stars]);
+            if (!s.boxes.isEmpty()) yaml.set(p + "box-list", s.boxes.stream().map(Box::text).toList());
             yaml.set(p + "owned", new ArrayList<>(s.owned));
             yaml.set(p + "daily", s.lastDaily);
             yaml.set(p + "streak", s.streak);
@@ -152,10 +186,26 @@ public final class MysteryData {
         }
     }
 
+    /** Adds new boxes (each with its own prizes), or with a negative amount takes away that many of these stars. */
     void addBoxes(UUID id, int stars, int amount) {
         Stash stash = get(id);
-        stash.boxes[stars] = Math.max(0, stash.boxes[stars] + amount);
+        for (int i = 0; i < amount; i++) stash.boxes.add(Box.random(stars));
+        for (int i = 0; i < -amount; i++) {
+            for (int k = stash.boxes.size() - 1; k >= 0; k--) {
+                if (stash.boxes.get(k).stars() == stars) {
+                    stash.boxes.remove(k);
+                    break;
+                }
+            }
+        }
         dirty = true;
+    }
+
+    /** Takes one particular box; false if they don't have it (any more). */
+    boolean take(UUID id, Box box) {
+        boolean removed = get(id).boxes.remove(box);
+        if (removed) dirty = true;
+        return removed;
     }
 
     void addDust(UUID id, long amount) {

@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 36
+messages-version: 37
 
 theme:
   primary: "#B266FF"
@@ -738,14 +738,20 @@ mystery:
   glow-name: "<#FFE680>Glow"
   dust-name: "<#FFD27F><amount> Mystery Dust"
   dust: "<prefix><secondary>You have <#FFD27F><dust> Mystery Dust</#FFD27F> <secondary>and <primary><boxes></primary> <secondary>Mystery Box(es). <dark_gray>▸ <white>/mysterybox"
-  daily: "<prefix><secondary>Daily reward: a <stars> <secondary>Mystery Box! <muted>(Day <white><streak></white> in a row) <dark_gray>▸ <white>/mysterybox"
-  daily-streak: "<prefix><#FFD27F><bold><streak> days in a row!</bold></#FFD27F> <secondary>Here's a <stars> <secondary>Mystery Box. <dark_gray>▸ <white>/mysterybox"
-  parkour-best: "<prefix><secondary>New parkour best! Here's a <stars> <secondary>Mystery Box."
   received: "<prefix><secondary>You got <white><amount></white> <stars> <secondary>Mystery Box(es)! <dark_gray>▸ <white>/mysterybox"
-  no-box: "<prefix><bad>You don't have a <stars> <bad>box. <muted>Craft one with Mystery Dust below it."
   craft-short: "<prefix><bad>You need <white><need></white> more Mystery Dust for a <stars> <bad>box."
   crafted: "<prefix><secondary>Crafted a <stars> <secondary>Mystery Box for <#FFD27F><cost> Mystery Dust</#FFD27F><secondary>."
   already-opening: "<prefix><muted>Your box is still opening!"
+  vault-only: "<prefix><bad>Boxes open at a Mystery Vault. <muted>Go to one and right-click it."
+  multi-locked: "<prefix><bad>Opening many boxes at once is a donor perk."
+  craft-locked: "<prefix><bad>Crafting <stars> <bad>boxes is a donor perk."
+  # Opening many boxes at once (lobby.mystery.multi): a summary instead of the show
+  summary:
+    header: "<prefix><#FFD27F><bold>Opened <count> Mystery Box(es)!</bold></#FFD27F> <muted>(<white><new></white> new)"
+    new-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <#9BFFC4>NEW"
+    dupe-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <dark_gray>x<times> <muted>(had it: dust)"
+    dust-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <dark_gray>x<times>"
+    footer: " <#FFD27F>+<dust> Mystery Dust <muted>(<white><total></white> now)"
   # What the player is told when the box bursts
   found: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>! <#9BFFC4>It's yours now."
   found-duplicate: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>, which you already have: <#FFD27F>+<dust> Mystery Dust"
@@ -761,6 +767,7 @@ mystery:
   opening:
     rarity:
       common: "<#ANIM:shimmer:#C9B8EE,#FFFFFF>&lᴄᴏᴍᴍᴏɴ</#ANIM>"
+      uncommon: "<#ANIM:shimmer:#7FE39A,#E3FFE9>&lᴜɴᴄᴏᴍᴍᴏɴ</#ANIM>"
       rare: "<#ANIM:shimmer:#7FA8FF,#E3EBFF>&lʀᴀʀᴇ</#ANIM>"
       epic: "<#ANIM:shimmer:#C77DFF,#FFB8F5>&lᴇᴘɪᴄ</#ANIM>"
       legendary: "<#ANIM:shimmer:#FFD27F,#FFFFFF>&lʟᴇɢᴇɴᴅᴀʀʏ</#ANIM>"
@@ -792,39 +799,76 @@ mystery:
         - "<muted>Mystery Dust: <#FFD27F><dust>"
         - "<muted>Boxes: <white><boxes>"
         - "<muted>Opened: <white><opened>"
-        - "<muted>Daily streak: <white><streak></white> <muted>day(s)"
-        - ""
-        - "<muted>A box every day you join, and"
-        - "<muted>for a new parkour best."
+    # Each box is different: what it can give is listed under it.
     box:
-      name: "<stars> <white>Mystery Box <dark_gray>(<count>)"
+      name: "<stars> <white>Mystery Box"
       lore:
-        - "<muted>You have <white><count></white><muted>."
-        - ""
-        - "<muted>Chances:"
-      odds: " <rarity> <dark_gray>- <white><chance>%"
+        - "<muted>Can contain:"
+      rarity: " <rarity> <dark_gray>(<chance>%)"
+      prize: "   <dark_gray>▪ <reward>"
       open-hint:
-        - "<accent><click></accent> <muted>to open one"
-      none-hint:
-        - "<dark_gray>Craft one below with Mystery Dust"
+        - "<accent><click></accent> <muted>to open it"
+      open-hint-multi:
+        - "<accent><click></accent> <muted>to open it"
+        - "<accent>Shift-click</accent> <muted>to open all <white><count></white> <stars>"
+      go-to-vault:
+        - "<muted>Open it at a Mystery Vault."
+    empty:
+      name: "<muted>No boxes yet"
+      lore:
+        - "<muted>Get them from games, votes and"
+        - "<muted>the store, or craft them."
+    previous:
+      name: "<secondary>← Page <page>"
+      lore: []
+    next:
+      name: "<secondary>Page <page> →"
+      lore: []
+    craft-button:
+      name: "<secondary>Craft Boxes"
+      lore:
+        - "<muted>Make boxes from Mystery Dust."
+        - "<muted>You have <#FFD27F><dust></#FFD27F><muted>."
+        - ""
+        - "<accent><click></accent> <muted>to craft"
+    open-all:
+      name: "<#FFD27F>Open Everything"
+      lore:
+        - "<muted>Open all <white><boxes></white> <muted>boxes at once:"
+        - "<muted>no show, just a list of what"
+        - "<muted>you got."
+        - ""
+        - "<accent><click></accent> <muted>to open them all"
+    open-all-locked:
+      name: "<dark_gray>Open Everything"
+      lore:
+        - "<muted>Open every box at once."
+        - "<bad>Donor perk"
+    collection:
+      name: "<primary>Collection"
+      lore:
+        - "<muted>Trails, chat colours and more."
+        - "<muted>Found: <white><found></white><dark_gray>/<total>"
+        - ""
+        - "<accent><click></accent> <muted>to look"
+  craft-menu:
+    title: "<brand><bold>Craft Boxes</bold></brand>"
     craft:
-      name: "<secondary>Craft a <stars>"
+      name: "<secondary>Craft a <stars> <secondary>Box"
       lore:
         - "<muted>Costs <#FFD27F><cost> Mystery Dust"
         - ""
         - "<accent><click></accent> <muted>to craft"
-    craft-short:
-      name: "<dark_gray>Craft a <stars>"
+    short:
+      name: "<dark_gray>Craft a <stars> <dark_gray>Box"
       lore:
         - "<muted>Costs <#FFD27F><cost> Mystery Dust"
         - "<bad>You need <white><need></white> more"
-    collection:
-      name: "<primary>Collection"
+    locked:
+      name: "<dark_gray>Craft a <stars> <dark_gray>Box"
       lore:
-        - "<muted>Everything a box can give."
-        - "<muted>Found: <white><found></white><dark_gray>/<total>"
-        - ""
-        - "<accent><click></accent> <muted>to look"
+        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<bad>Donor perk"
   collection:
     title: "<brand><bold>Collection</bold></brand>"
     found:
@@ -840,7 +884,7 @@ mystery:
     back:
       name: "<secondary>← Back"
       lore:
-        - "<muted>Back to the Mystery Vault."
+        - "<muted>Back to your boxes."
 
 
 # ── Collectibles ────────────────────────────────────────────────
@@ -896,6 +940,7 @@ collectibles:
       title: "<brand><bold>Emotes</bold></brand>"
       lore:
         - "<muted>A big emoji over your head."
+        - "<muted>Equip one: it goes in your hotbar."
     gestures:
       name: "<primary>Gestures"
       single: "Gesture"
@@ -917,6 +962,9 @@ collectibles:
     - "<accent><click></accent> <muted>to look"
   wearing: "<muted>Wearing: <name>"
   wearing-nothing: "<muted>Wearing: <dark_gray>nothing"
+  wearing-suit: "<muted>Wearing: <set> <dark_gray>(<white><count></white>/4)<more>"
+  equipped-line: "<muted>Equipped: <name>"
+  equipped-nothing: "<muted>Equipped: <dark_gray>nothing"
   trails:
     name: "<primary>Trails"
     lore:
@@ -1043,6 +1091,11 @@ collectibles:
     name: "<name> <muted>(Right-click)"
     lore:
       - "<muted><description>"
+  emote-item:
+    name: "<name> <muted>Emote (Right-click)"
+    lore:
+      - "<muted>Right-click to show this emote"
+      - "<muted>over your head."
   # Full-set bonuses. <how> says how to use it.
   ability:
     fireball:
@@ -1090,6 +1143,42 @@ collectibles:
       name: "Bone Rattle"
       description: 'Rattle your bones.'
       how: "Right-click a block with an empty hand, or press F"
+    speed_force:
+      name: "Speed Force"
+      description: 'Always on: run much faster, crackling with lightning.'
+      how: "Always on while you wear the full suit"
+    disco_floor:
+      name: "Disco Floor"
+      description: 'The floor around you lights up with music.'
+      how: "Right-click a block with an empty hand, or press F"
+    mermaid_grace:
+      name: "Mermaid's Grace"
+      description: 'Always on: swim fast, with a trail of bubbles.'
+      how: "Always on while you wear the full suit"
+    web_swing:
+      name: "Web Swing"
+      description: 'Shoot a web and swing to where you look.'
+      how: "Right-click a block with an empty hand, or press F"
+    battle_cry:
+      name: "Battle Cry"
+      description: 'Sound the horn and charge forward.'
+      how: "Right-click a block with an empty hand, or press F"
+    raise_dead:
+      name: "Raise the Dead"
+      description: 'The dead climb out of the ground around you.'
+      how: "Right-click a block with an empty hand, or press F"
+    thunder_strike:
+      name: "Thunder Strike"
+      description: 'Call lightning down where you look (it hurts nobody).'
+      how: "Right-click a block with an empty hand, or press F"
+    bake_sale:
+      name: "Bake Sale"
+      description: 'Throw a batch of fresh treats.'
+      how: "Right-click a block with an empty hand, or press F"
+    bee_swarm:
+      name: "Bee Swarm"
+      description: 'A swarm of friendly bees buzzes around you.'
+      how: "Right-click a block with an empty hand, or press F"
     bat_swarm:
       name: "Bat Swarm"
       description: 'Turn into a swarm of bats for 3s.'
@@ -1097,6 +1186,20 @@ collectibles:
   cooldown: "<muted>Ready in <white><seconds>s"
   equipped: "<prefix><secondary>Now wearing <name><secondary>."
   equipped-gadget: "<prefix><secondary>Equipped <name><secondary>. It's in your hotbar!"
+  # Bits some gadgets say
+  gadget:
+    no-one-near: "<prefix><muted>There's nobody close enough to play with."
+    potato-boom: "<prefix><#FF8A1F>BOOM! The hot potato went off on <white><player></white><#FF8A1F>!"
+    frisbee-caught: "<prefix><secondary><white><player></white> caught your frisbee!"
+    pinata-burst: "<prefix><#FFD27F>You burst the piñata!"
+    swing-sit: "<prefix><muted>Sneak to get off the swing."
+    rps-win: "<prefix><secondary><white><player></white> (<mine>) beat <white><rival></white> (<theirs>)!"
+    rps-lose: "<prefix><secondary><white><rival></white> (<theirs>) beat <white><player></white> (<mine>)!"
+    rps-draw: "<prefix><secondary>A draw! <white><mine></white> and <white><theirs></white>."
+    ttt-start: "<prefix><secondary>Tic tac toe: you're <#E03A3A>X</#E03A3A>. The next person to click a square plays <#3C6AE0>O</#3C6AE0>."
+    ttt-wait: "<prefix><muted>It's not your turn."
+    ttt-win: "<prefix><#FFD27F><player> wins tic tac toe!"
+  equipped-emote: "<prefix><secondary>Equipped the <name> <secondary>emote. Right-click it in your hotbar to show it!"
   # What a gesture's copy of you says (one is picked at random).
   gesture-say:
     wave: ["<black>Hi there!", "<black>Hey!", "<black>Hello!"]
@@ -1106,6 +1209,18 @@ collectibles:
     facepalm: ["<black>Ugh...", "<black>Really?", "<black>Why..."]
     headbang: ["<black>Rock on!", "<black>Turn it up!"]
     celebrate: ["<black>Woohoo!", "<black>Let's go!", "<black>GG!"]
+    dab: ["<black>Dab!", "<black>Nailed it."]
+    floss: ["<black>Floss time!", "<black>Can't stop!"]
+    moonwalk: ["<black>Hee-hee!", "<black>Smooth."]
+    zombie_walk: ["<black>Braaains...", "<black>Uuuurgh..."]
+    sleep: ["<black>Zzz...", "<black>Five more minutes..."]
+    swim: ["<black>Just keep swimming!", "<black>Splish splash!"]
+    twirl_jump: ["<black>Wheee!", "<black>Up we go!"]
+    levitate: ["<black>Behold!", "<black>Look, no hands!"]
+    tiny: ["<black>Tiny!", "<black>Down here!"]
+    magic_trick: ["<black>Ta-da!", "<black>Abracadabra!"]
+    giant: ["<black>FEE FI FO FUM!", "<black>Stomp stomp!"]
+    explode: ["<black>Uh oh...", "<black>I feel funny..."]
   took-off: "<prefix><muted>Took off your <category>."
   took-off-all: "<prefix><muted>Took everything off."
   unequipped-gadget: "<prefix><muted>Unequipped your gadget."

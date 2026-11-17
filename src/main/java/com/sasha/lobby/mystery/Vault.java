@@ -73,9 +73,9 @@ public final class Vault implements Listener {
             return "mystery-vault-" + index;
         }
 
-        /** Where the box plays: the top of the vault. */
+        /** Where the box plays: just above the open chest. */
         Location top() {
-            return location.clone().add(0, 1.0, 0);
+            return location.clone().add(0, 0.95, 0);
         }
 
         /** Where the opener stands: in front, on the ground, facing the vault. */
@@ -94,17 +94,18 @@ public final class Vault implements Listener {
             despawn();
             World world = location.getWorld();
             Location centre = location.clone().add(0, 0.5, 0);
-            centre.setYaw(0);
+            centre.setYaw(location.getYaw());   // the chest's front (lock) faces where players stand
             centre.setPitch(0);
             body = world.spawn(centre, ItemDisplay.class, display -> setup(display, model(BODY)));
             lid = world.spawn(centre, ItemDisplay.class, display -> setup(display, model(LID)));
             clickBox = world.spawn(location.clone(), Interaction.class, box -> {
-                box.setInteractionWidth(1.2f);
-                box.setInteractionHeight(1.2f);
+                box.setInteractionWidth(1.1f);
+                box.setInteractionHeight(1.25f);
                 box.setResponsive(true);
                 box.setPersistent(false);
                 box.addScoreboardTag(TAG);
             });
+            solid(true);
         }
 
         void despawn() {
@@ -116,13 +117,24 @@ public final class Vault implements Listener {
             clickBox = null;
         }
 
-        /** The lid floats up off the vault, turning a quarter, and the inside glows; or settles back down. */
+        /** Invisible walls (barriers) where the vault stands, so nobody walks through it. */
+        void solid(boolean on) {
+            for (int dy = 0; dy <= 1; dy++) {
+                org.bukkit.block.Block block = location.getBlock().getRelative(0, dy, 0);
+                if (on && block.getType().isAir()) block.setType(Material.BARRIER, false);
+                else if (!on && block.getType() == Material.BARRIER) block.setType(Material.AIR, false);
+            }
+        }
+
+        /** The lid swings open on its hinge at the back (and the inside glows), or shuts again. */
         void lid(boolean open) {
             if (lid == null || !lid.isValid()) return;
             lid.setInterpolationDelay(0);
-            lid.setInterpolationDuration(open ? 14 : 10);
-            lid.setTransformation(new Transformation(new Vector3f(0, open ? 0.55f : 0f, 0),
-                    new AxisAngle4f((float) Math.toRadians(open ? 90 : 0), 0, 1, 0), new Vector3f(open ? 0.9f : 1f), new AxisAngle4f()));
+            lid.setInterpolationDuration(open ? 16 : 10);
+            // hinge: the top back edge of the chest (model 8, 11, 3 -> 0, 0.1875, -0.3125 from the display's centre)
+            org.joml.Matrix4f m = new org.joml.Matrix4f().translate(0, 0.1875f, -0.3125f)
+                    .rotateX((float) Math.toRadians(open ? -105 : 0)).translate(0, -0.1875f, 0.3125f);
+            lid.setTransformationMatrix(m);
         }
     }
 
@@ -203,7 +215,7 @@ public final class Vault implements Listener {
 
     /** The vault's hologram: the title, the viewer's boxes and dust, and how to open it. */
     private void showHologram(Spot spot) {
-        Hologram holo = new Hologram(spot.hologramId(), spot.location.clone().add(0, 1.35, 0));
+        Hologram holo = new Hologram(spot.hologramId(), spot.location.clone().add(0, 1.55, 0));
         holo.downOrigin = true;
         holo.updateInterval = 10;
         Hologram.Page page = new Hologram.Page();
@@ -241,6 +253,7 @@ public final class Vault implements Listener {
             return;
         }
         Spot gone = nearest;
+        gone.solid(false);
         save(spots.stream().filter(s -> s != gone).map(s -> s.location).toList());
         start();
         plugin.messages().send(admin, "mystery.vault.removed", Messages.arg("count", spots.size()));
@@ -267,36 +280,24 @@ public final class Vault implements Listener {
     record Place(Location at, Spot spot) {
     }
 
-    Place place(Player player) {
-        for (Spot spot : spots) {
-            if (player.getUniqueId().equals(spot.busyFor)) {
+    /** Reserves this vault for the player's opening; null after telling them why it can't. */
+    Place reserve(Player player, Spot spot) {
+        for (Spot other : spots) {
+            if (player.getUniqueId().equals(other.busyFor)) {
                 plugin.messages().send(player, "mystery.already-opening");
                 return null;
             }
         }
-        if (spots.isEmpty()) {
-            Location front = player.getLocation().clone();
-            front.setPitch(0);
-            Location at = front.add(front.getDirection().multiply(2.5));
-            at.setY(player.getLocation().getY());
-            return new Place(at, null);
-        }
-        Spot nearest = null;
-        for (Spot spot : spots) {
-            if (!spot.location.getWorld().equals(player.getWorld())) continue;
-            double distance = spot.location.distanceSquared(player.getLocation());
-            if (distance <= REACH * REACH && (nearest == null || distance < nearest.location.distanceSquared(player.getLocation()))) nearest = spot;
-        }
-        if (nearest == null) {
-            plugin.messages().send(player, "mystery.vault.too-far");
+        if (!spots.contains(spot)) {
+            plugin.messages().send(player, "mystery.vault-only");
             return null;
         }
-        if (nearest.busyFor != null) {
-            plugin.messages().send(player, "mystery.vault.busy", Messages.name("player", nearest.busyName));
+        if (spot.busyFor != null) {
+            plugin.messages().send(player, "mystery.vault.busy", Messages.name("player", spot.busyName));
             return null;
         }
-        if (!nearest.alive()) nearest.spawn();
-        return new Place(nearest.top(), nearest);
+        if (!spot.alive()) spot.spawn();
+        return new Place(spot.top(), spot);
     }
 
     /** An opening starts: the vault is busy, its lid lifts, its hologram makes room, the player is held in front. */
@@ -349,8 +350,14 @@ public final class Vault implements Listener {
             if (spot.clickBox == null || !event.getRightClicked().equals(spot.clickBox)) continue;
             event.setCancelled(true);
             if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+            if (spot.busyFor != null) {   // someone is opening a box here: nobody else can use it until it's done
+                if (!event.getPlayer().getUniqueId().equals(spot.busyFor)) {
+                    plugin.messages().send(event.getPlayer(), "mystery.vault.busy", Messages.name("player", spot.busyName));
+                }
+                return;
+            }
             MysteryBoxes.sound(event.getPlayer(), "block.ender_chest.open", 1.3f);
-            boxes.openMenu(event.getPlayer());
+            boxes.openMenu(event.getPlayer(), spot, 0);
             return;
         }
     }
@@ -361,6 +368,7 @@ public final class Vault implements Listener {
         display.addScoreboardTag(TAG);
         display.setBrightness(new Display.Brightness(15, 15));
         display.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+        display.setInterpolationDuration(0);
     }
 
     private ItemStack model(Key key) {

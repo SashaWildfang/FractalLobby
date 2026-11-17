@@ -52,6 +52,7 @@ by['H'] = drawn(["#...#", "#...#", "#####", "#...#", "#...#"])
 by['B'] = drawn(["####.", "#...#", "####.", "#...#", "####."])
 by['K'] = drawn(["#...#", "#..#.", "###..", "#..#.", "#...#"])
 by['F'] = drawn(["#####", "#....", "####.", "#....", "#...."])
+by['X'] = drawn(["#...#", ".#.#.", "..#..", ".#.#.", "#...#"])
 by[' '] = (2, {})
 
 def plaque_title(img, word, centre=88):
@@ -142,7 +143,11 @@ for rows in range(3, 7):
     bottom = (rows - 1) * 9
     add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
-add(0xF173, 'mystery', background(5, [], "MYSTERY VAULT", cells=[4, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
+# the Mystery Vault: your stash on top, your boxes (4 rows of 7), and pages / craft / collection / open all below
+_grid = [r * 9 + c for r in (1, 2, 3, 4) for c in range(1, 8)]
+add(0xF173, 'mystery', background(6, [], "MYSTERY VAULT", cells=[4] + _grid + [45, 47, 49, 51, 53]))
+# crafting boxes with Mystery Dust: 1 to 5 stars, and back
+add(0xF17C, 'mystery_craft', background(3, [], "CRAFT BOXES", cells=[4, 11, 12, 13, 14, 15, 22]))
 add(0xF174, 'collection', background(6, [], "COLLECTION", cells=list(range(45)) + [49]))
 # Collectibles: the main menu (the stash, the categories, the extras) and a page per category (season tabs on top for
 # hats and suits, the items in the middle, back and take off at the bottom)

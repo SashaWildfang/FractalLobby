@@ -468,9 +468,229 @@ def vampire(l1, l2):
     l1.put(LEG, 'front', 1, 9, '#5a5a6e')
 
 
+def speedster(l1, l2):
+    RED, GOLD, DARK = '#d8282c', '#ffcf3a', '#8a1418'
+    l1.cloth(HEAD, RED)
+    l1.clear(HEAD, 'front', 1, 4, 6, 7)                    # the mouth and chin show
+    l1.clear(HEAD, 'bottom')
+    for face in ('right', 'left'):                          # gold lightning wings over the ears
+        for (x, y) in [(2, 2), (3, 3), (4, 3), (5, 4), (3, 4)]:
+            l1.put(HEAD, face, x, y, GOLD)
+    shirt(l1, RED)
+    bolt = [(5, 1), (4, 2), (4, 3), (3, 4), (4, 4), (5, 4), (4, 5), (3, 6), (2, 7)]
+    for x in range(1, 7):
+        for y in range(1, 7):
+            if (x - 3.5) ** 2 + (y - 3.5) ** 2 <= 7:
+                l1.put(BODY, 'front', x, y, '#fff4c8')
+    for (x, y) in bolt:
+        l1.put(BODY, 'front', x, y, GOLD)
+    l1.row(BODY, 9, GOLD)
+    for face in ('right', 'left', 'front', 'back'):
+        l1.put(ARM, face, 1, 6, GOLD)
+        l1.put(ARM, face, 2, 7, GOLD)
+    trousers(l2, RED)
+    for face in ('right', 'left'):
+        l2.col(LEG, face, 1, DARK)
+    boots(l1, GOLD, rows=(8, 11), sole='#b08a20')
+    l1.put(LEG, 'front', 1, 8, '#fff4c8')
+
+
+def disco(l1, l2):
+    PURPLE, PINK, GOLD = '#8a3ad8', '#ff6fd8', '#ffcf3a'
+    shirt(l1, PURPLE)
+    rr = random.Random(11)
+    for part in (BODY, ARM):
+        for face in SIDES:
+            w, h = part[face][2], part[face][3]
+            for y in range(h):
+                for x in range(w):
+                    if rr.random() < 0.18:
+                        l1.put(part, face, x, y, rr.choice([PINK, GOLD, '#ffffff', '#5bd8ff']))
+    for y in range(0, 5):                                    # a wide white collar
+        l1.put(BODY, 'front', 3 - min(y, 2), y, '#ffffff')
+        l1.put(BODY, 'front', 4 + min(y, 2), y, '#ffffff')
+    l1.row(BODY, 9, GOLD)
+    trousers(l2, '#ffffff')
+    for face in SIDES:                                        # flares
+        l2.col(LEG, face, 0, PINK, 8, 11)
+        l2.col(LEG, face, 3, PINK, 8, 11)
+    l2.row(BODY, 9, GOLD)
+    boots(l1, GOLD, rows=(10, 11), sole='#b08a20')
+
+
+def mermaid(l1, l2):
+    TEAL, TEAL2, SHELL, HAIR = '#2fb8a8', '#1f8a80', '#ff9ab8', '#e8443a'
+    l1.cloth(HEAD, HAIR, rows=(0, 2), faces=SIDES + ('top',))
+    l1.cloth(HEAD, HAIR, rows=(0, 7), faces=('back', 'right', 'left'))
+    l1.clear(HEAD, 'right', 0, 3, 3, 7)
+    l1.clear(HEAD, 'left', 4, 3, 7, 7)
+    for (x, y) in [(2, 1), (3, 1), (4, 1), (5, 1)]:
+        l1.put(HEAD, 'front', x, y, '#fff2a0')
+    l1.put(HEAD, 'front', 3, 0, '#fff2a0')
+    l1.put(HEAD, 'front', 4, 0, '#fff2a0')
+    l1.cloth(BODY, TEAL, rows=(0, 7))                          # a scaled top with a starfish and a pearl necklace
+    for y in range(0, 8):
+        for face in SIDES:
+            w = BODY[face][2]
+            for x in range(w):
+                if (x + y) % 2 == 0 and y % 2 == 1:
+                    l1.put(BODY, face, x, y, TEAL2)
+    for (x, y) in [(3, 3), (4, 3), (2, 4), (3, 4), (4, 4), (5, 4), (3, 5), (4, 5), (3, 2), (4, 2)]:
+        l1.put(BODY, 'front', x, y, '#ffb05a')
+    for (x, y) in [(2, 6), (5, 6)]:
+        l1.put(BODY, 'front', x, y, '#ffb05a')
+    for x in range(1, 7):
+        l1.put(BODY, 'front', x, 0, '#ffffff' if x % 2 else '#f0e8ff')
+    l1.cloth(ARM, TEAL, rows=(9, 10), faces=SIDES)
+    trousers(l2, TEAL)
+    for face in SIDES:                                        # scales
+        w = LEG[face][2]
+        for y in range(0, 12):
+            for x in range(w):
+                if (x + y) % 2 == 0 and y % 2 == 0:
+                    l2.put(LEG, face, x, y, TEAL2)
+    for y in range(7, 12):
+        for face in SIDES:
+            w = BODY[face][2]
+            for x in range(w):
+                if (x + y) % 2 == 0:
+                    l2.put(BODY, face, x, y, TEAL2)
+    boots(l1, '#5be0c8', rows=(9, 11))                        # fins
+    l1.row(LEG, 11, '#a8fff0')
+
+
+def spooderman(l1, l2):
+    RED, BLUE, WEB = '#d8282c', '#2a4ab8', '#7a1418'
+    l1.cloth(HEAD, RED)
+    for face in SIDES + ('top',):
+        w, h = HEAD[face][2], HEAD[face][3]
+        for i in range(w):
+            l1.put(HEAD, face, i, i, WEB)
+            l1.put(HEAD, face, w - 1 - i, i, WEB)
+            l1.put(HEAD, face, i, h // 2, WEB)
+    for (x, y) in [(1, 3), (2, 3), (2, 4), (1, 4), (5, 3), (6, 3), (5, 4), (6, 4)]:   # big white eyes
+        l1.put(HEAD, 'front', x, y, '#ffffff')
+    l1.clear(HEAD, 'bottom')
+    shirt(l1, RED)
+    for face in ('right', 'left'):
+        l1.cloth(BODY, BLUE, faces=(face,))
+    for x in (2, 3, 4, 5):                                     # a little spider on the chest
+        l1.put(BODY, 'front', x, 4, '#1a1b26')
+    for (x, y) in [(3, 3), (4, 3), (3, 5), (4, 5), (2, 2), (5, 2), (2, 6), (5, 6)]:
+        l1.put(BODY, 'front', x, y, '#1a1b26')
+    l1.cloth(ARM, BLUE, rows=(4, 9), faces=('right', 'back'))
+    trousers(l2, BLUE)
+    for face in SIDES:
+        l2.col(LEG, face, 1, '#3a5ad8')
+    boots(l1, RED, rows=(8, 11))
+
+
+def warrior(l1, l2):
+    IRON, IRON2, RED, LEATHER = '#c8ccd8', '#8a8ea0', '#b8282c', '#6b3e1e'
+    shirt(l1, IRON)
+    for y in range(0, 12, 2):
+        l1.row(BODY, y, IRON2)
+    l1.cloth(BODY, RED, rows=(0, 11), faces=('back',))         # a red cape
+    for y in range(0, 12):
+        l1.put(BODY, 'front', 3, y, RED)
+        l1.put(BODY, 'front', 4, y, RED)
+    l1.row(BODY, 8, LEATHER)
+    l1.put(BODY, 'front', 3, 8, '#ffcf3a')
+    l1.put(BODY, 'front', 4, 8, '#ffcf3a')
+    l1.row(ARM, 0, IRON2)
+    trousers(l2, LEATHER)
+    l2.row(LEG, 5, IRON2)
+    l2.row(LEG, 6, IRON)
+    boots(l1, IRON2, rows=(8, 11), sole='#5a5e6e')
+
+
+def necromancer(l1, l2):
+    ROBE, ROBE2, GREEN, BONE = '#2a1f3a', '#3a2c52', '#6aff8a', '#e8e8e0'
+    l1.cloth(HEAD, ROBE)
+    l1.window(1, 2, 6, 7)
+    l1.trim(ROBE2, 1, 2, 6, 7)
+    for (x, y) in [(2, 3), (5, 3)]:                            # glowing eyes in the hood's shadow
+        l1.put(HEAD, 'front', x, y, GREEN)
+    for x in range(1, 7):
+        l1.put(HEAD, 'front', x, 2, '#140e1e')
+    shirt(l1, ROBE)
+    for y in range(12):
+        l1.put(BODY, 'front', 3, y, ROBE2)
+        l1.put(BODY, 'front', 4, y, ROBE2)
+    for (x, y) in [(3, 2), (4, 2), (3, 3), (4, 3), (2, 3), (5, 3)]:   # a skull clasp
+        l1.put(BODY, 'front', x, y, BONE)
+    l1.put(BODY, 'front', 3, 3, '#1a1b26')
+    for y in (5, 7, 9):
+        l1.put(BODY, 'front', 1, y, GREEN)
+        l1.put(BODY, 'front', 6, y, GREEN)
+    l1.row(ARM, 11, GREEN)
+    trousers(l2, ROBE)
+    for face in SIDES:
+        l2.row(LEG, 11, ROBE2)
+    boots(l1, '#140e1e', rows=(9, 11))
+
+
+def thor(l1, l2):
+    STEEL, RED, MAIL, GOLD = '#c8ccd8', '#c8282c', '#6a6e80', '#ffcf3a'
+    shirt(l1, MAIL)
+    for y in range(12):
+        for x in range(8):
+            if (x + y) % 2 == 0:
+                l1.put(BODY, 'front', x, y, '#7e8296')
+    for (x, y) in [(2, 2), (5, 2), (2, 5), (5, 5)]:           # round steel discs
+        for (dx, dy) in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            l1.put(BODY, 'front', x + dx - (1 if x == 5 else 0), y + dy, STEEL)
+    l1.cloth(BODY, RED, faces=('back',))                       # a red cape
+    l1.row(BODY, 9, '#5a3a1e')
+    l1.put(BODY, 'front', 3, 9, GOLD)
+    l1.put(BODY, 'front', 4, 9, GOLD)
+    l1.cloth(ARM, STEEL, rows=(0, 2), faces=SIDES + ('top',))
+    trousers(l2, '#2a2a36')
+    boots(l1, '#5a3a1e', rows=(7, 11))
+    l1.row(LEG, 7, STEEL)
+
+
+def baker(l1, l2):
+    WHITE, CHECK, APRON = '#f4f4fa', '#e8e8f0', '#ff9ab8'
+    shirt(l1, WHITE)
+    for (x, y) in [(2, 1), (5, 1), (2, 4), (5, 4), (2, 7), (5, 7)]:   # two rows of buttons
+        l1.put(BODY, 'front', x, y, '#c9ccd8')
+    for y in range(5, 12):
+        for x in range(1, 7):
+            l1.put(BODY, 'front', x, y, APRON)
+    l1.put(BODY, 'front', 3, 8, '#ffffff')
+    l1.put(BODY, 'front', 4, 8, '#ffffff')
+    for y in range(0, 4):                                       # flour on the sleeves
+        l1.put(ARM, 'front', 1, 8 + y, '#ffffff')
+    trousers(l2, '#2a2a36')
+    for face in SIDES:
+        w = LEG[face][2]
+        for y in range(12):
+            for x in range(w):
+                if (x + y) % 2 == 0:
+                    l2.put(LEG, face, x, y, '#4a4a5a')
+    boots(l1, '#1a1b26', rows=(10, 11))
+
+
+def bumblebee(l1, l2):
+    YEL, BLACK = '#ffd23a', '#1c1c24'
+    l1.cloth(HEAD, YEL)
+    l1.window(1, 2, 6, 7)
+    l1.trim(BLACK, 1, 2, 6, 7)
+    shirt(l1, YEL)
+    for y in (2, 3, 6, 7, 10, 11):
+        l1.row(BODY, y, BLACK)
+        l1.row(ARM, y, BLACK)
+    trousers(l2, BLACK)
+    for y in (0, 1, 4, 5):
+        l2.row(LEG, y, YEL)
+    boots(l1, BLACK, rows=(9, 11))
+
+
 SUITS = {'plumber': plumber, 'ninja': ninja, 'astronaut': astronaut, 'frog': frog, 'lifeguard': lifeguard,
          'tourist': tourist, 'santa': santa, 'elf': elf, 'bunny': bunny, 'chick': chick, 'skeleton': skeleton,
-         'vampire': vampire}
+         'vampire': vampire, 'speedster': speedster, 'disco': disco, 'mermaid': mermaid, 'spooderman': spooderman,
+         'warrior': warrior, 'necromancer': necromancer, 'thor': thor, 'baker': baker, 'bumblebee': bumblebee}
 
 
 def layers(name):

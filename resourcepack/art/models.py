@@ -141,11 +141,20 @@ def build(out):
         flat_item(out, f'season/{key}', fn()); n += 1
     flat_item(out, 'menu/collectibles', icons.menu_collectibles()); n += 1
     flat_item(out, 'menu/take_off', icons.menu_take_off()); n += 1
+    flat_item(out, 'category/suits', icons.category_suits()); n += 1
+    flat_item(out, 'category/trails', icons.category_trails()); n += 1
     n += armor.build(out)
 
     # ------------------------------------------------ cloak pieces: blocky models, 32 pixels a block
     P = 'cloak/part/'
     H = 0.5
+    def ball(cx, cy, cz, r, col, pattern='glow', glow=15, light=None):
+        """A round-ish ball of boxes (three crossing slabs and a core), like a Blockbench sphere."""
+        k = r * 0.62
+        return [Box((cx - k, cy - k, cz - k), (cx + k, cy + k, cz + k), col, pattern, glow=glow),
+                Box((cx - r, cy - k * 0.8, cz - k * 0.8), (cx + r, cy + k * 0.8, cz + k * 0.8), col, pattern, glow=glow),
+                Box((cx - k * 0.8, cy - r, cz - k * 0.8), (cx + k * 0.8, cy + r, cz + k * 0.8), col, pattern, glow=glow),
+                Box((cx - k * 0.8, cy - k * 0.8, cz - r), (cx + k * 0.8, cy + k * 0.8, cz + r), col, pattern, glow=glow)]
     GOLD, WHITE = '#ffcf5a', '#f4f6ff'
     # halo: an octagon of gold bars
     ring = [Box((4, 7.25, 2.5), (12, 8.75, 4), GOLD, 'metal', glow=15), Box((4, 7.25, 12), (12, 8.75, 13.5), GOLD, 'metal', glow=15),
@@ -188,9 +197,12 @@ def build(out):
         return boxes
     write(out, P + 'wing_left', wing(False), scale=H)
     write(out, P + 'wing_right', wing(True), scale=H)
-    write(out, P + 'cloud', [Box((2, 5, 3), (14, 10, 13), WHITE, 'fluffy'), Box((0, 6, 5), (5, 9.5, 11), WHITE, 'fluffy'),
-                             Box((11, 6, 4), (16, 10.5, 11), WHITE, 'fluffy'), Box((4, 9, 4), (11, 13, 11), WHITE, 'fluffy'),
-                             Box((8, 9.5, 6), (13, 12, 11), WHITE, 'fluffy'), Box((2.5, 4.5, 3.5), (13.5, 5, 12.5), '#aab4cc', 'solid')], scale=H)
+    W2, G2 = '#ffffff', '#dfe5f0'
+    cloud = []
+    for (cx, cy, cz, r) in [(8, 8, 8, 4.5), (4, 7.5, 8, 3.4), (12, 7.5, 8, 3.6), (6, 10, 7, 3.2), (10.5, 10.5, 8.5, 3.0), (8, 7, 4.8, 3.0), (8, 7, 11.2, 3.0)]:
+        cloud += ball(cx, cy, cz, r, W2, 'flat', glow=None)
+    cloud.append(Box((1.5, 4.6, 5), (14.5, 5.4, 11), G2, 'flat'))
+    write(out, P + 'cloud', cloud, scale=H)
     for name, col in (('orb_blue', '#5b9dff'), ('orb_pink', '#ff6fd8'), ('orb_gold', '#ffcf5a')):
         write(out, P + name, [Box((5, 5, 5), (11, 11, 11), col, 'glow', glow=15),
                               Box((6, 4, 6), (10, 12, 10), col, 'glow', glow=15), Box((4, 6, 6), (12, 10, 10), col, 'glow', glow=15),
@@ -202,18 +214,19 @@ def build(out):
                              Box((10, 2, 5), (12, 4, 11), gw, 'flat', glow=12),
                              Box((5, 9, 4.6), (7, 11.5, 5), gb, 'flat'), Box((9, 9, 4.6), (11, 11.5, 5), gb, 'flat'),
                              Box((7, 6, 4.6), (9, 8, 5), '#2a2b3a', 'flat')], scale=H)
-    sun = [Box((5, 5, 5), (11, 11, 11), '#ffd84a', 'glow', glow=15), Box((4, 6, 6), (12, 10, 10), '#ffcf3a', 'glow', glow=15),
-           Box((6, 4, 6), (10, 12, 10), '#ffcf3a', 'glow', glow=15), Box((6, 6, 4), (10, 10, 12), '#ffcf3a', 'glow', glow=15)]
-    for k, ang in enumerate((0, 45, -45, 22.5, -22.5)):
-        for axis in (('y', 'x') if k == 0 else ('y',)):
-            rlen = 15 if k < 3 else 11
-            sun.append(Box((8 - rlen, 7.6, 7.6), (8 + rlen, 8.4, 8.4), '#fff2a0' if k < 3 else '#ffb428', 'glow', glow=15,
-                           rotation={"angle": ang, "axis": axis, "origin": [8, 8, 8]} if ang else None))
-    sun.append(Box((7.6, 7.6, -7), (8.4, 8.4, 23), '#fff2a0', 'glow', glow=15))
-    for ang in (45, -45):
-        sun.append(Box((7.6, -3, 7.6), (8.4, 19, 8.4), '#ffb428', 'glow', glow=15, rotation={"angle": ang, "axis": "x", "origin": [8, 8, 8]}))
-        sun.append(Box((7.6, -3, 7.6), (8.4, 19, 8.4), '#ffb428', 'glow', glow=15, rotation={"angle": ang, "axis": "z", "origin": [8, 8, 8]}))
+    sun = ball(8, 8, 8, 5, '#ffd84a') + ball(8, 8, 8, 3.6, '#fff2a0')[1:]
     write(out, P + 'sun3d', sun, scale=H)
+    # its rays: a ring of light that always faces whoever looks at it (the plugin turns it)
+    tex_save(out, P + 'sun_ring', icons.sun_ring())
+    model(out, P + 'sun_ring', P + 'sun_ring', [plane('z', light_level=15)])
+
+    BAT, WING_C = '#2a1f3a', '#3c2c52'
+    write(out, P + 'bat', [Box((6.5, 6.5, 6.5), (9.5, 9.8, 9.5), BAT, 'flat'),
+                           Box((6.8, 9.8, 7.0), (7.6, 11, 7.8), BAT, 'flat'), Box((8.4, 9.8, 7.0), (9.2, 11, 7.8), BAT, 'flat'),
+                           Box((7.0, 8.3, 6.3), (7.7, 8.9, 6.5), '#ff8a1f', 'flat', glow=15), Box((8.3, 8.3, 6.3), (9.0, 8.9, 6.5), '#ff8a1f', 'flat', glow=15),
+                           Box((1, 7.5, 7.6), (6.5, 9.5, 8.2), WING_C, 'flat'), Box((9.5, 7.5, 7.6), (15, 9.5, 8.2), WING_C, 'flat'),
+                           Box((1, 6.2, 7.6), (3, 7.5, 8.2), WING_C, 'flat'), Box((13, 6.2, 7.6), (15, 7.5, 8.2), WING_C, 'flat'),
+                           Box((3.8, 6.8, 7.6), (5.4, 7.5, 8.2), WING_C, 'flat'), Box((10.6, 6.8, 7.6), (12.2, 7.5, 8.2), WING_C, 'flat')], scale=H)
 
     # flat pieces (pixel sprites)
     tex_save(out, P + 'sparkle', strip([icons.part_sparkle(i).resize((32, 32), Image.NEAREST) for i in range(4)]), 3)
@@ -246,8 +259,8 @@ def build(out):
         Box((7, 13.5, 7), (8.5, 14, 8.5), choc, 'flat')], scale=H)
     yellow, blue, leg = '#ffcf5a', '#3c6ae0', '#5a6078'
     write(out, 'gadget/trampoline_3d', [
-        Box((1, 4, 1), (2.2, 10.5, 2.2), leg, 'metal'), Box((13.8, 4, 1), (15, 10.5, 2.2), leg, 'metal'),
-        Box((1, 4, 13.8), (2.2, 10.5, 15), leg, 'metal'), Box((13.8, 4, 13.8), (15, 10.5, 15), leg, 'metal'),
+        Box((1, 0, 1), (2.2, 10.5, 2.2), leg, 'metal'), Box((13.8, 0, 1), (15, 10.5, 2.2), leg, 'metal'),
+        Box((1, 0, 13.8), (2.2, 10.5, 15), leg, 'metal'), Box((13.8, 0, 13.8), (15, 10.5, 15), leg, 'metal'),
         Box((0, 10.5, 0), (16, 11.6, 1.4), yellow, 'solid'), Box((0, 10.5, 14.6), (16, 11.6, 16), yellow, 'solid'),
         Box((0, 10.5, 1.4), (1.4, 11.6, 14.6), yellow, 'solid'), Box((14.6, 10.5, 1.4), (16, 11.6, 14.6), yellow, 'solid'),
         Box((1.4, 10.9, 1.4), (14.6, 11.1, 14.6), blue, 'mat')], scale=H)
@@ -294,6 +307,107 @@ def build(out):
                         x0 = fixed - 0.1 if face == 'west' else fixed
                         b.append(Box((x0, v - 0.75, u), (x0 + 0.1, v, u + 0.75), '#ffffff', 'flat', faces=(face,)))
         write(out, f'mystery/box_{stars}', b, scale=H, display=BLOCK_DISPLAY)
+
+    # ------------------------------------------------ Mystery Dust: a golden sand pile with twinkles (8 frames)
+    import make_dust32
+    _dirs(out, 'mystery')
+    make_dust32.build(f'{out}/assets/fractal/textures/item/mystery/dust.png')
+    json.dump({"animation": {"frametime": 3}}, open(f'{out}/assets/fractal/textures/item/mystery/dust.png.mcmeta', 'w'))
+
+    # ------------------------------------------------ the Mystery Vault: a treasure chest on a stone plinth.
+    # Purple wood, gold corners and bands, a gold lock on the front (+Z, the side players stand on); the lid
+    # is its own model and swings open on a hinge at the back (the plugin turns it).
+    WOOD, WOOD2, GOLD_, STONE, STONE2, RUNE = '#4a2f72', '#3a2460', '#ffcf5a', '#3a3d56', '#4a4e6a', '#b266ff'
+    body = [Box((0, 0, 0), (16, 2, 16), STONE, 'brick'), Box((1, 2, 1), (15, 3, 15), STONE2, 'solid'),
+            Box((0.5, 1.4, 0.5), (15.5, 1.9, 15.5), RUNE, 'flat', glow=12),
+            Box((2, 3, 3), (14, 11, 13), WOOD, 'solid'),
+            Box((2.5, 10.9, 3.5), (13.5, 11, 12.5), '#f0e0ff', 'glow', glow=15),          # the glowing inside (seen when open)
+            Box((1.8, 3, 2.8), (3.2, 11, 4.2), GOLD_, 'metal'), Box((12.8, 3, 2.8), (14.2, 11, 4.2), GOLD_, 'metal'),
+            Box((1.8, 3, 11.8), (3.2, 11, 13.2), GOLD_, 'metal'), Box((12.8, 3, 11.8), (14.2, 11, 13.2), GOLD_, 'metal'),
+            Box((1.9, 6.2, 2.9), (14.1, 7.2, 13.1), GOLD_, 'metal'),
+            Box((6.6, 4.8, 13.1), (9.4, 8.8, 13.5), GOLD_, 'metal'), Box((7.6, 5.6, 13.5), (8.4, 7.2, 13.6), '#1a1b26', 'flat'),
+            Box((6.6, 8.8, 13.1), (9.4, 9.4, 13.4), '#d9a63a', 'metal')]
+    write(out, 'mystery/vault_body', body, scale=H)
+    lid = [Box((2, 11, 3), (14, 13, 13), WOOD2, 'solid'), Box((2.6, 13, 3.6), (13.4, 14.2, 12.4), WOOD2, 'solid'),
+           Box((3.4, 14.2, 4.4), (12.6, 14.8, 11.6), WOOD, 'solid'),
+           Box((1.8, 11, 2.8), (3.2, 13.2, 4.2), GOLD_, 'metal'), Box((12.8, 11, 2.8), (14.2, 13.2, 4.2), GOLD_, 'metal'),
+           Box((1.8, 11, 11.8), (3.2, 13.2, 13.2), GOLD_, 'metal'), Box((12.8, 11, 11.8), (14.2, 13.2, 13.2), GOLD_, 'metal'),
+           Box((7.1, 11, 2.9), (8.9, 14.9, 13.1), GOLD_, 'metal'),
+           Box((7, 9.6, 13.1), (9, 11.6, 13.7), GOLD_, 'metal'),                          # the latch over the lock
+           Box((7.4, 14.9, 7.4), (8.6, 15.6, 8.6), RUNE, 'glow', glow=15)]
+    write(out, 'mystery/vault_lid', lid, scale=H)
+
+    # ------------------------------------------------ 1.41 gadget models (placed in the world or flying)
+    G = 'gadget/'
+    write(out, G + 'tetherball_pole', [Box((7.2, 0, 7.2), (8.8, 32, 8.8), '#c9ccd8', 'metal'),
+                                         Box((5, 0, 5), (11, 1, 11), '#5a6078', 'solid'), Box((7, 31.5, 7), (9, 32, 9), '#ffcf5a', 'flat')], scale=H)
+    write(out, G + 'ball_orange', ball(8, 8, 8, 5, '#ff6a3a', 'solid', glow=None) + [Box((7.6, 2.8, 2.9), (8.4, 13.2, 3.1), '#ffffff', 'flat')], scale=H)
+    write(out, G + 'pong_ball', ball(8, 8, 8, 4, '#ffe14d', 'solid', glow=10), scale=H)
+    bb = ball(8, 8, 8, 6.5, '#ffffff', 'flat', glow=None)
+    for box, col in zip(bb[1:], ('#ff4d4d', '#ffe14d', '#3f8bff')):   # each slab its own colour: a segmented beach ball
+        box.colour = col
+    write(out, G + 'beach_ball_3d', bb, scale=H)
+    write(out, G + 'frisbee_3d', [Box((2, 7.4, 2), (14, 8.6, 14), '#ff5a4a', 'solid'), Box((3.5, 8.6, 3.5), (12.5, 9.0, 12.5), '#ff7a6a', 'flat'),
+                                    Box((1.4, 7.2, 4), (14.6, 8.2, 12), '#c8322e', 'flat'), Box((4, 7.2, 1.4), (12, 8.2, 14.6), '#c8322e', 'flat')], scale=H)
+    P_ = ['#ff6fd8', '#ffcf3a', '#5be37c', '#5b9dff', '#ff8a1f']
+    pinata = []
+    for i, col in enumerate(P_):                                   # a striped donkey
+        pinata.append(Box((3, 7 + i * 1.4, 5.5), (12, 8.4 + i * 1.4, 10.5), col, 'solid'))
+    pinata += [Box((10, 11, 6.5), (13, 17, 9.5), '#ff6fd8', 'solid'), Box((10.5, 15, 6.6), (16, 18, 9.4), '#ffcf3a', 'solid'),
+               Box((11, 18, 7.2), (12, 20, 8), '#5be37c', 'solid'), Box((11, 18, 8.4), (12, 20, 9.2), '#5be37c', 'solid'),
+               Box((14.8, 16.5, 6.5), (15.4, 17.1, 6.7), '#1a1b26', 'flat'), Box((14.8, 16.5, 9.3), (15.4, 17.1, 9.5), '#1a1b26', 'flat')]
+    for (x, z) in [(3.5, 6), (3.5, 9), (10, 6), (10, 9)]:
+        pinata.append(Box((x, 3, z), (x + 1.4, 7, z + 1.2), P_[int(x) % 5], 'solid'))
+    for k in range(3):
+        pinata.append(Box((1, 9 + k * 1.6, 7.5), (3, 9.6 + k * 1.6, 8.5), P_[k + 1], 'flat'))
+    pinata.append(Box((7.6, 14, 7.6), (8.4, 32, 8.4), '#e8e8f0', 'flat'))
+    write(out, G + 'pinata_3d', pinata, scale=H)
+    board, stand = '#f4f4fa', '#c9ccd8'
+    write(out, G + 'diving_board_3d', [Box((0, 0, 5), (3, 6, 11), stand, 'metal'), Box((0, 6, 6), (16, 7, 10), board, 'solid'),
+                                         Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
+    write(out, G + 'swing_frame', [Box((0, 0, 7), (1.5, 30, 9), '#a8743a', 'wood'), Box((14.5, 0, 7), (16, 30, 9), '#a8743a', 'wood'),
+                                     Box((0, 30, 6.5), (16, 32, 9.5), '#8b5a2b', 'wood')], scale=H)
+    write(out, G + 'swing_seat', [Box((4, 0, 6.5), (12, 1, 9.5), '#e03a3a', 'solid'), Box((4.5, 1, 7.7), (5.1, 24, 8.3), '#e8e8f0', 'flat'),
+                                    Box((10.9, 1, 7.7), (11.5, 24, 8.3), '#e8e8f0', 'flat')], scale=H)
+    scare = [Box((7.3, 0, 7.3), (8.7, 26, 8.7), '#8b5a2b', 'wood'), Box((0, 17, 7.3), (16, 18.4, 8.7), '#8b5a2b', 'wood'),
+             Box((4, 12, 6), (12, 20, 10), '#5b8fd0', 'solid'), Box((1, 16.6, 6.6), (4, 19, 9.4), '#5b8fd0', 'solid'),
+             Box((12, 16.6, 6.6), (15, 19, 9.4), '#5b8fd0', 'solid'), Box((4, 9, 6.4), (12, 12, 9.6), '#7a5a3a', 'solid')]
+    scare += ball(8, 24, 8, 3.6, '#ec7a1c', 'solid', glow=None)
+    scare += [Box((6.4, 24.4, 4.3), (7.4, 25.6, 4.5), '#ffd84a', 'flat', glow=12), Box((8.6, 24.4, 4.3), (9.6, 25.6, 4.5), '#ffd84a', 'flat', glow=12),
+              Box((6.4, 22.4, 4.3), (9.6, 23.2, 4.5), '#ffd84a', 'flat', glow=12),
+              Box((2.5, 27.2, 2.5), (13.5, 27.8, 13.5), '#c9a24a', 'wood'), Box((5, 27.8, 5), (11, 30.5, 11), '#c9a24a', 'wood'),
+              Box((4.9, 27.8, 4.9), (11.1, 28.6, 11.1), '#c8322e', 'flat')]
+    write(out, G + 'scarecrow_3d', scare, scale=H)
+    sand, sand2 = '#ecd08a', '#d6b46a'
+    castle = [Box((0, 0, 0), (16, 1, 16), sand2, 'solid'), Box((2, 1, 2), (14, 7, 14), sand, 'solid'),
+              Box((5, 7, 5), (11, 13, 11), sand, 'solid'), Box((7.6, 13, 7.6), (8.4, 17, 8.4), '#8b5a2b', 'flat'),
+              Box((8.4, 15, 7.8), (11.5, 16.8, 8.2), '#e03a3a', 'flat'), Box((6.5, 1, 1.8), (9.5, 4.5, 2.1), sand2, 'flat')]
+    for (x, z) in [(1, 1), (12, 1), (1, 12), (12, 12)]:
+        castle.append(Box((x, 1, z), (x + 3, 10, z + 3), sand, 'solid'))
+        castle.append(Box((x - 0.2, 10, z - 0.2), (x + 3.2, 11, z + 3.2), sand2, 'solid'))
+    for x in (2.5, 5.5, 8.5, 11.5):
+        castle.append(Box((x, 7, 1.8), (x + 1.5, 8, 2.8), sand, 'solid'))
+    write(out, G + 'sand_castle_3d', castle, scale=H)
+    write(out, G + 'ttt_board', [Box((0, 0, 0), (16, 0.6, 16), '#c49a5a', 'wood'), Box((5, 0.6, 0.5), (5.6, 0.8, 15.5), '#5a3a1e', 'flat'),
+                                  Box((10.4, 0.6, 0.5), (11, 0.8, 15.5), '#5a3a1e', 'flat'), Box((0.5, 0.6, 5), (15.5, 0.8, 5.6), '#5a3a1e', 'flat'),
+                                  Box((0.5, 0.6, 10.4), (15.5, 0.8, 11), '#5a3a1e', 'flat')], scale=H)
+    write(out, G + 'ttt_x', [Box((1, 0, 7), (15, 1, 9), '#e03a3a', 'flat', rotation={"angle": 45, "axis": "y", "origin": [8, 0, 8]}),
+                             Box((7, 0, 1), (9, 1, 15), '#e03a3a', 'flat', rotation={"angle": 45, "axis": "y", "origin": [8, 0, 8]})], scale=H)
+    o = []
+    for (x0, z0, x1, z1) in [(3, 2, 13, 4), (3, 12, 13, 14), (2, 3, 4, 13), (12, 3, 14, 13)]:
+        o.append(Box((x0, 0, z0), (x1, 1, z1), '#3c6ae0', 'flat'))
+    write(out, G + 'ttt_o', o, scale=H)
+    dj = [Box((0, 0, 4), (4, 14, 12), '#2a2a36', 'solid'), Box((12, 0, 4), (16, 14, 12), '#2a2a36', 'solid'),
+          Box((0.6, 9, 3.6), (3.4, 12, 4), '#5a6078', 'flat'), Box((12.6, 9, 3.6), (15.4, 12, 4), '#5a6078', 'flat'),
+          Box((0.4, 2, 3.6), (3.6, 7, 4), '#5a6078', 'flat'), Box((12.4, 2, 3.6), (15.6, 7, 4), '#5a6078', 'flat'),
+          Box((4, 0, 5), (12, 8, 11), '#3a2a52', 'solid'), Box((4, 7.4, 4.8), (12, 8.2, 5.2), '#b266ff', 'flat', glow=15),
+          Box((4.6, 8, 6), (7.6, 8.6, 10), '#1a1b26', 'flat'), Box((8.4, 8, 6), (11.4, 8.6, 10), '#1a1b26', 'flat'),
+          Box((5.6, 8.6, 7.5), (6.6, 8.8, 8.5), '#e03a3a', 'flat', glow=12), Box((9.4, 8.6, 7.5), (10.4, 8.8, 8.5), '#5b9dff', 'flat', glow=12)]
+    write(out, G + 'dj_booth_3d', dj, scale=H)
+    write(out, G + 'jetpack_3d', [Box((3, 3, 6), (7, 13, 10), '#c8322e', 'solid'), Box((9, 3, 6), (13, 13, 10), '#c8322e', 'solid'),
+                                    Box((7, 6, 7), (9, 11, 9), '#5a6078', 'metal'), Box((3.5, 1.5, 6.5), (6.5, 3, 9.5), '#5a6078', 'metal'),
+                                    Box((9.5, 1.5, 6.5), (12.5, 3, 9.5), '#5a6078', 'metal'), Box((3, 9, 5.8), (7, 10, 6.1), '#e8e8f0', 'flat'),
+                                    Box((9, 9, 5.8), (13, 10, 6.1), '#e8e8f0', 'flat')], scale=H)
 
     # the disco ball (texture used by sprites.py's model): mirror tiles
     t = Image.new('RGBA', (16, 16))
