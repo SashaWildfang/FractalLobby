@@ -227,8 +227,8 @@ final class MoreGadgets implements Listener {
                 fx.tagged(arrow, "boom");
                 fx.sound(eye, "entity.arrow.shoot", 1f, 0.8f);
             }
-            case "pong" -> bouncyBall(player, "gadget/pong_ball", Material.SLIME_BALL, 0.5f, 0.55, "block.note_block.pling");
-            case "beach_ball" -> bouncyBall(player, "gadget/beach_ball_3d", Material.SNOWBALL, 1.1f, 0.42, "entity.slime.jump_small");
+            case "pong" -> bouncyBall(player, "gadget/pong_ball", Material.SLIME_BALL, 0.8f, 0.2, 0.75, "block.note_block.pling");
+            case "beach_ball" -> bouncyBall(player, "gadget/beach_ball_3d", Material.SNOWBALL, 1.1f, 0.45, 0.62, "entity.slime.jump_small");
             case "rush_pearl" -> {
                 if (fx.parkour(player)) return true;
                 EnderPearl pearl = player.launchProjectile(EnderPearl.class, look.clone().multiply(1.7));
@@ -524,52 +524,126 @@ final class MoreGadgets implements Listener {
         fx.sound(end, "entity.lightning_bolt.impact", 0.5f, 1.8f);
     }
 
-    /** A ball anyone can hit (right-click it): it flies, bounces off walls and the ground, and slows down. */
-    private void bouncyBall(Player player, String modelPath, Material fallback, float scale, double bounciness, String hitSound) {
+    /**
+     * A ball anyone can play with: hit it (left- or right-click) to send it where you look, harder when sprinting, or
+     * just run into it. It starts in the air, falls, bounces off the ground and walls, rolls to a stop, and spins as it goes.
+     */
+    private void bouncyBall(Player player, String modelPath, Material fallback, float scale, double radius, double bounce, String hitSound) {
         Placed p = place(player);
-        Location at = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(1.5));
-        ItemDisplay ball = keep(p, model(at, modelPath, fallback, scale, 0));
-        Interaction hitbox = box(p, at.clone().add(0, -scale / 2, 0), scale + 0.3f, scale + 0.3f, null);
-        Vector[] velocity = {player.getEyeLocation().getDirection().multiply(0.35)};
-        clicks.put(hitbox.getUniqueId(), hitter -> {
-            velocity[0] = hitter.getEyeLocation().getDirection().multiply(0.5).add(new Vector(0, 0.25, 0));
-            fx.sound(ball.getLocation(), hitSound, 1f, 1.2f);
+        Location eye = player.getEyeLocation();
+        Vector dir = eye.getDirection().setY(0);
+        if (dir.lengthSquared() < 1e-4) dir = new Vector(0, 0, 1);
+        dir.normalize();
+        Location start = eye.clone().add(dir.clone().multiply(1.5)).add(0, 0.4, 0);
+        if (!start.getBlock().isPassable()) start = eye.clone().add(0, 0.6, 0);
+        ItemDisplay ball = keep(p, model(start, modelPath, fallback, scale, 0));
+        float size = (float) (radius * 2 + 0.35);
+        Interaction hitbox = box(p, start.clone().add(0, -size / 2, 0), size, size, null);
+        Vector[] velocity = {dir.clone().multiply(0.22).setY(0.32)};     // pops up out of your hands
+        int[] now = {0}, lastHit = {-10};
+        Map<UUID, Integer> bumped = new HashMap<>();
+        Consumer<Player> hit = hitter -> {
+            if (now[0] - lastHit[0] < 4) return;
+            lastHit[0] = now[0];
+            Vector look = hitter.getEyeLocation().getDirection();
+            Vector flat = look.clone().setY(0);
+            if (flat.lengthSquared() < 1e-4) flat = ball.getLocation().toVector().subtract(hitter.getLocation().toVector()).setY(0);
+            if (flat.lengthSquared() < 1e-4) flat = new Vector(0, 0, 1);
+            double power = hitter.isSprinting() ? 0.85 : 0.6;
+            velocity[0] = flat.normalize().multiply(power).setY(Math.max(0.32, 0.3 + look.getY() * power));
+            fx.sound(ball.getLocation(), hitSound, 1f, hitter.isSprinting() ? 0.9f : 1.2f);
             ball.getWorld().spawnParticle(Particle.CRIT, ball.getLocation(), 8, 0.2, 0.2, 0.2, 0.2);
-        });
-        float[] spin = {0};
-        p.task = fx.every(600, t -> {
+        };
+        clicks.put(hitbox.getUniqueId(), hit);
+        org.joml.Quaternionf turn = new org.joml.Quaternionf();
+        World world = start.getWorld();
+        long[] seen = {0};
+        p.task = fx.every(900, t -> {
+            now[0] = t;
+            // a left-click on the hitbox, in case the attack event didn't reach us
+            Interaction.PreviousInteraction attack = hitbox.getLastAttack();
+            if (attack != null && attack.getTimestamp() != seen[0]) {
+                boolean fresh = seen[0] != 0 || t > 1;
+                seen[0] = attack.getTimestamp();
+                Player by = plugin.getServer().getPlayer(attack.getPlayer().getUniqueId());
+                if (fresh && by != null) hit.accept(by);
+            }
             Location pos = ball.getLocation();
             Vector v = velocity[0];
-            v.setY(v.getY() - 0.04);
-            Location next = pos.clone().add(v);
-            Block block = next.getBlock();
-            if (!block.isPassable()) {
-                // bounce off whichever way we hit it
-                if (!pos.clone().add(v.getX(), 0, 0).getBlock().isPassable()) v.setX(-v.getX() * bounciness * 1.4);
-                if (!pos.clone().add(0, v.getY(), 0).getBlock().isPassable()) {
-                    v.setY(Math.abs(v.getY()) > 0.12 ? -v.getY() * bounciness * 1.5 : 0);
+            v.setY(v.getY() - 0.045);
+            v.multiply(0.99);
+            double x = pos.getX(), y = pos.getY(), z = pos.getZ();
+            boolean bonk = false;
+            // across: stop at walls (the ball's edge, not its middle) and bounce back
+            double nx = x + v.getX();
+            if (solid(world, nx + Math.signum(v.getX()) * radius, y, z)) {
+                v.setX(-v.getX() * bounce);
+                nx = x;
+                bonk = Math.abs(v.getX()) > 0.08;
+            }
+            double nz = z + v.getZ();
+            if (solid(world, nx, y, nz + Math.signum(v.getZ()) * radius)) {
+                v.setZ(-v.getZ() * bounce);
+                nz = z;
+                bonk |= Math.abs(v.getZ()) > 0.08;
+            }
+            // up and down: sit on top of the ground, never in it
+            double ny = y + v.getY();
+            boolean grounded = false;
+            if (v.getY() <= 0) {
+                Block under = world.getBlockAt((int) Math.floor(nx), (int) Math.floor(ny - radius), (int) Math.floor(nz));
+                if (!under.isPassable()) {
+                    double top = under.getBoundingBox().getHeight() > 0 ? under.getBoundingBox().getMaxY() : under.getY() + 1;
+                    ny = top + radius;
+                    if (v.getY() < -0.14) {
+                        v.setY(-v.getY() * bounce);
+                        bonk = true;
+                    } else {
+                        v.setY(0);
+                        grounded = true;
+                    }
                     v.setX(v.getX() * 0.9);
                     v.setZ(v.getZ() * 0.9);
                 }
-                if (!pos.clone().add(0, 0, v.getZ()).getBlock().isPassable()) v.setZ(-v.getZ() * bounciness * 1.4);
-                next = pos.clone().add(v);
-                if (!next.getBlock().isPassable()) next = pos;
-                if (v.length() > 0.15) fx.sound(pos, "entity.slime.squish_small", 0.5f, 1.4f);
+            } else if (solid(world, nx, ny + radius, nz)) {
+                v.setY(-v.getY() * 0.4);
+                ny = y;
             }
-            v.setX(v.getX() * 0.97).setZ(v.getZ() * 0.97);
+            if (grounded) {                       // rolling to a stop
+                v.setX(v.getX() * 0.94);
+                v.setZ(v.getZ() * 0.94);
+                if (Math.abs(v.getX()) < 0.004 && Math.abs(v.getZ()) < 0.004) v.setX(0).setZ(0);
+            }
+            if (bonk) fx.sound(pos, "entity.slime.squish_small", 0.6f, 1.3f);
+            Location next = new Location(world, nx, ny, nz);
             ball.teleport(next);
-            hitbox.teleport(next.clone().add(0, -scale / 2, 0));
-            spin[0] += (float) (v.length() * 0.6);
+            hitbox.teleport(next.clone().add(0, -size / 2, 0));
+            // spin the way it's going
+            double moved = Math.hypot(v.getX(), v.getZ());
+            if (moved > 0.002) turn.premul(new org.joml.Quaternionf().rotateAxis((float) (moved / radius), (float) v.getZ(), 0f, (float) -v.getX()));
             ball.setInterpolationDelay(0);
             ball.setInterpolationDuration(2);
-            ball.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(spin[0], 1, 0, 0), new Vector3f(scale), new AxisAngle4f()));
-            // bumping into it hits it too
-            for (Player near : next.getWorld().getPlayers()) {
-                if (near.getLocation().add(0, 1, 0).distanceSquared(next) < 0.8 && v.lengthSquared() < 0.09) {
-                    velocity[0] = near.getLocation().getDirection().setY(0).normalize().multiply(0.35).setY(0.25);
-                }
+            ball.setTransformation(new Transformation(new Vector3f(), new org.joml.Quaternionf(turn), new Vector3f(scale), new org.joml.Quaternionf()));
+            // running into it kicks it along
+            for (Player runner : world.getPlayers()) {
+                Location feet = runner.getLocation();
+                double dx = nx - feet.getX(), dz = nz - feet.getZ();
+                if (dx * dx + dz * dz > (radius + 0.4) * (radius + 0.4) || ny < feet.getY() - radius || ny > feet.getY() + 1.9 + radius) continue;
+                Integer last = bumped.get(runner.getUniqueId());
+                if (last != null && t - last < 6) continue;
+                bumped.put(runner.getUniqueId(), t);
+                Vector away = new Vector(dx, 0, dz);
+                if (away.lengthSquared() < 1e-4) away = feet.getDirection().setY(0);
+                double power = runner.isSprinting() ? 0.65 : 0.4;
+                velocity[0] = away.normalize().multiply(power).setY(0.25);
+                fx.sound(next, hitSound, 0.7f, 1.4f);
             }
+            if (player.isOnline() && player.getWorld() == world && player.getLocation().distanceSquared(next) > 64 * 64) fx.later(0, () -> clear(player.getUniqueId()));
         }, () -> clear(player.getUniqueId()));
+    }
+
+    private static boolean solid(World world, double x, double y, double z) {
+        return !world.getBlockAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z)).isPassable();
     }
 
     private void ghost(Player player) {
@@ -1063,6 +1137,15 @@ final class MoreGadgets implements Listener {
     }
 
     // ---------------------------------------------------------------- clicks on placed things
+
+    /** Hitting (left-click) a placed thing does what a right-click does: hit the ball, swing at the piñata... */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onAttack(io.papermc.paper.event.player.PrePlayerAttackEntityEvent event) {
+        Consumer<Player> click = clicks.get(event.getAttacked().getUniqueId());
+        if (click == null) return;
+        event.setCancelled(true);
+        click.accept(event.getPlayer());
+    }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onClick(PlayerInteractEntityEvent event) {

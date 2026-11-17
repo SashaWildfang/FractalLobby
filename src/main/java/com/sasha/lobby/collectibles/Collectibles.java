@@ -255,7 +255,10 @@ public final class Collectibles implements Listener {
                 data.equip(id, slotKey(item.piece()), item.id());
                 if (item.piece() == Catalog.Piece.HELMET) data.equip(id, "hat", null);
             }
-            case GADGET, EMOTE -> data.equip(id, "gadget", item.id());   // one or the other in the hotbar
+            case GADGET, EMOTE -> {
+                effects.stopGadget(player);                                  // the old one's show ends right away
+                data.equip(id, "gadget", item.id());                         // one or the other in the hotbar
+            }
             case CLOAK -> data.equip(id, "cloak", item.id());
             default -> {
             }
@@ -282,6 +285,7 @@ public final class Collectibles implements Listener {
     }
 
     private void takeOff(Player player, Category category) {
+        if (category == Category.GADGET || category == Category.EMOTE) effects.stopGadget(player);
         if (category == Category.SUIT) {
             for (Catalog.Piece piece : Catalog.Piece.values()) data().equip(player.getUniqueId(), slotKey(piece), null);
         } else {
