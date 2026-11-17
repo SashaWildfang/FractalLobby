@@ -94,7 +94,9 @@ public final class Vault implements Listener {
             despawn();
             World world = location.getWorld();
             Location centre = location.clone().add(0, 0.5, 0);
-            centre.setYaw(location.getYaw());   // the chest's front (lock) faces where players stand
+            // the chest's front (lock) faces where players stand: an item display shows its model turned half round,
+            // so the display itself faces the other way
+            centre.setYaw(location.getYaw() + 180);
             centre.setPitch(0);
             body = world.spawn(centre, ItemDisplay.class, display -> setup(display, model(BODY)));
             lid = world.spawn(centre, ItemDisplay.class, display -> setup(display, model(LID)));

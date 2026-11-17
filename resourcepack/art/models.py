@@ -335,8 +335,7 @@ def build(out):
            Box((1.8, 11, 2.8), (3.2, 13.2, 4.2), GOLD_, 'metal'), Box((12.8, 11, 2.8), (14.2, 13.2, 4.2), GOLD_, 'metal'),
            Box((1.8, 11, 11.8), (3.2, 13.2, 13.2), GOLD_, 'metal'), Box((12.8, 11, 11.8), (14.2, 13.2, 13.2), GOLD_, 'metal'),
            Box((7.1, 11, 2.9), (8.9, 14.9, 13.1), GOLD_, 'metal'),
-           Box((7, 9.6, 13.1), (9, 11.6, 13.7), GOLD_, 'metal'),                          # the latch over the lock
-           Box((7.4, 14.9, 7.4), (8.6, 15.6, 8.6), RUNE, 'glow', glow=15)]
+           Box((7, 9.6, 13.1), (9, 11.6, 13.7), GOLD_, 'metal')]                          # the latch over the lock
     write(out, 'mystery/vault_lid', lid, scale=H)
 
     # ------------------------------------------------ 1.41 gadget models (placed in the world or flying)
