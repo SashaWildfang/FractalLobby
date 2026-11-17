@@ -425,14 +425,11 @@ final class Effects implements Listener {
                 sound(eye, "entity.chicken.egg", 0.6f, 1.6f);
             }
             case "bubble_wand" -> {
-                sound(eye, "block.bubble_column.upwards_inside", 0.8f, 1.2f);
-                every(36, t -> {
-                    Location at = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(1 + t * 0.14));
-                    world.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 4, 0.2, 0.2, 0.2, 0,
-                            new Particle.DustTransition(Color.fromRGB(0xBFEFFF), Color.fromRGB(0xFFB8F0), 1.6f));
-                    world.spawnParticle(Particle.BUBBLE_POP, at, 3, 0.25, 0.25, 0.25, 0.02);
-                    if (t % 6 == 0) sound(at, "block.bubble_column.bubble_pop", 0.5f, 1.4f);
-                }, null);
+                sound(eye, "block.bubble_column.upwards_inside", 0.8f, 1.5f);
+                for (int i = 0; i < 7; i++) {
+                    float size = i == 6 ? 1.5f : 0.4f + ThreadLocalRandom.current().nextFloat() * 0.55f;   // the last one is a big one
+                    later(i * 3, () -> blowBubble(player, size));
+                }
             }
             case "firework_launcher" -> {
                 sound(eye, "entity.firework_rocket.launch", 1f, 0.8f);
@@ -696,6 +693,84 @@ final class Effects implements Listener {
         sound(player.getLocation(), "entity.chicken.egg", 0.5f, 0.6f);
         every(600, t -> {
         }, () -> popBalloon(id, true));
+    }
+
+    /**
+     * One soap bubble from the wand: it swells out of the ring, drifts off and slowly up, wobbling and squishing as it
+     * goes, and pops (on a wall, on someone, or when its time is up) with a splash of droplets.
+     */
+    private void blowBubble(Player player, float size) {
+        if (!player.isOnline()) return;
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        if (right.lengthSquared() < 1e-4) right = new Vector(1, 0, 0);
+        right.normalize();
+        Location from = eye.clone().add(look.clone().multiply(1.1)).add(right.clone().multiply(0.3)).add(0, -0.2, 0);
+        World world = from.getWorld();
+        ItemDisplay bubble = world.spawn(from, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.GLASS_PANE, "gadget/bubble"));
+            d.setBillboard(Display.Billboard.CENTER);
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setTeleportDuration(2);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.05f), new AxisAngle4f()));
+        });
+        tagged(bubble, "bubble");
+        later(1, () -> {
+            if (!bubble.isValid()) return;
+            bubble.setInterpolationDelay(0);
+            bubble.setInterpolationDuration(5);
+            bubble.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+        });
+        sound(from, "entity.axolotl.splash", 0.25f, 1.9f - size * 0.3f);
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Vector velocity = look.clone().multiply(0.13 + r.nextDouble() * 0.07).add(new Vector(rand(0.03), 0.015 + r.nextDouble() * 0.02, rand(0.03)));
+        double phase = r.nextDouble() * Math.PI * 2;
+        int life = (int) (45 + r.nextInt(45) + size * 30);
+        Vector side = right;
+        every(life, t -> {
+            if (!bubble.isValid()) return;
+            Location at = bubble.getLocation();
+            velocity.multiply(0.955).add(new Vector(0, 0.0035, 0));          // slows down and floats up
+            Location next = at.clone().add(velocity).add(side.clone().multiply(Math.sin(t * 0.22 + phase) * 0.025))
+                    .add(0, Math.sin(t * 0.17 + phase) * 0.01, 0);
+            if (!next.getBlock().isPassable()) {
+                popBubble(bubble, size);
+                return;
+            }
+            for (Player near : world.getPlayers()) {
+                if (near == player && t < 15) continue;
+                Location body = near.getLocation().add(0, 1, 0);
+                if (Math.abs(body.getY() - next.getY()) < 1.1 && Math.hypot(body.getX() - next.getX(), body.getZ() - next.getZ()) < 0.35 + size * 0.4) {
+                    popBubble(bubble, size);
+                    return;
+                }
+            }
+            bubble.teleport(next);
+            if (t > 5 && t % 3 == 0) {                                        // a gentle squish as it wobbles
+                float squish = (float) Math.sin(t * 0.35 + phase) * 0.07f;
+                bubble.setInterpolationDelay(0);
+                bubble.setInterpolationDuration(3);
+                bubble.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(),
+                        new Vector3f(size * (1 + squish), size * (1 - squish), size), new AxisAngle4f()));
+            }
+        }, () -> popBubble(bubble, size));
+    }
+
+    private void popBubble(ItemDisplay bubble, float size) {
+        if (!bubble.isValid()) return;
+        Location at = bubble.getLocation();
+        bubble.setInterpolationDelay(0);
+        bubble.setInterpolationDuration(2);
+        bubble.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size * 1.25f), new AxisAngle4f()));
+        later(2, bubble::remove);
+        World world = at.getWorld();
+        world.spawnParticle(Particle.BUBBLE_POP, at, (int) (6 + size * 10), size * 0.3, size * 0.3, size * 0.3, 0.04);
+        world.spawnParticle(Particle.SPLASH, at, (int) (4 + size * 8), size * 0.25, size * 0.25, size * 0.25, 0);
+        world.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 3, size * 0.2, size * 0.2, size * 0.2, 0,
+                new Particle.DustTransition(Color.fromRGB(0xBFEFFF), Color.fromRGB(0xFFB8F0), 0.7f));
+        sound(at, "block.bubble_column.bubble_pop", 0.7f, 1.9f - size * 0.5f);
     }
 
     /** Takes the player's balloon away (with a pop if it burst). */

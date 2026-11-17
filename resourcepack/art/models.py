@@ -283,6 +283,25 @@ def build(out):
             Box((7.75, 2.6, 7.75), (8.25, 4.3, 8.25), '#f4f4f4', 'flat'), Box((8.25, 1.2, 7.75), (8.75, 2.8, 8.25), '#f4f4f4', 'flat'),
             Box((7.75, -0.4, 7.75), (8.25, 1.4, 8.25), '#f4f4f4', 'flat')]
     write(out, 'gadget/balloon_3d', bal, scale=H, tints=True)
+    # ------------------------------------------------ a soap bubble (a flat sprite the plugin turns to face you): a thin
+    # rainbow rim, a see-through middle and a shine
+    from PIL import Image as _I
+    bub = _I.new('RGBA', (16, 16), (0, 0, 0, 0))
+    RIM = [(150, 235, 255), (190, 170, 255), (255, 160, 225), (255, 225, 140), (150, 240, 190)]
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if d > 7.4:
+                continue
+            if d > 6.2:
+                a = (math.degrees(math.atan2(y - 7.5, x - 7.5)) + 360 + 30) % 360
+                bub.putpixel((x, y), RIM[int(a // 72) % 5] + (235,))
+            else:
+                bub.putpixel((x, y), (200, 240, 255, 40 if d < 4.5 else 70))
+    for (x, y, al) in [(4, 3, 255), (5, 3, 255), (3, 4, 255), (4, 4, 255), (3, 5, 200), (6, 3, 160), (11, 12, 150), (12, 11, 150)]:
+        bub.putpixel((x, y), (255, 255, 255, al))
+    flat_item(out, 'gadget/bubble', bub)
+
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
     BOX_COLOURS = {1: '#9C8DB8', 2: '#5BE37C', 3: '#7FA8FF', 4: '#C77DFF', 5: '#FFB347'}
     QMARK = [".###.", "#...#", "...#.", "..#..", ".....", "..#.."]
