@@ -30,7 +30,7 @@ B, BLACK, WHITE, GOLD, PURPLE = '#1c1c24', '#1c1c24', '#f5f5f5', '#ffd27f', '#b2
 
 HATS = {
     'top_hat': [(-5.5, -0.2, -5.5, 5.5, 0.6, 5.5, '#1c1c24'), (-3.5, 0.6, -3.5, 3.5, 6, 3.5, '#24242e'),
-                (-3.6, 0.6, -3.6, 3.6, 1.6, 3.6, PURPLE)],
+                (-3.75, 0.6, -3.75, 3.75, 1.6, 3.75, PURPLE)],
     'beanie': [(-4.6, -2.6, -4.6, 4.6, -0.6, 4.6, '#2e8c85'), (-4.4, -0.6, -4.4, 4.4, 1.8, 4.4, '#3fb8af'),
                (-4.45, 0.2, -4.45, 4.45, 0.9, 4.45, '#f5f5f5'), (-3.7, 1.8, -3.7, 3.7, 2.8, 3.7, '#3fb8af'),
                (-2.6, 2.8, -2.6, 2.6, 3.4, 2.6, '#3fb8af'), (-1.5, 3.4, -1.5, 1.5, 5.8, 1.5, '#fafafa'),
@@ -241,7 +241,64 @@ def propeller(out_root):
               open(f'{out_root}/assets/fractal/items/hat/propeller.json', 'w'))
 
 
+# Suit helmets with shapes armour can't have (worn like hats): a hood around the face, plus ears, eyes or a beak.
+def hood(col, trim=None):
+    t = trim or col
+    return [(-4.5, 0, -4.5, 4.5, 0.7, 4.5, col), (-4.5, -8.4, -4.5, -4.0, 0, 4.5, col), (4.0, -8.4, -4.5, 4.5, 0, 4.5, col),
+            (-4.0, -8.4, 4.0, 4.0, 0, 4.5, col), (-4.0, -1.6, -4.6, 4.0, 0, -4.0, t), (-4.0, -8.4, -4.6, -3.2, -1.6, -4.0, t),
+            (3.2, -8.4, -4.6, 4.0, -1.6, -4.0, t), (-3.2, -8.4, -4.6, 3.2, -7.4, -4.0, t)]
+
+
+HATS['suit_bunny'] = hood('#f6f2f2') + [
+    (-3.4, 0.7, -0.7, -1.4, 7.6, 0.7, '#f6f2f2'), (-3.0, 1.4, -0.85, -1.8, 6.9, -0.7, '#f6b8d2'),
+    (1.4, 0.7, -0.7, 3.4, 5.2, 0.7, '#f6f2f2'), (1.8, 1.4, -0.85, 3.0, 4.8, -0.7, '#f6b8d2'),
+    (1.4, 5.2, -0.7, 3.4, 6.6, 3.0, '#f6f2f2'), (-0.9, -6.6, -4.75, 0.9, -5.6, -4.55, '#f6b8d2')]
+HATS['suit_frog'] = hood('#4fbf3c', '#2e8a24') + [
+    (-3.8, 0.7, -3.8, -1.0, 3.2, -1.0, '#ffffff'), (-3.0, 1.2, -3.95, -1.8, 2.6, -3.8, '#1c1c24'),
+    (1.0, 0.7, -3.8, 3.8, 3.2, -1.0, '#ffffff'), (1.8, 1.2, -3.95, 3.0, 2.6, -3.8, '#1c1c24'),
+    (-3.2, -7.9, -4.75, 3.2, -7.4, -4.55, '#c8f0a0')]
+HATS['suit_chick'] = hood('#ffe14d', '#f2b82a') + [
+    (-1.2, -2.8, -6.0, 1.2, -1.6, -4.6, '#ff8a1f'), (-0.4, 0.7, -1.0, 0.4, 2.6, 0.2, '#f2b82a'),
+    (-0.4, 0.7, 0.2, 0.4, 2.0, 1.4, '#f2b82a')]
+MATERIALS.update({'suit_bunny': {'*': 'fur'}, 'suit_frog': {'#ffffff': 'cloth', '#1c1c24': 'cloth', '*': 'felt'},
+                  'suit_chick': {'#ff8a1f': 'cloth', '*': 'fur'}})
+
+VOX_PATTERN = {'knit': 'knit', 'felt': 'flat', 'cloth': 'solid', 'stars': 'solid', 'leather': 'solid', 'fur': 'fluffy',
+               'snow': 'fluffy', 'metal': 'metal', 'shine': 'metal', 'straw': 'wood', 'bone': 'solid', 'scales': 'brick',
+               'leaf': 'solid', 'pumpkin': 'stripes'}
+
+
 def build(out_root):
+    """Every hat as a blocky model with its own pixels (2 per head pixel), in the game's style."""
+    from vox import Box, write
+    for d in ('textures/item/hat', 'models/item/hat', 'items/hat'):
+        os.makedirs(f'{out_root}/assets/fractal/{d}', exist_ok=True)
+    for name, boxes in HATS.items():
+        mats = MATERIALS.get(name.replace('_base', ''), {})
+        vboxes, lo, hi = [], [99] * 3, [-99] * 3
+        for (x0, y0, z0, x1, y1, z1, c) in boxes:
+            f = [round(max(-16, min(32, v)), 3) for v in (8 + x0 * U, TOP + y0 * U, 8 + z0 * U)]
+            t = [round(max(-16, min(32, v)), 3) for v in (8 + x1 * U, TOP + y1 * U, 8 + z1 * U)]
+            for k in range(3):
+                lo[k], hi[k] = min(lo[k], f[k]), max(hi[k], t[k])
+            vboxes.append(Box(f, t, c, VOX_PATTERN.get(mats.get(c, mats.get('*', 'cloth')), 'solid')))
+        size = max(hi[k] - lo[k] for k in range(3))
+        s = round(min(0.85, 14.0 / size), 3)
+        cy = (lo[1] + hi[1]) / 2 - 8
+        display = {
+            "gui": {"rotation": [25, 200, 0], "translation": [0, round(-cy * s, 2), 0], "scale": [s, s, s]},
+            "ground": {"rotation": [0, 0, 0], "translation": [0, round(-cy * s * 0.5, 2), 0], "scale": [s * 0.5] * 3},
+            "fixed": {"rotation": [0, 180, 0], "translation": [0, round(-cy * s, 2), 0], "scale": [s, s, s]},
+            "head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+            "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, round(-cy * 0.4, 2), 0], "scale": [0.4, 0.4, 0.4]},
+            "firstperson_righthand": {"rotation": [0, 225, 0], "translation": [0, round(-cy * 0.4, 2), 0], "scale": [0.4, 0.4, 0.4]},
+        }
+        write(out_root, f'hat/{name}', vboxes, scale=U / 2, display=display)
+    propeller(out_root)
+    return list(HATS)
+
+
+def _old_build(out_root):
     """Writes every hat's texture, model and item definition under out_root/assets/fractal."""
     for d in ('textures/item/hat', 'models/item/hat', 'items/hat'):
         os.makedirs(f'{out_root}/assets/fractal/{d}', exist_ok=True)

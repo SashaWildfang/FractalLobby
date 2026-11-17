@@ -10,6 +10,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 S = 8
+PIXEL = False   # True: crisp pixel art (no smoothing, flat bands, dark outline)
+BANDS = 0   # >0: gradients become this many flat bands (pixel-art shading)
 
 
 def hexc(h):
@@ -95,7 +97,10 @@ class Canvas:
                 cx, cy = bbox[0] + fx * bw, bbox[1] + fy * bh
                 r = fr * max(bw, bh)
                 t = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2) / max(1e-6, r)
-            t = np.clip(t, 0, 1)[..., None]
+            t = np.clip(t, 0, 1)
+            if BANDS:
+                t = np.minimum(np.floor(t * BANDS), BANDS - 1) / max(1, BANDS - 1)
+            t = t[..., None]
             a, b = np.array(rgb(c0), np.float32), np.array(rgb(c1), np.float32)
             arr = a + (b - a) * t
             out = np.concatenate([arr, np.full((H, W, 1), 255, np.float32)], axis=2).astype(np.uint8)
@@ -138,6 +143,8 @@ class Canvas:
         return self.shape('poly', pts, colour, opacity=opacity)
 
     def glow(self, cx, cy, r, colour, opacity=0.6):
+        if PIXEL:
+            return
         m = self.mask('ellipse', (cx - r, cy - r, cx + r, cy + r)).filter(ImageFilter.GaussianBlur(r * S / 2.5))
         self.paint(m, colour, opacity)
 
@@ -148,7 +155,11 @@ class Canvas:
 
     # ---------------------------------------------------------------- finishing
     def done(self, outline=True, keep_soft=False):
-        small = self.img.convert('RGBa').resize((self.w, self.h), Image.LANCZOS).convert('RGBA')
+        if PIXEL:
+            small = self.img.resize((self.w, self.h), Image.NEAREST)
+            keep_soft = False
+        else:
+            small = self.img.convert('RGBa').resize((self.w, self.h), Image.LANCZOS).convert('RGBA')
         arr = np.array(small).astype(np.int32)
         a = arr[..., 3]
         if keep_soft:
@@ -176,7 +187,7 @@ class Canvas:
                             if 0 <= y + dy < H and 0 <= x + dx < W and solid[y + dy, x + dx]]
                     if near:
                         c = np.mean([arr[p][:3] for p in near], axis=0)
-                        d = dark(tuple(int(v) for v in c), 0.62)
+                        d = dark(tuple(int(v) for v in c), 0.85 if PIXEL else 0.62)
                         out[y, x] = list(d) + [255]
             arr = out
         return Image.fromarray(arr.clip(0, 255).astype(np.uint8), 'RGBA')

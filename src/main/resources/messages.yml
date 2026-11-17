@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 35
+messages-version: 36
 
 theme:
   primary: "#B266FF"
@@ -983,6 +983,11 @@ collectibles:
       - "<accent><click></accent> <muted>to take off"
     equip:
       - "<accent><click></accent> <muted>to wear"
+    equipped:
+      - "<#9BFFC4>✔ Equipped"
+      - "<accent><click></accent> <muted>to unequip"
+    equip-gadget:
+      - "<accent><click></accent> <muted>to equip"
     use:
       - "<accent><click></accent> <muted>to do it"
     buy:
@@ -1091,8 +1096,19 @@ collectibles:
       how: "Right-click a block with an empty hand, or press F"
   cooldown: "<muted>Ready in <white><seconds>s"
   equipped: "<prefix><secondary>Now wearing <name><secondary>."
+  equipped-gadget: "<prefix><secondary>Equipped <name><secondary>. It's in your hotbar!"
+  # What a gesture's copy of you says (one is picked at random).
+  gesture-say:
+    wave: ["<black>Hi there!", "<black>Hey!", "<black>Hello!"]
+    clap: ["<black>Bravo!", "<black>*clap clap*", "<black>Well done!"]
+    bow: ["<black>Thank you!", "<black>At your service.", "<black>Thank you, thank you!"]
+    spin: ["<black>Wheee!", "<black>Spin to win!"]
+    facepalm: ["<black>Ugh...", "<black>Really?", "<black>Why..."]
+    headbang: ["<black>Rock on!", "<black>Turn it up!"]
+    celebrate: ["<black>Woohoo!", "<black>Let's go!", "<black>GG!"]
   took-off: "<prefix><muted>Took off your <category>."
   took-off-all: "<prefix><muted>Took everything off."
+  unequipped-gadget: "<prefix><muted>Unequipped your gadget."
   took-off-piece: "<prefix><muted>Took off your <name><muted>."
   full-set: "<prefix><#FFD27F>Full <set><#FFD27F>! <white><ability></white> <muted>(<how>)"
   boxes-only: "<prefix><bad><name> <bad>is seasonal: it only comes from Mystery Boxes."

@@ -91,11 +91,39 @@ def noise_tex(base, size=16, amount=0.08, seed=1, bricks=False):
     return img
 
 
+GUN_DISPLAY = {
+    "thirdperson_righthand": {"rotation": [-90, 0, -60], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
+    "thirdperson_lefthand": {"rotation": [-90, 0, 30], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
+    "firstperson_righthand": {"rotation": [-90, 0, -55], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+    "firstperson_lefthand": {"rotation": [-90, 0, 35], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+}
+
+
+def held_item(out, path, img, parent="minecraft:item/generated", display=None):
+    flat_item(out, path, img)
+    m = {"parent": parent, "textures": {"layer0": f"fractal:item/{path}"}}
+    if display:
+        m["display"] = display
+    json.dump(m, open(f'{out}/assets/fractal/models/item/{path}.json', 'w'))
+
+
 def build(out):
+    import kit
+    kit.S, kit.BANDS, kit.PIXEL = 4, 3, True          # crisp pixel art, like the Survival pack's icons
+    from vox import Box, write
     n = 0
-    # ------------------------------------------------ icons
+    # ------------------------------------------------ icons (32x32)
     for key, fn in icons.GADGETS.items():
-        flat_item(out, f'gadget/{key}', fn()); n += 1
+        if key in icons.GUNS:
+            held_item(out, f'gadget/{key}', fn(), display=GUN_DISPLAY)
+        elif key in icons.WANDS:
+            held_item(out, f'gadget/{key}', fn(), parent="minecraft:item/handheld")
+        else:
+            flat_item(out, f'gadget/{key}', fn())
+        n += 1
+    # the fake TNT is the game's own TNT block (readable label, the real look)
+    _dirs(out, 'gadget')
+    json.dump({"model": {"type": "minecraft:model", "model": "minecraft:block/tnt"}}, open(f'{out}/assets/fractal/items/gadget/fake_tnt.json', 'w'))
     for key, fn in icons.CLOAKS.items():
         flat_item(out, f'cloak/{key}', fn()); n += 1
     for key, fn in icons.GESTURES.items():
@@ -105,77 +133,94 @@ def build(out):
     flat_item(out, 'menu/collectibles', icons.menu_collectibles()); n += 1
     n += armor.build(out)
 
-    # ------------------------------------------------ cloak pieces
-    G = 15  # they glow
-    for key, fn in icons.PARTS.items():
-        tex_save(out, f'cloak/part/{key}', fn())
-    for key, (fn, frames, ticks) in icons.ANIMATED_PARTS.items():
-        tex_save(out, f'cloak/part/{key}', strip([fn(i) for i in range(frames)]), ticks)
+    # ------------------------------------------------ cloak pieces: blocky models, 32 pixels a block
     P = 'cloak/part/'
+    H = 0.5
+    GOLD, WHITE = '#ffcf5a', '#f4f6ff'
+    # halo: an octagon of gold bars
+    ring = [Box((4, 7.25, 2.5), (12, 8.75, 4), GOLD, 'metal', glow=15), Box((4, 7.25, 12), (12, 8.75, 13.5), GOLD, 'metal', glow=15),
+            Box((2.5, 7.25, 4), (4, 8.75, 12), GOLD, 'metal', glow=15), Box((12, 7.25, 4), (13.5, 8.75, 12), GOLD, 'metal', glow=15)]
+    for (cx, cz) in ((4, 4), (12, 4), (4, 12), (12, 12)):
+        ring.append(Box((cx - 1.2, 7.25, cz - 0.75), (cx + 1.2, 8.75, cz + 0.75), GOLD, 'metal', glow=15,
+                        rotation={"angle": 45 if (cx < 8) == (cz < 8) else -45, "axis": "y", "origin": [cx, 8, cz]}))
+    write(out, P + 'halo', ring, scale=H)
+    # wings: rows of feathers growing out of the spine (x = 8) to the side; the right wing is the mirror
+    def wing(mirror):
+        """A bird's wing seen from behind: feathers hanging from a bone that rises from the spine (x = 8) out to
+        the tip, longer towards the tip, with a row of short coverts over their tops. No rotated parts."""
+        boxes = []
+        def mx(x0, x1):
+            return (16 - x1, 16 - x0) if mirror else (x0, x1)
+        cols = ['#ffffff', '#f8f9ff', '#f0f3fd', '#e8edfb', '#e0e7f9', '#d8e0f6', '#d0daf2', '#c8d2ee']
+        for i in range(8):
+            x0 = 8.5 + i * 2
+            top = 14 + i * 1.0
+            length = [5, 6, 7.5, 9, 10.5, 12, 13, 11.5][i]
+            a, b2 = mx(x0, x0 + 2.5)
+            boxes.append(Box((a, top - length, 8.2 + (i % 2) * 0.4), (b2, top, 9.2 + (i % 2) * 0.4), cols[i], 'feather', glow=10))
+            a, b2 = mx(x0 - 0.2, x0 + 2.7)
+            boxes.append(Box((a, top - 3, 7.4), (b2, top + 0.4, 8.3), '#ffffff', 'flat', glow=10))
+            a, b2 = mx(x0 - 0.2, x0 + 2.7)
+            boxes.append(Box((a, top + 0.4, 7.4), (b2, top + 1.6, 8.6), '#ffffff', 'flat', glow=10))   # the bone
+        return boxes
+    write(out, P + 'wing_left', wing(False), scale=H)
+    write(out, P + 'wing_right', wing(True), scale=H)
+    write(out, P + 'cloud', [Box((2, 5, 3), (14, 10, 13), WHITE, 'fluffy'), Box((0, 6, 5), (5, 9.5, 11), WHITE, 'fluffy'),
+                             Box((11, 6, 4), (16, 10.5, 11), WHITE, 'fluffy'), Box((4, 9, 4), (11, 13, 11), WHITE, 'fluffy'),
+                             Box((8, 9.5, 6), (13, 12, 11), WHITE, 'fluffy'), Box((2.5, 4.5, 3.5), (13.5, 5, 12.5), '#aab4cc', 'solid')], scale=H)
+    for name, col in (('orb_blue', '#5b9dff'), ('orb_pink', '#ff6fd8'), ('orb_gold', '#ffcf5a')):
+        write(out, P + name, [Box((5, 5, 5), (11, 11, 11), col, 'glow', glow=15),
+                              Box((6, 4, 6), (10, 12, 10), col, 'glow', glow=15), Box((4, 6, 6), (12, 10, 10), col, 'glow', glow=15),
+                              Box((6, 6, 4), (10, 10, 12), col, 'glow', glow=15)], scale=H)
+    # the ghost: a little blocky ghost, eyes on the front (north)
+    gw, gb = '#f4f6ff', '#1a1b26'
+    write(out, P + 'ghost', [Box((4, 4, 5), (12, 13, 11), gw, 'flat', glow=12), Box((5, 13, 6), (11, 14, 10), gw, 'flat', glow=12),
+                             Box((4, 2, 5), (6, 4, 11), gw, 'flat', glow=12), Box((7, 2.5, 5), (9, 4, 11), gw, 'flat', glow=12),
+                             Box((10, 2, 5), (12, 4, 11), gw, 'flat', glow=12),
+                             Box((5, 9, 4.6), (7, 11.5, 5), gb, 'flat'), Box((9, 9, 4.6), (11, 11.5, 5), gb, 'flat'),
+                             Box((7, 6, 4.6), (9, 8, 5), '#2a2b3a', 'flat')], scale=H)
+    # flat pieces (pixel sprites)
+    tex_save(out, P + 'sparkle', strip([icons.part_sparkle(i).resize((32, 32), Image.NEAREST) for i in range(4)]), 3)
+    tex_save(out, P + 'flame', strip([icons.part_flame(i).resize((32, 32), Image.NEAREST) for i in range(8)]), 2)
+    for key in ('snowflake', 'petal', 'sun', 'pumpkin_light'):
+        im = icons.PARTS[key]()
+        tex_save(out, P + key, im.resize((32, 32), Image.NEAREST) if im.size != (32, 32) else im)
 
-    def cross(name, three=True, size=16):
-        els = [plane('z', light_level=G, size=size), plane('x', light_level=G, size=size)]
+    def cross(name, three=True):
+        els = [plane('z', light_level=15), plane('x', light_level=15)]
         if three:
-            els.append(plane('y', light_level=G, size=size))
+            els.append(plane('y', light_level=15))
         model(out, P + name, P + name, els)
-
-    model(out, P + 'halo', P + 'halo', [plane('y', light_level=G), plane('y', light_level=G, at=8.3)])
-    model(out, P + 'wing_left', P + 'wing', [plane('z', light_level=10)])
-    model(out, P + 'wing_right', P + 'wing', [plane('z', flip=True, light_level=10)])
-    model(out, P + 'sun', P + 'sun', [plane('z', light_level=G)])
-    model(out, P + 'ghost', P + 'ghost', [plane('z', light_level=G)])
-    model(out, P + 'petal', P + 'petal', [plane('z', light_level=12)])
-    model(out, P + 'pumpkin_light', P + 'pumpkin_light', [plane('y', light_level=G)])
-    for k in ('orb_blue', 'orb_pink', 'orb_gold', 'sparkle', 'snowflake'):
-        cross(k)
+    cross('sparkle')
+    cross('snowflake')
     cross('flame', three=False)
-    model(out, P + 'cloud', P + 'cloud', [box((2, 5, 3), (14, 10, 13)), box((0, 6, 5), (5, 9.5, 11)), box((11, 6, 4), (16, 10.5, 11)),
-                                          box((4, 9, 4), (11, 13, 11)), box((8, 9.5, 6), (13, 12, 11))])
+    model(out, P + 'sun', P + 'sun', [plane('z', light_level=15)])
+    model(out, P + 'petal', P + 'petal', [plane('z', light_level=12)])
+    model(out, P + 'pumpkin_light', P + 'pumpkin_light', [plane('y', light_level=15)])
 
-    # ------------------------------------------------ the cookie fountain (stone basin, cookie dough, a spout)
-    tex_save(out, 'gadget/fountain_stone', noise_tex((168, 172, 186), seed=3, bricks=True))
-    tex_save(out, 'gadget/fountain_dough', icons.cookie(16))
-    T = {"stone": "fractal:item/gadget/fountain_stone", "dough": "fractal:item/gadget/fountain_dough"}
-    els = [box((1, 0, 1), (15, 3.5, 2.5), tex='#stone'), box((1, 0, 13.5), (15, 3.5, 15), tex='#stone'),
-           box((1, 0, 2.5), (2.5, 3.5, 13.5), tex='#stone'), box((13.5, 0, 2.5), (15, 3.5, 13.5), tex='#stone'),
-           box((2.5, 0, 2.5), (13.5, 2.6, 13.5), tex='#dough'),
-           box((6.5, 2.6, 6.5), (9.5, 10, 9.5), tex='#stone'), box((4.5, 10, 4.5), (11.5, 11.5, 11.5), tex='#stone'),
-           box((5.3, 11.5, 5.3), (10.7, 12.3, 10.7), tex='#dough'), box((6.5, 12.3, 6.5), (9.5, 13.3, 9.5), tex='#dough')]
-    model(out, 'gadget/cookie_fountain_3d', 'gadget/fountain_stone', els, extra_textures=T)
-
-    # ------------------------------------------------ the trampoline (2x2 blocks when shown; sits on the ground)
-    mat = Image.new('RGBA', (16, 16))
-    for y in range(16):
-        for x in range(16):
-            mat.putpixel((x, y), ((40, 110, 230) if (x + y) % 2 else (52, 124, 244)) + (255,))
-    tex_save(out, 'gadget/trampoline_mat', mat)
-    tex_save(out, 'gadget/trampoline_frame', noise_tex((255, 207, 90), seed=5, amount=0.05))
-    tex_save(out, 'gadget/trampoline_leg', noise_tex((90, 96, 120), seed=6, amount=0.05))
-    T = {"mat": "fractal:item/gadget/trampoline_mat", "frame": "fractal:item/gadget/trampoline_frame",
-         "leg": "fractal:item/gadget/trampoline_leg"}
-    els = [box((1, 4, 1), (2.2, 10.5, 2.2), tex='#leg'), box((13.8, 4, 1), (15, 10.5, 2.2), tex='#leg'),
-           box((1, 4, 13.8), (2.2, 10.5, 15), tex='#leg'), box((13.8, 4, 13.8), (15, 10.5, 15), tex='#leg'),
-           box((0, 10.5, 0), (16, 11.6, 1.4), tex='#frame'), box((0, 10.5, 14.6), (16, 11.6, 16), tex='#frame'),
-           box((0, 10.5, 1.4), (1.4, 11.6, 14.6), tex='#frame'), box((14.6, 10.5, 1.4), (16, 11.6, 14.6), tex='#frame'),
-           box((1.4, 10.9, 1.4), (14.6, 11.1, 14.6), tex='#mat')]
-    model(out, 'gadget/trampoline_3d', 'gadget/trampoline_mat', els, extra_textures=T)
-
-    # ------------------------------------------------ the balloon (tinted by the item's dye colour)
-    b = Image.new('RGBA', (16, 16))
-    for y in range(16):
-        for x in range(16):
-            k = 1.0 - y * 0.018 + (0.12 if (x < 6 and y < 6) else 0)
-            v = max(0, min(255, round(232 * k)))
-            b.putpixel((x, y), (v, v, v, 255))
-    for (x, y) in [(3, 3), (4, 3), (3, 4)]:
-        b.putpixel((x, y), (255, 255, 255, 255))
-    tex_save(out, 'gadget/balloon_skin', b)
-    els = [box((4, 6, 4), (12, 16, 12), tint=True), box((3, 8, 5), (13, 14.5, 11), tint=True), box((5, 8, 3), (11, 14.5, 13), tint=True),
-           box((5, 16, 5), (11, 17, 11), tint=True), box((5.5, 4.5, 5.5), (10.5, 6, 10.5), tint=True),
-           box((7.3, 3.2, 7.3), (8.7, 4.5, 8.7), tint=True)]
-    model(out, 'gadget/balloon_3d', 'gadget/balloon_skin', els, tints=True)
-
-    # ------------------------------------------------ the mirrored disco ball, sharper
+    # ------------------------------------------------ gadgets in the world
+    stone, dough, choc = '#a8acba', '#c98a4b', '#4a2410'
+    write(out, 'gadget/cookie_fountain_3d', [
+        Box((1, 0, 1), (15, 3.5, 2.5), stone, 'brick'), Box((1, 0, 13.5), (15, 3.5, 15), stone, 'brick'),
+        Box((1, 0, 2.5), (2.5, 3.5, 13.5), stone, 'brick'), Box((13.5, 0, 2.5), (15, 3.5, 13.5), stone, 'brick'),
+        Box((2.5, 0, 2.5), (13.5, 2.5, 13.5), dough, 'solid'),
+        Box((4, 2.5, 5), (6, 3, 7), choc, 'flat'), Box((9, 2.5, 4), (11, 3, 6), choc, 'flat'), Box((10, 2.5, 10), (12, 3, 12), choc, 'flat'),
+        Box((6.5, 2.5, 6.5), (9.5, 10, 9.5), stone, 'brick'), Box((4.5, 10, 4.5), (11.5, 11.5, 11.5), stone, 'brick'),
+        Box((5.5, 11.5, 5.5), (10.5, 12.5, 10.5), dough, 'solid'), Box((6.5, 12.5, 6.5), (9.5, 13.5, 9.5), dough, 'solid'),
+        Box((7, 13.5, 7), (8.5, 14, 8.5), choc, 'flat')], scale=H)
+    yellow, blue, leg = '#ffcf5a', '#3c6ae0', '#5a6078'
+    write(out, 'gadget/trampoline_3d', [
+        Box((1, 4, 1), (2.2, 10.5, 2.2), leg, 'metal'), Box((13.8, 4, 1), (15, 10.5, 2.2), leg, 'metal'),
+        Box((1, 4, 13.8), (2.2, 10.5, 15), leg, 'metal'), Box((13.8, 4, 13.8), (15, 10.5, 15), leg, 'metal'),
+        Box((0, 10.5, 0), (16, 11.6, 1.4), yellow, 'solid'), Box((0, 10.5, 14.6), (16, 11.6, 16), yellow, 'solid'),
+        Box((0, 10.5, 1.4), (1.4, 11.6, 14.6), yellow, 'solid'), Box((14.6, 10.5, 1.4), (16, 11.6, 14.6), yellow, 'solid'),
+        Box((1.4, 10.9, 1.4), (14.6, 11.1, 14.6), blue, 'mat')], scale=H)
+    write(out, 'gadget/balloon_3d', [
+        Box((4, 6, 4), (12, 16, 12), '#eeeeee', 'solid', tint=True), Box((3, 8, 5), (13, 14.5, 11), '#eeeeee', 'solid', tint=True),
+        Box((5, 8, 3), (11, 14.5, 13), '#eeeeee', 'solid', tint=True), Box((5, 16, 5), (11, 17, 11), '#eeeeee', 'solid', tint=True),
+        Box((5.5, 4.5, 5.5), (10.5, 6, 10.5), '#d8d8d8', 'solid', tint=True), Box((7.3, 3.2, 7.3), (8.7, 4.5, 8.7), '#c8c8c8', 'solid', tint=True),
+        Box((4.5, 13, 3.9), (6.5, 15, 4.0), '#ffffff', 'flat')], scale=H, tints=True)
+    # the disco ball (texture used by sprites.py's model): mirror tiles
     t = Image.new('RGBA', (16, 16))
     shades = [(235, 238, 250), (160, 168, 196), (120, 200, 255), (255, 255, 255), (200, 160, 255), (130, 136, 160), (255, 190, 240)]
     for y in range(16):

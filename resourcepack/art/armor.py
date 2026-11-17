@@ -278,11 +278,14 @@ def tourist(l1, l2):
                 l2.put(LEG, face, x, y, dark(BEIGE, 0.2))
     l2.row(BODY, 7, '#8b5a2b')
     BROWN = '#8b5a2b'
-    l1.row(LEG, 11, BROWN)
-    l1.cloth(LEG, BROWN, faces=('bottom',))
+    l1.row(LEG, 11, dark(BROWN, 0.3) if False else '#5a3a1e')
+    l1.row(LEG, 10, BROWN)
+    l1.cloth(LEG, '#5a3a1e', faces=('bottom',))
     for face in SIDES:
-        l1.put(LEG, face, 1, 9, BROWN)
-        l1.put(LEG, face, 2, 10, BROWN)
+        l1.put(LEG, face, 0, 9, BROWN)
+        l1.put(LEG, face, 3, 9, BROWN)
+        l1.put(LEG, face, 1, 8, BROWN)
+        l1.put(LEG, face, 2, 8, BROWN)
 
 
 def santa(l1, l2):
@@ -572,7 +575,7 @@ def icon(name, piece):
         tmp = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
         block(tmp, l2, BODY, 8, 4, 2, rows=(7, 11))
         block(tmp, l2, LEG, 8, 14, 2)
-        block(tmp, l2, LEG, 16, 14, 2)
+        block(tmp, l2, LEG, 17, 14, 2)
         bb = tmp.getbbox()
         part = tmp.crop(bb)
         sc = min(30 / part.height, 30 / part.width, 1.0)

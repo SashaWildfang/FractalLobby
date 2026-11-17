@@ -245,7 +245,7 @@ public final class Collectibles implements Listener {
             }
         }
         apply(player);
-        plugin.messages().send(player, "collectibles.equipped", name(item));
+        plugin.messages().send(player, item.category() == Category.GADGET ? "collectibles.equipped-gadget" : "collectibles.equipped", name(item));
         sound(player, "item.armor.equip_leather", 1.2f);
         if (item.set() != null && worn(player, item.set()) == 4) {
             Catalog.SuitSet set = Catalog.set(item.set());
@@ -271,7 +271,7 @@ public final class Collectibles implements Listener {
             data().equip(player.getUniqueId(), category.prefix(), null);
         }
         apply(player);
-        plugin.messages().send(player, "collectibles.took-off", Placeholder.parsed("category",
+        plugin.messages().send(player, category == Category.GADGET ? "collectibles.unequipped-gadget" : "collectibles.took-off", Placeholder.parsed("category",
                 plugin.messages().raw("collectibles.category." + category.key + ".name")));
         sound(player, "item.armor.equip_generic", 0.8f);
     }
@@ -321,7 +321,28 @@ public final class Collectibles implements Listener {
     }
 
     /** A suit piece as worn: the suit's own armour look, no armour points, and the set and its bonus when hovered. */
+    /** Suits whose helmet has a shape armour can't (ears, eyes, a beak): it's worn like a hat. */
+    private static final java.util.Set<String> SHAPED_HELMETS = java.util.Set.of("bunny", "frog", "chick");
+
+    private boolean shapedHelmet(Item piece) {
+        return piece.piece() == Catalog.Piece.HELMET && SHAPED_HELMETS.contains(piece.set()) && plugin.menuStyle().custom();
+    }
+
     private ItemStack armour(Player player, Item piece) {
+        if (shapedHelmet(piece)) {
+            Catalog.SuitSet set = Catalog.set(piece.set());
+            int on = worn(player, piece.set());
+            ItemStack hood = ItemStack.of(Material.PAPER);
+            hood.editMeta(meta -> {
+                meta.displayName(plugin.messages().item("collectibles.worn.name", name(piece)));
+                List<Component> lore = new ArrayList<>(plugin.messages().lore("collectibles.worn.lore", wornTags(piece)));
+                lore.addAll(plugin.messages().lore(on == 4 ? "collectibles.worn.set-complete" : "collectibles.worn.set", setTags(set, on)));
+                meta.lore(lore);
+                meta.setItemModel(new NamespacedKey("fractal", "hat/suit_" + piece.set()));
+                meta.addItemFlags(ItemFlag.values());
+            });
+            return hood;
+        }
         Material material = switch (piece.piece()) {
             case HELMET -> Material.LEATHER_HELMET;
             case CHESTPLATE -> Material.LEATHER_CHESTPLATE;
@@ -626,7 +647,9 @@ public final class Collectibles implements Listener {
             }
             lore.add(Component.empty());
             String state;
-            if (owned) state = worn ? "collectibles.entry.worn" : item.category().action() ? "collectibles.entry.use" : "collectibles.entry.equip";
+            boolean gadget = item.category() == Category.GADGET;
+            if (owned) state = worn ? (gadget ? "collectibles.entry.equipped" : "collectibles.entry.worn")
+                    : item.category().action() ? "collectibles.entry.use" : gadget ? "collectibles.entry.equip-gadget" : "collectibles.entry.equip";
             else if (!craftable(item)) state = season ? "collectibles.entry.boxes-only" : "collectibles.entry.out-of-season";
             else state = dust >= price ? "collectibles.entry.buy" : "collectibles.entry.cant-afford";
             lore.addAll(messages.lore(state, tags));
@@ -814,7 +837,8 @@ public final class Collectibles implements Listener {
     public ItemStack icon(Item item) {
         return switch (item.category()) {
             case HAT -> modelled(Material.LEATHER_HELMET, "hat/" + item.key());
-            case SUIT -> modelled(Material.LEATHER_CHESTPLATE, "suit/" + item.set() + "/" + item.piece().key());
+            case SUIT -> modelled(Material.LEATHER_CHESTPLATE, shapedHelmet(item) ? "hat/suit_" + item.set()
+                    : "suit/" + item.set() + "/" + item.piece().key());
             case GADGET -> modelled(Material.FIREWORK_STAR, "gadget/" + item.key());
             case CLOAK -> modelled(Material.PHANTOM_MEMBRANE, "cloak/" + item.key());
             case EMOTE -> modelled(Material.PLAYER_HEAD, "status/" + item.emoji());

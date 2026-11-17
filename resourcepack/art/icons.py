@@ -821,3 +821,274 @@ def menu_collectibles():
 
 SEASONS = {'normal': season_normal, 'summer': season_summer, 'holiday': season_holiday, 'easter': season_easter,
            'halloween': season_halloween}
+
+
+# ---------------------------------------------------------------- 1.38: the guns, drawn along a diagonal (stock bottom
+# left, muzzle top right) so they're held like a crossbow, pointing forward
+
+GUN_ANGLE = math.radians(40)
+
+
+class Gun:
+    """Draws in the gun's own frame: u along the barrel (0 = back, 30 = muzzle), v up from the barrel's middle."""
+
+    def __init__(self, c, ox=3.5, oy=26.5, angle=GUN_ANGLE):
+        self.c, self.ox, self.oy = c, ox, oy
+        self.d = (math.cos(angle), -math.sin(angle))
+        self.n = (-math.sin(angle), -math.cos(angle))
+
+    def p(self, u, v):
+        return (self.ox + u * self.d[0] + v * self.n[0], self.oy + u * self.d[1] + v * self.n[1])
+
+    def rect(self, u0, v0, u1, v1, fill):
+        self.c.shape('poly', [self.p(u0, v0), self.p(u1, v0), self.p(u1, v1), self.p(u0, v1)], fill)
+
+    def poly(self, pts, fill):
+        self.c.shape('poly', [self.p(u, v) for u, v in pts], fill)
+
+    def oval(self, u, v, ru, rv, fill):
+        self.c.shape('poly', [self.p(u + math.cos(a) * ru, v + math.sin(a) * rv) for a in (i * math.pi / 10 for i in range(20))], fill)
+
+    def tube(self, u0, u1, r, base):
+        """A round barrel: dark underside, base, light top stripe."""
+        self.rect(u0, -r, u1, r, dark(base, 0.25))
+        self.rect(u0, -r * 0.45, u1, r, base)
+        self.rect(u0, r * 0.35, u1, r * 0.8, light(base, 0.35))
+
+
+def gun_paintball():
+    c = Canvas()
+    g = Gun(c)
+    g.poly([(4, -1), (9, -1), (7, -9), (3, -9)], '#2c2a40')            # grip
+    g.rect(9.5, -3.5, 11, -1, '#8a8ea0')                                 # trigger guard
+    g.tube(3, 21, 3.2, '#7b55e0')                                        # body
+    g.rect(20, -1.8, 29, 1.8, '#a8acbc')                                 # barrel
+    g.rect(20, 0.4, 29, 1.2, '#e8eaf4')
+    g.rect(28, -2.2, 30, 2.2, '#5a5e70')
+    g.rect(6, -0.6, 19, 0.6, '#ffcf5a')                                  # stripe
+    g.oval(12, 6.5, 4.2, 4.2, '#ff6fd8')                                 # paint hopper
+    g.oval(11, 7.6, 1.6, 1.4, '#ffc4ee')
+    g.rect(10.5, 2.5, 13.5, 3.6, '#4a3a8a')
+    for (u, v) in [(32.5, 3), (33, -2.5)]:
+        x, y = g.p(u, v)
+        c.shape('ellipse', (x - 1, y - 1, x + 1, y + 1), '#ff6fd8')
+    return c.done()
+
+
+def gun_bat_blaster():
+    c = Canvas()
+    g = Gun(c, ox=3, oy=27)
+    g.poly([(4, -1), (9, -1), (7, -9), (3, -9)], '#2c2a40')
+    g.tube(2, 19, 3.4, '#4a2f7a')
+    g.poly([(18, -3.6), (18, 3.6), (27, 6.5), (27, -6.5)], '#5a3a96')      # flared bell
+    g.poly([(18, 1), (18, 3.6), (27, 6.5), (27, 3.5)], '#8a64d0')
+    g.rect(26, -6.5, 28, 6.5, '#2a1a4a')
+    g.rect(27.5, -4.5, 28.2, 4.5, '#120a20')
+    g.poly([(7, 3), (12, 3), (10, 8), (8, 6)], '#2a1a4a')                # bat wing fin
+    g.poly([(12, 3), (16, 3), (15, 7)], '#2a1a4a')
+    g.oval(9, -0.2, 1.1, 1.1, '#ff3a3a')
+    g.oval(13, -0.2, 1.1, 1.1, '#ff3a3a')
+    return c.done()
+
+
+def gun_snow_cannon():
+    c = Canvas()
+    g = Gun(c)
+    g.poly([(4, -1), (9, -1), (7, -8), (3, -8)], '#3a5a8a')
+    g.tube(2, 26, 4, '#6ec8ff')
+    g.rect(25, -4.6, 28, 4.6, '#d8f2ff')
+    g.rect(27.4, -3, 28.2, 3, '#2a4a7a')
+    for u in (8, 15, 21):                                                 # frosty bands
+        g.rect(u, -4, u + 1.4, 4, '#ffffff')
+    g.poly([(6, 4), (24, 4), (22, 6), (8, 6)], '#ffffff')                # snow on top
+    for (x, y) in [(27, 4), (30, 9)]:
+        c.line([(x - 2, y), (x + 2, y)], '#ffffff', 0.9)
+        c.line([(x, y - 2), (x, y + 2)], '#ffffff', 0.9)
+    return c.done()
+
+
+def gun_pumpkin_launcher():
+    c = Canvas()
+    g = Gun(c, ox=3, oy=28)
+    g.poly([(4, -1), (9, -1), (7, -8), (3, -8)], '#5a3a1e')
+    g.tube(2, 19, 3.6, '#8b5a2b')
+    g.rect(6, -3.6, 7.2, 3.6, '#ffcf5a')
+    g.rect(14, -3.6, 15.2, 3.6, '#ffcf5a')
+    g.rect(18, -4.4, 20, 4.4, '#5a3a1e')
+    x, y = g.p(25, 0)
+    pumpkin(c, x, y, 6.4)
+    return c.done()
+
+
+def gun_firework_launcher():
+    c = Canvas()
+    g = Gun(c, ox=3, oy=27)
+    g.poly([(7, -1), (12, -1), (10, -8), (6, -8)], '#2c2a40')
+    g.tube(0, 22, 3.6, '#e8443a')
+    for u in (4, 10, 16):
+        g.rect(u, -3.6, u + 2.4, 3.6, '#f4f4fa')
+    g.rect(21, -4.2, 23, 4.2, '#8a8ea0')
+    g.poly([(23, -2.6), (23, 2.6), (29, 0)], '#ffcf5a')                    # rocket nose poking out
+    g.poly([(23, 0.6), (23, 2.6), (29, 0)], '#fff2a0')
+    g.rect(0, -4.2, 1.6, 4.2, '#8a8ea0')
+    for (u, v, col) in [(31, 4, '#ffe14d'), (31, -4, '#ff6fd8'), (33, 0, '#5b9dff')]:
+        x, y = g.p(u, v)
+        c.star(x, y, 1.8, col)
+    return c.done()
+
+
+def gun_grappling_hook():
+    c = Canvas()
+    g = Gun(c)
+    g.poly([(4, -1), (9, -1), (7, -8), (3, -8)], '#2c2a40')
+    g.tube(2, 18, 3, '#6a7086')
+    g.rect(7, 3, 13, 5.5, '#a8743a')                                    # rope drum
+    g.rect(7, 3.8, 13, 4.6, '#6b3e1e')
+    g.rect(18, -0.9, 28, 0.9, '#c9ccd8')                                 # shaft
+    g.rect(18, 0.1, 28, 0.9, '#f4f6ff')
+    for k in (-1, 1):                                                     # two prongs curling back
+        c.line([g.p(28, 0), g.p(24, k * 5)], '#e8eaf4', 1.5)
+        c.line([g.p(24, k * 5), g.p(22.5, k * 3.6)], '#e8eaf4', 1.5)
+    g.poly([(28, -1.6), (28, 1.6), (31.5, 0)], '#ffffff')
+    return c.done()
+
+
+def cloak_angel_wings2():
+    c = Canvas()
+    for side in (-1, 1):
+        cx = 16 + side * 2
+        pts = [(cx, 10), (cx + side * 9, 4), (cx + side * 14, 3), (cx + side * 13.5, 9), (cx + side * 12, 14),
+               (cx + side * 9, 19), (cx + side * 5, 22), (cx, 18)]
+        c.shape('poly', pts, '#f4f6ff')
+        for k, (a, b) in enumerate([(5, 9), (9, 14), (12, 18)]):
+            c.line([(cx + side * 1, a + 2), (cx + side * (13 - k * 3), b - 3)], '#c8d2ee', 0.9)
+        c.shape('poly', [(cx, 10), (cx + side * 9, 4), (cx + side * 14, 3), (cx + side * 12, 6), (cx + side * 6, 8)], '#ffffff')
+    head(c, x=16, y=19, r=5.2)
+    return c.done()
+
+
+def cloak_sun_rays2():
+    c = Canvas()
+    for i in range(12):
+        a = math.radians(i * 30)
+        l = 15.5 if i % 2 == 0 else 13
+        c.shape('poly', [(16 + math.cos(a - 0.2) * 9, 15 + math.sin(a - 0.2) * 9), (16 + math.cos(a) * l, 15 + math.sin(a) * l),
+                         (16 + math.cos(a + 0.2) * 9, 15 + math.sin(a + 0.2) * 9)], '#ffb428')
+    c.shape('ellipse', (6, 5, 26, 25), '#ffd84a')
+    c.shape('ellipse', (8, 7, 24, 23), '#ffe88a')
+    head(c, x=16, y=17, r=5.6)
+    return c.done()
+
+
+def cloak_blossom2():
+    c = Canvas()
+
+    def flower(x, y, r, col, centre):
+        for i in range(5):
+            a = math.radians(-90 + i * 72)
+            px_, py_ = x + math.cos(a) * r * 0.62, y + math.sin(a) * r * 0.62
+            c.shape('ellipse', (px_ - r * 0.5, py_ - r * 0.5, px_ + r * 0.5, py_ + r * 0.5), col)
+        c.shape('ellipse', (x - r * 0.32, y - r * 0.32, x + r * 0.32, y + r * 0.32), centre)
+    flower(10, 10, 8, '#ffb3dc', '#ffe14d')
+    flower(23, 8, 6, '#ff8cc8', '#ffffff')
+    flower(21, 23, 7, '#ffc8e6', '#ffcf5a')
+    flower(7, 25, 4.5, '#ff8cc8', '#ffffff')
+    return c.done()
+
+
+def cloak_spooky2():
+    c = Canvas()
+    body = [(9, 12), (10, 6), (16, 3), (22, 6), (23, 12), (24, 25), (21.5, 22.5), (19, 26), (16, 22.5), (13, 26), (10.5, 22.5), (8, 25)]
+    c.shape('poly', body, '#f4f6ff')
+    c.shape('poly', [(20, 6), (22, 6), (23, 12), (24, 25), (21.5, 22.5), (21, 10)], '#c8d2ee')
+    c.shape('ellipse', (11.5, 9, 15, 14), '#1a1b26')
+    c.shape('ellipse', (17, 9, 20.5, 14), '#1a1b26')
+    c.shape('ellipse', (14, 16, 18, 20), '#2a2b3a')
+    for (x, y, col) in [(4, 8, '#ff8a1f'), (28, 6, '#9b5cff'), (27, 26, '#ff8a1f'), (4, 26, '#9b5cff')]:
+        c.shape('ellipse', (x - 1.6, y - 1.6, x + 1.6, y + 1.6), col)
+    return c.done()
+
+
+def gesture_facepalm2():
+    c = Canvas()
+    c.shape('rect', (8, 6, 24, 22), SKIN)
+    c.shape('rect', (8, 6, 24, 10), '#5a3a1e')
+    c.shape('rect', (11, 18, 21, 19.5), '#8a4a3a')
+    # hand across the eyes, arm coming up from below
+    c.shape('rect', (5, 11, 27, 16), '#f0bc94')
+    for x in (10, 15, 20):
+        c.line([(x, 11.5), (x, 15.5)], '#c88a5a', 0.6)
+    c.shape('rect', (3, 13, 8, 30), SHIRT)
+    c.shape('rect', (11, 23, 21, 30), SHIRT)
+    for (x, y) in [(27, 4), (29.5, 7.5)]:
+        c.line([(x, y), (x + 2, y - 2)], '#7fd7ff', 1)
+    return c.done()
+
+
+GADGETS.update({'paintball_gun': gun_paintball, 'bat_blaster': gun_bat_blaster, 'snow_cannon': gun_snow_cannon,
+                'pumpkin_launcher': gun_pumpkin_launcher, 'firework_launcher': gun_firework_launcher,
+                'grappling_hook': gun_grappling_hook, 'cookie_fountain': cookie})
+GADGETS.pop('fake_tnt', None)   # shown as the game's own TNT block
+CLOAKS.update({'angel_wings': cloak_angel_wings2, 'sun_rays': cloak_sun_rays2, 'blossom_aura': cloak_blossom2,
+               'spooky_aura': cloak_spooky2})
+GESTURES['facepalm'] = gesture_facepalm2
+GUNS = ('paintball_gun', 'bat_blaster', 'snow_cannon', 'pumpkin_launcher', 'firework_launcher', 'grappling_hook')
+WANDS = ('magic_wand', 'bubble_wand', 'blink_stick')
+
+
+def gun_snow_cannon2():
+    c = Canvas()
+    g = Gun(c)
+    g.poly([(5, -2), (10, -2), (8, -10), (4, -10)], '#2f4f86')                 # grip
+    g.rect(10.5, -4.6, 12, -2, '#8a8ea0')
+    g.tube(2, 24, 4, '#5ab8f0')
+    g.rect(6, 1.8, 20, 3.2, '#e8f8ff')                                        # frosty shine
+    g.rect(23, -5, 28, 5, '#2a5a9a')                                          # muzzle ring
+    g.rect(23.6, -4.2, 27.4, 4.2, '#3f7fc8')
+    g.rect(27.2, -3, 28, 3, '#0e1e3a')
+    x, y = g.p(13, 0)
+    for a in (0, 60, 120):                                                    # snowflake emblem
+        r = math.radians(a)
+        c.line([(x - math.cos(r) * 3, y - math.sin(r) * 3), (x + math.cos(r) * 3, y + math.sin(r) * 3)], '#ffffff', 0.9)
+    for (u, v) in [(31, 3), (32, -3)]:
+        x, y = g.p(u, v)
+        c.shape('ellipse', (x - 1.4, y - 1.4, x + 1.4, y + 1.4), '#ffffff')
+    return c.done()
+
+
+def gesture_clap2():
+    c = Canvas()
+    for side in (-1, 1):
+        x = 16 + side * 0.4
+        palm = [(x, 8), (x + side * 7, 10), (x + side * 8, 20), (x + side * 5, 26), (x, 26)]
+        c.shape('poly', palm, '#f0bc94')
+        c.shape('poly', [(x, 8), (x + side * 2.5, 8.6), (x + side * 2.5, 26), (x, 26)], '#d89a70')
+        for k in range(3):                                                     # fingers, with gaps between
+            fx = x + side * (1.2 + k * 2.2)
+            c.shape('rect', (min(fx, fx + side * 1.8), 3 + k * 1.2, max(fx, fx + side * 1.8), 12), '#f0bc94')
+            gx = fx + side * 1.9
+            c.line([(gx, 5 + k * 1.2), (gx, 12)], '#b87850', 0.5)
+        c.shape('rect', (min(x + side * 1.5, x + side * 8), 25, max(x + side * 1.5, x + side * 8), 30), SHIRT)
+    for (x0, y0, x1, y1) in [(5, 6, 2, 3), (27, 6, 30, 3), (4, 12, 1, 12), (28, 12, 31, 12)]:
+        c.line([(x0, y0), (x1, y1)], '#ffe14d', 1.1)
+    return c.done()
+
+
+def gesture_facepalm3():
+    c = Canvas()
+    c.shape('rect', (7, 5, 25, 23), SKIN)                                    # head
+    c.shape('rect', (7, 5, 25, 9), '#5a3a1e')
+    c.shape('rect', (12, 19, 20, 20.5), '#8a4a3a')                           # mouth
+    c.shape('poly', [(20, 31), (27, 31), (27, 20), (22, 16)], SHIRT)          # arm from below
+    c.shape('poly', [(5, 9), (19, 9), (24, 15), (21, 18), (5, 16)], '#f0bc94')  # palm over the eyes
+    c.shape('poly', [(19, 9), (24, 15), (21, 18), (17, 14)], '#d89a70')
+    for y in (11, 13.5):
+        c.line([(6, y), (16, y)], '#c88a5a', 0.6)
+    c.line([(27.5, 3), (29.5, 1)], '#7fd7ff', 1)
+    c.line([(29, 7), (31, 5)], '#7fd7ff', 1)
+    return c.done()
+
+
+GADGETS['snow_cannon'] = gun_snow_cannon2
+GESTURES['clap'] = gesture_clap2
+GESTURES['facepalm'] = gesture_facepalm3
