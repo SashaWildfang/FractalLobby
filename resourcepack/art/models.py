@@ -146,6 +146,14 @@ def build(out):
                              "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}_gui"}}],
                              "fallback": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}"}}},
                   open(f'{out}/assets/fractal/items/gadget/{key}.json', 'w'))
+    # guns that point the other way in the hand: shown flipped in menus (and on the ground) so they match
+    for key in ['paintball_gun', 'firework_launcher'] + [f'paintball_gun_{i}' for i in range(len(icons.PAINTS))]:
+        img = Image.open(f'{out}/assets/fractal/textures/item/gadget/{key}.png').convert('RGBA')
+        flat_item(out, f'gadget/{key}_gui', ImageOps.mirror(img))
+        json.dump({"model": {"type": "minecraft:select", "property": "minecraft:display_context",
+                             "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}_gui"}}],
+                             "fallback": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}"}}},
+                  open(f'{out}/assets/fractal/items/gadget/{key}.json', 'w'))
     # the fake TNT is the game's own TNT block (readable label, the real look)
     _dirs(out, 'gadget')
     json.dump({"model": {"type": "minecraft:model", "model": "minecraft:block/tnt"}}, open(f'{out}/assets/fractal/items/gadget/fake_tnt.json', 'w'))
