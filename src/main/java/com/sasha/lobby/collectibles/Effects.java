@@ -100,6 +100,7 @@ final class Effects implements Listener {
 
     private static final class Rig {
         final String key;
+        Double lastX, lastZ;
         final List<ItemDisplay> parts = new ArrayList<>();
 
         Rig(String key) {
@@ -1125,7 +1126,7 @@ final class Effects implements Listener {
             case "orbit" -> List.of("orb_blue", "orb_pink", "orb_gold");
             case "flame_ring" -> List.of("flame", "flame", "flame", "flame", "flame", "flame");
             case "angel_wings" -> List.of("wing_left", "wing_right");
-            case "sun_rays" -> List.of("sun");
+            case "sun_rays" -> List.of("sun3d");
             case "snow_globe" -> List.of("snowflake", "snowflake", "snowflake", "snowflake", "snowflake", "snowflake");
             case "blossom_aura" -> List.of("petal", "petal", "petal", "petal", "petal", "petal");
             case "spooky_aura" -> List.of("ghost", "ghost", "pumpkin_light");
@@ -1189,11 +1190,22 @@ final class Effects implements Listener {
                 case "angel_wings" -> {
                     float side = i == 0 ? 1 : -1; // left, right
                     // the model's spine is its centre; the wing grows out to the side and folds back as it flaps
-                    float flap = (float) Math.toRadians(22 + 16 * Math.sin(t * 0.09));
+                    double moved = rig.lastX == null ? 0 : Math.hypot(player.getX() - rig.lastX, player.getZ() - rig.lastZ);
+                    boolean air = !((Entity) player).isOnGround() && !player.isFlying() && player.getVehicle() == null;
+                    double deg;
+                    if (air) deg = 15 + 45 * Math.abs(Math.sin(t * 0.32));              // flapping hard
+                    else if (moved > 0.12) deg = 58 + 6 * Math.sin(t * (moved > 0.5 ? 0.45 : 0.28)); // swept back
+                    else deg = 28 + 12 * Math.sin(t * 0.08);                              // open, breathing
+                    float flap = (float) Math.toRadians(deg);
                     m.rotateY(-yaw).translate(0, -0.68f + sneak * 0.5f, -0.2f).rotateX(sneak * 0.8f)
                             .rotateY(side * flap).scale(0.85f);
                 }
-                case "sun_rays" -> m.rotateY(-yaw).translate(0, -0.2f, -0.32f).rotateZ((float) (t * 0.03)).scale(1.05f);
+                case "sun_rays" -> {
+                    // a little sun floating over the head, turning and pulsing, rays blasting out
+                    float pulse = 0.5f + 0.06f * (float) Math.sin(t * 0.3);
+                    m.translate(0, 0.95f + (float) Math.sin(t * 0.07) * 0.06f, 0).rotateY((float) (t * 0.05))
+                            .rotateX((float) Math.sin(t * 0.04) * 0.3f).scale(pulse);
+                }
                 case "snow_globe" -> {
                     double a = t * 0.03 + phase;
                     float fall = (float) ((t * 0.035 + i * 0.41) % 2.4);
@@ -1220,6 +1232,8 @@ final class Effects implements Listener {
             if (!shown) m = new Matrix4f().scale(0);
             move(rig.parts.get(i), m);
         }
+        rig.lastX = player.getX();
+        rig.lastZ = player.getZ();
     }
 
     /** The propeller on the propeller cap: on top of the head, turning with it, spinning. */
@@ -1287,6 +1301,12 @@ final class Effects implements Listener {
                 if (tick % 4 == 0) wings(player);
             }
             case "sun_rays" -> {
+                if (tick % 4 == 0) {
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+                    Location sun = base.clone().add(0, 2.75, 0);
+                    for (int k = 1; k <= 5; k++) show(player, Particle.DUST, sun.clone().add(Math.cos(a) * k * 0.28, -k * 0.12, Math.sin(a) * k * 0.28),
+                            1, 0, 0, 0, 0, dust(Color.fromRGB(k < 3 ? 0xFFF2A0 : 0xFFC83D), 0.7f));
+                }
                 if (tick % 6 == 0) show(player, Particle.DUST, base.clone().add(rand(0.6), 1.9 + rand(0.3), rand(0.6)), 1, 0, 0, 0, 0,
                         dust(Color.fromRGB(0xFFC83D), 0.8f));
             }

@@ -74,13 +74,6 @@ HATS = {
     'sun_hat': [(-7, -0.2, -7, 7, 0.5, 7, '#e8c77a'), (-3.8, 0.5, -3.8, 3.8, 3, 3.8, '#ddb868'),
                 (-3.9, 0.5, -3.9, 3.9, 1.3, 3.9, '#ff7be5'), (3.9, 0.4, -1.6, 4.9, 1.6, -0.2, '#ffe14d'),
                 (4.1, 0.7, -1.2, 5.1, 1.3, -0.6, '#ff9f3f')],
-    'flower_crown': [(-4.5, 0, -4.5, 4.5, 0.8, -3.9, '#4aa83c'), (-4.5, 0, 3.9, 4.5, 0.8, 4.5, '#4aa83c'),
-                     (-4.5, 0, -3.9, -3.9, 0.8, 3.9, '#4aa83c'), (3.9, 0, -3.9, 4.5, 0.8, 3.9, '#4aa83c'),
-                     (-3.4, 0.2, -5, -2, 1.6, -3.8, '#ff7be5'), (-0.7, 0.2, -5, 0.7, 1.6, -3.8, '#ffe14d'),
-                     (2, 0.2, -5, 3.4, 1.6, -3.8, '#ffffff'), (-5, 0.2, -0.7, -3.8, 1.6, 0.7, '#c9b8ee'),
-                     (3.8, 0.2, -0.7, 5, 1.6, 0.7, '#ff7be5'), (-2.7, 0.2, 3.8, -1.3, 1.6, 5, '#ffe14d'),
-                     (1.3, 0.2, 3.8, 2.7, 1.6, 5, '#ffffff'), (-4.8, 0.2, -4.8, -3.8, 1.4, -3.8, '#ffffff'),
-                     (3.8, 0.2, 3.8, 4.8, 1.4, 4.8, '#c9b8ee')],
     'snorkel': [(-3.8, -4.7, -4.7, 3.8, -1.3, -4.2, '#1c1c24'), (-3.2, -4.2, -4.9, 3.2, -1.8, -4.6, '#7fd7ff'),
                 (-4.5, -3.5, -4.2, -4.2, -2.5, 4.5, '#1c1c24'), (4.2, -3.5, -4.2, 4.5, -2.5, 4.5, '#1c1c24'),
                 (-4.2, -3.5, 4.2, 4.2, -2.5, 4.5, '#1c1c24'), (4.5, -5, -2, 5.3, 3, -1.2, '#ffd23f'),
@@ -239,6 +232,35 @@ def propeller(out_root):
               open(f'{out_root}/assets/fractal/models/item/hat/propeller.json', 'w'))
     json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/hat/propeller"}},
               open(f'{out_root}/assets/fractal/items/hat/propeller.json', 'w'))
+
+
+# The flower crown: a twisted vine around the head with flowers on it (a yellow middle and four petals, facing out).
+def _flower_crown():
+    vine, leaf = '#3f8f34', '#5bbf45'
+    boxes = [(-4.6, 0, -4.6, 4.6, 0.7, -4.0, vine), (-4.6, 0, 4.0, 4.6, 0.7, 4.6, vine),
+             (-4.6, 0, -4.0, -4.0, 0.7, 4.0, vine), (4.0, 0, -4.0, 4.6, 0.7, 4.0, vine)]
+    flowers = [(-2.6, 'z', -1, '#ff8cc8'), (0.6, 'z', -1, '#ffffff'), (3.2, 'z', -1, '#c9a0ff'),
+               (-2.0, 'x', -1, '#ffe14d'), (1.8, 'x', -1, '#ff8cc8'), (-1.8, 'x', 1, '#ffffff'), (2.2, 'x', 1, '#c9a0ff'),
+               (-1.0, 'z', 1, '#ff8cc8'), (2.6, 'z', 1, '#ffe14d')]
+    for (p, axis, side, col) in flowers:
+        out = side * 4.6
+        if axis == 'z':        # on the front (-z) or back (+z) band, p along x
+            x, y = p, 0.35
+            boxes += [(x - 0.5, y - 0.5, out - 0.35, x + 0.5, y + 0.5, out + 0.35, '#ffcf3a'),
+                      (x - 0.5, y + 0.5, out - 0.25, x + 0.5, y + 1.4, out + 0.25, col), (x - 0.5, y - 1.2, out - 0.25, x + 0.5, y - 0.5, out + 0.25, col),
+                      (x - 1.4, y - 0.5, out - 0.25, x - 0.5, y + 0.5, out + 0.25, col), (x + 0.5, y - 0.5, out - 0.25, x + 1.4, y + 0.5, out + 0.25, col)]
+        else:                  # on the left (-x) or right (+x) band, p along z
+            z, y = p, 0.35
+            boxes += [(out - 0.35, y - 0.5, z - 0.5, out + 0.35, y + 0.5, z + 0.5, '#ffcf3a'),
+                      (out - 0.25, y + 0.5, z - 0.5, out + 0.25, y + 1.4, z + 0.5, col), (out - 0.25, y - 1.2, z - 0.5, out + 0.25, y - 0.5, z + 0.5, col),
+                      (out - 0.25, y - 0.5, z - 1.4, out + 0.25, y + 0.5, z - 0.5, col), (out - 0.25, y - 0.5, z + 0.5, out + 0.25, y + 0.5, z + 1.4, col)]
+    for (x, z) in [(-1.2, -4.75), (2.0, -4.75), (-4.75, 0.2), (4.75, -0.4), (0.8, 4.75)]:
+        boxes.append((x - 0.6, 0.6, z - 0.2, x + 0.6, 1.1, z + 0.2, leaf) if abs(z) > 4 else (x - 0.2, 0.6, z - 0.6, x + 0.2, 1.1, z + 0.6, leaf))
+    return boxes
+
+
+HATS['flower_crown'] = _flower_crown()
+MATERIALS['flower_crown'] = {'*': 'cloth'}
 
 
 # Suit helmets with shapes armour can't have (worn like hats): a hood around the face, plus ears, eyes or a beak.

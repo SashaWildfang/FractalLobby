@@ -873,8 +873,8 @@ mystery-boxes:
 # lobby.collectibles.all gives everything (for staff to try things out).
 collectibles:
   enabled: true
-  # Hotbar slot (1-9) for the gadget you hold.
-  gadget-slot: 4
+  # Hotbar slot (1-9) for the gadget you hold (right of the Collectibles item).
+  gadget-slot: 6
   # Price in Mystery Dust, by rarity (a suit piece costs half).
   price:
     common: 100

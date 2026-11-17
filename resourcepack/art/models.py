@@ -2,7 +2,7 @@
 Writes the HD collectible icons (icons.py), the suit textures (armor.py) and the 3D models the plugin shows in the
 world: cloak pieces, the cookie fountain, the trampoline, the balloon and the propeller (hats.py).
 """
-import json, os, random
+import json, math, os, random
 from PIL import Image
 import icons, armor
 from kit import light, dark, hexc
@@ -92,6 +92,14 @@ def noise_tex(base, size=16, amount=0.08, seed=1, bricks=False):
 
 
 GUN_DISPLAY = {
+    # Worked out from the game's own sword transforms: the muzzle (top right of the sprite, 40 degrees up) ends up
+    # pointing straight ahead in first person, and out in front of the hand in third person.
+    "firstperson_righthand": {"rotation": [0, -78, -35], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+    "firstperson_lefthand": {"rotation": [0, 78, 35], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+    "thirdperson_righthand": {"rotation": [0, -90, 55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
+    "thirdperson_lefthand": {"rotation": [0, 90, -55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
+}
+_OLD_GUN_DISPLAY = {
     "thirdperson_righthand": {"rotation": [-90, 0, -60], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
     "thirdperson_lefthand": {"rotation": [-90, 0, 30], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
     "firstperson_righthand": {"rotation": [-90, 0, -55], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
@@ -146,22 +154,35 @@ def build(out):
     write(out, P + 'halo', ring, scale=H)
     # wings: rows of feathers growing out of the spine (x = 8) to the side; the right wing is the mirror
     def wing(mirror):
-        """A bird's wing seen from behind: feathers hanging from a bone that rises from the spine (x = 8) out to
-        the tip, longer towards the tip, with a row of short coverts over their tops. No rotated parts."""
+        """A bird's wing seen from behind: twelve slim feathers hanging from a bone that arcs up from the spine
+        (x = 8) to the tip, longer and paler towards the tip, each ending in a point, with two rows of coverts."""
         boxes = []
         def mx(x0, x1):
             return (16 - x1, 16 - x0) if mirror else (x0, x1)
-        cols = ['#ffffff', '#f8f9ff', '#f0f3fd', '#e8edfb', '#e0e7f9', '#d8e0f6', '#d0daf2', '#c8d2ee']
-        for i in range(8):
-            x0 = 8.5 + i * 2
-            top = 14 + i * 1.0
-            length = [5, 6, 7.5, 9, 10.5, 12, 13, 11.5][i]
-            a, b2 = mx(x0, x0 + 2.5)
-            boxes.append(Box((a, top - length, 8.2 + (i % 2) * 0.4), (b2, top, 9.2 + (i % 2) * 0.4), cols[i], 'feather', glow=10))
-            a, b2 = mx(x0 - 0.2, x0 + 2.7)
-            boxes.append(Box((a, top - 3, 7.4), (b2, top + 0.4, 8.3), '#ffffff', 'flat', glow=10))
-            a, b2 = mx(x0 - 0.2, x0 + 2.7)
-            boxes.append(Box((a, top + 0.4, 7.4), (b2, top + 1.6, 8.6), '#ffffff', 'flat', glow=10))   # the bone
+        n = 12
+        for i in range(n):
+            t = i / (n - 1)
+            x0 = 8.4 + t * 15.6
+            top = 13 + 10 * math.sin(t * math.pi * 0.8)
+            length = 3.5 + 13 * t ** 1.2 - (2 if i == n - 1 else 0)
+            shade = int(255 - 40 * t)
+            col = '#%02x%02x%02x' % (shade - 12, shade - 6, 255)
+            z = 8.2 + (i % 2) * 0.35
+            a0, b0 = mx(x0, x0 + 1.5)
+            rot = None
+            if False:   # (no rotated feathers: they read better straight)
+                rot = {"angle": (22.5 if not mirror else -22.5), "axis": "z", "origin": [(mx(x0, x0 + 1.5)[0] + mx(x0, x0 + 1.5)[1]) / 2, top, 8]}
+            boxes.append(Box((a0, top - length + 1.2, z), (b0, top, z + 0.5), col, 'feather', glow=11, rotation=rot))
+            a1, b1 = mx(x0 + 0.4, x0 + 1.1)
+            boxes.append(Box((a1, top - length, z), (b1, top - length + 1.2, z + 0.5), col, 'flat', glow=11, rotation=rot))   # pointed tip
+        for row, (drop, z) in enumerate(((3.2, 7.6), (1.6, 7.2))):
+            for i in range(0, n, 2):
+                t = i / (n - 1)
+                x0 = 8.2 + t * 15.6
+                top = 13 + 10 * math.sin(t * math.pi * 0.8)
+                a0, b0 = mx(x0, x0 + 3.2)
+                boxes.append(Box((a0, top - drop - (1.4 if row == 0 else 0.6), z), (b0, top + 0.6, z + 0.6),
+                                 '#ffffff' if row else '#f2f5fe', 'flat', glow=11))
         return boxes
     write(out, P + 'wing_left', wing(False), scale=H)
     write(out, P + 'wing_right', wing(True), scale=H)
@@ -179,6 +200,19 @@ def build(out):
                              Box((10, 2, 5), (12, 4, 11), gw, 'flat', glow=12),
                              Box((5, 9, 4.6), (7, 11.5, 5), gb, 'flat'), Box((9, 9, 4.6), (11, 11.5, 5), gb, 'flat'),
                              Box((7, 6, 4.6), (9, 8, 5), '#2a2b3a', 'flat')], scale=H)
+    sun = [Box((5, 5, 5), (11, 11, 11), '#ffd84a', 'glow', glow=15), Box((4, 6, 6), (12, 10, 10), '#ffcf3a', 'glow', glow=15),
+           Box((6, 4, 6), (10, 12, 10), '#ffcf3a', 'glow', glow=15), Box((6, 6, 4), (10, 10, 12), '#ffcf3a', 'glow', glow=15)]
+    for k, ang in enumerate((0, 45, -45, 22.5, -22.5)):
+        for axis in (('y', 'x') if k == 0 else ('y',)):
+            rlen = 15 if k < 3 else 11
+            sun.append(Box((8 - rlen, 7.6, 7.6), (8 + rlen, 8.4, 8.4), '#fff2a0' if k < 3 else '#ffb428', 'glow', glow=15,
+                           rotation={"angle": ang, "axis": axis, "origin": [8, 8, 8]} if ang else None))
+    sun.append(Box((7.6, 7.6, -7), (8.4, 8.4, 23), '#fff2a0', 'glow', glow=15))
+    for ang in (45, -45):
+        sun.append(Box((7.6, -3, 7.6), (8.4, 19, 8.4), '#ffb428', 'glow', glow=15, rotation={"angle": ang, "axis": "x", "origin": [8, 8, 8]}))
+        sun.append(Box((7.6, -3, 7.6), (8.4, 19, 8.4), '#ffb428', 'glow', glow=15, rotation={"angle": ang, "axis": "z", "origin": [8, 8, 8]}))
+    write(out, P + 'sun3d', sun, scale=H)
+
     # flat pieces (pixel sprites)
     tex_save(out, P + 'sparkle', strip([icons.part_sparkle(i).resize((32, 32), Image.NEAREST) for i in range(4)]), 3)
     tex_save(out, P + 'flame', strip([icons.part_flame(i).resize((32, 32), Image.NEAREST) for i in range(8)]), 2)
@@ -220,6 +254,45 @@ def build(out):
         Box((5, 8, 3), (11, 14.5, 13), '#eeeeee', 'solid', tint=True), Box((5, 16, 5), (11, 17, 11), '#eeeeee', 'solid', tint=True),
         Box((5.5, 4.5, 5.5), (10.5, 6, 10.5), '#d8d8d8', 'solid', tint=True), Box((7.3, 3.2, 7.3), (8.7, 4.5, 8.7), '#c8c8c8', 'solid', tint=True),
         Box((4.5, 13, 3.9), (6.5, 15, 4.0), '#ffffff', 'flat')], scale=H, tints=True)
+    # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
+    BOX_COLOURS = {1: '#9C8DB8', 2: '#5BE37C', 3: '#7FA8FF', 4: '#C77DFF', 5: '#FFB347'}
+    QMARK = [".###.", "#...#", "...#.", "..#..", ".....", "..#.."]
+    BLOCK_DISPLAY = {"gui": {"rotation": [30, 225, 0], "translation": [0, -0.5, 0], "scale": [0.6, 0.6, 0.6]},
+                     "fixed": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.5, 0.5, 0.5]},
+                     "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.25, 0.25, 0.25]},
+                     "head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+                     "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.375, 0.375, 0.375]},
+                     "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.4, 0.4, 0.4]}}
+    for stars, col in BOX_COLOURS.items():
+        rib = '#B266FF' if stars == 5 else '#FFD27F'
+        b = [Box((1.5, 0, 1.5), (14.5, 11.5, 14.5), col, 'solid'), Box((1, 11, 1), (15, 14, 15), col, 'solid')]
+        # ribbon round the box and over the lid
+        b += [Box((7, 0, 1.3), (9, 11.5, 14.7), rib, 'metal'), Box((1.3, 0, 7), (14.7, 11.5, 9), rib, 'metal'),
+              Box((7, 11, 0.8), (9, 14.2, 15.2), rib, 'metal'), Box((0.8, 11, 7), (15.2, 14.2, 9), rib, 'metal')]
+        # the bow: a knot, two loops standing up and two tails
+        b += [Box((6.6, 14.2, 6.6), (9.4, 16, 9.4), rib, 'metal')]
+        for side in (-1, 1):
+            def X(a, c):
+                return (8 + side * a, 8 + side * c) if side > 0 else (8 - c, 8 - a)
+            for (a, c, y0, y1) in [(1.4, 6, 14.2, 15.2), (5.2, 6.4, 15.2, 18.6), (2.0, 5.4, 18.4, 19.4), (1.2, 2.2, 15.6, 18.6)]:
+                x0, x1 = X(a, c)
+                b.append(Box((x0, y0, 7.1), (x1, y1, 8.9), rib, 'metal'))
+        b += [Box((6.2, 9.5, 0.6), (7.3, 14, 1.0), rib, 'metal'), Box((8.7, 9, 0.6), (9.8, 14, 1.0), rib, 'metal')]
+        # a white "?" on each side panel
+        for (face, fixed) in (('north', 1.3), ('south', 14.7), ('west', 1.3), ('east', 14.7)):
+            for qy, row in enumerate(QMARK):
+                for qx, ch in enumerate(row):
+                    if ch != '#':
+                        continue
+                    u, v = 2.4 + qx * 0.75, 9.5 - qy * 0.75
+                    if face in ('north', 'south'):
+                        z0 = fixed - 0.1 if face == 'north' else fixed
+                        b.append(Box((u, v - 0.75, z0), (u + 0.75, v, z0 + 0.1), '#ffffff', 'flat', faces=(face,)))
+                    else:
+                        x0 = fixed - 0.1 if face == 'west' else fixed
+                        b.append(Box((x0, v - 0.75, u), (x0 + 0.1, v, u + 0.75), '#ffffff', 'flat', faces=(face,)))
+        write(out, f'mystery/box_{stars}', b, scale=H, display=BLOCK_DISPLAY)
+
     # the disco ball (texture used by sprites.py's model): mirror tiles
     t = Image.new('RGBA', (16, 16))
     shades = [(235, 238, 250), (160, 168, 196), (120, 200, 255), (255, 255, 255), (200, 160, 255), (130, 136, 160), (255, 190, 240)]

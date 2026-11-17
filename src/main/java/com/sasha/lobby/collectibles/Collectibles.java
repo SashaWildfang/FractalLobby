@@ -189,7 +189,13 @@ public final class Collectibles implements Listener {
         inventory.setChestplate(armourOrNull(player, Catalog.Piece.CHESTPLATE));
         inventory.setLeggings(armourOrNull(player, Catalog.Piece.LEGGINGS));
         inventory.setBoots(armourOrNull(player, Catalog.Piece.BOOTS));
-        int gadgetSlot = slot("collectibles.gadget-slot", 4);
+        // the gadget sits right of the Collectibles item (slot 6); configs from before 1.39 said 4
+        int configured = plugin.getConfig().getInt("collectibles.gadget-slot", 6);
+        int gadgetSlot = Math.max(0, Math.min(8, (configured == 4 ? 6 : configured) - 1));
+        if (gadgetSlot != 3) {
+            ItemStack old = inventory.getItem(3);
+            if (old != null && old.hasItemMeta() && "gadget".equals(kindOf(old))) inventory.setItem(3, null);
+        }
         inventory.setItem(gadgetSlot, gadget != null && owns(player, gadget) ? gadgetItem(gadget) : null);
         // The ability item from 1.36 is gone: abilities are a right-click with an empty hand now.
         int oldAbility = slot("collectibles.ability-slot", 6);
@@ -203,6 +209,11 @@ public final class Collectibles implements Listener {
         }
         effects.worn(player);
         if (plugin.doubleJump() != null) plugin.doubleJump().refresh(player);
+    }
+
+    private String kindOf(ItemStack item) {
+        String what = item.getItemMeta().getPersistentDataContainer().get(itemKey, PersistentDataType.STRING);
+        return what == null ? null : what.contains(":") ? what.substring(0, what.indexOf(':')) : what;
     }
 
     private ItemStack armourOrNull(Player player, Catalog.Piece piece) {

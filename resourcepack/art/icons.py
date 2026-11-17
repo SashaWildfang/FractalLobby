@@ -1092,3 +1092,60 @@ def gesture_facepalm3():
 GADGETS['snow_cannon'] = gun_snow_cannon2
 GESTURES['clap'] = gesture_clap2
 GESTURES['facepalm'] = gesture_facepalm3
+
+
+# ---------------------------------------------------------------- 1.39: cloak icons show just the cloak
+
+def cloak_sparkle3():
+    c = Canvas()
+    for (x, y, r, col) in [(11, 12, 8, '#ffffff'), (23, 8, 5, '#ff9ede'), (22, 23, 6.5, '#ffd0f4'), (7, 25, 3.5, '#ff9ede'),
+                           (27, 16, 2.5, '#ffffff'), (5, 4, 2.5, '#ffd0f4')]:
+        c.star(x, y, r, col, inner=0.26)
+        c.star(x, y, r * 0.4, '#ffffff', inner=0.3, rot=-45)
+    return c.done()
+
+
+def cloak_halo3():
+    c = Canvas()
+    c.shape('ellipse', (2, 9, 30, 23), '#c9963a')
+    c.shape('ellipse', (2, 8, 30, 21), '#ffcf5a')
+    c.shape('ellipse', (3, 8.5, 29, 15), '#ffe88a')
+    c.erase('ellipse', (8, 11.5, 24, 17.5))
+    for (x, y) in [(6, 5), (27, 4), (16, 26)]:
+        c.star(x, y, 2.4, '#fff6c0', inner=0.3)
+    return c.done()
+
+
+def cloak_wings3():
+    c = Canvas()
+    for side in (-1, 1):
+        def P(x, y):
+            return (16 + side * x, y)
+        main = [P(1, 13), P(4, 8), P(9, 4), P(14, 2), P(15.5, 4), P(15, 9), P(13.5, 14), P(11, 19), P(8, 23), P(5, 25.5), P(2, 23), P(1, 18)]
+        c.shape('poly', main, '#bcc8ea')
+        for (x, y, r) in [(13.2, 13, 2.6), (11, 17.5, 2.6), (8.3, 21.5, 2.6), (5, 24, 2.4)]:
+            px_, py_ = P(x, y)
+            c.shape('ellipse', (px_ - r, py_ - r, px_ + r, py_ + r), '#bcc8ea')
+            c.shape('arc', ((px_ - r, py_ - r, px_ + r, py_ + r), 20, 160), '#8e9cc8', width=0.7)
+        mid = [P(1, 13), P(4, 8), P(9, 4), P(14, 2), P(15, 5), P(13.5, 10), P(10, 15), P(6, 19), P(2, 19)]
+        c.shape('poly', mid, '#dfe6f8')
+        top = [P(1, 13), P(4, 8), P(9, 4), P(14, 2), P(14.5, 4.5), P(10, 8), P(5.5, 12), P(2, 15)]
+        c.shape('poly', top, '#ffffff')
+    return c.done()
+
+
+def cloak_sun3():
+    c = Canvas()
+    for i in range(12):
+        a = math.radians(i * 30 + 15)
+        l = 15.5 if i % 2 == 0 else 12.5
+        c.shape('poly', [(16 + math.cos(a - 0.22) * 8, 16 + math.sin(a - 0.22) * 8), (16 + math.cos(a) * l, 16 + math.sin(a) * l),
+                         (16 + math.cos(a + 0.22) * 8, 16 + math.sin(a + 0.22) * 8)], ('lin', '#fff2a0', '#ff9a2e', 90))
+    c.shape('ellipse', (7, 7, 25, 25), '#ffb428')
+    c.shape('ellipse', (8, 8, 24, 23), '#ffd84a')
+    c.shape('ellipse', (10, 9.5, 19, 17), '#fff2a0')
+    return c.done()
+
+
+CLOAKS.update({'sparkle_aura': cloak_sparkle3, 'halo': cloak_halo3, 'angel_wings': cloak_wings3, 'sun_rays': cloak_sun3})
+GUNS = GUNS + ('party_popper',)

@@ -113,7 +113,7 @@ if __name__ == '__main__':
     ims = []
     for p in paths:
         for yaw in ((180, 0) if 'wing' in p else (-35, 145)):
-            ims.append(render(f'{root}/assets/fractal/models/item/{p}.json', f'{root}/assets/fractal/textures', yaw=yaw, pitch=0 if 'wing' in p else 25))
+            ims.append(render(f'{root}/assets/fractal/models/item/{p}.json', f'{root}/assets/fractal/textures', yaw=yaw, pitch=0 if 'wing' in p else 25, zoom=0.7 if 'wing' in p else 1.0))
     cols = 6
     sheet = Image.new('RGBA', (cols * 256, ((len(ims) + cols - 1) // cols) * 256))
     for i, im in enumerate(ims):

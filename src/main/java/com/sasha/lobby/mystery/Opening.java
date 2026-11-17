@@ -115,7 +115,7 @@ final class Opening {
     // ---------------------------------------------------------------- the stages
 
     private void rise() {
-        if (tick == 1) set(box, 0.35f, 0.7f, 0, RISE);
+        if (tick == 1) set(box, 0.35f, 1.0f, 0, RISE);
         world().spawnParticle(Particle.REVERSE_PORTAL, base.clone().add(0, 0.4, 0), 6, 0.3, 0.2, 0.3, 0.05);
     }
 
@@ -125,7 +125,7 @@ final class Opening {
         if (tick % 2 == 0) {
             spin += spinSpeed * 2;
             float lift = (float) (0.35 + progress * 0.95 + Math.sin(tick * 0.3) * 0.05);
-            set(box, lift, 0.7f, spin, 2);
+            set(box, lift, 1.0f, spin, 2);
             // The stars orbit the box, closer and faster as it charges.
             double radius = 0.95 - progress * 0.35;
             for (int i = 0; i < orbs.size(); i++) {
@@ -148,7 +148,7 @@ final class Opening {
         double progress = (tick - CHARGE) / (double) (SHAKE - CHARGE);
         ThreadLocalRandom random = ThreadLocalRandom.current();
         spin += 40;
-        float pulse = (tick % 4 < 2) ? 0.82f : 0.72f;
+        float pulse = (tick % 4 < 2) ? 1.12f : 1.0f;
         float jitter = (float) (0.04 + progress * 0.06);
         Vector3f wobble = new Vector3f((float) random.nextDouble(-jitter, jitter), 1.3f + (float) random.nextDouble(-jitter, jitter),
                 (float) random.nextDouble(-jitter, jitter));
