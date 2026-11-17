@@ -107,3 +107,58 @@ def streamer_piece(i):
         im.putpixel((x, y), light + (255,))
         im.putpixel((x + 1, y), base + (255,))
     return im
+
+
+# ---------------------------------------------------------------- 1.41: bigger and centred in the slot
+K, AX, AY = 1.3, 11.5, 21.5          # scale the sealed popper up by K around its middle (AX, AY) to the slot's middle
+
+
+def T(x, y):
+    return 16 + (x - AX) * K, 16 + (y - AY) * K
+
+
+STRIPES = lambda t, u: ('#ffb3ee' if u < -0.45 else '#c2389f' if u > 0.45 else '#ff6fd8') if int(t * 5) % 2 \
+    else ('#c79bff' if u < -0.45 else '#5a2ab0' if u > 0.45 else '#9b5cff')
+
+
+def _cone(p):
+    p.cone(T(4, 29), T(12, 13), T(20, 21), STRIPES)
+
+
+def popper_closed():
+    """The sealed popper, filling the slot: a striped cone with a gold foil cap over the mouth and a pull string."""
+    p = P()
+    _cone(p)
+    cx, cy = T(16, 17)
+    half, height = 5.9 * K, 3.4 * K
+    for y in range(32):
+        for x in range(32):
+            px, py = x + 0.5, y + 0.5
+            along = ((px - cx) - (py - cy)) / 1.414
+            across = ((px - cx) + (py - cy)) / 1.414
+            if -0.3 <= along <= height * math.sqrt(max(0, 1 - (across / half) ** 2)) and abs(across) <= half:
+                col = '#fff2a0' if across < -2.5 else '#e2a93a' if across > 2.8 else '#ffcf5a'
+                if (x + y) % 5 == 0 and abs(across) < half - 2: col = '#fff8d0'
+                p.put(x, y, col)
+    gx, gy = T(15, 14.5)
+    p.put(gx, gy, '#ffffff'); p.put(gx + 1, gy, '#ffffff')
+    a, b, c = T(4, 29), T(2.5, 30.5), T(3.5, 31.5)
+    p.curve([a, b, c], '#ffffff', 20)
+    return p.outline()
+
+
+def popper_open():
+    """The same popper, just popped: the cap is gone and streamers and confetti burst out of the mouth (up and right)."""
+    p = P()
+    _cone(p)
+    a, b = T(12, 13), T(20, 21)                                # the gold rim round the open mouth
+    for i in range(14):
+        p.put(a[0] + (b[0] - a[0]) * i / 13, a[1] + (b[1] - a[1]) * i / 13, '#ffe14d')
+    mx, my = T(16, 17)                                         # the middle of the mouth
+    for pts, c in [([(mx, my), (mx + 1, my - 4), (mx + 4, my - 5), (mx + 5, my - 9)], '#ff6fd8'),
+                   ([(mx + 1, my + 1), (mx + 5, my - 1), (mx + 6, my - 3), (mx + 9, my - 5)], '#ffe14d'),
+                   ([(mx - 1, my - 1), (mx - 1, my - 5), (mx + 1, my - 7), (mx + 1, my - 9.5)], '#5bc8ff')]:
+        p.curve(pts, c); p.curve([(x + 0.6, y + 0.6) for x, y in pts], c)
+    for (dx, dy, c) in [(8, -9, '#7fe39a'), (8, 1, '#5bc8ff'), (-4, -8.5, '#ffe14d'), (4.5, -8, '#ff6fd8')]:
+        p.sq(mx + dx, my + dy, c)
+    return p.outline()

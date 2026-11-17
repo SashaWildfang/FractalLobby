@@ -856,7 +856,11 @@ class Gun:
         self.rect(u0, r * 0.35, u1, r * 0.8, light(base, 0.35))
 
 
-def gun_paintball():
+PAINTS = ['#ff6fd8', '#9b5cff', '#5bc8ff', '#7fe35a', '#ffd23a', '#ff8a1f', '#e040c0', '#2fc8c8']   # the paint colours, in order
+
+
+def gun_paintball(paint='#ff6fd8'):
+    """The paintball gun; the hopper, stripe and drips show the colour it will shoot next."""
     c = Canvas()
     g = Gun(c)
     g.poly([(4, -1), (9, -1), (7, -9), (3, -9)], '#2c2a40')            # grip
@@ -865,13 +869,19 @@ def gun_paintball():
     g.rect(20, -1.8, 29, 1.8, '#a8acbc')                                 # barrel
     g.rect(20, 0.4, 29, 1.2, '#e8eaf4')
     g.rect(28, -2.2, 30, 2.2, '#5a5e70')
-    g.rect(6, -0.6, 19, 0.6, '#ffcf5a')                                  # stripe
-    g.oval(12, 6.5, 4.2, 4.2, '#ff6fd8')                                 # paint hopper
-    g.oval(11, 7.6, 1.6, 1.4, '#ffc4ee')
+    g.rect(6, -0.6, 19, 0.6, paint)                                      # stripe in the paint's colour
+    g.oval(12, 6.5, 4.2, 4.2, paint)                                     # paint hopper
+    g.oval(11, 7.6, 1.6, 1.4, light(paint, 0.55))
     g.rect(10.5, 2.5, 13.5, 3.6, '#4a3a8a')
     for (u, v) in [(32.5, 3), (33, -2.5)]:
         x, y = g.p(u, v)
-        c.shape('ellipse', (x - 1, y - 1, x + 1, y + 1), '#ff6fd8')
+        c.shape('ellipse', (x - 1, y - 1, x + 1, y + 1), paint)
+    return c.done()
+
+
+def paintball_of(paint):
+    c = Canvas(16, 16)
+    c.ball(8, 8, 5.5, paint)
     return c.done()
 
 

@@ -405,10 +405,7 @@ final class Effects implements Listener {
         World world = player.getWorld();
         switch (key) {
             case "party_popper" -> partyPopper(player);
-            case "paintball_gun" -> {
-                toss(player, modelled(Material.SNOWBALL, "gadget/paintball"), "paint", 2.2);
-                sound(eye, "entity.chicken.egg", 0.6f, 1.6f);
-            }
+            case "paintball_gun" -> paintball(player);
             case "bubble_wand" -> {
                 sound(eye, "block.bubble_column.upwards_inside", 0.8f, 1.5f);
                 for (int i = 0; i < 7; i++) {
@@ -1433,7 +1430,7 @@ final class Effects implements Listener {
         World world = at.getWorld();
         projectile.remove();
         switch (effect.contains(":") ? effect.substring(0, effect.indexOf(':')) : effect) {
-            case "paint" -> paint(event.getHitBlock(), at);
+            case "paint" -> paint(event.getHitBlock(), at, effect.contains(":") ? Integer.parseInt(effect.substring(effect.indexOf(':') + 1)) : -1);
             case "rush" -> {
                 world.spawnParticle(Particle.PORTAL, at, 30, 0.3, 0.5, 0.3, 0.5);
                 sound(at, "entity.enderman.teleport", 0.6f, 1.4f);
@@ -1502,11 +1499,41 @@ final class Effects implements Listener {
     }
 
     /** Splats colour on the blocks around a paintball hit, only shown to players, gone after a few seconds. */
-    private void paint(Block hit, Location at) {
+    /** The paints, in the pack's order (icons.PAINTS): the block it splats, and its colour for the droplets. */
+    private static final Material[] PAINT_BLOCKS = {Material.PINK_CONCRETE, Material.PURPLE_CONCRETE, Material.LIGHT_BLUE_CONCRETE,
+            Material.LIME_CONCRETE, Material.YELLOW_CONCRETE, Material.ORANGE_CONCRETE, Material.MAGENTA_CONCRETE, Material.CYAN_CONCRETE};
+    private static final int[] PAINT_RGB = {0xFF6FD8, 0x9B5CFF, 0x5BC8FF, 0x7FE35A, 0xFFD23A, 0xFF8A1F, 0xE040C0, 0x2FC8C8};
+    /** Fires a paintball of the colour the gun shows, then loads a different colour (and the gun changes to it). */
+    private void paintball(Player player) {
+        int slot = player.getInventory().getHeldItemSlot();
+        ItemStack held = player.getInventory().getItem(slot);
+        NamespacedKey shown = held != null && held.hasItemMeta() ? held.getItemMeta().getItemModel() : null;
+        boolean gun = shown != null && shown.getKey().startsWith("gadget/paintball_gun");
+        int paint = 0;                                                     // the plain gun is pink, the first paint
+        if (gun && shown.getKey().startsWith("gadget/paintball_gun_")) {
+            try {
+                paint = Integer.parseInt(shown.getKey().substring("gadget/paintball_gun_".length())) % PAINT_BLOCKS.length;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        Snowball ball = toss(player, modelled(Material.SNOWBALL, "gadget/paintball_" + paint), "paint:" + paint, 2.2);
+        sound(player.getEyeLocation(), "entity.chicken.egg", 0.6f, 1.6f);
+        sound(player.getEyeLocation(), "block.piston.contract", 0.25f, 2f);
+        int next = (paint + 1 + ThreadLocalRandom.current().nextInt(PAINT_BLOCKS.length - 1)) % PAINT_BLOCKS.length;
+        if (gun) {
+            held.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "gadget/paintball_gun_" + next)));
+            player.getInventory().setItem(slot, held);
+        }
+        Color trail = Color.fromRGB(PAINT_RGB[paint]);
+        every(20, t -> {
+            if (ball.isValid() && t % 2 == 0) ball.getWorld().spawnParticle(Particle.DUST, ball.getLocation(), 1, 0, 0, 0, 0, dust(trail, 0.7f));
+        }, null);
+    }
+
+    private void paint(Block hit, Location at, int colour) {
         if (hit == null) return;
-        Material[] colours = {Material.PINK_CONCRETE, Material.PURPLE_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE,
-                Material.YELLOW_CONCRETE, Material.ORANGE_CONCRETE, Material.MAGENTA_CONCRETE, Material.CYAN_CONCRETE};
-        BlockData paint = colours[ThreadLocalRandom.current().nextInt(colours.length)].createBlockData();
+        int index = colour >= 0 && colour < PAINT_BLOCKS.length ? colour : ThreadLocalRandom.current().nextInt(PAINT_BLOCKS.length);
+        BlockData paint = PAINT_BLOCKS[index].createBlockData();
         List<Block> splat = new ArrayList<>();
         int radius = Math.max(1, plugin.getConfig().getInt("collectibles.paintball-radius", 3));
         for (int x = -radius; x <= radius; x++) for (int y = -radius; y <= radius; y++) for (int z = -radius; z <= radius; z++) {
@@ -1521,10 +1548,8 @@ final class Effects implements Listener {
         List<Player> viewers = at.getWorld().getPlayers().stream().filter(p -> p.getLocation().distanceSquared(at) < 64 * 64).toList();
         for (Player viewer : viewers) for (Block block : splat) viewer.sendBlockChange(block.getLocation(), paint);
         at.getWorld().spawnParticle(Particle.BLOCK, at, 45, 0.6, 0.6, 0.6, 0, paint);
-        at.getWorld().spawnParticle(Particle.DUST, at, 30, 0.8, 0.8, 0.8, 0,
-                dust(paint.getMaterial() == Material.PINK_CONCRETE ? Color.fromRGB(0xFF7BE5) : party(), 1.4f));
-        sound(at, "entity.slime.squish", 1f, 1.3f);
-        sound(at, "entity.slime.squish_small", 1f, 0.9f);
+        at.getWorld().spawnParticle(Particle.DUST, at, 30, 0.8, 0.8, 0.8, 0, dust(Color.fromRGB(PAINT_RGB[index]), 1.4f));
+        sound(at, "fractal:gadget.paint_splat", 1f, 0.9f + ThreadLocalRandom.current().nextFloat() * 0.2f);
         later(120, () -> {
             for (Player viewer : viewers) {
                 if (!viewer.isOnline()) continue;

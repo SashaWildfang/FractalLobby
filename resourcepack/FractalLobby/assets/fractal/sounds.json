@@ -5,5 +5,18 @@
     "name": "fractal:gadget/party_popper"
    }
   ]
+ },
+ "gadget.paint_splat": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/paint_splat_1"
+   },
+   {
+    "name": "fractal:gadget/paint_splat_2"
+   },
+   {
+    "name": "fractal:gadget/paint_splat_3"
+   }
+  ]
  }
 }

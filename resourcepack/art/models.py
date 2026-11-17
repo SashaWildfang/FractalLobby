@@ -100,6 +100,8 @@ GUN_DISPLAY = {
     "thirdperson_righthand": {"rotation": [0, -90, 55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
     "thirdperson_lefthand": {"rotation": [0, 90, -55], "translation": [0, 4, 0.5], "scale": [0.85, 0.85, 0.85]},
 }
+POPPER_DISPLAY = {k: {"rotation": v["rotation"], "translation": v["translation"], "scale": [round(v["scale"][0] / 1.3, 3)] * 3}
+                  for k, v in GUN_DISPLAY.items()}
 _OLD_GUN_DISPLAY = {
     "thirdperson_righthand": {"rotation": [-90, 0, -60], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
     "thirdperson_lefthand": {"rotation": [-90, 0, 30], "translation": [2, 0.1, -3], "scale": [0.9, 0.9, 0.9]},
@@ -130,6 +132,20 @@ def build(out):
         else:
             flat_item(out, f'gadget/{key}', fn())
         n += 1
+    # the paintball gun in each paint colour (it shows the colour it shoots next), and a paintball of each colour
+    for i, paint in enumerate(icons.PAINTS):
+        held_item(out, f'gadget/paintball_gun_{i}', icons.gun_paintball(paint), display=GUN_DISPLAY)
+        flat_item(out, f'gadget/paintball_{i}', icons.paintball_of(paint))
+    # the party popper: held smaller (the art fills the slot now), and pointing left in menus like it does in the hand
+    from PIL import ImageOps
+    for key in ('party_popper', 'party_popper_open'):
+        img = icons.GADGETS[key]()
+        held_item(out, f'gadget/{key}', img, display=POPPER_DISPLAY)
+        flat_item(out, f'gadget/{key}_gui', ImageOps.mirror(img))
+        json.dump({"model": {"type": "minecraft:select", "property": "minecraft:display_context",
+                             "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}_gui"}}],
+                             "fallback": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}"}}},
+                  open(f'{out}/assets/fractal/items/gadget/{key}.json', 'w'))
     # the fake TNT is the game's own TNT block (readable label, the real look)
     _dirs(out, 'gadget')
     json.dump({"model": {"type": "minecraft:model", "model": "minecraft:block/tnt"}}, open(f'{out}/assets/fractal/items/gadget/fake_tnt.json', 'w'))
@@ -313,6 +329,10 @@ def build(out):
     sounds_path = f'{out}/assets/fractal/sounds.json'
     sounds = json.load(open(sounds_path)) if os.path.exists(sounds_path) else {}
     sounds['gadget.party_popper'] = {"sounds": [{"name": "fractal:gadget/party_popper"}]}
+    for i in (1, 2, 3):
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'paint_splat_{i}.ogg'),
+                    f'{out}/assets/fractal/sounds/gadget/paint_splat_{i}.ogg')
+    sounds['gadget.paint_splat'] = {"sounds": [{"name": f"fractal:gadget/paint_splat_{i}"} for i in (1, 2, 3)]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
