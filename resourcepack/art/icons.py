@@ -1900,3 +1900,7 @@ GADGETS.update({'hot_potato': gi_hot_potato, 'magic_8_ball': gi_magic_8_ball, 'f
                 'let_it_snow': gi_let_it_snow, 'ice_skate': gi_ice_skate, 'frisbee': gi_frisbee, 'sand_castle': gi_sand_castle,
                 'tic_tac_toe': gi_tic_tac_toe, 'dj_booth': gi_dj_booth})
 GUNS = GUNS + ('mob_gun', 'railgun')
+
+
+from bubble_wand_icon import bubble_wand as _bubble_wand_pixels
+GADGETS['bubble_wand'] = _bubble_wand_pixels
