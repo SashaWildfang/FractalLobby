@@ -273,14 +273,8 @@ def build(out):
 
     # ------------------------------------------------ gadgets in the world
     stone, dough, choc = '#a8acba', '#c98a4b', '#4a2410'
-    write(out, 'gadget/cookie_fountain_3d', [
-        Box((1, 0, 1), (15, 3.5, 2.5), stone, 'brick'), Box((1, 0, 13.5), (15, 3.5, 15), stone, 'brick'),
-        Box((1, 0, 2.5), (2.5, 3.5, 13.5), stone, 'brick'), Box((13.5, 0, 2.5), (15, 3.5, 13.5), stone, 'brick'),
-        Box((2.5, 0, 2.5), (13.5, 2.5, 13.5), dough, 'solid'),
-        Box((4, 2.5, 5), (6, 3, 7), choc, 'flat'), Box((9, 2.5, 4), (11, 3, 6), choc, 'flat'), Box((10, 2.5, 10), (12, 3, 12), choc, 'flat'),
-        Box((6.5, 2.5, 6.5), (9.5, 10, 9.5), stone, 'brick'), Box((4.5, 10, 4.5), (11.5, 11.5, 11.5), stone, 'brick'),
-        Box((5.5, 11.5, 5.5), (10.5, 12.5, 10.5), dough, 'solid'), Box((6.5, 12.5, 6.5), (9.5, 13.5, 9.5), dough, 'solid'),
-        Box((7, 13.5, 7), (8.5, 14, 8.5), choc, 'flat')], scale=H)
+    import cookie_fountain
+    cookie_fountain.build(out)                        # the big three-tier fountain and its flowing chocolate milk
     yellow, blue, leg = '#ffcf5a', '#3c6ae0', '#5a6078'
     write(out, 'gadget/trampoline_3d', [
         Box((1, 0, 1), (2.2, 10.5, 2.2), leg, 'metal'), Box((13.8, 0, 1), (15, 10.5, 2.2), leg, 'metal'),

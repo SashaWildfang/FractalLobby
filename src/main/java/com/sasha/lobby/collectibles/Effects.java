@@ -114,10 +114,12 @@ final class Effects implements Listener {
     private static final class Placed {
         final ItemDisplay display;
         final BukkitTask task;
+        final Entity[] extras;
 
-        Placed(ItemDisplay display, BukkitTask task) {
+        Placed(ItemDisplay display, BukkitTask task, Entity... extras) {
             this.display = display;
             this.task = task;
+            this.extras = extras;
         }
     }
 
@@ -541,44 +543,75 @@ final class Effects implements Listener {
         if (old == null) return;
         old.task.cancel();
         old.display.remove();
+        for (Entity extra : old.extras) extra.remove();
     }
 
     /** A cookie fountain on the ground, spraying cookies for eight seconds, then sinking away. */
     private void cookieFountain(Player player) {
         unplace(player.getUniqueId());
         Location at = ground(player);
-        ItemDisplay fountain = at.getWorld().spawn(at, ItemDisplay.class, d -> {
-            d.setItemStack(modelled(Material.COOKIE, "gadget/cookie_fountain_3d"));
-            d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
-        });
-        tagged(fountain, "fountain");
+        World world = at.getWorld();
+        // the fountain and its chocolate milk are two models on top of each other; both rise out of the ground
+        ItemDisplay[] parts = new ItemDisplay[2];
+        String[] models = {"gadget/cookie_fountain_3d", "gadget/cookie_fountain_flow"};
+        for (int i = 0; i < 2; i++) {
+            String model = models[i];
+            parts[i] = world.spawn(at, ItemDisplay.class, d -> {
+                d.setItemStack(modelled(Material.COOKIE, model));
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f(0, 0.05f, 0), new AxisAngle4f(), new Vector3f(2f, 0.01f, 2f), new AxisAngle4f()));
+            });
+            tagged(parts[i], "fountain");
+        }
+        ItemDisplay fountain = parts[0], milk = parts[1];
         later(1, () -> {
-            fountain.setInterpolationDelay(0);
-            fountain.setInterpolationDuration(8);
-            fountain.setTransformation(new Transformation(new Vector3f(0, 0.75f, 0), new AxisAngle4f(), new Vector3f(1.5f), new AxisAngle4f()));
+            for (ItemDisplay part : parts) {
+                if (!part.isValid()) continue;
+                part.setInterpolationDelay(0);
+                part.setInterpolationDuration(12);
+                part.setTransformation(new Transformation(new Vector3f(0, 1f, 0), new AxisAngle4f(), new Vector3f(2f), new AxisAngle4f()));
+            }
         });
-        sound(at, "block.stone.place", 1f, 0.9f);
+        sound(at, "block.stone.place", 1f, 0.8f);
         sound(at, "entity.player.levelup", 0.4f, 1.8f);
         ItemStack cookie = modelled(Material.COOKIE, "gadget/cookie");
-        Location top = at.clone().add(0, 1.45, 0);
-        BukkitTask run = every(180, t -> {
-            if (t < 10) return;
-            if (t < 160) {
-                if (t % 3 == 0) burstItems(top, cookie, 1, 0.16, 45);
-                if (t % 4 == 0) at.getWorld().spawnParticle(Particle.DUST, top, 2, 0.15, 0.1, 0.15, 0, dust(Color.fromRGB(0xC98A4B), 1.1f));
-                if (t % 12 == 0) sound(top, "entity.item.pickup", 0.5f, 0.8f + (t % 48) / 48f);
-            } else if (t == 160) {
-                fountain.setInterpolationDelay(0);
-                fountain.setInterpolationDuration(15);
-                fountain.setTransformation(new Transformation(new Vector3f(0, 0.4f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        Location top = at.clone().add(0, 2.45, 0);
+        Color brown = Color.fromRGB(0x8A5530), cream = Color.fromRGB(0xE2C4A4);
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        BukkitTask run = every(260, t -> {
+            if (t < 14) return;
+            if (t < 236) {
+                // cookies spring out of the top and fly out over the edge
+                if (t % 3 == 0) burstItems(top, cookie, 1, 0.24, 50);
+                // the spring of milk at the top
+                if (t % 2 == 0) world.spawnParticle(Particle.DUST, top.clone().add(rand(0.12), rand(0.08), rand(0.12)), 2, 0.05, 0.05, 0.05, 0,
+                        dust(t % 6 == 0 ? cream : brown, 0.8f));
+                // splashes where the milk pours into the pools below
+                for (int k = 0; k < 2; k++) {
+                    double a = r.nextDouble(Math.PI * 2);
+                    boolean basin = r.nextBoolean();
+                    double radius = basin ? 0.84 : 0.53, y = basin ? 0.36 : 1.22;
+                    world.spawnParticle(Particle.DUST, at.clone().add(Math.cos(a) * radius, y, Math.sin(a) * radius), 1, 0.03, 0.03, 0.03, 0,
+                            dust(r.nextInt(4) == 0 ? cream : brown, 0.6f));
+                }
+                if (t % 30 == 14) sound(at.clone().add(0, 1, 0), "block.water.ambient", 0.5f, 1.4f);
+                if (t % 9 == 0) sound(top, "block.pointed_dripstone.drip_water_into_cauldron", 0.4f, 0.8f + r.nextFloat() * 0.4f);
+                if (t % 12 == 0) sound(top, "entity.item.pickup", 0.4f, 0.8f + (t % 48) / 48f);
+            } else if (t == 236) {
+                for (ItemDisplay part : parts) {
+                    part.setInterpolationDelay(0);
+                    part.setInterpolationDuration(18);
+                    part.setTransformation(new Transformation(new Vector3f(0, 0.05f, 0), new AxisAngle4f(), new Vector3f(2f, 0.01f, 2f), new AxisAngle4f()));
+                }
                 sound(at, "block.stone.break", 0.8f, 1.1f);
             }
         }, () -> {
-            at.getWorld().spawnParticle(Particle.POOF, at.clone().add(0, 0.4, 0), 12, 0.3, 0.2, 0.3, 0.02);
+            world.spawnParticle(Particle.POOF, at.clone().add(0, 0.4, 0), 16, 0.6, 0.2, 0.6, 0.02);
             fountain.remove();
+            milk.remove();
             placed.remove(player.getUniqueId());
         });
-        placed.put(player.getUniqueId(), new Placed(fountain, run));
+        placed.put(player.getUniqueId(), new Placed(fountain, run, milk));
     }
 
     /** A trampoline on the ground for fifteen seconds; anyone who lands on it bounces high. */
