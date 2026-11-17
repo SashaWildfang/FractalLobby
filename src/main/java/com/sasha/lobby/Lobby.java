@@ -80,6 +80,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private final com.sasha.lobby.help.CommandHelp help = new com.sasha.lobby.help.CommandHelp();
     private Profile profile;
     private com.sasha.lobby.mystery.MysteryBoxes mystery;
+    private com.sasha.lobby.collectibles.Collectibles collectibles;
     private com.sasha.lobby.items.FriendsMenu friendsMenu;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
@@ -128,10 +129,11 @@ public final class Lobby extends JavaPlugin implements Listener {
         profile = new Profile(this);
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
         mystery = new com.sasha.lobby.mystery.MysteryBoxes(this);
+        collectibles = new com.sasha.lobby.collectibles.Collectibles(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, mystery, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, mystery, collectibles, collectibles.effectsListener(), new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -139,6 +141,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         holograms.start();
         npcs.start();
         mystery.start();
+        collectibles.start();
         afk.start();
         display.start();
         border.apply();
@@ -164,6 +167,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
         if (npcs != null) npcs.stop();
+        if (collectibles != null) collectibles.stop();
         if (mystery != null) mystery.stop();
         if (holograms != null) holograms.shutdown();
         if (serverStatus != null) serverStatus.stop();
@@ -218,6 +222,11 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public com.sasha.lobby.items.Statuses statuses() {
         return statuses;
+    }
+
+    /** Hats, suits, gadgets, cloaks, emotes and gestures. */
+    public com.sasha.lobby.collectibles.Collectibles collectibles() {
+        return collectibles;
     }
 
     /** Mystery Boxes and Mystery Dust (null until the plugin has started). */
@@ -292,6 +301,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         holograms.start();
         npcs.start();
         mystery.reload();
+        collectibles.start();
         afk.start();
         display.start();
         for (Player player : getServer().getOnlinePlayers()) {
@@ -431,12 +441,34 @@ public final class Lobby extends JavaPlugin implements Listener {
                                         return Command.SINGLE_SUCCESS;
                                     })))
                     .then(Commands.literal("vault").requires(source -> source.getSender().hasPermission("lobby.admin"))
-                            .then(Commands.literal("set").executes(context -> asPlayer(context.getSource(), player -> mystery.vault().set(player))))
-                            .then(Commands.literal("remove").executes(context -> {
-                                mystery.vault().remove(context.getSource().getSender());
+                            .then(Commands.literal("add").executes(context -> asPlayer(context.getSource(), player -> mystery.vault().add(player))))
+                            .then(Commands.literal("set").executes(context -> asPlayer(context.getSource(), player -> mystery.vault().add(player))))
+                            .then(Commands.literal("remove").executes(context -> asPlayer(context.getSource(), player -> mystery.vault().remove(player))))
+                            .then(Commands.literal("list").executes(context -> {
+                                mystery.vault().list(context.getSource().getSender());
                                 return Command.SINGLE_SUCCESS;
                             })))
                     .build(), "Open your Mystery Boxes", List.of("mysteryboxes", "mb", "boxes"));
+
+            commands.register(Commands.literal("collectibles")
+                    .executes(context -> asPlayer(context.getSource(), collectibles::open))
+                    .build(), "Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures", List.of("cosmetics", "wardrobe"));
+
+            for (var category : List.of(com.sasha.lobby.collectibles.Catalog.Category.EMOTE, com.sasha.lobby.collectibles.Catalog.Category.GESTURE)) {
+                String name = category == com.sasha.lobby.collectibles.Catalog.Category.EMOTE ? "emote" : "gesture";
+                commands.register(Commands.literal(name)
+                        .executes(context -> asPlayer(context.getSource(), collectibles::open))
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    if (context.getSource().getSender() instanceof Player p) {
+                                        for (String key : collectibles.owned(p, category)) if (key.startsWith(builder.getRemainingLowerCase())) builder.suggest(key);
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(context -> asPlayer(context.getSource(), player ->
+                                        collectibles.use(player, category, StringArgumentType.getString(context, "name")))))
+                        .build(), name.equals("emote") ? "Do an emote (a big emoji over your head)" : "Do a gesture (wave, clap, spin...)", List.of());
+            }
 
             commands.register(Commands.literal("dust")
                     .executes(context -> asPlayer(context.getSource(), mystery::showDust))

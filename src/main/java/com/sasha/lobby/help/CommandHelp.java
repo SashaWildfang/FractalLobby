@@ -63,12 +63,17 @@ public final class CommandHelp {
         // ---- parkour
         e.add(new Entry("mystery", "/mysterybox", "Open the Mystery Vault menu: your boxes, crafting with dust, your collection.", null,
                 List.of("Aliases: /mb, /boxes. Boxes are opened at the Mystery Vault.")));
+        e.add(new Entry("player", "/collectibles", "Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.", null,
+                List.of("Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar.")));
+        e.add(new Entry("player", "/emote <name>", "Do an emote you've found (a big emoji over your head).", null, List.of()));
+        e.add(new Entry("player", "/gesture <name>", "Do a gesture you've found (wave, clap, spin...).", null, List.of()));
         e.add(new Entry("mystery", "/dust", "See how much Mystery Dust you have.", null, List.of()));
         e.add(new Entry("mystery", "/mysterybox give <player> <stars> [amount]", "Give Mystery Boxes (works from the console, for the store and votes).", admin, List.of()));
         e.add(new Entry("mystery", "/mysterybox dust <player> <amount>", "Give Mystery Dust (a negative amount takes it away).", admin, List.of()));
         e.add(new Entry("mystery", "/mysterybox reset <player>", "Take away a player's boxes, dust and found cosmetics.", admin, List.of()));
-        e.add(new Entry("mystery", "/mysterybox vault set", "Put the Mystery Vault on the block you stand on.", admin, List.of()));
-        e.add(new Entry("mystery", "/mysterybox vault remove", "Take the Mystery Vault away (boxes then open in front of the player).", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox vault add", "Add a Mystery Vault on the block you stand on; players stand on the side you face.", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox vault remove", "Remove the nearest Mystery Vault (without any, boxes open in front of the player).", admin, List.of()));
+        e.add(new Entry("mystery", "/mysterybox vault list", "List the Mystery Vaults.", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour setup", "Put the Parkour NPC where you stand (it starts runs; make it again if it was removed).", admin, List.of()));
         e.add(new Entry("parkour", "/lobbyparkour area pos1", "Set one corner of the area the course is built in.", admin,
                 List.of("Stand in one corner, then the opposite one for pos2.", "The course is built anywhere inside the box.")));

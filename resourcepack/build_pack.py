@@ -1109,7 +1109,7 @@ print('friends: badge, icons')
 
 
 # 27. Mystery Boxes: the boxes (fractal:mystery/box_1..5, little 3D gift boxes, one colour per star count), the
-#     vault (fractal:mystery/vault_closed / vault_open), Mystery Dust and the menu icons
+#     vault (fractal:mystery/vault_body and its lid, vault_lid), Mystery Dust and the menu icons
 for dd in ('textures/item/mystery', 'models/item/mystery', 'items/mystery'): os.makedirs(f'{OUT}/assets/fractal/{dd}', exist_ok=True)
 def mystery_item(name, model_json):
     json.dump(model_json, open(f'{OUT}/assets/fractal/models/item/mystery/{name}.json', 'w'))
@@ -1193,12 +1193,13 @@ def box_faces(tex, top=None):
 vault_textures = {"side": "fractal:item/mystery/vault_side", "top": "fractal:item/mystery/vault_top",
                   "inside": "fractal:item/mystery/vault_inside", "particle": "fractal:item/mystery/vault_side"}
 body = {"from": [1, 0, 1], "to": [15, 10, 15], "shade": False, "faces": box_faces("#side", "#inside")}
-lid_closed = {"from": [1, 10, 1], "to": [15, 14, 15], "shade": False, "faces": box_faces("#side", "#top")}
-lid_open = dict(lid_closed, rotation={"origin": [8, 10, 15], "axis": "x", "angle": -45})
-glow = {"from": [2, 9.5, 2], "to": [14, 10.2, 14], "shade": False, "light_emission": 15,
+glow = {"from": [2, 9.6, 2], "to": [14, 10.1, 14], "shade": False, "light_emission": 15,
         "faces": {d: {"uv": [0, 0, 16, 16], "texture": "#inside"} for d in ('north', 'south', 'east', 'west', 'up', 'down')}}
-mystery_item('vault_closed', {"textures": vault_textures, "elements": [body, lid_closed], "display": BLOCK_DISPLAY})
-mystery_item('vault_open', {"textures": vault_textures, "elements": [body, lid_open, glow], "display": BLOCK_DISPLAY})
+lid = {"from": [1, 10, 1], "to": [15, 14, 15], "shade": False, "faces": box_faces("#side", "#top")}
+knob = {"from": [6.5, 14, 6.5], "to": [9.5, 15, 9.5], "shade": False,
+        "faces": {d: {"uv": [6, 5, 10, 8], "texture": "#side"} for d in ('north', 'south', 'east', 'west', 'up', 'down')}}
+mystery_item('vault_body', {"textures": vault_textures, "elements": [body, glow], "display": BLOCK_DISPLAY})
+mystery_item('vault_lid', {"textures": vault_textures, "elements": [lid, knob], "display": BLOCK_DISPLAY})
 
 def sprite(rows, colours):
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
@@ -1207,26 +1208,11 @@ def sprite(rows, colours):
             if ch in colours: img.putpixel((x, y), hexc(colours[ch]) + (255,))
     return img
 DUST_COL = {'#': '#1a1b26', 'g': '#FFD27F', 'G': '#C9963A', 'w': '#FFFFFF', 'p': '#FF7BE5', 'l': '#FFF1C9'}
-# Mystery Dust: a purple pouch tied with gold, glittering with dust, sparkles rising out of it
-DUST_COL = {'#': '#1a1b26', 'p': '#B266FF', 'P': '#7d3fc4', 'q': '#d9a8ff', 's': '#5a2a9a', 'y': '#FFD27F', 'Y': '#C9963A',
-            'w': '#FFFFFF', 'k': '#FF7BE5', 't': '#e8ddff'}
-mystery_sprite('dust', sprite([
-    "...k......w.....",
-    ".........www..y.",
-    "......y...w.....",
-    "....y.####...k..",
-    ".....#tyyt#.....",
-    "......#YY#......",
-    ".....##ss##.....",
-    "....#qppppp#....",
-    "...#qpypppkp#...",
-    "..#qppppyppPP#..",
-    "..#pkpppppypP#..",
-    "..#ppypkpppPP#..",
-    "..#PpppppypPP#..",
-    "...#PPPPPPPP#...",
-    "....########....",
-    "................"], DUST_COL))
+# Mystery Dust: a pile of gold dust with sparkles twinkling and motes drifting up over it (an animated texture,
+# drawn by art/make_dust.py)
+shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art', 'dust.png'), f'{OUT}/assets/fractal/textures/item/mystery/dust.png')
+json.dump({"animation": {"frametime": 3, "interpolate": False}}, open(f'{OUT}/assets/fractal/textures/item/mystery/dust.png.mcmeta', 'w'))
+mystery_item('dust', {"parent": "minecraft:item/generated", "textures": {"layer0": "fractal:item/mystery/dust"}})
 CRAFT_COL = {'#': '#1a1b26', 'b': '#C77DFF', 'B': '#8a4fd1', 'y': '#FFD27F', 'Y': '#C9963A', 'w': '#FFFFFF', 'g': '#5BE37C', 'G': '#2fb956'}
 craft_rows = [
     "................",
@@ -1286,3 +1272,10 @@ locked = sprite([
     "................"], {'#': '#1a1b26', 'd': '#4a4a58', 'w': '#9C8DB8'})
 mystery_sprite('locked', locked)
 print('mystery boxes: 5 boxes, vault, dust, icons')
+
+
+# 28. Collectibles: the 3D hats (art/hats.py) and the icons for gadgets, cloaks, gestures, season tabs and the
+#     Collectibles join item (art/sprites.py)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'art'))
+import hats as _hats, sprites as _sprites
+print('collectibles:', len(_hats.build(OUT)), 'hats,', len(_sprites.build(OUT)), 'icons')

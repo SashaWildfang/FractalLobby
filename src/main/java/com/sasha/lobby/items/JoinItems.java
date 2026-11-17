@@ -128,6 +128,7 @@ public final class JoinItems implements Listener {
             ItemStack base = joinItem(org.bukkit.Material.PLAYER_HEAD, "items.profile", PROFILE);
             player.getInventory().setItem(config.profileSlot(), plugin.profile().hotbarItem(player, base));
         }
+        if (plugin.collectibles() != null) plugin.collectibles().apply(player);
     }
 
     private void toggleVisibility(Player player) {

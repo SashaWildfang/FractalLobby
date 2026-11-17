@@ -59,7 +59,7 @@ final class Opening {
     private final Reward reward;
     private final boolean duplicate;
     private final long dust;
-    private final boolean onVault;
+    private final Vault.Spot spot;
     private final Color colour;
 
     private ItemDisplay box, prize;
@@ -70,23 +70,24 @@ final class Opening {
     private float spin;
     private float spinSpeed = 4f;
 
-    Opening(Lobby plugin, MysteryBoxes boxes, Player player, Location base, int stars, Reward reward, boolean duplicate, long dust) {
+    Opening(Lobby plugin, MysteryBoxes boxes, Player player, Vault.Place place, int stars, Reward reward, boolean duplicate, long dust) {
         this.plugin = plugin;
         this.boxes = boxes;
         this.player = player;
-        this.base = base.clone();
+        this.spot = place.spot();
+        this.base = place.at().clone();
         this.base.setYaw(0);
         this.base.setPitch(0);
         this.stars = stars;
         this.reward = reward;
         this.duplicate = duplicate;
         this.dust = dust;
-        this.onVault = boxes.vault().isVault(base);
         this.colour = boxes.rarityColor(reward.rarity());
     }
 
     void start() {
-        boxes.vault().busy(player, onVault);
+        boxes.vault().busy(player, spot);
+        if (spot == null) player.lookAt(base.clone().add(0, 1.0, 0), io.papermc.paper.entity.LookAnchor.EYES);
         box = display(model("mystery/box_" + stars, Material.CHEST), base.clone().add(0, 0.35, 0), 0f);
         for (int i = 0; i < stars; i++) orbs.add(display(model("parkour/dot", Material.GLOWSTONE_DUST), base.clone().add(0, 0.6, 0), 0f));
         for (ItemDisplay orb : orbs) orb.setBillboard(Display.Billboard.CENTER);
@@ -228,6 +229,7 @@ final class Opening {
     private void reveal() {
         int since = tick - SHAKE;
         if (since == 7) set(prize, 0f, 0.85f, spin, 5); // settle after the pop
+        if (since == 40) boxes.vault().release(player); // they've seen it: free to walk off
         if (since > 12 && tick % 2 == 0) {
             spin += 6;
             float bob = (float) Math.sin(since * 0.12) * 0.08f;
@@ -263,7 +265,7 @@ final class Opening {
         if (prize != null) prize.remove();
         if (text != null) text.remove();
         for (ItemDisplay orb : orbs) orb.remove();
-        boxes.vault().free(onVault);
+        boxes.vault().free(player, spot);
     }
 
     // ---------------------------------------------------------------- what's said

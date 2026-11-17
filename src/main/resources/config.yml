@@ -653,6 +653,12 @@ join-items:
     enabled: true
     slot: 2
 
+  # Opens the Collectibles menu: hats, suits, gadgets, cloaks, emotes and
+  # gestures (see collectibles below).
+  collectibles:
+    enabled: true
+    slot: 3
+
   # Opens the settings menu: join messages, leave messages, chat and
   # the scoreboard, each on or off per player. Remembered between joins.
   settings:
@@ -764,14 +770,14 @@ realm-selector:
 # Boxes of 1 to 5 stars that give a random cosmetic (a trail, a chat colour,
 # glowing) or a pile of Mystery Dust. A cosmetic the player already has turns
 # into Mystery Dust, and dust crafts new boxes. Boxes are opened at the
-# Mystery Vault (stand on its spot and type /mysterybox vault set); without a
+# Mystery Vaults (stand on a spot and type /mysterybox vault add); without a
 # vault they open in front of the player.
 #   /mysterybox                         the Mystery Vault menu (everyone)
 #   /dust                               your Mystery Dust (everyone)
 #   /mysterybox give NAME STARS [AMOUNT] give boxes (console: store, votes)
 #   /mysterybox dust NAME AMOUNT        give (or take, negative) Mystery Dust
 #   /mysterybox reset NAME              take everything away
-#   /mysterybox vault set / remove      place or remove the vault
+#   /mysterybox vault add / remove / list   place, remove or list vaults
 # Found cosmetics work without the rank permission (they're saved in
 # mystery-boxes.yml).
 mystery-boxes:
@@ -823,7 +829,10 @@ mystery-boxes:
       duplicate-dust: 150
   # Everyone is told when someone finds something this rare or rarer.
   announce: legendary
-  # What boxes can give: "type:value rarity". Types: trail:ID and
+  # Every collectible (hats, suits, gadgets, cloaks, emotes, gestures) can
+  # drop from boxes too, with its own rarity; seasonal ones only in season.
+  include-collectibles: true
+  # What else boxes can give: "type:value rarity". Types: trail:ID and
   # chatcolor:ID (from trails and chat-color above), glow, dust:AMOUNT.
   # Cosmetics that are free for everyone are left out automatically.
   rewards:
@@ -847,3 +856,26 @@ mystery-boxes:
     - "trail:enchanted legendary"
     - "trail:totem legendary"
     - "chatcolor:rainbow legendary"
+
+
+# ── Collectibles ────────────────────────────────────────────────
+# Hats, suits, gadgets, cloaks, emotes and gestures, from the Collectibles
+# join item (join-items.collectibles) or /collectibles. Found in Mystery
+# Boxes or bought with Mystery Dust. Seasonal ones (Summer: Jun-Aug,
+# Halloween: Oct 1-Nov 7, Holiday: Dec 1-Jan 6, Easter: Mar 15-Apr 30) only
+# drop and sell in their season; found ones can be worn any time.
+# A full suit puts its ability in the hotbar. lobby.collectibles.all gives
+# everything (for staff to try things out).
+collectibles:
+  enabled: true
+  # Hotbar slots (1-9) for the gadget you hold and your suit's ability.
+  gadget-slot: 4
+  ability-slot: 6
+  # Price in Mystery Dust, by rarity.
+  price:
+    common: 100
+    rare: 250
+    epic: 600
+    legendary: 1500
+  # Seasons to treat as on right now, e.g. [halloween] for an event.
+  seasons-on: []

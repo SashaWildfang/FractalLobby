@@ -31,6 +31,8 @@ public final class MysteryData {
         final int[] boxes = new int[MysteryBoxes.MAX_STARS + 1];   // boxes[stars], index 0 unused
         final Set<String> owned = new LinkedHashSet<>();
         String lastDaily = "";
+        /** What they're wearing or holding, by category ("hat" → "hat:top_hat"). */
+        final Map<String, String> equipped = new HashMap<>();
         int streak;
         int opened;
 
@@ -62,6 +64,10 @@ public final class MysteryData {
 
         public int streak() {
             return streak;
+        }
+
+        public String equipped(String category) {
+            return equipped.get(category);
         }
     }
 
@@ -95,6 +101,8 @@ public final class MysteryData {
                 stash.lastDaily = c.getString("daily", "");
                 stash.streak = c.getInt("streak");
                 stash.opened = c.getInt("opened");
+                ConfigurationSection worn = c.getConfigurationSection("equipped");
+                if (worn != null) for (String category : worn.getKeys(false)) stash.equipped.put(category, worn.getString(category));
                 stashes.put(UUID.fromString(key), stash);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("mystery-boxes.yml: skipped " + key + " (not a UUID)");
@@ -117,6 +125,7 @@ public final class MysteryData {
             yaml.set(p + "daily", s.lastDaily);
             yaml.set(p + "streak", s.streak);
             yaml.set(p + "opened", s.opened);
+            for (Map.Entry<String, String> worn : s.equipped.entrySet()) yaml.set(p + "equipped." + worn.getKey(), worn.getValue());
         }
         String text = yaml.saveToString();
         Runnable write = () -> {
@@ -160,6 +169,22 @@ public final class MysteryData {
         boolean added = get(id).owned.add(reward);
         if (added) dirty = true;
         return added;
+    }
+
+    /** Wears (or with null takes off) something of a category. */
+    public void equip(UUID id, String category, String item) {
+        if (item == null) get(id).equipped.remove(category);
+        else get(id).equipped.put(category, item);
+        dirty = true;
+    }
+
+    /** For buying with dust and other unlocks outside boxes: false if they had it already. */
+    public boolean grant(UUID id, String reward) {
+        return unlock(id, reward);
+    }
+
+    public void spendDust(UUID id, long amount) {
+        addDust(id, -amount);
     }
 
     void opened(UUID id) {

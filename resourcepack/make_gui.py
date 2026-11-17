@@ -49,6 +49,7 @@ by['P'] = drawn(["####.", "#...#", "####.", "#....", "#...."])
 by['Y'] = drawn(["#...#", ".#.#.", "..#..", "..#..", "..#.."])
 by['C'] = drawn([".####", "#....", "#....", "#....", ".####"])
 by['H'] = drawn(["#...#", "#...#", "#####", "#...#", "#...#"])
+by['B'] = drawn(["####.", "#...#", "####.", "#...#", "####."])
 by['K'] = drawn(["#...#", "#..#.", "###..", "#..#.", "#...#"])
 by['F'] = drawn(["#####", "#....", "####.", "#....", "#...."])
 by[' '] = (2, {})
@@ -143,6 +144,13 @@ for rows in range(3, 7):
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
 add(0xF173, 'mystery', background(5, [], "MYSTERY VAULT", cells=[4, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
 add(0xF174, 'collection', background(6, [], "COLLECTION", cells=list(range(45)) + [49]))
+# Collectibles: the main menu (the stash, the categories, the extras) and a page per category (season tabs on top for
+# hats and suits, the items in the middle, back and take off at the bottom)
+add(0xF175, 'collectibles', background(6, [], "COLLECTIBLES", cells=[4, 19, 20, 21, 22, 23, 24, 25, 38, 40, 42]))
+for _code, _word, _tabs in ((0xF176, 'HATS', True), (0xF177, 'SUITS', True), (0xF178, 'GADGETS', False),
+                            (0xF179, 'CLOAKS', False), (0xF17A, 'EMOTES', False), (0xF17B, 'GESTURES', False)):
+    add(_code, 'collect_' + _word.lower(), background(6, [], _word,
+        cells=([2, 3, 4, 5, 6] if _tabs else []) + list(range(9, 45)) + [45] + ([] if _word in ('EMOTES', 'GESTURES') else [49])))
 add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 40]))
 add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))  # before 1.18.1
 add(0xF1C4, 'profile_4', background(4, [4], "PROFILE", cells=[13, 28, 29, 30, 31, 32, 33, 34]))

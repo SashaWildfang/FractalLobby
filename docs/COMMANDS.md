@@ -16,6 +16,9 @@ Commands every player can use.
 | `/glow` | `lobby.cmd.glow` | Glow in your rank colour (or stop). |
 | `/flyingminecart` | `lobby.cmd.flyingminecart` | Summon a flying minecart anyone can ride.<br>W to fly, Space to climb, sneak to get out. Also /flycart. |
 | `/lobbyhelp [topic\|command]` | everyone | This help.<br>Example: /lobbyhelp npcs<br>Example: /lobbyhelp npc skin |
+| `/collectibles` | everyone | Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.<br>Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar. |
+| `/emote <name>` | everyone | Do an emote you've found (a big emoji over your head). |
+| `/gesture <name>` | everyone | Do a gesture you've found (wave, clap, spin...). |
 
 ## Parkour
 
@@ -42,8 +45,9 @@ Mystery Boxes, Mystery Dust and the Mystery Vault.
 | `/mysterybox give <player> <stars> [amount]` | `lobby.admin` | Give Mystery Boxes (works from the console, for the store and votes). |
 | `/mysterybox dust <player> <amount>` | `lobby.admin` | Give Mystery Dust (a negative amount takes it away). |
 | `/mysterybox reset <player>` | `lobby.admin` | Take away a player's boxes, dust and found cosmetics. |
-| `/mysterybox vault set` | `lobby.admin` | Put the Mystery Vault on the block you stand on. |
-| `/mysterybox vault remove` | `lobby.admin` | Take the Mystery Vault away (boxes then open in front of the player). |
+| `/mysterybox vault add` | `lobby.admin` | Add a Mystery Vault on the block you stand on; players stand on the side you face. |
+| `/mysterybox vault remove` | `lobby.admin` | Remove the nearest Mystery Vault (without any, boxes open in front of the player). |
+| `/mysterybox vault list` | `lobby.admin` | List the Mystery Vaults. |
 
 ## Holograms
 

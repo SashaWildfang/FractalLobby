@@ -58,6 +58,15 @@ public record Reward(String id, String type, String value, Rarity rarity) {
         };
     }
 
+    /** A hat, suit, gadget, cloak, emote or gesture (from collectibles.Catalog). */
+    public boolean collectible() {
+        return type.equals("collectible");
+    }
+
+    public com.sasha.lobby.collectibles.Catalog.Item item() {
+        return com.sasha.lobby.collectibles.Catalog.get(value);
+    }
+
     public boolean dust() {
         return type.equals("dust");
     }
@@ -71,6 +80,7 @@ public record Reward(String id, String type, String value, Rarity rarity) {
         return switch (type) {
             case "trail" -> trail(plugin) != null;
             case "chatcolor" -> chatColor(plugin) != null;
+            case "collectible" -> item() != null;
             default -> true;
         };
     }
@@ -100,6 +110,7 @@ public record Reward(String id, String type, String value, Rarity rarity) {
             case "trail" -> trail(plugin).name() + " <gray>Trail";
             case "chatcolor" -> chatColor(plugin).name() + " <gray>Chat Colour";
             case "glow" -> plugin.messages().raw("mystery.glow-name");
+            case "collectible" -> item().name() + " <gray>" + plugin.messages().raw("collectibles.category." + item().category().key + ".single");
             default -> plugin.messages().raw("mystery.dust-name").replace("<amount>", value);
         };
     }
@@ -111,6 +122,7 @@ public record Reward(String id, String type, String value, Rarity rarity) {
             case "trail" -> style.trailIcon(ItemStack.of(trail(plugin).item()), value);
             case "chatcolor" -> style.colorIcon(ItemStack.of(chatColor(plugin).item()), value);
             case "glow" -> style.icon(ItemStack.of(Material.GLOWSTONE_DUST), "glow");
+            case "collectible" -> plugin.collectibles().icon(item());
             default -> model(ItemStack.of(Material.GLOWSTONE_DUST), "mystery/dust");
         };
     }

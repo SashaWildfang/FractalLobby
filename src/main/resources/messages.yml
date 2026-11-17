@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 33
+messages-version: 34
 
 theme:
   primary: "#B266FF"
@@ -776,8 +776,12 @@ mystery:
       - "&#E8DDFFʏᴏᴜ ʜᴀᴠᴇ &f&l%lobby_boxes% &#E8DDFFᴍʏꜱᴛᴇʀʏ ʙᴏxᴇꜱ"
       - "&#FFD27F%lobby_dust% &#C9A86Aᴍʏꜱᴛᴇʀʏ ᴅᴜꜱᴛ"
       - "<white><font:fractal:lobby>\uF011</font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ᴏᴘᴇɴ</#ANIM>"
-    set: "<prefix><good>The Mystery Vault is here now."
-    removed: "<prefix><secondary>The Mystery Vault is gone. <muted>Boxes now open in front of the player."
+    added: "<prefix><good>Added a Mystery Vault here. <muted>Players stand on the side you're facing. (<white><count></white> now)"
+    removed: "<prefix><secondary>Removed that Mystery Vault. <muted>(<white><count></white> left)"
+    none-near: "<prefix><bad>There's no Mystery Vault within 6 blocks."
+    list-header: "<prefix><secondary>Mystery Vaults: <white><count>"
+    list-entry: " <dark_gray>▪ <white>#<number></white> <muted><world> <white><x> <y> <z>"
+    list-empty: "<prefix><muted>No Mystery Vaults yet. <dark_gray>▸ <white>/mysterybox vault add"
     too-far: "<prefix><bad>Open your boxes at the Mystery Vault."
     busy: "<prefix><muted><white><player></white> is opening a box. One moment!"
   menu:
@@ -837,3 +841,211 @@ mystery:
       name: "<secondary>← Back"
       lore:
         - "<muted>Back to the Mystery Vault."
+
+
+# ── Collectibles ────────────────────────────────────────────────
+# <name> the collectible (in its rarity's colour), <rarity>, <description>,
+# <season>, <price> in Mystery Dust, <need> dust still needed.
+collectibles:
+  title: "<brand><bold>Collectibles</bold></brand>"
+  join-item:
+    name: "<primary>Collectibles <muted>(Right-click)"
+    lore:
+      - "<muted>Hats, suits, gadgets, cloaks,"
+      - "<muted>emotes and gestures."
+  worn-name: "<name>"
+  stash:
+    name: "<#FFD27F>Your Collection"
+    lore:
+      - "<muted>Found: <white><found></white><dark_gray>/<total>"
+      - "<muted>Mystery Dust: <#FFD27F><dust>"
+      - "<muted>Mystery Boxes: <white><boxes>"
+      - ""
+      - "<muted>Find more in Mystery Boxes,"
+      - "<muted>or buy them with Mystery Dust."
+  category:
+    hats:
+      name: "<primary>Hats"
+      single: "Hat"
+      title: "<brand><bold>Hats</bold></brand>"
+      lore:
+        - "<muted>Something for your head."
+    suits:
+      name: "<primary>Suits"
+      single: "Suit"
+      title: "<brand><bold>Suits</bold></brand>"
+      lore:
+        - "<muted>Full outfits. Wear the whole set"
+        - "<muted>for a special ability!"
+    gadgets:
+      name: "<primary>Gadgets"
+      single: "Gadget"
+      title: "<brand><bold>Gadgets</bold></brand>"
+      lore:
+        - "<muted>Fun things to use in your hotbar."
+    cloaks:
+      name: "<primary>Cloaks"
+      single: "Cloak"
+      title: "<brand><bold>Cloaks</bold></brand>"
+      lore:
+        - "<muted>Particles that follow you around."
+    emotes:
+      name: "<primary>Emotes"
+      single: "Emote"
+      title: "<brand><bold>Emotes</bold></brand>"
+      lore:
+        - "<muted>A big emoji over your head."
+    gestures:
+      name: "<primary>Gestures"
+      single: "Gesture"
+      title: "<brand><bold>Gestures</bold></brand>"
+      lore:
+        - "<muted>Wave, clap, spin and more."
+  # Under each category button. <found> <total> <wearing>
+  category-footer:
+    - ""
+    - "<muted>Found: <white><found></white><dark_gray>/<total>"
+    - "<wearing>"
+    - ""
+    - "<accent><click></accent> <muted>to look"
+  category-footer-action:
+    - ""
+    - "<muted>Found: <white><found></white><dark_gray>/<total>"
+    - ""
+    - "<accent><click></accent> <muted>to look"
+  wearing: "<muted>Wearing: <name>"
+  wearing-nothing: "<muted>Wearing: <dark_gray>nothing"
+  trails:
+    name: "<primary>Trails"
+    lore:
+      - "<muted>Particles behind you as you walk."
+      - ""
+      - "<accent><click></accent> <muted>to pick one"
+  chat-colours:
+    name: "<primary>Chat Colours"
+    lore:
+      - "<muted>The colour of your chat messages."
+      - ""
+      - "<accent><click></accent> <muted>to pick one"
+  vault:
+    name: "<primary>Mystery Vault"
+    lore:
+      - "<muted>Your boxes, crafting with dust."
+      - "<muted>Boxes: <white><boxes>"
+      - ""
+      - "<accent><click></accent> <muted>to open"
+  take-off-all:
+    name: "<bad>Take Everything Off"
+    lore:
+      - "<muted>Hat, suit, gadget and cloak."
+  take-off:
+    name: "<bad>Take Off"
+    lore:
+      - "<muted>Stop using your <category>."
+  back:
+    name: "<secondary>← Back"
+    lore:
+      - "<muted>Back to your Collectibles."
+  empty:
+    name: "<dark_gray>Nothing here yet"
+    lore:
+      - "<muted>Check back soon!"
+  season:
+    normal: "<white>All Year"
+    summer: "<#FFC83D>Summer"
+    holiday: "<#E05A5A>Holiday"
+    easter: "<#F2A8D0>Easter"
+    halloween: "<#FF8A1F>Halloween"
+  tab-chosen:
+    - "<#9BFFC4>Showing now"
+  tab-in-season:
+    - "<muted>In season!"
+    - "<accent><click></accent> <muted>to look"
+  tab-out-of-season:
+    - "<muted>Out of season: found and"
+    - "<muted>sold during its season."
+    - "<accent><click></accent> <muted>to look"
+  entry:
+    name: "<name>"
+    locked-name: "<dark_gray><name>"
+    lore:
+      - "<rarity> <dark_gray>• <season>"
+      - "<muted><description>"
+    suit:
+      - ""
+      - "<#FFD27F>Full set: <white><ability>"
+    worn:
+      - "<#9BFFC4>✔ Wearing"
+      - "<accent><click></accent> <muted>to take off"
+    equip:
+      - "<accent><click></accent> <muted>to wear"
+    use:
+      - "<accent><click></accent> <muted>to do it"
+    buy:
+      - "<muted>Find it in Mystery Boxes, or"
+      - "<accent><shift> <click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
+    cant-afford:
+      - "<muted>Find it in Mystery Boxes, or"
+      - "<muted>buy for <#FFD27F><price> Mystery Dust"
+      - "<bad>You need <white><need></white> more"
+    out-of-season:
+      - "<muted>Out of season: only found and"
+      - "<muted>sold during <season><muted>."
+  # Hotbar items
+  gadget-item:
+    name: "<name> <muted>(Right-click)"
+    lore:
+      - "<muted><description>"
+  ability-item:
+    name: "<#FFD27F><ability> <muted>(Right-click)"
+    lore:
+      - "<muted><description>"
+      - "<dark_gray>From your <name>"
+  ability:
+    fireball:
+      name: "Fireball"
+      description: 'Throw a fireball (it doesn''t burn anything).'
+    smoke_bomb:
+      name: "Smoke Bomb"
+      description: 'Vanish in smoke and dash forward.'
+    low_gravity:
+      name: "Low Gravity"
+      description: 'Jump high and float down for 8s.'
+    super_leap:
+      name: "Super Leap"
+      description: 'A huge frog jump.'
+    water_splash:
+      name: "Water Splash"
+      description: 'Make a big splash.'
+    beach_ball:
+      name: "Beach Ball"
+      description: 'Throw a bouncy beach ball.'
+    gift_toss:
+      name: "Gift Toss"
+      description: 'Throw a present that bursts into confetti.'
+    jingle_dash:
+      name: "Jingle Dash"
+      description: 'Run fast with jingling bells.'
+    bunny_hop:
+      name: "Bunny Hop"
+      description: 'Hop like a bunny.'
+    egg_toss:
+      name: "Egg Toss"
+      description: 'Throw an egg (no chicks, promise).'
+    bone_rattle:
+      name: "Bone Rattle"
+      description: 'Rattle your bones.'
+    bat_swarm:
+      name: "Bat Swarm"
+      description: 'Turn into a swarm of bats for 3s.'
+  cooldown: "<muted>Ready in <white><seconds>s"
+  equipped: "<prefix><secondary>Now wearing <name><secondary>."
+  took-off: "<prefix><muted>Took off your <category>."
+  took-off-all: "<prefix><muted>Took everything off."
+  bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price> Mystery Dust</#FFD27F><secondary>!"
+  shift-to-buy: "<prefix><muted>Shift-click to buy <name> <muted>for <#FFD27F><price> Mystery Dust<muted>."
+  cant-afford: "<prefix><bad>You need <white><need></white> more Mystery Dust for <name><bad>."
+  out-of-season: "<prefix><bad><name> <bad>is only around during <season><bad>."
+  not-owned: "<prefix><bad>You haven't found <name> <bad>yet."
+  unknown: "<prefix><bad>There's no <white><input></white>."
+  no-chat-colours: "<prefix><bad>Chat colours come with a rank, or from Mystery Boxes."

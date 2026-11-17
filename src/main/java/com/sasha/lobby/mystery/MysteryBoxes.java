@@ -94,6 +94,15 @@ public final class MysteryBoxes implements Listener {
                 rewards.add(reward);
             }
         }
+        // Every collectible (hats, suits, gadgets, cloaks, emotes, gestures), seasonal ones only in their season.
+        if (plugin.getConfig().getBoolean("mystery-boxes.include-collectibles", true)) {
+            for (var item : com.sasha.lobby.collectibles.Catalog.ITEMS) rewards.add(new Reward(item.id(), "collectible", item.id(), item.rarity()));
+        }
+    }
+
+    /** Whether a reward can drop now (seasonal collectibles only in their season). */
+    private boolean available(Reward reward) {
+        return !reward.collectible() || plugin.collectibles() == null || plugin.collectibles().inSeason(reward.item());
     }
 
     public void stop() {
@@ -103,6 +112,10 @@ public final class MysteryBoxes implements Listener {
 
     public boolean enabled() {
         return plugin.getConfig().getBoolean("mystery-boxes.enabled", true) && !rewards.isEmpty();
+    }
+
+    public MysteryData data() {
+        return data;
     }
 
     public MysteryData.Stash stash(UUID id) {
@@ -144,6 +157,7 @@ public final class MysteryBoxes implements Listener {
             case "chatcolor" -> player.hasPermission(com.sasha.lobby.items.ChatColors.PERMISSION)
                     && com.sasha.lobby.items.ChatColors.allowed(player, reward.chatColor(plugin)) || owns(player, reward.id());
             case "glow" -> com.sasha.lobby.listener.GlowListener.allowed(player);
+            case "collectible" -> plugin.collectibles() != null && plugin.collectibles().owns(player, reward.item());
             default -> false;
         };
     }
@@ -240,8 +254,8 @@ public final class MysteryBoxes implements Listener {
             }
         }
         Reward.Rarity chosen = rarity;
-        List<Reward> pool = rewards.stream().filter(r -> r.rarity() == chosen).toList();
-        if (pool.isEmpty()) pool = rewards; // nothing of that rarity: anything
+        List<Reward> pool = rewards.stream().filter(r -> r.rarity() == chosen && available(r)).toList();
+        if (pool.isEmpty()) pool = rewards.stream().filter(this::available).toList(); // nothing of that rarity: anything
         return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
 
@@ -253,7 +267,7 @@ public final class MysteryBoxes implements Listener {
         for (Reward.Rarity rarity : Reward.Rarity.values()) {
             int i = rarity.ordinal();
             double chance = configured.size() > i ? configured.get(i) : defaults[stars][i];
-            if (chance > 0 && rewards.stream().anyMatch(r -> r.rarity() == rarity)) odds.put(rarity, chance);
+            if (chance > 0 && rewards.stream().anyMatch(r -> r.rarity() == rarity && available(r))) odds.put(rarity, chance);
         }
         if (odds.isEmpty()) odds.put(Reward.Rarity.COMMON, 1.0);
         return odds;
@@ -267,8 +281,8 @@ public final class MysteryBoxes implements Listener {
             sound(player, "entity.villager.no", 1f);
             return;
         }
-        Location at = vault.openingSpot(player);
-        if (at == null) return; // told why (too far from the vault, or it's busy)
+        Vault.Place place = vault.place(player);
+        if (place == null) return; // told why (too far from a vault, or it's busy)
         player.closeInventory();
         data.addBoxes(player.getUniqueId(), stars, -1);
         data.opened(player.getUniqueId());
@@ -289,7 +303,7 @@ public final class MysteryBoxes implements Listener {
         }
         if (dust > 0) data.addDust(player.getUniqueId(), dust);
         refresh(player.getUniqueId());
-        new Opening(plugin, this, player, at, stars, reward, duplicate, dust).start();
+        new Opening(plugin, this, player, place, stars, reward, duplicate, dust).start();
     }
 
     long duplicateDust(Reward.Rarity rarity) {
@@ -301,6 +315,17 @@ public final class MysteryBoxes implements Listener {
     String rarityName(Reward.Rarity rarity) {
         String[] defaults = {"<#C9B8EE>Common", "<#7FA8FF>Rare", "<#C77DFF>Epic", "<#FFD27F>Legendary"};
         return plugin.getConfig().getString("mystery-boxes.rarities." + rarity.key() + ".name", defaults[rarity.ordinal()]);
+    }
+
+    /** The rarity's name with its colour, as MiniMessage ("<#FFD27F>Legendary"). */
+    public String rarityLabel(Reward.Rarity rarity) {
+        return rarityName(rarity);
+    }
+
+    /** The rarity's colour as a MiniMessage tag ("<#FFD27F>"). */
+    public String rarityColourTag(Reward.Rarity rarity) {
+        org.bukkit.Color c = rarityColor(rarity);
+        return String.format("<#%02X%02X%02X>", c.getRed(), c.getGreen(), c.getBlue());
     }
 
     org.bukkit.Color rarityColor(Reward.Rarity rarity) {
@@ -377,8 +402,8 @@ public final class MysteryBoxes implements Listener {
                     afford ? "mystery/craft" : "mystery/craft_locked", afford ? "mystery.menu.craft" : "mystery.menu.craft-short",
                     TagResolver.resolver(starsTag(stars), Messages.arg("cost", cost), Messages.arg("need", Math.max(0, cost - stash.dust())))));
         }
-        int found = (int) rewards.stream().filter(r -> !r.dust() && (owns(player, r.id()) || has(player, r))).count();
-        int total = (int) rewards.stream().filter(r -> !r.dust()).count();
+        int found = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible() && (owns(player, r.id()) || has(player, r))).count();
+        int total = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible()).count();
         menu.inventory.setItem(COLLECTION, item(Material.BOOK, "mystery/collection", "mystery.menu.collection",
                 TagResolver.resolver(Messages.arg("found", found), Messages.arg("total", total))));
         player.openInventory(menu.inventory);
@@ -395,7 +420,7 @@ public final class MysteryBoxes implements Listener {
         int slot = 0;
         for (Reward.Rarity rarity : Reward.Rarity.values()) {
             for (Reward reward : rewards) {
-                if (reward.rarity() != rarity || reward.dust() || slot >= 45) continue;
+                if (reward.rarity() != rarity || reward.dust() || reward.collectible() || slot >= 45) continue;
                 boolean found = owns(player, reward.id()) || has(player, reward);
                 TagResolver tags = TagResolver.resolver(Placeholder.parsed("reward", reward.name(plugin)),
                         Placeholder.parsed("rarity", rarityName(rarity)));
