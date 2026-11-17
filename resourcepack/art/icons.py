@@ -1904,3 +1904,8 @@ GUNS = GUNS + ('mob_gun', 'railgun')
 
 from bubble_wand_icon import bubble_wand as _bubble_wand_pixels
 GADGETS['bubble_wand'] = _bubble_wand_pixels
+
+from party_popper_icon import popper_closed as _popper_closed, popper_open as _popper_open
+GADGETS['party_popper'] = _popper_closed
+GADGETS['party_popper_open'] = _popper_open
+GUNS = GUNS + ('party_popper_open',)

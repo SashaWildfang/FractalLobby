@@ -404,22 +404,7 @@ final class Effects implements Listener {
         Vector look = eye.getDirection();
         World world = player.getWorld();
         switch (key) {
-            case "party_popper" -> {
-                Location from = eye.clone().add(look.clone().multiply(0.6));
-                for (int i = 0; i < 90; i++) {
-                    Vector v = look.clone().multiply(0.6).add(new Vector(rand(0.35), rand(0.35) + 0.15, rand(0.35)));
-                    world.spawnParticle(Particle.DUST, from.clone().add(v.clone().multiply(ThreadLocalRandom.current().nextDouble(1, 5))),
-                            1, 0, 0, 0, 0, dust(party(), 1.3f));
-                }
-                Location fall = from.clone().add(look.clone().multiply(3));
-                every(30, t -> {
-                    if (t % 2 == 0) world.spawnParticle(Particle.DUST_COLOR_TRANSITION, fall.clone().add(rand(1.4), 1 - t * 0.05, rand(1.4)), 2,
-                            0.05, 0.05, 0.05, 0, new Particle.DustTransition(party(), party(), 1f));
-                }, null);
-                world.spawnParticle(Particle.FIREWORK, from, 15, 0.1, 0.1, 0.1, 0.12);
-                sound(from, "entity.firework_rocket.blast", 0.8f, 1.6f);
-                sound(from, "entity.player.levelup", 0.4f, 2f);
-            }
+            case "party_popper" -> partyPopper(player);
             case "paintball_gun" -> {
                 toss(player, modelled(Material.SNOWBALL, "gadget/paintball"), "paint", 2.2);
                 sound(eye, "entity.chicken.egg", 0.6f, 1.6f);
@@ -771,6 +756,103 @@ final class Effects implements Listener {
         world.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 3, size * 0.2, size * 0.2, size * 0.2, 0,
                 new Particle.DustTransition(Color.fromRGB(0xBFEFFF), Color.fromRGB(0xFFB8F0), 0.7f));
         sound(at, "block.bubble_column.bubble_pop", 0.7f, 1.9f - size * 0.5f);
+    }
+
+    private static final NamespacedKey POPPER = new NamespacedKey("fractal", "gadget/party_popper"),
+            POPPER_OPEN = new NamespacedKey("fractal", "gadget/party_popper_open");
+
+    /**
+     * The party popper: the sealed popper in your hand bursts open (streamers out) for a moment, with its own POP, and
+     * shoots real paper confetti and curly streamers that flutter down, land and fade.
+     */
+    private void partyPopper(Player player) {
+        int slot = player.getInventory().getHeldItemSlot();
+        ItemStack held = player.getInventory().getItem(slot);
+        if (held != null && held.hasItemMeta() && POPPER.equals(held.getItemMeta().getItemModel())) {
+            held.editMeta(meta -> meta.setItemModel(POPPER_OPEN));
+            player.getInventory().setItem(slot, held);
+            later(30, () -> {
+                ItemStack now = player.getInventory().getItem(slot);
+                if (now == null || !now.hasItemMeta() || !POPPER_OPEN.equals(now.getItemMeta().getItemModel())) return;
+                now.editMeta(meta -> meta.setItemModel(POPPER));
+                player.getInventory().setItem(slot, now);
+            });
+        }
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        if (right.lengthSquared() < 1e-4) right = new Vector(1, 0, 0);
+        right.normalize();
+        Location mouth = eye.clone().add(look.clone().multiply(0.8)).add(right.clone().multiply(0.3)).add(0, -0.2, 0);
+        World world = mouth.getWorld();
+        sound(mouth, "fractal:gadget.party_popper", 1f, 0.95f + ThreadLocalRandom.current().nextFloat() * 0.1f);
+        world.spawnParticle(Particle.POOF, mouth, 3, 0.05, 0.05, 0.05, 0.02);
+        for (int i = 0; i < 22; i++) confetti(mouth, look, false);
+        for (int i = 0; i < 6; i++) confetti(mouth, look, true);
+    }
+
+    /** One piece of paper from the popper: out in a cone, slowed by the air, fluttering and tumbling down, then resting. */
+    private void confetti(Location mouth, Vector look, boolean streamer) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        int colour = r.nextInt(6);
+        World world = mouth.getWorld();
+        float size = streamer ? 0.42f : 0.16f + r.nextFloat() * 0.06f;
+        ItemDisplay piece = world.spawn(mouth, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.PAPER, (streamer ? "gadget/streamer_" : "gadget/confetti_") + colour));
+            d.setTeleportDuration(2);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+        });
+        tagged(piece, "confetti");
+        Vector velocity = look.clone().add(new Vector(rand(0.45), rand(0.35) + 0.25, rand(0.45))).normalize()
+                .multiply((streamer ? 0.5 : 0.55) + r.nextDouble() * 0.3);
+        org.joml.Quaternionf turn = new org.joml.Quaternionf().rotateXYZ(r.nextFloat() * 6.3f, r.nextFloat() * 6.3f, r.nextFloat() * 6.3f);
+        Vector3f axis = new Vector3f(r.nextFloat() - 0.5f, r.nextFloat() - 0.5f, r.nextFloat() - 0.5f).normalize();
+        float[] spin = {0.5f + r.nextFloat() * 0.5f};
+        double phase = r.nextDouble() * Math.PI * 2;
+        double fall = streamer ? -0.045 : -0.065;
+        boolean[] landed = {false};
+        int[] restFor = {0};
+        every(110 + r.nextInt(30), t -> {
+            if (!piece.isValid()) return;
+            if (landed[0]) {
+                if (++restFor[0] == 30) {                                 // lie there a moment, then fade away
+                    piece.setInterpolationDelay(0);
+                    piece.setInterpolationDuration(8);
+                    piece.setTransformation(new Transformation(new Vector3f(), new org.joml.Quaternionf().rotateX((float) Math.PI / 2),
+                            new Vector3f(0), new org.joml.Quaternionf()));
+                }
+                if (restFor[0] == 40) piece.remove();
+                return;
+            }
+            velocity.multiply(0.88);                                      // paper is stopped fast by the air
+            velocity.setY(Math.max(fall, velocity.getY() - 0.02));        // then flutters down slowly
+            Location at = piece.getLocation();
+            Location next = at.clone().add(velocity).add(Math.sin(t * 0.3 + phase) * 0.025, 0, Math.cos(t * 0.27 + phase) * 0.025);
+            if (!next.getBlock().isPassable()) {
+                org.bukkit.block.Block ground = next.getBlock();
+                double top = ground.getBoundingBox().getHeight() > 0 ? ground.getBoundingBox().getMaxY() : ground.getY() + 1;
+                if (at.getY() >= top - 0.05) {                            // landed on top: lie flat
+                    landed[0] = true;
+                    piece.teleport(new Location(world, next.getX(), top + 0.02, next.getZ()));
+                    piece.setInterpolationDelay(0);
+                    piece.setInterpolationDuration(3);
+                    piece.setTransformation(new Transformation(new Vector3f(), new org.joml.Quaternionf().rotateX((float) Math.PI / 2)
+                            .rotateZ(r.nextFloat() * 6.3f), new Vector3f(size), new org.joml.Quaternionf()));
+                    return;
+                }
+                velocity.setX(-velocity.getX() * 0.3).setZ(-velocity.getZ() * 0.3);   // hit a wall: bounce off a little
+                return;
+            }
+            piece.teleport(next);
+            spin[0] *= 0.985f;
+            turn.premul(new org.joml.Quaternionf().rotateAxis(spin[0] * 0.5f, axis));
+            if (t % 2 == 0) {
+                piece.setInterpolationDelay(0);
+                piece.setInterpolationDuration(2);
+                piece.setTransformation(new Transformation(new Vector3f(), new org.joml.Quaternionf(turn), new Vector3f(size), new org.joml.Quaternionf()));
+            }
+        }, piece::remove);
     }
 
     /** Takes the player's balloon away (with a pop if it burst). */

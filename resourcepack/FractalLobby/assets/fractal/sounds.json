@@ -1,0 +1,9 @@
+{
+ "gadget.party_popper": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/party_popper"
+   }
+  ]
+ }
+}

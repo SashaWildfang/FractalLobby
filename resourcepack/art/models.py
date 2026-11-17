@@ -301,6 +301,19 @@ def build(out):
     for (x, y, al) in [(4, 3, 255), (5, 3, 255), (3, 4, 255), (4, 4, 255), (3, 5, 200), (6, 3, 160), (11, 12, 150), (12, 11, 150)]:
         bub.putpixel((x, y), (255, 255, 255, al))
     flat_item(out, 'gadget/bubble', bub)
+    import party_popper_icon as _pp
+    for _i in range(len(_pp.CONFETTI)):
+        flat_item(out, f'gadget/confetti_{_i}', _pp.confetti_piece(_i))
+        flat_item(out, f'gadget/streamer_{_i}', _pp.streamer_piece(_i))
+    # the party popper's own POP (made by make_pop_sound.py)
+    import shutil
+    os.makedirs(f'{out}/assets/fractal/sounds/gadget', exist_ok=True)
+    shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', 'party_popper.ogg'),
+                f'{out}/assets/fractal/sounds/gadget/party_popper.ogg')
+    sounds_path = f'{out}/assets/fractal/sounds.json'
+    sounds = json.load(open(sounds_path)) if os.path.exists(sounds_path) else {}
+    sounds['gadget.party_popper'] = {"sounds": [{"name": "fractal:gadget/party_popper"}]}
+    json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
     BOX_COLOURS = {1: '#9C8DB8', 2: '#5BE37C', 3: '#7FA8FF', 4: '#C77DFF', 5: '#FFB347'}
