@@ -146,3 +146,37 @@ def shears_icon():
     d.line([(10, 12), (15, 16)], fill=handle + (255,), width=3); d.line([(10, 20), (15, 16)], fill=handle + (255,), width=3)
     im.putpixel((15, 16), hexc('#5a5e70') + (255,))
     return finish(im)
+
+
+def shears_held():
+    """The shears as held: drawn turned so the blades point up and out (like a tool), the handles toward the hand."""
+    import math as _m
+    a = _m.radians(-45)
+
+    def r(x, y):
+        dx, dy = x - 16, y - 16
+        return (16 + dx * _m.cos(a) - dy * _m.sin(a), 16 + dx * _m.sin(a) + dy * _m.cos(a))
+
+    im = Image.new('RGBA', (32, 32), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    blade, blade_l, blade_d, handle = hexc('#d8dce8'), hexc('#ffffff'), hexc('#9aa0b4'), hexc('#e03a3a')
+    d.polygon([r(14, 15), r(30, 10), r(30, 12), r(15, 17)], fill=blade + (255,))
+    d.polygon([r(14, 17), r(30, 22), r(30, 20), r(15, 15)], fill=blade + (255,))
+    d.line([r(15, 15), r(29, 10)], fill=blade_l + (255,)); d.line([r(15, 17), r(29, 21)], fill=blade_d + (255,))
+    for (cx, cy) in [(6.5, 10), (6.5, 22)]:
+        x, y = r(cx, cy)
+        d.ellipse((x - 4.5, y - 4, x + 4.5, y + 4), fill=handle + (255,)); d.ellipse((x - 1.5, y - 1, x + 1.5, y + 1), fill=(0, 0, 0, 0))
+    d.line([r(10, 12), r(15, 16)], fill=handle + (255,), width=3); d.line([r(10, 20), r(15, 16)], fill=handle + (255,), width=3)
+    return finish(im)
+
+
+def build_held(out, flat_item):
+    import json
+    flat_item(out, 'gadget/rock_paper_shears_held', shears_held())
+    # menus keep the flat picture; in the hand it's the turned one, held like a tool
+    model = json.load(open(f'{out}/assets/fractal/models/item/gadget/rock_paper_shears_held.json'))
+    model["parent"] = "minecraft:item/handheld"
+    json.dump(model, open(f'{out}/assets/fractal/models/item/gadget/rock_paper_shears_held.json', 'w'))
+    json.dump({"model": {"type": "minecraft:select", "property": "minecraft:display_context",
+                         "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": "fractal:item/gadget/rock_paper_shears"}}],
+                         "fallback": {"type": "minecraft:model", "model": "fractal:item/gadget/rock_paper_shears_held"}}},
+              open(f'{out}/assets/fractal/items/gadget/rock_paper_shears.json', 'w'))

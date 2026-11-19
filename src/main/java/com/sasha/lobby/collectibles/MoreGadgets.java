@@ -172,21 +172,11 @@ final class MoreGadgets implements Listener {
         Vector look = eye.getDirection();
         World world = player.getWorld();
         switch (key) {
-            case "hot_potato" -> hotPotato(player);
             case "magic_8_ball" -> magic8(player);
             case "fortune_cookie" -> fortuneCookie(player);
             case "tetherball" -> tetherball(player);
             case "rock_paper_shears" -> rockPaperShears(player);
-            case "catapult" -> {
-                fx.sound(eye, "entity.cat.ambient", 1f, 1.2f);
-                for (int i = 0; i < 3; i++) {
-                    int n = i;
-                    fx.later(i * 4, () -> launch(player, Cat.class, 1.3, "entity.cat.hiss", e -> {
-                        Cat.Type[] types = {Cat.Type.TABBY, Cat.Type.BLACK, Cat.Type.RED, Cat.Type.SIAMESE, Cat.Type.CALICO};
-                        ((Cat) e).setCatType(types[(n + ThreadLocalRandom.current().nextInt(5)) % types.length]);
-                    }));
-                }
-            }
+            case "catapult" -> catapult(player);
             case "pigs_fly" -> pigsFly(player);
             case "creeper_astronaut" -> creeperAstronaut(player);
             case "exploding_sheep" -> explodingSheep(player);
@@ -780,30 +770,178 @@ final class MoreGadgets implements Listener {
         }, ghost::remove);
     }
 
+    /**
+     * A real rainbow: a big arc of six soft, glowing colour bands rises up in front of the player between two little
+     * clouds, to a run of rising magical chimes, with twinkles drifting off it; after a while it sinks away again.
+     */
     private void rainbow(Player player) {
-        Location base = player.getLocation();
-        Vector side = new Vector(-base.getDirection().getZ(), 0, base.getDirection().getX());
-        if (side.lengthSquared() < 0.01) side = new Vector(1, 0, 0);
-        side.normalize();
-        Location centre = base.clone().add(base.getDirection().setY(0).normalize().multiply(4));
-        Color[] bands = {Color.fromRGB(0xFF5A5A), Color.fromRGB(0xFF9A2E), Color.fromRGB(0xFFE14D), Color.fromRGB(0x5BE37C),
-                Color.fromRGB(0x5B9DFF), Color.fromRGB(0x9B5CFF)};
-        Vector across = side.clone();
-        fx.sound(centre, "block.amethyst_block.resonate", 1f, 1.4f);
-        fx.every(100, t -> {
-            if (t % 3 != 0) return;
-            double grow = Math.min(1, t / 25.0);
-            for (int b = 0; b < bands.length; b++) {
-                double r = 3.6 - b * 0.28;
-                for (int k = 0; k <= 28 * grow; k++) {
-                    double a = Math.PI * k / 28;
-                    Location at = centre.clone().add(across.clone().multiply(Math.cos(a) * r)).add(0, Math.sin(a) * r, 0);
-                    centre.getWorld().spawnParticle(Particle.DUST, at, 1, 0, 0, 0, 0, new Particle.DustOptions(bands[b], 1.1f));
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().setY(0);
+        if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+        look.normalize();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        Location base = fx.ground(player).add(look.clone().multiply(2));
+        base.setDirection(look.clone().multiply(-1));                  // facing the player
+        World world = base.getWorld();
+        float full = 2.4f;                                             // 48 units wide: about 7 blocks across
+        ItemDisplay arc = world.spawn(base, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.PAPER, "gadget/rainbow_arc"));
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(0, 0, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        fx.tagged(arc, "rainbow");
+        ItemDisplay[] clouds = new ItemDisplay[2];
+        for (int i = 0; i < 2; i++) {
+            int side = i == 0 ? -1 : 1;
+            Location at = base.clone().add(right.clone().multiply(side * 2.35)).add(0, 0.25, 0);   // under each end of the arc
+            clouds[i] = world.spawn(at, ItemDisplay.class, d -> {
+                d.setItemStack(fx.modelled(Material.WHITE_WOOL, "cloak/part/cloud"));
+                d.setBillboard(Display.Billboard.VERTICAL);
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+            });
+            fx.tagged(clouds[i], "rainbow");
+        }
+        int[] scale = {0, 2, 4, 5, 7, 9, 11, 12};                        // a major scale, rising
+        fx.every(150, t -> {
+            if (!arc.isValid()) return;
+            float grow = t < 22 ? easeOut(t / 22f) : t > 132 ? (150 - t) / 18f : 1f;
+            float size = Math.max(0.01f, full * grow);
+            // the model's sheet runs from 0 to 24 units up; its middle sits on the display, so lift it by half its height
+            arc.setInterpolationDelay(0);
+            arc.setInterpolationDuration(2);
+            arc.setTransformation(new Transformation(new Vector3f(0, size * 0.5f, 0), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+            for (ItemDisplay cloud : clouds) {
+                cloud.setInterpolationDelay(0);
+                cloud.setInterpolationDuration(2);
+                cloud.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(Math.max(0.01f, 1.6f * Math.min(1, grow * 1.5f))), new AxisAngle4f()));
+            }
+            if (t < 24 && t % 3 == 0) {                                // the chimes as it rises
+                int note = scale[(t / 3) % scale.length];
+                fx.sound(base, "block.note_block.chime", 0.8f, (float) Math.pow(2, (note - 6) / 12.0));
+            }
+            if (t == 24) {
+                fx.sound(base, "block.amethyst_block.resonate", 1f, 1.5f);
+                fx.sound(base, "entity.player.levelup", 0.4f, 2f);
+            }
+            if (t > 10 && t < 130 && t % 3 == 0) {                     // twinkles drifting off the arc
+                double a = ThreadLocalRandom.current().nextDouble(Math.PI);
+                double r = (2.3 + ThreadLocalRandom.current().nextDouble(-0.9, 0.9)) * grow;
+                Location on = base.clone().add(right.clone().multiply(Math.cos(a) * r)).add(0, Math.sin(a) * r * 1.0, 0);
+                fx.driftFx(on, "gadget/fx_twinkle", 0.25f, new Vector(0, 0.01, 0), 14);
+            }
+            if (t == 132) fx.sound(base, "block.amethyst_block.chime", 0.8f, 0.8f);
+        }, () -> {
+            arc.remove();
+            for (ItemDisplay cloud : clouds) cloud.remove();
+        });
+    }
+
+    private static float easeOut(float k) {
+        float c = 1.4f;                                                // overshoots a touch, then settles
+        float x = k - 1;
+        return 1 + (c + 1) * x * x * x + c * x * x;
+    }
+
+    /**
+     * The CATapult: a little wooden catapult rolls up in front of the player and flings three cats, one after another:
+     * the arm winds back, whips over with a thunk, and a cat sails off in a big arc, lands on its feet, sits for a moment,
+     * then poofs away. (The cats are fine.) It needs a bit of open, solid ground in front of the player.
+     */
+    private void catapult(Player player) {
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().setY(0);
+        if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+        look.normalize();
+        Vector forward = look.clone();
+        Location base = player.getLocation().add(look.clone().multiply(1.8));
+        base = base.getBlock().getLocation().add(0.5, 0, 0.5);
+        Block floor = base.clone().add(0, -1, 0).getBlock();
+        if (!floor.getType().isSolid() || !base.getBlock().isPassable() || !base.clone().add(0, 1, 0).getBlock().isPassable()) {
+            plugin.messages().send(player, "collectibles.gadget.catapult-room");
+            fx.sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+            return;
+        }
+        base.setDirection(look);
+        World world = base.getWorld();
+        Location spot = base;
+        float yaw = spot.getYaw();
+        ItemDisplay frame = world.spawn(spot, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.OAK_PLANKS, "gadget/catapult_base"));
+            d.setPersistent(false);
+            d.setRotation(yaw, 0);
+            d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        // the arm's pivot: model (8, 4, 11) on the base, which is just behind the middle (the base is turned half round)
+        Location pivot = spot.clone().add(0, 4 / 16.0, 0).add(look.clone().multiply(-3 / 16.0));
+        ItemDisplay arm = world.spawn(pivot, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.OAK_PLANKS, "gadget/catapult_arm"));
+            d.setPersistent(false);
+            d.setRotation(yaw, 0);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        fx.tagged(frame, "catapult");
+        fx.tagged(arm, "catapult");
+        fx.sound(spot, "block.wood.place", 1f, 0.8f);
+        fx.sound(spot, "entity.cat.ambient", 0.8f, 1.2f);
+        Cat.Type[] types = {Cat.Type.RED, Cat.Type.BLACK, Cat.Type.TABBY, Cat.Type.SIAMESE, Cat.Type.CALICO, Cat.Type.BRITISH_SHORTHAIR};
+        fx.every(150, t -> {
+            if (!frame.isValid()) return;
+            if (t <= 6) {                                              // rolls in (grows in)
+                float k = t / 6f;
+                frame.setInterpolationDelay(0);
+                frame.setInterpolationDuration(2);
+                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(Math.max(0.01f, k)), new AxisAngle4f()));
+            }
+            // each throw takes 40 ticks: wind back slowly (0-20), whip over (20-25), rest (25-40)
+            int phase = (t - 10) % 40, shot = (t - 10) / 40;
+            float angle;
+            if (t < 10 || shot >= 3) angle = 0;
+            else if (phase < 20) angle = -0.25f * phase / 20f;               // creaks back a little
+            else if (phase < 25) angle = -0.25f + 2.0f * (phase - 20) / 5f;  // and whips up and over
+            else angle = 1.75f * (1 - (phase - 25) / 15f);                   // and settles back down
+            float size = t < 6 ? Math.max(0.01f, t / 6f) : t > 140 ? Math.max(0.01f, (150 - t) / 10f) : 1f;
+            arm.setInterpolationDelay(0);
+            arm.setInterpolationDuration(1);
+            arm.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(angle, 1, 0, 0), new Vector3f(size), new AxisAngle4f()));
+            if (t > 140) {
+                frame.setInterpolationDelay(0);
+                frame.setInterpolationDuration(1);
+                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+            }
+            if (t >= 10 && shot < 3) {
+                if (phase == 2) fx.sound(spot, "block.wooden_trapdoor.close", 0.6f, 0.6f);     // creak
+                if (phase == 22) {                                     // the throw
+                    fx.sound(spot, "block.wood.hit", 1f, 0.7f);
+                    fx.sound(spot, "entity.cat.hiss", 0.6f, 1.5f);
+                    Location release = pivot.clone().add(0, 1.0, 0);
+                    Cat.Type type = types[(shot + ThreadLocalRandom.current().nextInt(types.length)) % types.length];
+                    Cat cat = world.spawn(release, Cat.class, c -> {
+                        c.setInvulnerable(true);
+                        c.setCatType(type);
+                        c.setAware(false);
+                        c.setPersistent(false);
+                    });
+                    fx.tagged(cat, "thrown");
+                    Vector toss = forward.clone().multiply(0.75 + ThreadLocalRandom.current().nextDouble() * 0.2)
+                            .add(new Vector(fx.rand(0.12), 0.65, fx.rand(0.12)));
+                    cat.setVelocity(toss);
+                    fx.every(80, k -> {
+                        if (!cat.isValid()) return;
+                        if (k % 3 == 0 && !cat.isOnGround()) fx.driftFx(cat.getLocation().add(0, 0.3, 0), "gadget/fx_sparkle", 0.18f, new Vector(), 10);
+                        if (k > 4 && cat.isOnGround() && !cat.isSitting()) {
+                            cat.setSitting(true);
+                            fx.sound(cat.getLocation(), "entity.cat.ambient", 0.8f, 1.1f + ThreadLocalRandom.current().nextFloat() * 0.3f);
+                            world.spawnParticle(Particle.HEART, cat.getLocation().add(0, 0.8, 0), 2, 0.2, 0.1, 0.2, 0);
+                        }
+                    }, () -> pop(cat, "entity.cat.purreow"));
                 }
             }
-            for (int k = -1; k <= 1; k += 2) centre.getWorld().spawnParticle(Particle.CLOUD,
-                    centre.clone().add(across.clone().multiply(k * 3.4)), 3, 0.3, 0.1, 0.3, 0.01);
-        }, null);
+        }, () -> {
+            frame.remove();
+            arm.remove();
+        });
     }
 
     private void pumpkinRain(Player player) {
@@ -989,13 +1127,6 @@ final class MoreGadgets implements Listener {
                             result == 0 ? 0xFFE14D : won ? 0x7FE39A : 0xFFFFFF), 0);
                     if (won) fx.confetti(spots.get(i).clone().add(0, 0.3, 0), 25, 0.4);
                 }
-                String key = result == 0 ? "collectibles.gadget.rps-draw" : result == 1 ? "collectibles.gadget.rps-win" : "collectibles.gadget.rps-lose";
-                var tags = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
-                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", player.getName()),
-                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("rival", rivalName),
-                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("mine", picks[mine]),
-                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("theirs", picks[theirs]));
-                for (Player who : playing) plugin.messages().send(who, key, tags);
                 fx.sound(player.getLocation(), result == 1 ? "entity.player.levelup" : result == 0 ? "block.note_block.pling" : "entity.villager.no", 0.8f, 1.4f);
             } else if (t > 100) {
                 for (ItemDisplay hand : hands) scale(hand, 0.7f * (110 - t) / 10f, 0, 0, 0);

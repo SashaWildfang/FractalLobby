@@ -229,7 +229,6 @@ public final class Catalog {
         add(Category.GADGET, "fortune_cookie", N, COMMON, "Fortune Cookie", "Crack it open for your fortune.", null, null);
         add(Category.GADGET, "rock_paper_shears", N, COMMON, "Rock Paper Shears", "Play the nearest player.", null, null);
         add(Category.GADGET, "rainbow", N, UNCOMMON, "Rainbow", "Make a rainbow appear.", null, null);
-        add(Category.GADGET, "hot_potato", N, UNCOMMON, "Hot Potato", "Pass it on before it goes off!", null, null);
         add(Category.GADGET, "catapult", N, UNCOMMON, "CATapult", "Launch some cats. They land on their feet.", null, null);
         add(Category.GADGET, "mob_gun", N, UNCOMMON, "Mob Gun", "Fire baby animals. They're fine!", null, null);
         add(Category.GADGET, "diamond_shower", N, UNCOMMON, "Diamond Shower", "Make it rain diamonds (they're fake).", null, null);

@@ -154,6 +154,8 @@ def build(out):
                              "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}_gui"}}],
                              "fallback": {"type": "minecraft:model", "model": f"fractal:item/gadget/{key}"}}},
                   open(f'{out}/assets/fractal/items/gadget/{key}.json', 'w'))
+    import rps_fx as _rps
+    _rps.build_held(out, flat_item)                # the shears held blades-out
     # the fake TNT is the game's own TNT block (readable label, the real look)
     _dirs(out, 'gadget')
     json.dump({"model": {"type": "minecraft:model", "model": "minecraft:block/tnt"}}, open(f'{out}/assets/fractal/items/gadget/fake_tnt.json', 'w'))
@@ -360,6 +362,8 @@ def build(out):
     import wand_fx
     import fortune_fx
     import rps_fx
+    import catapult_rainbow
+    catapult_rainbow.build(out)                     # the catapult and the rainbow
     rps_fx.build(out, flat_item)                    # rock, paper and shears hands
     fortune_fx.build(out, flat_item)                # the fortune cookie that cracks open
     wand_fx.build(out, flat_item)                   # the magic wand's starry particles

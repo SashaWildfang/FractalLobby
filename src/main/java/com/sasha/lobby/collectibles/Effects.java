@@ -1422,7 +1422,7 @@ final class Effects implements Listener {
     }
 
     /** A particle picture that drifts (slowing down), turns, and shrinks away over its life. */
-    private void driftFx(Location at, String model, float size, Vector velocity, int life) {
+    void driftFx(Location at, String model, float size, Vector velocity, int life) {
         ItemDisplay d = fx(at, model, size);
         float spin = (ThreadLocalRandom.current().nextFloat() - 0.5f) * 0.5f;
         every(life, t -> {

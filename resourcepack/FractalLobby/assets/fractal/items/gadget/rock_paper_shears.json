@@ -1,1 +1,1 @@
-{"model": {"type": "minecraft:model", "model": "fractal:item/gadget/rock_paper_shears"}}
+{"model": {"type": "minecraft:select", "property": "minecraft:display_context", "cases": [{"when": ["gui", "ground", "fixed"], "model": {"type": "minecraft:model", "model": "fractal:item/gadget/rock_paper_shears"}}], "fallback": {"type": "minecraft:model", "model": "fractal:item/gadget/rock_paper_shears_held"}}}
