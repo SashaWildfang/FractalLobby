@@ -1919,3 +1919,25 @@ from party_popper_icon import popper_closed as _popper_closed, popper_open as _p
 GADGETS['party_popper'] = _popper_closed
 GADGETS['party_popper_open'] = _popper_open
 GUNS = GUNS + ('party_popper_open',)
+
+
+# ---------------------------------------------------------------- 1.41: the firework launcher, loaded but not firing
+def gun_firework_launcher():
+    """The firework launcher (Sasha picked this one): a red and white bazooka with a rocket loaded, only its gold nose
+    showing at the muzzle (no fireworks until it fires). Placed so it sits in the middle of the slot."""
+    c = Canvas(); g = Gun(c, ox=6.5, oy=24)
+    g.poly([(7, -1), (12, -1), (10, -8), (6, -8)], '#2c2a40')               # grip
+    g.poly([(14, -1), (17, -1), (16, -6), (13, -6)], '#2c2a40')             # front grip
+    g.tube(0, 23, 3.8, '#e8443a')
+    for u in (4, 10, 16):
+        g.rect(u, -3.8, u + 2.4, 3.8, '#f4f4fa')
+    g.rect(21.5, -4.4, 24, 4.4, '#8a8ea0')                                   # muzzle ring
+    g.rect(0, -4.4, 1.8, 4.4, '#8a8ea0')
+    g.poly([(24, -2.4), (24, 2.4), (28.5, 0)], '#ffcf5a')                    # the rocket's nose, waiting
+    g.poly([(24, 0.5), (24, 2.4), (28.5, 0)], '#fff2a0')
+    g.rect(8, 3.8, 14, 5.6, '#5a5e70')                                       # sight
+    g.rect(12, 5.6, 13.2, 7.2, '#5a5e70')
+    return c.done()
+
+
+GADGETS['firework_launcher'] = gun_firework_launcher
