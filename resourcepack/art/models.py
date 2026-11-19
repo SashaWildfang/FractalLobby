@@ -490,6 +490,9 @@ def build(out):
         return GORES[int(a // 60) % 6]
     bb = sphere_columns(8, 8, 8, 6.5, beach_colour)
     write(out, G + 'beach_ball_3d', bb, scale=H)
+    def tether_colour(mx, mz):                            # a yellow tetherball with a white seam round its middle
+        return '#ffffff' if abs(mx) < 0.55 else ('#ffd23a' if mx < 0 else '#ffc21a')
+    write(out, G + 'tetherball_3d', sphere_columns(8, 8, 8, 6.5, tether_colour) + [Box((7.3, 14.4, 7.3), (8.7, 15.2, 8.7), '#c9ccd8', 'flat')], scale=H)
     write(out, G + 'frisbee_3d', [Box((2, 7.4, 2), (14, 8.6, 14), '#ff5a4a', 'solid'), Box((3.5, 8.6, 3.5), (12.5, 9.0, 12.5), '#ff7a6a', 'flat'),
                                     Box((1.4, 7.2, 4), (14.6, 8.2, 12), '#c8322e', 'flat'), Box((4, 7.2, 1.4), (12, 8.2, 14.6), '#c8322e', 'flat')], scale=H)
     P_ = ['#ff6fd8', '#ffcf3a', '#5be37c', '#5b9dff', '#ff8a1f']
