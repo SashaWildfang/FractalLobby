@@ -528,8 +528,8 @@ public final class Collectibles implements Listener {
                  "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
             case "rock_paper_shears", "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;
             case "mob_gun", "railgun", "explosive_bow" -> 2;
-            case "balloon" -> 30;
-            case "bat_blaster", "melody_maker" -> 8;
+            case "balloon" -> 1;
+            case "bat_blaster" -> 8;
             case "fake_tnt" -> 4;
             case "grappling_hook", "blink_stick", "magic_wand" -> 3;
             case "firework_launcher", "snow_cannon", "pumpkin_launcher" -> 3;

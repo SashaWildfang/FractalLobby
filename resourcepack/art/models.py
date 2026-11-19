@@ -298,8 +298,7 @@ def build(out):
             bal.append(Box((x0, round(lo * 2) / 2, z0), (x0 + 1, round((CY + h) * 2) / 2, z0 + 1), '#eeeeee', 'flat', tint=True))
     bal += [Box((5.4, 14.5, 3.6), (6.4, 16.5, 3.9), '#ffffff', 'flat'), Box((6.4, 16.5, 3.6), (7.4, 17.0, 3.9), '#ffffff', 'flat'),   # shine
             Box((7.2, 4.8, 7.2), (8.8, 5.8, 8.8), '#d0d0d0', 'flat', tint=True), Box((6.8, 4.3, 6.8), (9.2, 4.8, 9.2), '#c0c0c0', 'flat', tint=True),
-            Box((7.75, 2.6, 7.75), (8.25, 4.3, 8.25), '#f4f4f4', 'flat'), Box((8.25, 1.2, 7.75), (8.75, 2.8, 8.25), '#f4f4f4', 'flat'),
-            Box((7.75, -0.4, 7.75), (8.25, 1.4, 8.25), '#f4f4f4', 'flat')]
+]                                                     # (no string: the lead ties straight to the knot)
     write(out, 'gadget/balloon_3d', bal, scale=H, tints=True)
     # ------------------------------------------------ a soap bubble (a flat sprite the plugin turns to face you): a thin
     # rainbow rim, a see-through middle and a shine
@@ -509,5 +508,23 @@ def build(out):
             if x % 2 == 1 or y % 2 == 1:
                 c = dark(c, 0.25)
             t.putpixel((x, y), c + (255,))
-    tex_save(out, 'gadget/disco_ball_3d', t)
+    # 1.41: the disco ball as a round mirror ball (no rod: it hangs from the rig's chain), pastel tiles like its icon
+    tiles = ['#d6dae8', '#f0b4e4', '#acd4ff', '#ceb8ff', '#ffe4a8', '#d6dae8', '#eef0fa']
+    ballb = []
+    R = 5.5
+    for i in range(11):
+        for k in range(11):
+            x0, z0 = 2.5 + i, 2.5 + k
+            mx, mz = x0 + 0.5 - 8, z0 + 0.5 - 8
+            d2 = mx * mx + mz * mz
+            if d2 > R * R * 0.96:
+                continue
+            h = round(math.sqrt(R * R - d2) * 2) / 2
+            y = 8 - h
+            j = 0
+            while y < 8 + h - 1e-6:                        # stacked tiles, alternating so the ball is checked all over
+                y1 = min(8 + h, y + 1.5)
+                ballb.append(Box((x0, y, z0), (x0 + 1, y1, z0 + 1), tiles[(i * 3 + k * 5 + j * 2) % len(tiles)], 'flat', glow=10))
+                y, j = y1, j + 1
+    write(out, 'gadget/disco_ball_3d', ballb, scale=0.5)
     return n

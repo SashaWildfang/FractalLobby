@@ -219,8 +219,7 @@ public final class Catalog {
         add(Category.GADGET, "bat_blaster", N, EPIC, "Bat Blaster", "Send a flock of bats flying.", null, null);
         add(Category.GADGET, "fake_tnt", N, EPIC, "TNT Throw", "Toss a lit TNT. Big bang, no damage.", null, null);
         add(Category.GADGET, "disco_ball", N, LEGENDARY, "Disco Ball", "Start a party wherever you are.", null, null);
-        add(Category.GADGET, "balloon", N, COMMON, "Balloon", "A balloon floats over you for a while.", null, null);
-        add(Category.GADGET, "melody_maker", N, COMMON, "Melody Maker", "Play a little tune for everyone.", null, null);
+        add(Category.GADGET, "balloon", N, COMMON, "Balloons", "Balloons on a lead: click up to three times for three colours.", null, null);
         add(Category.GADGET, "magic_wand", N, RARE, "Magic Wand", "Cast a sparkling spell.", null, null);
         add(Category.GADGET, "grappling_hook", N, RARE, "Grappling Hook", "Pull yourself to where you look.", null, null);
         add(Category.GADGET, "blink_stick", N, EPIC, "Blink Stick", "Teleport a few blocks ahead.", null, null);

@@ -89,7 +89,23 @@ final class Effects implements Listener {
     private final Map<UUID, Rig> rigs = new HashMap<>();
     private final Map<UUID, ItemDisplay> propellers = new HashMap<>();
     private final Map<UUID, Mannequin> clones = new HashMap<>();
-    private final Map<UUID, ItemDisplay> balloons = new HashMap<>();
+    /** Each player's balloons (up to three, each on its own lead). */
+    private final Map<UUID, List<Balloon>> balloons = new HashMap<>();
+
+    private static final class Balloon {
+        final ItemDisplay display;
+        final org.bukkit.entity.Chicken anchor;
+        final int slot;
+        final Color colour;
+        BukkitTask life;
+
+        Balloon(ItemDisplay display, org.bukkit.entity.Chicken anchor, int slot, Color colour) {
+            this.display = display;
+            this.anchor = anchor;
+            this.slot = slot;
+            this.colour = colour;
+        }
+    }
     private final Map<UUID, Placed> placed = new HashMap<>();
     /** Frogs charging a leap: when they started. */
     private final Map<UUID, Long> charging = new HashMap<>();
@@ -151,8 +167,8 @@ final class Effects implements Listener {
                 if (rig != null) pose(player, rig, shown);
                 ItemDisplay propeller = propellers.get(player.getUniqueId());
                 if (propeller != null) spin(player, propeller, shown);
-                ItemDisplay balloon = balloons.get(player.getUniqueId());
-                if (balloon != null) floatBalloon(player, balloon);
+                List<Balloon> held = balloons.get(player.getUniqueId());
+                if (held != null) for (Balloon b : new ArrayList<>(held)) floatBalloon(player, b);
                 passive(player);
                 charge(player);
                 if (tick % 20 == 0) viewers(player);
@@ -171,10 +187,13 @@ final class Effects implements Listener {
         propellers.clear();
         clones.values().forEach(Entity::remove);
         clones.clear();
-        balloons.values().forEach(Entity::remove);
+        for (List<Balloon> list : balloons.values()) {
+            for (Balloon b : list) {
+                b.display.remove();
+                b.anchor.remove();
+            }
+        }
         balloons.clear();
-        anchors.values().forEach(Entity::remove);
-        anchors.clear();
         for (UUID id : new ArrayList<>(placed.keySet())) unplace(id);
         for (Player player : plugin.getServer().getOnlinePlayers()) bonus(player, null);
         passives.clear();
@@ -191,7 +210,7 @@ final class Effects implements Listener {
         if (propeller != null) propeller.remove();
         Mannequin clone = clones.remove(id);
         if (clone != null) clone.remove();
-        popBalloon(id, false);
+        popBalloons(id);
         unplace(id);
         bonus(player, null);
         stopGadget(player);
@@ -292,7 +311,7 @@ final class Effects implements Listener {
         }
         unplace(id);
         more.quit(player);
-        popBalloon(id, false);
+        popBalloons(id);
     }
 
     void later(int ticks, Runnable run) {
@@ -375,10 +394,10 @@ final class Effects implements Listener {
         if (rig != null) riders.addAll(rig.parts);
         ItemDisplay propeller = propellers.get(wearer.getUniqueId());
         if (propeller != null) riders.add(propeller);
-        ItemDisplay balloon = balloons.get(wearer.getUniqueId());
-        if (balloon != null) riders.add(balloon);
-        org.bukkit.entity.Chicken anchor = anchors.get(wearer.getUniqueId());
-        if (anchor != null) riders.add(anchor);
+        for (Balloon b : balloons.getOrDefault(wearer.getUniqueId(), List.of())) {
+            riders.add(b.display);
+            riders.add(b.anchor);
+        }
         if (riders.isEmpty()) return;
         for (Player viewer : wearer.getWorld().getPlayers()) {
             if (viewer == wearer) continue;
@@ -499,7 +518,6 @@ final class Effects implements Listener {
                 sound(eye, "entity.witch.throw", 1f, 1f);
             }
             case "balloon" -> balloon(player);
-            case "melody_maker" -> melody(player);
             case "magic_wand" -> magicWand(player);
             case "grappling_hook" -> {
                 Snowball hook = toss(player, modelled(Material.SNOWBALL, "gadget/grappling_hook_head"), "hook", 2.4);
@@ -669,15 +687,42 @@ final class Effects implements Listener {
         placed.put(player.getUniqueId(), new Placed(trampoline, run));
     }
 
-    /** A balloon tied to the player for thirty seconds (in a random colour). */
-    /** The invisible little things the balloons are tied to (a real lead runs from the hand to them). */
-    private final Map<UUID, org.bukkit.entity.Chicken> anchors = new HashMap<>();
+    /** The balloon colours: each balloon a player holds is a different one. */
+    private static final Color[] BALLOON_COLOURS = {Color.fromRGB(0xFF4D6D), Color.fromRGB(0x3F8BFF), Color.fromRGB(0xFFD23A),
+            Color.fromRGB(0x5BE37C), Color.fromRGB(0xB266FF), Color.fromRGB(0xFF8A1F), Color.fromRGB(0xFF6FD8), Color.fromRGB(0x2FC8C8)};
 
-    /** A balloon on a real lead: it bobs above the player, drifts behind when they move and tilts as it swings. */
+    /** How far above the lead's end the balloon model sits (its knot is right at the lead). */
+    private static final float BALLOON_LIFT = 0.23f;
+
+    /** Is this one of the invisible things a balloon's lead is tied to? */
+    private boolean isAnchor(Entity entity) {
+        for (List<Balloon> list : balloons.values()) for (Balloon b : list) if (b.anchor.equals(entity)) return true;
+        return false;
+    }
+
+    /**
+     * A balloon on a real lead: it bobs above the player, drifts behind when they move and tilts as it swings. Each
+     * right-click adds another (up to three, each its own colour, one over each shoulder and one behind); each lasts
+     * thirty seconds and pops.
+     */
     private void balloon(Player player) {
-        popBalloon(player.getUniqueId(), false);
         if (!plugin.menuStyle().custom()) return;
         UUID id = player.getUniqueId();
+        List<Balloon> held = balloons.computeIfAbsent(id, k -> new ArrayList<>());
+        if (held.size() >= 3) {
+            plugin.messages().send(player, "collectibles.gadget.balloon-full");
+            collectibles.refund(player, "gadget:balloon");
+            return;
+        }
+        int slot = 0;
+        while (true) {
+            int s = slot;
+            if (held.stream().noneMatch(b -> b.slot == s)) break;
+            slot++;
+        }
+        List<Color> free = new ArrayList<>(List.of(BALLOON_COLOURS));
+        for (Balloon b : held) free.remove(b.colour);
+        Color colour = free.get(ThreadLocalRandom.current().nextInt(free.size()));
         Location start = player.getLocation().add(0, 2.2, 0);
         org.bukkit.entity.Chicken anchor = player.getWorld().spawn(start, org.bukkit.entity.Chicken.class, c -> {
             c.setInvisible(true);
@@ -693,21 +738,20 @@ final class Effects implements Listener {
         });
         tagged(anchor, "balloon_anchor");
         anchor.setLeashHolder(player);
-        ItemDisplay balloon = anchor.getWorld().spawn(start, ItemDisplay.class, d -> {
+        ItemDisplay display = anchor.getWorld().spawn(start, ItemDisplay.class, d -> {
             ItemStack look = modelled(Material.LEATHER_HORSE_ARMOR, "gadget/balloon_3d");
-            look.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(party()));
+            look.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(colour));
             d.setItemStack(look);
             d.setPersistent(false);
             d.setInterpolationDuration(3);
-            d.setTransformation(new Transformation(new Vector3f(0, 0.45f, 0), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+            d.setTransformation(new Transformation(new Vector3f(0, BALLOON_LIFT, 0), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
         });
-        tagged(balloon, "balloon");
-        anchor.addPassenger(balloon);
-        anchors.put(id, anchor);
-        balloons.put(id, balloon);
-        sound(player.getLocation(), "entity.chicken.egg", 0.5f, 0.6f);
-        every(600, t -> {
-        }, () -> popBalloon(id, true));
+        tagged(display, "balloon");
+        anchor.addPassenger(display);
+        Balloon balloon = new Balloon(display, anchor, slot, colour);
+        held.add(balloon);
+        sound(player.getLocation(), "entity.chicken.egg", 0.5f, 0.6f + held.size() * 0.2f);
+        balloon.life = plugin.getServer().getScheduler().runTaskLater(plugin, () -> popOne(id, balloon, true), 600L);
     }
 
     /**
@@ -885,30 +929,49 @@ final class Effects implements Listener {
         }, piece::remove);
     }
 
-    /** Takes the player's balloon away (with a pop if it burst). */
-    private void popBalloon(UUID id, boolean pop) {
-        ItemDisplay balloon = balloons.remove(id);
-        org.bukkit.entity.Chicken anchor = anchors.remove(id);
-        if (pop && balloon != null && balloon.isValid()) {
-            Location at = balloon.getLocation().add(0, 1.1, 0);
-            at.getWorld().spawnParticle(Particle.DUST, at, 20, 0.25, 0.25, 0.25, 0, dust(Color.WHITE, 1f));
-            sound(at, "entity.firework_rocket.blast", 0.6f, 2f);
+    /** Takes all of the player's balloons away. */
+    private void popBalloons(UUID id) {
+        List<Balloon> list = balloons.remove(id);
+        if (list == null) return;
+        for (Balloon b : list) {
+            if (b.life != null) b.life.cancel();
+            b.display.remove();
+            b.anchor.remove();
         }
-        if (balloon != null) balloon.remove();
-        if (anchor != null) anchor.remove();
     }
 
-    private void floatBalloon(Player player, ItemDisplay balloon) {
-        org.bukkit.entity.Chicken anchor = anchors.get(player.getUniqueId());
-        if (!balloon.isValid() || anchor == null || !anchor.isValid() || anchor.getWorld() != player.getWorld()) {
-            popBalloon(player.getUniqueId(), false);
+    /** One balloon goes (with a pop if it burst). */
+    private void popOne(UUID id, Balloon balloon, boolean pop) {
+        List<Balloon> list = balloons.get(id);
+        if (list != null) {
+            list.remove(balloon);
+            if (list.isEmpty()) balloons.remove(id);
+        }
+        if (balloon.life != null) balloon.life.cancel();
+        if (pop && balloon.display.isValid()) {
+            Location at = balloon.display.getLocation().add(0, 0.9, 0);
+            at.getWorld().spawnParticle(Particle.DUST, at, 20, 0.25, 0.25, 0.25, 0, dust(balloon.colour, 1f));
+            sound(at, "entity.firework_rocket.blast", 0.6f, 2f);
+        }
+        balloon.display.remove();
+        balloon.anchor.remove();
+    }
+
+    private void floatBalloon(Player player, Balloon balloon) {
+        org.bukkit.entity.Chicken anchor = balloon.anchor;
+        if (!balloon.display.isValid() || !anchor.isValid() || anchor.getWorld() != player.getWorld()) {
+            popOne(player.getUniqueId(), balloon, false);
             return;
         }
         double yaw = Math.toRadians(player.getLocation().getYaw());
-        // above the player's right shoulder and a little behind, bobbing; it lags behind when they move
-        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw)).multiply(0.6);
-        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(0.45);
-        Location want = player.getLocation().add(right).add(back).add(0, 2.15 + Math.sin(tick * 0.09) * 0.12, 0);
+        // first over the right shoulder, then the left, then behind; each bobs on its own and lags behind when they move
+        double side = balloon.slot == 0 ? 0.6 : balloon.slot == 1 ? -0.6 : 0;
+        double behind = balloon.slot == 2 ? 0.75 : 0.4;
+        double height = balloon.slot == 2 ? 2.45 : 2.15;
+        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw)).multiply(side);
+        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(behind);
+        double bob = Math.sin(tick * 0.09 + balloon.slot * 2.1) * 0.12;
+        Location want = player.getLocation().add(right).add(back).add(0, height + bob, 0);
         Vector pull = want.toVector().subtract(anchor.getLocation().toVector());
         if (pull.lengthSquared() > 36) {
             anchor.teleport(want);
@@ -916,27 +979,26 @@ final class Effects implements Listener {
         } else {
             anchor.setVelocity(anchor.getVelocity().multiply(0.6).add(pull.multiply(0.12)));
         }
-        // tilt with the swing, and turn a little on its own
         Vector v = anchor.getVelocity();
         float tiltX = (float) Math.max(-0.5, Math.min(0.5, v.getZ() * 2.2));
         float tiltZ = (float) Math.max(-0.5, Math.min(0.5, -v.getX() * 2.2));
-        float wobble = (float) Math.sin(tick * 0.07) * 0.08f;
-        move(balloon, new Matrix4f().rotateX(tiltX).rotateZ(tiltZ + wobble).rotateY(tick * 0.02f).translate(0, 0.45f, 0));
+        float wobble = (float) Math.sin(tick * 0.07 + balloon.slot) * 0.08f;
+        move(balloon.display, new Matrix4f().rotateX(tiltX).rotateZ(tiltZ + wobble).rotateY(tick * 0.02f + balloon.slot).translate(0, BALLOON_LIFT, 0));
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onUnleash(org.bukkit.event.entity.EntityUnleashEvent event) {
-        if (event.getEntity().getScoreboardTags().contains(TAG) || anchors.containsValue(event.getEntity())) event.setDropLeash(false);
+        if (event.getEntity().getScoreboardTags().contains(TAG) || isAnchor(event.getEntity())) event.setDropLeash(false);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onTouchAnchor(org.bukkit.event.player.PlayerInteractEntityEvent event) {
-        if (anchors.containsValue(event.getRightClicked())) event.setCancelled(true);
+        if (isAnchor(event.getRightClicked())) event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerUnleash(org.bukkit.event.player.PlayerUnleashEntityEvent event) {
-        if (anchors.containsValue(event.getEntity())) event.setCancelled(true);
+        if (isAnchor(event.getEntity())) event.setCancelled(true);
     }
 
     /** A little tune with notes floating up. */
@@ -1258,7 +1320,7 @@ final class Effects implements Listener {
         BlockDisplay chain = world.spawn(hook, BlockDisplay.class, d -> {
             d.setBlock(Material.IRON_CHAIN.createBlockData());
             d.setPersistent(false);
-            d.setTransformation(new Transformation(new Vector3f(-0.5f, -0.75f, -0.5f), new AxisAngle4f(), new Vector3f(1f, 0.75f, 1f), new AxisAngle4f()));
+            d.setTransformation(new Transformation(new Vector3f(-0.5f, -0.82f, -0.5f), new AxisAngle4f(), new Vector3f(1f, 0.82f, 1f), new AxisAngle4f()));
         });
         Location at = centre.clone().add(0, 2.85, 0);
         ItemDisplay ball = world.spawn(at, ItemDisplay.class, d -> {
