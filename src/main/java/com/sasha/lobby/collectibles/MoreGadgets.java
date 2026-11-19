@@ -779,10 +779,11 @@ final class MoreGadgets implements Listener {
                         new Vector3f((float) sx, (float) height, (float) sz), new AxisAngle4f()));
             }));
         };
-        slab.make(0, 0, L + 0.3, W + 0.3, 0.02, 0.005, Material.BLACK_CONCRETE);                     // the court
-        for (int s2 : new int[]{-1, 1}) slab.make(s2 * W / 2, 0, L + 0.3, 0.12, 0.03, 0.01, Material.WHITE_CONCRETE);   // side lines
-        slab.make(0, -L / 2, 0.12, W, 0.03, 0.01, Material.LIGHT_BLUE_CONCRETE);                     // end lines
-        slab.make(0, L / 2, 0.12, W, 0.03, 0.01, Material.PINK_CONCRETE);
+        slab.make(0, 0, L, W, 0.02, 0.005, Material.BLACK_CONCRETE);                                 // the court
+        // the lines sit just inside the court's edges, flush with them
+        for (int s2 : new int[]{-1, 1}) slab.make(s2 * (W / 2 - 0.06), 0, L, 0.12, 0.03, 0.01, Material.WHITE_CONCRETE);
+        slab.make(0, -(L / 2 - 0.06), 0.12, W - 0.24, 0.03, 0.01, Material.LIGHT_BLUE_CONCRETE);
+        slab.make(0, L / 2 - 0.06, 0.12, W - 0.24, 0.03, 0.01, Material.PINK_CONCRETE);
         for (double u = -W / 2 + 0.5; u < W / 2; u += 1) slab.make(u, 0, 0.1, 0.5, 0.03, 0.01, Material.LIGHT_GRAY_CONCRETE);   // the dashed middle
         BlockDisplay[] paddles = {slab.make(0, -L / 2 + 0.6, 0.25, PADDLE * 2, 0.5, 0.03, Material.LIGHT_BLUE_CONCRETE),
                 slab.make(0, L / 2 - 0.6, 0.25, PADDLE * 2, 0.5, 0.03, Material.PINK_CONCRETE)};
@@ -807,20 +808,24 @@ final class MoreGadgets implements Listener {
         boolean[] over = {false};
         Runnable showScore = () -> score.text(text(player.getName() + "  ", 0x3FD8FF).append(text(pts[0] + " : " + pts[1], 0xFFFFFF))
                 .append(text("  " + (far[0] == null ? "Lobby" : far[0].getName()), 0xFF5AB4))
-                .append(Component.newline()).append(text(far[0] == null ? "Walk into the pink end to play!" : "First to 5", 0xA9A3C2)));
+                .append(Component.newline()).append(text(far[0] == null ? "Walk into the pink end to play!" : "First to 5", 0xA9A3C2))
+                .append(Component.newline()).append(text("Look left and right to steer", 0x7A7F96)));
         showScore.run();
         p.task = fx.every(2400, t -> {
             if (t % 40 == 0) hide.run();                                // (again now and then, for anyone who came along)
             if (over[0]) return;
-            if (!player.isOnline() || player.getWorld() != world || player.getLocation().distanceSquared(c) > 18 * 18) {
-                clear(player.getUniqueId());
-                return;
-            }
             // where a player is on the court: (u across, v along)
             java.util.function.Function<Player, double[]> local = who -> {
                 Vector d = who.getLocation().toVector().subtract(c.toVector());
                 return new double[]{d.dot(side), d.dot(fwd)};
             };
+            // the player walking away from their end ends the game straight away
+            double[] me = player.isOnline() && player.getWorld() == world ? local.apply(player) : null;
+            if (me == null || me[1] < -L / 2 - 3.5 || me[1] > -L / 2 + 2 || Math.abs(me[0]) > W / 2 + 1.5) {
+                if (player.isOnline()) fx.sound(player.getLocation(), "block.note_block.bass", 0.8f, 0.6f);
+                clear(player.getUniqueId());
+                return;
+            }
             // the far end: whoever walks in takes over from the Lobby, and gives it back when they walk off
             if (far[0] != null) {
                 double[] q = far[0].isOnline() && far[0].getWorld() == world ? local.apply(far[0]) : null;
@@ -842,17 +847,26 @@ final class MoreGadgets implements Listener {
             }
             for (int i = 0; i < 2; i++) {                              // move the paddles
                 Player who = i == 0 ? player : far[0];
+                double paddleV = i == 0 ? -L / 2 + 0.6 : L / 2 - 0.6;
                 double target;
-                if (who != null && (i == 1 || local.apply(who)[1] < 0)) {
-                    target = local.apply(who)[0];
+                double step;
+                if (who != null) {
+                    // the paddle goes where the player is looking along their end line (just turn to steer), or, if
+                    // they're looking away from the court, where they stand
+                    double[] q = local.apply(who);
+                    Vector eye = who.getEyeLocation().getDirection();
+                    double lu = eye.dot(side), lv = eye.dot(fwd) * (i == 0 ? 1 : -1);
+                    double gap = Math.abs(paddleV - q[1]);
+                    target = lv > 0.15 ? q[0] + lu / lv * Math.max(2.5, gap) : q[0];   // (a quarter turn or so reaches either side)
+                    step = 0.6;
                 } else {                                               // the Lobby: follows the ball (a bit slowly)
                     boolean coming = (i == 0 ? b[3] < 0 : b[3] > 0) && wait[0] <= 0;
                     target = coming ? b[0] + aim[0] : 0;
+                    step = 0.11;
                 }
                 target = Math.max(-W / 2 + PADDLE, Math.min(W / 2 - PADDLE, target));
-                double step = who != null && (i == 1 || local.apply(who)[1] < 0) ? 0.5 : 0.11;
                 pu[i] += Math.max(-step, Math.min(step, target - pu[i]));
-                paddles[i].teleport(at.apply(pu[i], i == 0 ? -L / 2 + 0.6 : L / 2 - 0.6));
+                paddles[i].teleport(at.apply(pu[i], paddleV));
             }
             if (wait[0] > 0) {                                         // waiting to serve: the ball sits in the middle
                 if (--wait[0] == 0) {
@@ -1114,84 +1128,74 @@ final class MoreGadgets implements Listener {
     }
 
     /**
-     * A rainbow arching over the player's head (just behind it), a soft cloud at each end, and it goes wherever they
-     * go for ten seconds, with rising chimes as it appears and twinkles drifting off it.
+     * A big rainbow standing on the ground with the player right in the middle of it (it stays where it was made): a
+     * soft cloud at each end, rising chimes as it appears, and twinkles drifting off it for about ten seconds.
      */
     private void rainbow(Player player) {
         World world = player.getWorld();
-        float full = 1.2f;                                             // about 3.4 blocks across
-        java.util.function.Supplier<Location[]> spots = () -> {        // where the arc and its clouds go, from the player
-            Location feet = player.getLocation();
-            float yaw = feet.getYaw();
-            Vector look = new Location(world, 0, 0, 0, yaw, 0).getDirection();
-            Vector right = new Vector(-look.getZ(), 0, look.getX());
-            Location base = feet.clone().add(look.clone().multiply(-0.25)).add(0, 1.15, 0);
-            base.setYaw(yaw);
-            base.setPitch(0);
-            Location l = base.clone().add(right.clone().multiply(-1.16)).add(look.clone().multiply(0.1)).add(0, 0.35, 0);
-            Location r = base.clone().add(right.clone().multiply(1.16)).add(look.clone().multiply(0.1)).add(0, 0.35, 0);
-            return new Location[]{base, l, r};
-        };
-        Location[] start = spots.get();
-        ItemDisplay arc = world.spawn(start[0], ItemDisplay.class, d -> {
+        Location feet = player.getLocation().clone();                  // right where the player stands
+        float yaw = feet.getYaw();
+        Vector look = new Location(world, 0, 0, 0, yaw, 0).getDirection();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        Location base = feet.clone();
+        base.setYaw(yaw);
+        base.setPitch(0);
+        float full = 2.4f;                                             // about 7 blocks across, the ends 2.3 blocks either side
+        ItemDisplay arc = world.spawn(base, ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.PAPER, "gadget/rainbow_arc"));
             d.setBrightness(new Display.Brightness(15, 15));
             d.setPersistent(false);
-            d.setTeleportDuration(2);
             d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
         });
         fx.tagged(arc, "rainbow");
+        float cloudSize = 2.2f;                                        // the sprite's cloud sits in its lower part
         ItemDisplay[] clouds = new ItemDisplay[2];
         for (int i = 0; i < 2; i++) {
-            clouds[i] = world.spawn(start[i + 1], ItemDisplay.class, d -> {
+            int side = i == 0 ? -1 : 1;
+            Location at = base.clone().add(right.clone().multiply(side * 2.35)).add(0, cloudSize / 2 - 0.05, 0);
+            clouds[i] = world.spawn(at, ItemDisplay.class, d -> {
                 d.setItemStack(fx.modelled(Material.WHITE_WOOL, "gadget/rainbow_cloud"));
                 d.setBillboard(Display.Billboard.VERTICAL);
                 d.setBrightness(new Display.Brightness(15, 15));
                 d.setPersistent(false);
-                d.setTeleportDuration(2);
-                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+                d.setTransformation(new Transformation(new Vector3f(0, -cloudSize / 2, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
             });
             fx.tagged(clouds[i], "rainbow");
         }
-        // grow (and later shrink) in one smooth step each, rather than nudging the size every tick
+        // grow (and later shrink) in one smooth step each; the clouds keep their bottoms on the ground as they do
         java.util.function.Consumer<Float> size = k -> {
             float sz = Math.max(0.01f, full * k);
             arc.setInterpolationDelay(0);
-            arc.setInterpolationDuration(12);
+            arc.setInterpolationDuration(14);
             arc.setTransformation(new Transformation(new Vector3f(0, sz * 0.5f, 0), new AxisAngle4f(), new Vector3f(sz), new AxisAngle4f()));
+            float c = Math.max(0.01f, cloudSize * k);
             for (ItemDisplay cloud : clouds) {
                 cloud.setInterpolationDelay(0);
-                cloud.setInterpolationDuration(12);
-                cloud.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(Math.max(0.01f, 1.3f * k)), new AxisAngle4f()));
+                cloud.setInterpolationDuration(14);
+                cloud.setTransformation(new Transformation(new Vector3f(0, (c - cloudSize) / 2, 0), new AxisAngle4f(), new Vector3f(c), new AxisAngle4f()));
             }
         };
         fx.later(2, () -> size.accept(1f));
         int[] scale = {0, 2, 4, 5, 7, 9, 11, 12};                        // a major scale, rising
         fx.every(200, t -> {
-            if (!arc.isValid() || !player.isOnline() || player.getWorld() != world) return;
-            Location[] now = spots.get();
-            arc.teleport(now[0]);
-            clouds[0].teleport(now[1]);
-            clouds[1].teleport(now[2]);
+            if (!arc.isValid()) return;
             if (t < 24 && t % 3 == 0) {                                // the chimes as it rises
                 int note = scale[(t / 3) % scale.length];
-                fx.sound(now[0], "block.note_block.chime", 0.8f, (float) Math.pow(2, (note - 6) / 12.0));
+                fx.sound(base, "block.note_block.chime", 0.8f, (float) Math.pow(2, (note - 6) / 12.0));
             }
             if (t == 24) {
-                fx.sound(now[0], "block.amethyst_block.resonate", 1f, 1.5f);
-                fx.sound(now[0], "entity.player.levelup", 0.4f, 2f);
+                fx.sound(base, "block.amethyst_block.resonate", 1f, 1.5f);
+                fx.sound(base, "entity.player.levelup", 0.4f, 2f);
             }
-            if (t > 10 && t < 180 && t % 4 == 0) {                     // twinkles drifting off the arc
-                Vector look = now[0].getDirection().setY(0).normalize();
-                Vector right = new Vector(-look.getZ(), 0, look.getX());
+            if (t > 10 && t < 180 && t % 3 == 0) {                     // twinkles drifting off the arc
                 double a = ThreadLocalRandom.current().nextDouble(Math.PI);
-                double r = 1.2 + ThreadLocalRandom.current().nextDouble(-0.5, 0.5);
-                Location on = now[0].clone().add(right.multiply(Math.cos(a) * r)).add(0, Math.sin(a) * r, 0);
-                fx.driftFx(on, "gadget/fx_twinkle", 0.2f, new Vector(0, 0.01, 0), 14);
+                double r = 2.3 + ThreadLocalRandom.current().nextDouble(-0.9, 0.9);
+                Location on = base.clone().add(right.clone().multiply(Math.cos(a) * r)).add(0, Math.sin(a) * r, 0);
+                fx.driftFx(on, "gadget/fx_twinkle", 0.25f, new Vector(0, 0.01, 0), 14);
             }
-            if (t == 186) {
+            if (t == 184) {
                 size.accept(0f);
-                fx.sound(now[0], "block.amethyst_block.chime", 0.8f, 0.8f);
+                fx.sound(base, "block.amethyst_block.chime", 0.8f, 0.8f);
             }
         }, () -> {
             arc.remove();
@@ -1407,121 +1411,107 @@ final class MoreGadgets implements Listener {
     // ---------------------------------------------------------------- placed things
 
     /**
-     * Tetherball, scored: a pole with a round ball on a real rope. The player (blue) hits it one way round, and anyone
-     * else who hits it (pink) the other way; with nobody else about, the Lobby takes the pink side and swats it back
-     * when it comes round. Each hit sends it flying out and round, the rope winds up round the pole, and whoever winds
-     * it all the way up their way wins the point. First to 3.
+     * Tetherball: a pole with a round ball on a slack rope. Hit it (left or right click, or run into it) and it swings
+     * out and round; the rope winds up round the outside of the pole as it goes (and unwinds when it's hit back the
+     * other way), sagging when it's slow and pulling tight when it's flying.
      */
     private void tetherball(Player player) {
         Placed p = place(player);
         Location base = fx.ground(player);
         World world = base.getWorld();
         keep(p, model(base.clone(), "gadget/tetherball_pole", Material.IRON_BARS, 1.4f, 0.7f));
-        final double TOP = 2.75, ROPE = 1.9, LAPS = 3.5;
+        final double TOP = 2.7, ROPE = 1.9, POLE = 0.1, PITCH = 0.09, BALL = 0.3;
+        final double MAX_TURNS = (ROPE - 0.35) / (Math.PI * 2 * POLE * 1.05);
         Location top = base.clone().add(0, TOP, 0);
+        top.setYaw(0);                                                 // the rope's pieces are placed in plain world directions
+        top.setPitch(0);
         ItemDisplay ball = keep(p, model(top.clone().add(0, -ROPE, 0), "gadget/tetherball_3d", Material.YELLOW_WOOL, 0.75f, 0));
         ball.setTeleportDuration(1);
-        BlockDisplay rope = keep(p, world.spawn(top, BlockDisplay.class, d -> {
-            d.setBlock(Material.WHITE_WOOL.createBlockData());
-            d.setBrightness(new Display.Brightness(15, 15));
-            d.setPersistent(false);
-        }));
-        TextDisplay score = keep(p, label(top.clone().add(0, 0.9, 0), Component.empty(), 0));
-        double[] st = {Math.toRadians(player.getLocation().getYaw() + 90), 0, 0};   // angle round the pole, speed, how far wound
-        int[] pts = {0, 0};
-        int[] pause = {0};
-        Player[] rival = {null};
-        boolean[] over = {false};
+        int pieces = 40;                                               // the rope, in short pieces, so it can bend and wind
+        BlockDisplay[] rope = new BlockDisplay[pieces];
+        for (int i = 0; i < pieces; i++) {
+            rope[i] = keep(p, world.spawn(top, BlockDisplay.class, d -> {
+                d.setBlock(Material.WHITE_WOOL.createBlockData());
+                d.setBrightness(new Display.Brightness(15, 15));
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            }));
+        }
+        double[] st = {Math.toRadians(player.getLocation().getYaw() + 90), 0, 0};   // angle round the pole, speed, how far wound (radians)
         Map<UUID, Integer> lastHit = new HashMap<>();
-        double lobbyAngle = st[0] + Math.PI;                           // where the Lobby stands, across from the player
-        Runnable showScore = () -> score.text(text(player.getName() + "  ", 0x3FD8FF).append(text(pts[0] + " : " + pts[1], 0xFFFFFF))
-                .append(text("  " + (rival[0] == null ? "Lobby" : rival[0].getName()), 0xFF5AB4))
-                .append(Component.newline()).append(text(rival[0] == null ? "Hit the ball to play! First to 3" : "First to 3", 0xA9A3C2)));
-        showScore.run();
         int[] tick = {0};
         java.util.function.BiConsumer<Player, Double> hitBall = (hitter, power) -> {
-            if (over[0] || pause[0] > 0) return;
             Integer last = lastHit.get(hitter.getUniqueId());
             if (last != null && tick[0] - last < 6) return;
             lastHit.put(hitter.getUniqueId(), tick[0]);
-            if (!hitter.equals(player) && rival[0] == null) {
-                rival[0] = hitter;
-                showScore.run();
-            }
-            int way = hitter.equals(player) ? 1 : -1;                  // blue sends it one way round, pink the other
-            st[1] = Math.max(-0.32, Math.min(0.32, st[1] + way * power));
             Location at = ball.getLocation();
+            Vector toBall = at.toVector().subtract(base.toVector()).setY(0);
+            Vector push = hitter.getLocation().getDirection().setY(0);
+            double cross = toBall.getX() * push.getZ() - toBall.getZ() * push.getX();
+            st[1] = Math.max(-0.32, Math.min(0.32, st[1] + (cross >= 0 ? 1 : -1) * power));
             fx.sound(at, "entity.player.attack.strong", 0.9f, 1.3f);
             world.spawnParticle(Particle.CRIT, at, 6, 0.15, 0.15, 0.15, 0.1);
         };
         Interaction hit = box(p, top.clone().add(0, -ROPE - 0.4, 0), 0.8f, 0.8f, null);
         clicks.put(hit.getUniqueId(), hitter -> hitBall.accept(hitter, hitter.isSprinting() ? 0.16 : 0.12));
         fx.sound(base, "block.chain.place", 1f, 1f);
-        p.task = fx.every(2400, t -> {
+        p.task = fx.every(1200, t -> {
             tick[0] = t;
-            if (over[0]) return;
-            if (!player.isOnline() || player.getWorld() != world || player.getLocation().distanceSquared(base) > 16 * 16) {
-                clear(player.getUniqueId());
-                return;
-            }
-            if (rival[0] != null && (!rival[0].isOnline() || rival[0].getWorld() != world || rival[0].getLocation().distanceSquared(base) > 10 * 10)) {
-                rival[0] = null;                                       // the rival walked off: the Lobby takes over again
-                showScore.run();
-            }
-            if (pause[0] > 0) {                                        // after a point the rope unwinds back down
-                pause[0]--;
-                st[2] *= 0.9;
-                st[1] *= 0.85;
-            } else {
-                st[0] += st[1];
-                st[2] += st[1];
-                st[1] *= 0.992;
-            }
-            double free = ROPE - Math.min(1, Math.abs(st[2]) / (LAPS * Math.PI * 2)) * (ROPE - 0.3);
-            double fly = Math.min(1, Math.abs(st[1]) / 0.2) * Math.toRadians(70);   // swings out the faster it goes
-            double out = 0.12 + free * Math.sin(fly);
-            Location at = base.clone().add(Math.cos(st[0]) * out, TOP - free * Math.cos(fly), Math.sin(st[0]) * out);
+            st[0] += st[1];
+            st[2] += st[1];
+            st[1] *= 0.99;
+            double turns = Math.min(MAX_TURNS, Math.abs(st[2]) / (Math.PI * 2));
+            // what's wound round the pole is used up: a little helix of rope going down from the top
+            double wound = Math.min(ROPE - 0.35, turns * Math.PI * 2 * POLE * 1.05);
+            double free = ROPE - wound;
+            double taut = Math.min(1, Math.abs(st[1]) / 0.18);
+            double fly = taut * Math.toRadians(72);                    // swings out the faster it goes
+            double drop = turns * PITCH;                               // the wound part steps down the pole
+            double out = Math.max(POLE + BALL + 0.05, POLE + free * Math.sin(fly));
+            double y = TOP - drop - free * Math.cos(fly);
+            Location at = base.clone().add(Math.cos(st[0]) * out, y, Math.sin(st[0]) * out);
             ball.teleport(at);
             hit.teleport(at.clone().add(0, -0.4, 0));
-            // the rope: a thin cord from the top of the pole to the ball
-            Vector d = at.toVector().subtract(top.toVector());
-            float len = (float) d.length();
-            Vector n = d.clone().normalize();
-            rope.setInterpolationDelay(0);
-            rope.setInterpolationDuration(1);
-            rope.setTransformationMatrix(new Matrix4f().rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) n.getX(), (float) n.getY(), (float) n.getZ()))
-                    .translate(-0.03f, 0, -0.03f).scale(0.06f, len, 0.06f));
-            if (pause[0] > 0) return;
+
+            // the rope's points: the helix round the pole (just outside it), then the slack bit down to the ball
+            List<Vector> pts = new ArrayList<>();
+            double woundAngle = Math.min(Math.abs(st[2]), (ROPE - 0.35) / (POLE * 1.05)) * Math.signum(st[2]);
+            int helix = (int) Math.min(pieces - 10, Math.ceil(Math.abs(woundAngle) / (Math.PI / 5)));
+            for (int k = 0; k <= helix; k++) {
+                double f = helix == 0 ? 1 : k / (double) helix;
+                double ang = st[0] - woundAngle * (1 - f);
+                pts.add(new Vector(Math.cos(ang) * POLE * 1.05, -drop * f, Math.sin(ang) * POLE * 1.05));
+            }
+            Vector from = pts.get(pts.size() - 1);
+            Vector to = at.toVector().subtract(top.toVector()).add(new Vector(0, 0.05, 0));
+            Vector toward = to.clone().subtract(from);
+            double towardLen = Math.max(0.01, toward.length());
+            Vector mid = from.clone().add(toward.clone().multiply(0.5));
+            mid.setY(mid.getY() - (0.06 + (1 - taut) * 0.22) * towardLen);   // slack: sags when it's slow
+            int slack = pieces - 1 - helix;
+            for (int k = 1; k <= slack; k++) {
+                double f = k / (double) slack, g = 1 - f;
+                pts.add(from.clone().multiply(g * g).add(mid.clone().multiply(2 * f * g)).add(to.clone().multiply(f * f)));
+            }
+            for (int i = 0; i < pieces; i++) {
+                BlockDisplay piece = rope[i];
+                piece.setInterpolationDelay(0);
+                piece.setInterpolationDuration(1);
+                if (i + 1 >= pts.size()) {
+                    piece.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+                    continue;
+                }
+                Vector a0 = pts.get(i), d = pts.get(i + 1).clone().subtract(a0);
+                float len = (float) d.length() + 0.01f;
+                Vector n = d.clone().normalize();
+                piece.setTransformationMatrix(new Matrix4f().translate((float) a0.getX(), (float) a0.getY(), (float) a0.getZ())
+                        .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) n.getX(), (float) n.getY(), (float) n.getZ()))
+                        .translate(-0.025f, 0, -0.025f).scale(0.05f, len, 0.05f));
+            }
             // running into it counts as a hit too
             for (Player who : world.getPlayers()) {
                 if (fx.parkour(who) || who.getLocation().add(0, 1, 0).distanceSquared(at) > 0.6) continue;
                 hitBall.accept(who, 0.1);
-            }
-            // the Lobby swats it back when it comes round to its side (and nobody else is playing pink)
-            if (rival[0] == null && Math.abs(st[1]) > 0.01) {
-                double diff = Math.atan2(Math.sin(st[0] - lobbyAngle), Math.cos(st[0] - lobbyAngle));
-                if (Math.abs(diff) < Math.abs(st[1]) && st[1] > 0 && ThreadLocalRandom.current().nextDouble() < 0.6) {
-                    st[1] = Math.max(-0.32, st[1] - 0.12 - ThreadLocalRandom.current().nextDouble(0.08));
-                    fx.sound(at, "entity.player.attack.strong", 0.9f, 1.1f);
-                    world.spawnParticle(Particle.CRIT, at, 6, 0.15, 0.15, 0.15, 0.1);
-                }
-            }
-            if (Math.abs(st[2]) >= LAPS * Math.PI * 2) {               // wound all the way up: a point!
-                int winner = st[2] > 0 ? 0 : 1;
-                pts[winner]++;
-                world.spawnParticle(Particle.FIREWORK, at, 20, 0.2, 0.2, 0.2, 0.1);
-                fx.sound(base, winner == 0 ? "entity.player.levelup" : "block.note_block.bass", 0.9f, winner == 0 ? 1.6f : 0.8f);
-                showScore.run();
-                pause[0] = 50;
-                if (pts[winner] >= 3) {
-                    over[0] = true;
-                    String name = winner == 0 ? player.getName() : rival[0] == null ? "The Lobby" : rival[0].getName();
-                    score.text(text(name + " wins!", winner == 0 ? 0x3FD8FF : 0xFF5AB4).append(Component.newline())
-                            .append(text(pts[0] + " : " + pts[1], 0xFFFFFF)));
-                    fx.confetti(top.clone().add(0, 0.3, 0), 60, 1);
-                    fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
-                    fx.later(80, () -> clear(player.getUniqueId()));
-                }
             }
         }, () -> clear(player.getUniqueId()));
     }
