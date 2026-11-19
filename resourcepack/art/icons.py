@@ -1985,3 +1985,6 @@ GADGETS['fortune_cookie'] = _fortune_icon
 
 from rps_fx import shears_icon as _rps_icon
 GADGETS['rock_paper_shears'] = _rps_icon
+
+from catapult_icon import catapult_icon as _catapult_icon
+GADGETS['catapult'] = _catapult_icon
