@@ -1941,3 +1941,6 @@ def gun_firework_launcher():
 
 
 GADGETS['firework_launcher'] = gun_firework_launcher
+
+from disco_ball_icon import disco_ball_icon as _disco_ball_icon
+GADGETS['disco_ball'] = _disco_ball_icon
