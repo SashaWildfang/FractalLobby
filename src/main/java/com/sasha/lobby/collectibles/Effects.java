@@ -1164,41 +1164,157 @@ final class Effects implements Listener {
     }
 
     /** A disco ball over the player, spinning, throwing coloured light and playing a little tune. */
+    /**
+     * The disco: a mirror ball hanging from a chain on a little lighting rig, over a 5 by 5 dance floor of glowing
+     * tiles that change colour to the beat (in waves, checks and rings), with beams of light and a tune. It needs a
+     * flat, open spot: solid ground under all of the floor, room above it, and no other disco right there; if the spot
+     * isn't right the player is told and gets their cooldown back.
+     */
     private void discoBall(Player player) {
-        Location at = player.getLocation().add(0, 3.4, 0);
-        ItemDisplay ball = at.getWorld().spawn(at, ItemDisplay.class, d -> {
+        Location centre = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
+        World world = centre.getWorld();
+        String why = null;
+        if (!player.isOnGround()) why = "air";
+        else {
+            for (int dx = -2; dx <= 2 && why == null; dx++) {
+                for (int dz = -2; dz <= 2 && why == null; dz++) {
+                    Block floor = centre.clone().add(dx, -1, dz).getBlock();
+                    if (!floor.getType().isOccluding()) why = "floor";
+                    for (int dy = 0; dy < 5 && why == null; dy++) {
+                        if (!centre.clone().add(dx, dy, dz).getBlock().isPassable()) why = "room";
+                    }
+                }
+            }
+            for (Entity near : world.getNearbyEntities(centre, 6, 5, 6)) {
+                if (near.getScoreboardTags().contains("lobby_disco_floor")) why = "taken";
+            }
+        }
+        // the stand goes just off the floor: behind the player if there's room, else to a side, else in front
+        Location foot = null;
+        if (why == null) {
+            for (float turn : new float[]{180, 90, -90, 0}) {
+                double a = Math.toRadians(player.getLocation().getYaw() + turn);
+                Location spot = centre.clone().add(-Math.sin(a) * 2.75, 0, Math.cos(a) * 2.75);
+                boolean ok = spot.clone().add(0, -1, 0).getBlock().getType().isSolid();
+                for (int dy = 0; dy < 5 && ok; dy++) ok = spot.clone().add(0, dy, 0).getBlock().isPassable();
+                if (ok) {
+                    foot = spot;
+                    break;
+                }
+            }
+            if (foot == null) why = "room";
+        }
+        if (why != null) {
+            plugin.messages().send(player, "collectibles.gadget.disco-" + why);
+            sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+            collectibles.refund(player, "gadget:disco_ball");
+            return;
+        }
+        unplace(player.getUniqueId());
+        List<Entity> parts = new ArrayList<>();
+        // the dance floor: 25 glowing tiles laid just on top of the ground (pictures only: the ground isn't changed)
+        BlockDisplay[][] tiles = new BlockDisplay[5][5];
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                Location corner = centre.clone().add(dx - 0.5, 0.005, dz - 0.5);
+                BlockDisplay tile = world.spawn(corner, BlockDisplay.class, d -> {
+                    d.setBlock(Material.WHITE_CONCRETE.createBlockData());
+                    d.setBrightness(new Display.Brightness(15, 15));
+                    d.setPersistent(false);
+                    d.setTransformation(new Transformation(new Vector3f(0.03f, 0, 0.03f), new AxisAngle4f(), new Vector3f(0.94f, 0.02f, 0.94f), new AxisAngle4f()));
+                });
+                tile.addScoreboardTag("lobby_disco_floor");
+                tagged(tile, "disco_floor");
+                tiles[dx + 2][dz + 2] = tile;
+                parts.add(tile);
+            }
+        }
+        // the rig: a dark stand at the back corner, an arm over the middle, and a chain the ball hangs from
+        BlockData metal = Material.POLISHED_BLACKSTONE.createBlockData();
+        Location stand = foot;
+        BlockDisplay pole = world.spawn(stand, BlockDisplay.class, d -> {
+            d.setBlock(metal);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.09f, 0, -0.09f), new AxisAngle4f(), new Vector3f(0.18f, 4.1f, 0.18f), new AxisAngle4f()));
+        });
+        BlockDisplay base = world.spawn(stand, BlockDisplay.class, d -> {
+            d.setBlock(metal);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.3f, 0, -0.3f), new AxisAngle4f(), new Vector3f(0.6f, 0.12f, 0.6f), new AxisAngle4f()));
+        });
+        // the arm: from the top of the pole to above the middle of the floor
+        Vector across = centre.toVector().subtract(stand.toVector()).setY(0);
+        float armLength = (float) across.length();
+        float armYaw = (float) Math.atan2(across.getX(), across.getZ());
+        Location top = stand.clone().add(0, 4.0, 0);
+        org.joml.Quaternionf armTurn = new org.joml.Quaternionf().rotateY(armYaw);
+        BlockDisplay arm = world.spawn(top, BlockDisplay.class, d -> {
+            d.setBlock(metal);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.07f, 0, -0.07f).rotate(armTurn), armTurn,
+                    new Vector3f(0.14f, 0.14f, armLength + 0.07f), new org.joml.Quaternionf()));
+        });
+        Location hook = centre.clone().add(0, 4.0, 0);
+        BlockDisplay chain = world.spawn(hook, BlockDisplay.class, d -> {
+            d.setBlock(Material.IRON_CHAIN.createBlockData());
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.5f, -0.75f, -0.5f), new AxisAngle4f(), new Vector3f(1f, 0.75f, 1f), new AxisAngle4f()));
+        });
+        Location at = centre.clone().add(0, 2.85, 0);
+        ItemDisplay ball = world.spawn(at, ItemDisplay.class, d -> {
             d.setItemStack(modelled(Material.GLASS, "gadget/disco_ball_3d"));
             d.setBrightness(new Display.Brightness(15, 15));
+            d.setPersistent(false);
             d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.9f), new AxisAngle4f()));
         });
-        tagged(ball, "disco");
+        for (Entity e : List.of(pole, base, arm, chain, ball)) {
+            tagged(e, "disco");
+            parts.add(e);
+        }
+        sound(centre, "block.anvil.place", 0.4f, 1.6f);
+        sound(centre, "block.beacon.activate", 0.8f, 1.6f);
+        Material[] colours = {Material.MAGENTA_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE,
+                Material.ORANGE_CONCRETE, Material.PURPLE_CONCRETE, Material.RED_CONCRETE, Material.CYAN_CONCRETE, Material.PINK_CONCRETE};
         int[] melody = {0, 4, 7, 12, 7, 4, 0, 5, 9, 12, 9, 5};
-        every(160, t -> {
+        BukkitTask run = every(320, t -> {
             if (t % 2 == 0) {
                 ball.setInterpolationDelay(0);
                 ball.setInterpolationDuration(2);
                 ball.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f((float) Math.toRadians(t * 9), 0, 1, 0),
                         new Vector3f(0.9f), new AxisAngle4f()));
             }
-            if (t % 3 == 0) {
-                // A beam of colour from the ball to a spot on the ground nearby.
-                double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r = ThreadLocalRandom.current().nextDouble(1.5, 4.5);
-                Location to = at.clone().add(Math.cos(a) * r, -3.3, Math.sin(a) * r);
+            if (t % 8 == 0) {                          // the floor changes with the beat: waves, then checks, then rings
+                int beat = t / 8, mode = (beat / 8) % 3;
+                for (int i = 0; i < 5; i++) {
+                    for (int k = 0; k < 5; k++) {
+                        int pick = switch (mode) {
+                            case 0 -> i + beat;                                              // a wave sweeping across
+                            case 1 -> ((i + k + beat) % 2) * 3 + beat;                       // flashing checks
+                            default -> Math.max(Math.abs(i - 2), Math.abs(k - 2)) + beat;  // rings from the middle
+                        };
+                        tiles[i][k].setBlock(colours[Math.floorMod(pick, colours.length)].createBlockData());
+                    }
+                }
+                int note = melody[beat % melody.length];
+                sound(at, "block.note_block.bell", 0.7f, (float) Math.pow(2, (note - 12) / 12.0));
+                if (beat % 2 == 0) sound(centre, "block.note_block.basedrum", 0.6f, 0.8f);
+                world.spawnParticle(Particle.NOTE, at.clone().add(rand(1), -0.6, rand(1)), 0, note / 24.0, 0, 0, 1);
+            }
+            if (t % 3 == 0) {                          // a beam of coloured light from the ball down to the floor
+                double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r = ThreadLocalRandom.current().nextDouble(0.5, 2.4);
+                Location to = centre.clone().add(Math.cos(a) * r, 0.1, Math.sin(a) * r);
                 Vector step = to.toVector().subtract(at.toVector()).multiply(1 / 10.0);
                 Color colour = party();
                 for (int i = 1; i <= 10; i++) {
-                    at.getWorld().spawnParticle(Particle.DUST, at.clone().add(step.clone().multiply(i)), 1, 0, 0, 0, 0, dust(colour, 0.9f));
+                    world.spawnParticle(Particle.DUST, at.clone().add(step.clone().multiply(i)), 1, 0, 0, 0, 0, dust(colour, 0.8f));
                 }
             }
-            if (t % 8 == 0) {
-                int note = melody[(t / 8) % melody.length];
-                sound(at, "block.note_block.bell", 0.7f, (float) Math.pow(2, (note - 12) / 12.0));
-                at.getWorld().spawnParticle(Particle.NOTE, at.clone().add(rand(1), -0.5, rand(1)), 0, note / 24.0, 0, 0, 1);
-            }
         }, () -> {
-            at.getWorld().spawnParticle(Particle.FIREWORK, at, 30, 0.2, 0.2, 0.2, 0.2);
-            ball.remove();
+            world.spawnParticle(Particle.FIREWORK, at, 30, 0.2, 0.2, 0.2, 0.2);
+            parts.forEach(Entity::remove);
+            placed.remove(player.getUniqueId());
         });
+        placed.put(player.getUniqueId(), new Placed(ball, run, parts.toArray(new Entity[0])));
     }
 
     // ---------------------------------------------------------------- suit bonuses

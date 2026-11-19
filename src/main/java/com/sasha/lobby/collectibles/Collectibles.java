@@ -514,6 +514,11 @@ public final class Collectibles implements Listener {
         return true;
     }
 
+    /** Gives back a cooldown (when a gadget couldn't be used after all, like no room for it). */
+    void refund(Player player, String what) {
+        cooldowns.remove(player.getUniqueId() + ":" + what);
+    }
+
     private double gadgetCooldown(String key) {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
