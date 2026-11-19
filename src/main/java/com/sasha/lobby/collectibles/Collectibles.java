@@ -531,7 +531,8 @@ public final class Collectibles implements Listener {
             case "balloon" -> 1;
             case "bat_blaster" -> 8;
             case "fake_tnt" -> 4;
-            case "grappling_hook", "blink_stick", "magic_wand" -> 3;
+            case "blink_stick", "magic_wand" -> 3;
+            case "grappling_hook" -> 0.25;
             case "firework_launcher", "snow_cannon", "pumpkin_launcher" -> 3;
             case "party_popper", "bubble_wand" -> 2;
             default -> 0.6; // paintball gun

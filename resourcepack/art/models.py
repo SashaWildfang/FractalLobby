@@ -282,8 +282,8 @@ def build(out):
         Box((0, 10.5, 0), (16, 11.6, 1.4), yellow, 'solid'), Box((0, 10.5, 14.6), (16, 11.6, 16), yellow, 'solid'),
         Box((0, 10.5, 1.4), (1.4, 11.6, 14.6), yellow, 'solid'), Box((14.6, 10.5, 1.4), (16, 11.6, 14.6), yellow, 'solid'),
         Box((1.4, 10.9, 1.4), (14.6, 11.1, 14.6), blue, 'mat')], scale=H)
-    # the balloon: a round, slightly tall balloon (dyed by the plugin) with a shine, a knot and a short curl of string
-    # under it; the plugin ties a real lead to the bottom of the string
+    # the balloon: a round, slightly tall balloon (dyed by the plugin) with a knot under it; the plugin ties a real lead
+    # to the knot
     bal = []
     R, RY, CY = 5.0, 6.0, 12.0
     for i in range(10):
@@ -296,10 +296,11 @@ def build(out):
             h = RY * math.sqrt(1 - d2)
             lo = CY - h * (1.08 if d2 < 0.5 else 1.0)            # a touch fuller at the bottom middle
             bal.append(Box((x0, round(lo * 2) / 2, z0), (x0 + 1, round((CY + h) * 2) / 2, z0 + 1), '#eeeeee', 'flat', tint=True))
-    bal += [Box((5.4, 14.5, 3.6), (6.4, 16.5, 3.9), '#ffffff', 'flat'), Box((6.4, 16.5, 3.6), (7.4, 17.0, 3.9), '#ffffff', 'flat'),   # shine
-            Box((7.2, 4.8, 7.2), (8.8, 5.8, 8.8), '#d0d0d0', 'flat', tint=True), Box((6.8, 4.3, 6.8), (9.2, 4.8, 9.2), '#c0c0c0', 'flat', tint=True),
+    bal += [Box((7.2, 4.8, 7.2), (8.8, 5.8, 8.8), '#d0d0d0', 'flat', tint=True), Box((6.8, 4.3, 6.8), (9.2, 4.8, 9.2), '#c0c0c0', 'flat', tint=True),
 ]                                                     # (no string: the lead ties straight to the knot)
     write(out, 'gadget/balloon_3d', bal, scale=H, tints=True)
+    # a grappling rope: a thin cord one block long along +z from the model's middle (the plugin stretches it to length)
+    write(out, 'gadget/rope', [Box((7.5, 7.5, 8), (8.5, 8.5, 24), '#9a7a4f', 'flat', faces=('north', 'south', 'east', 'west', 'up', 'down'))], scale=0.5)
     # ------------------------------------------------ a soap bubble (a flat sprite the plugin turns to face you): a thin
     # rainbow rim, a see-through middle and a shine
     from PIL import Image as _I

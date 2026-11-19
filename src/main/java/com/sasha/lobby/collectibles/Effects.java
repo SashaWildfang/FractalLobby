@@ -168,7 +168,7 @@ final class Effects implements Listener {
                 ItemDisplay propeller = propellers.get(player.getUniqueId());
                 if (propeller != null) spin(player, propeller, shown);
                 List<Balloon> held = balloons.get(player.getUniqueId());
-                if (held != null) for (Balloon b : new ArrayList<>(held)) floatBalloon(player, b);
+                if (held != null) floatBalloons(player, new ArrayList<>(held));
                 passive(player);
                 charge(player);
                 if (tick % 20 == 0) viewers(player);
@@ -183,6 +183,7 @@ final class Effects implements Listener {
         for (TextDisplay display : emotes.values()) display.remove();
         emotes.clear();
         for (UUID id : new ArrayList<>(rigs.keySet())) unrig(id);
+        for (UUID id : new ArrayList<>(grapples.keySet())) dropGrapple(id, false);
         propellers.values().forEach(Entity::remove);
         propellers.clear();
         clones.values().forEach(Entity::remove);
@@ -211,6 +212,7 @@ final class Effects implements Listener {
         Mannequin clone = clones.remove(id);
         if (clone != null) clone.remove();
         popBalloons(id);
+        dropGrapple(id, false);
         unplace(id);
         bonus(player, null);
         stopGadget(player);
@@ -312,6 +314,7 @@ final class Effects implements Listener {
         unplace(id);
         more.quit(player);
         popBalloons(id);
+        dropGrapple(id, false);
     }
 
     void later(int ticks, Runnable run) {
@@ -519,26 +522,170 @@ final class Effects implements Listener {
             }
             case "balloon" -> balloon(player);
             case "magic_wand" -> magicWand(player);
-            case "grappling_hook" -> {
-                Snowball hook = toss(player, modelled(Material.SNOWBALL, "gadget/grappling_hook_head"), "hook", 2.4);
-                sound(eye, "item.crossbow.shoot", 0.8f, 1.3f);
-                every(30, t -> {
-                    if (!hook.isValid() || !player.isOnline()) return;
-                    Location hand = player.getLocation().add(0, 1.2, 0);
-                    Vector line = hook.getLocation().toVector().subtract(hand.toVector());
-                    int steps = (int) Math.min(30, line.length() * 3);
-                    for (int i = 1; i < steps; i += 1) {
-                        world.spawnParticle(Particle.DUST, hand.clone().add(line.clone().multiply(i / (double) steps)), 1, 0, 0, 0, 0,
-                                dust(Color.fromRGB(0x8A6A45), 0.5f));
-                    }
-                }, () -> {
-                    if (hook.isValid()) hook.remove();
-                });
-            }
+            case "grappling_hook" -> grapple(player);
             case "blink_stick" -> blink(player);
             case "trampoline" -> trampoline(player);
             default -> more.use(player, key);
         }
+    }
+
+    // ---------------------------------------------------------------- the grappling hook
+
+    /** A grappling hook out: its head, its rope, where it's stuck (null while flying) and its task. */
+    private static final class Grapple {
+        ItemDisplay head, rope;
+        Location stuck;
+        BukkitTask task;
+        boolean reeling;
+    }
+
+    private final Map<UUID, Grapple> grapples = new HashMap<>();
+
+    /**
+     * The grappling hook takes two clicks: the first fires the hook out on a rope (up to 30 blocks); when it bites into
+     * a block it stays there; the second click reels you in to it. Clicking while it's still flying pulls it back.
+     */
+    private void grapple(Player player) {
+        UUID id = player.getUniqueId();
+        Grapple g = grapples.get(id);
+        if (g != null) {
+            if (g.stuck != null && !g.reeling && !parkour(player)) reel(player, g);
+            else if (g.stuck == null) dropGrapple(id, true);
+            return;
+        }
+        if (parkour(player)) return;
+        Grapple fresh = new Grapple();
+        grapples.put(id, fresh);
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().normalize();
+        World world = eye.getWorld();
+        Location start = ropeHand(player);
+        fresh.head = world.spawn(start, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.TRIPWIRE_HOOK, "gadget/grappling_hook_head"));
+            d.setTeleportDuration(1);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.55f), new AxisAngle4f()));
+        });
+        fresh.rope = world.spawn(start, ItemDisplay.class, d -> {
+            d.setItemStack(modelled(Material.STRING, "gadget/rope"));
+            d.setTeleportDuration(1);
+            d.setPersistent(false);
+        });
+        tagged(fresh.head, "grapple");
+        tagged(fresh.rope, "grapple");
+        sound(eye, "item.crossbow.shoot", 0.8f, 1.3f);
+        sound(eye, "entity.fishing_bobber.throw", 0.8f, 0.8f);
+        Location[] tip = {eye.clone().add(look.clone().multiply(0.8))};
+        double[] out = {0};
+        fresh.task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline() || player.getWorld() != world || !fresh.head.isValid()) {
+                dropGrapple(id, false);
+                return;
+            }
+            if (fresh.stuck == null) {                           // flying out
+                RayTraceResult hit = world.rayTraceBlocks(tip[0], look, 1.6);
+                if (hit != null) {
+                    fresh.stuck = hit.getHitPosition().toLocation(world);
+                    tip[0] = fresh.stuck.clone();
+                    sound(tip[0], "block.chain.place", 1f, 1.2f);
+                    sound(tip[0], "entity.arrow.hit", 0.6f, 1.4f);
+                    world.spawnParticle(Particle.BLOCK, tip[0], 8, 0.1, 0.1, 0.1, 0, hit.getHitBlock().getBlockData());
+                } else {
+                    tip[0].add(look.clone().multiply(1.6));
+                    out[0] += 1.6;
+                    if (out[0] > 30) {
+                        dropGrapple(id, true);
+                        return;
+                    }
+                }
+            } else if (player.getLocation().distanceSquared(fresh.stuck) > 45 * 45) {
+                dropGrapple(id, false);
+                return;
+            }
+            Location hand = ropeHand(player);
+            Location head = tip[0].clone();
+            head.setDirection(look);
+            fresh.head.teleport(head);
+            stretchRope(fresh.rope, hand, tip[0]);
+        }, 1L, 1L);
+        // let go on its own if it isn't used
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (grapples.get(id) == fresh) dropGrapple(id, true);
+        }, 200L);
+    }
+
+    /** Reels the player in to where the hook is stuck, over a few ticks, then lets go. */
+    private void reel(Player player, Grapple g) {
+        g.reeling = true;
+        UUID id = player.getUniqueId();
+        sound(player.getLocation(), "entity.fishing_bobber.retrieve", 1f, 0.8f);
+        sound(player.getLocation(), "block.chain.step", 1f, 1.4f);
+        int[] t = {0};
+        BukkitTask[] pull = new BukkitTask[1];
+        pull[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (grapples.get(id) != g || !player.isOnline()) {
+                pull[0].cancel();
+                return;
+            }
+            Vector line = g.stuck.toVector().subtract(player.getLocation().add(0, 1, 0).toVector());
+            double d = line.length();
+            if (d < 1.6 || t[0]++ > 30) {
+                player.setVelocity(player.getVelocity().multiply(0.5).add(new Vector(0, 0.3, 0)));
+                player.setFallDistance(0);
+                pull[0].cancel();
+                dropGrapple(id, false);
+                return;
+            }
+            double speed = Math.min(1.5, 0.45 + d * 0.06);
+            player.setVelocity(line.normalize().multiply(speed).add(new Vector(0, 0.06, 0)));
+            player.setFallDistance(0);
+        }, 0L, 1L);
+    }
+
+    /** Takes the hook away; when it's pulled back, the rope flies back to the hand first. */
+    private void dropGrapple(UUID id, boolean pullBack) {
+        Grapple g = grapples.remove(id);
+        if (g == null) return;
+        if (g.task != null) g.task.cancel();
+        Player player = plugin.getServer().getPlayer(id);
+        if (!pullBack || player == null || !g.head.isValid()) {
+            g.head.remove();
+            g.rope.remove();
+            return;
+        }
+        sound(player.getLocation(), "entity.fishing_bobber.retrieve", 0.7f, 1.4f);
+        Location from = g.head.getLocation();
+        every(6, t -> {
+            if (!g.head.isValid() || !player.isOnline()) return;
+            Location hand = ropeHand(player);
+            Location at = from.clone().add(hand.toVector().subtract(from.toVector()).multiply((t + 1) / 6.0));
+            g.head.teleport(at);
+            stretchRope(g.rope, hand, at);
+        }, () -> {
+            g.head.remove();
+            g.rope.remove();
+        });
+    }
+
+    /** Where the rope leaves the player: their right hand. */
+    private Location ropeHand(Player player) {
+        double yaw = Math.toRadians(player.getLocation().getYaw());
+        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
+        return player.getLocation().add(right.multiply(0.38)).add(0, 1.05, 0);
+    }
+
+    /** Points the rope from the hand to the hook and stretches it to reach. */
+    private void stretchRope(ItemDisplay rope, Location from, Location to) {
+        Vector line = to.toVector().subtract(from.toVector());
+        float length = (float) line.length();
+        rope.teleport(from);
+        if (length < 1e-3) return;
+        // an item display shows its model turned half round, so the rope (built along +z) runs along -z here
+        org.joml.Quaternionf aim = new org.joml.Quaternionf().rotationTo(new Vector3f(0, 0, -1),
+                new Vector3f((float) line.getX(), (float) line.getY(), (float) line.getZ()).normalize());
+        rope.setInterpolationDelay(0);
+        rope.setInterpolationDuration(1);
+        rope.setTransformation(new Transformation(new Vector3f(), aim, new Vector3f(1, 1, length), new org.joml.Quaternionf()));
     }
 
     /** Where to put something on the ground: the block looked at (within 5), else just in front. */
@@ -957,33 +1104,61 @@ final class Effects implements Listener {
         balloon.anchor.remove();
     }
 
-    private void floatBalloon(Player player, Balloon balloon) {
-        org.bukkit.entity.Chicken anchor = balloon.anchor;
-        if (!balloon.display.isValid() || !anchor.isValid() || anchor.getWorld() != player.getWorld()) {
-            popOne(player.getUniqueId(), balloon, false);
-            return;
+    /**
+     * Moves a player's balloons like real ones: each is pulled toward a spot above the player on a springy lead (so they
+     * lag and swing when the player moves), floats up a little, bumps the others out of its way, and leans along its lead.
+     */
+    private void floatBalloons(Player player, List<Balloon> list) {
+        UUID id = player.getUniqueId();
+        for (Balloon b : list) {
+            if (!b.display.isValid() || !b.anchor.isValid() || b.anchor.getWorld() != player.getWorld()) popOne(id, b, false);
         }
+        list.removeIf(b -> !b.display.isValid() || !b.anchor.isValid());
+        if (list.isEmpty()) return;
         double yaw = Math.toRadians(player.getLocation().getYaw());
-        // first over the right shoulder, then the left, then behind; each bobs on its own and lags behind when they move
-        double side = balloon.slot == 0 ? 0.6 : balloon.slot == 1 ? -0.6 : 0;
-        double behind = balloon.slot == 2 ? 0.75 : 0.4;
-        double height = balloon.slot == 2 ? 2.45 : 2.15;
-        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw)).multiply(side);
-        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw)).multiply(behind);
-        double bob = Math.sin(tick * 0.09 + balloon.slot * 2.1) * 0.12;
-        Location want = player.getLocation().add(right).add(back).add(0, height + bob, 0);
-        Vector pull = want.toVector().subtract(anchor.getLocation().toVector());
-        if (pull.lengthSquared() > 36) {
-            anchor.teleport(want);
-            anchor.setVelocity(new Vector());
-        } else {
-            anchor.setVelocity(anchor.getVelocity().multiply(0.6).add(pull.multiply(0.12)));
+        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
+        Vector back = new Vector(Math.sin(yaw), 0, -Math.cos(yaw));
+        Location hand = player.getLocation().add(right.clone().multiply(0.35)).add(0, 1.0, 0);
+        Vector[] push = new Vector[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            Balloon b = list.get(i);
+            // where it would like to be: a little bunch above and behind the shoulder
+            double side = b.slot == 0 ? 0.25 : b.slot == 1 ? -0.25 : 0;
+            Location want = player.getLocation().add(right.clone().multiply(side + 0.2)).add(back.clone().multiply(b.slot == 2 ? 0.55 : 0.3))
+                    .add(0, 2.25 + (b.slot == 2 ? 0.25 : 0) + Math.sin(tick * 0.08 + b.slot * 2.1) * 0.08, 0);
+            Vector pull = want.toVector().subtract(b.anchor.getLocation().toVector());
+            if (pull.lengthSquared() > 36) {
+                b.anchor.teleport(want);
+                b.anchor.setVelocity(new Vector());
+                push[i] = new Vector();
+                continue;
+            }
+            push[i] = pull.multiply(0.07);
+            // bump the others: balloons push apart when they get too close
+            for (int k = 0; k < list.size(); k++) {
+                if (k == i) continue;
+                Vector apart = b.anchor.getLocation().toVector().subtract(list.get(k).anchor.getLocation().toVector());
+                double d = apart.length();
+                if (d < 0.75) {
+                    if (d < 1e-3) apart = new Vector(i - k, 0, 0.1);
+                    push[i].add(apart.normalize().multiply((0.75 - d) * 0.18));
+                }
+            }
         }
-        Vector v = anchor.getVelocity();
-        float tiltX = (float) Math.max(-0.5, Math.min(0.5, v.getZ() * 2.2));
-        float tiltZ = (float) Math.max(-0.5, Math.min(0.5, -v.getX() * 2.2));
-        float wobble = (float) Math.sin(tick * 0.07 + balloon.slot) * 0.08f;
-        move(balloon.display, new Matrix4f().rotateX(tiltX).rotateZ(tiltZ + wobble).rotateY(tick * 0.02f + balloon.slot).translate(0, BALLOON_LIFT, 0));
+        for (int i = 0; i < list.size(); i++) {
+            Balloon b = list.get(i);
+            if (push[i] == null) continue;
+            // springy and floaty: keeps most of its speed, so it swings past and settles back
+            Vector v = b.anchor.getVelocity().multiply(0.82).add(push[i]).add(new Vector(0, 0.004, 0));
+            if (v.length() > 0.6) v.normalize().multiply(0.6);
+            b.anchor.setVelocity(v);
+            // lean along the lead: the knot points back at the hand
+            Vector lead = b.anchor.getLocation().toVector().subtract(hand.toVector());
+            Vector3f up = lead.lengthSquared() < 1e-4 ? new Vector3f(0, 1, 0) : new Vector3f((float) lead.getX(), (float) lead.getY(), (float) lead.getZ()).normalize();
+            if (up.y < 0.35f) up.set(up.x, 0.35f, up.z).normalize();          // never further over than a strong swing
+            org.joml.Quaternionf lean = new org.joml.Quaternionf().rotationTo(new Vector3f(0, 1, 0), new Vector3f(up.x * 0.7f, 1, up.z * 0.7f).normalize());
+            move(b.display, new Matrix4f().rotate(lean).rotateY(tick * 0.015f + b.slot * 2f).translate(0, BALLOON_LIFT, 0));
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
