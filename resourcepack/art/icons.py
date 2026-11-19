@@ -1996,3 +1996,6 @@ from pong_icon import diamond_shower as _diamond_shower_icon
 GADGETS['diamond_shower'] = _diamond_shower_icon   # a cloud raining diamonds
 from pong_icon import pong1 as _pong_icon
 GADGETS['pong'] = _pong_icon                       # the arcade screen (Sasha picked #1)
+
+from tetherball_icon import tb2 as _tetherball_icon
+GADGETS['tetherball'] = _tetherball_icon           # wound round the pole (Sasha picked #2, no sparkle)
