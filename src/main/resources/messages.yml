@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 41
+messages-version: 42
 
 theme:
   primary: "#B266FF"
@@ -1216,6 +1216,9 @@ collectibles:
   # Bits some gadgets say
   gadget:
     balloon-full: "<prefix><muted>You're already holding three balloons."
+    trampoline-floor: "<prefix><muted>The trampoline needs flat, solid ground under it (3 by 3). Try somewhere more open."
+    trampoline-room: "<prefix><muted>There isn't enough room here for the trampoline. Try somewhere more open."
+    trampoline-taken: "<prefix><muted>There's already something set up here. Try a bit further away."
     disco-air: "<prefix><muted>Stand on the ground to set up the disco."
     disco-floor: "<prefix><muted>The disco needs flat, solid ground all around you (5 by 5). Try somewhere more open."
     disco-room: "<prefix><muted>There isn't enough room above you for the disco. Try somewhere more open."

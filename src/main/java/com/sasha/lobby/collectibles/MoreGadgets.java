@@ -173,15 +173,7 @@ final class MoreGadgets implements Listener {
         World world = player.getWorld();
         switch (key) {
             case "hot_potato" -> hotPotato(player);
-            case "magic_8_ball" -> {
-                String[] answers = {"It is certain.", "Without a doubt!", "Yes, definitely.", "Ask again later...", "Cannot predict now.",
-                        "Don't count on it.", "My sources say no.", "Very doubtful.", "Outlook good!", "Signs point to yes!"};
-                String answer = answers[ThreadLocalRandom.current().nextInt(answers.length)];
-                TextDisplay d = label(player.getLocation().add(0, 2.6, 0), text(answer, 0xE2D0FF), 60);
-                player.addPassenger(d);
-                world.spawnParticle(Particle.WITCH, eye, 15, 0.3, 0.3, 0.3, 0.05);
-                fx.sound(eye, "block.amethyst_block.chime", 1f, 0.8f);
-            }
+            case "magic_8_ball" -> magic8(player);
             case "fortune_cookie" -> {
                 String[] fortunes = {"A big win is in your future.", "Today is a lucky day.", "Someone will GG you soon.",
                         "You will find something legendary.", "A friend is closer than you think.", "Adventure awaits on another server.",
@@ -293,6 +285,52 @@ final class MoreGadgets implements Listener {
         fx.confetti(at, 15, 0.4);
         fx.sound(at, sound != null ? sound : "entity.chicken.egg", 0.8f, 1.2f);
         e.remove();
+    }
+
+    /**
+     * The magic 8 ball: a real 8 ball appears floating in front of the player, gets a good shake while it thinks, then
+     * its answer appears above it; after a few seconds it shrinks away.
+     */
+    private void magic8(Player player) {
+        String[] answers = {"It is certain.", "Without a doubt!", "Yes, definitely.", "Ask again later...", "Cannot predict now.",
+                "Don't count on it.", "My sources say no.", "Very doubtful.", "Outlook good!", "Signs point to yes!"};
+        String answer = answers[ThreadLocalRandom.current().nextInt(answers.length)];
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().setY(0);
+        if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+        Location at = eye.clone().add(look.normalize().multiply(1.6)).add(0, -0.25, 0);
+        if (!at.getBlock().isPassable()) at = eye.clone().add(0, 0.6, 0);
+        World world = at.getWorld();
+        Location spot = at;
+        ItemDisplay ball = world.spawn(spot, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.ENDER_EYE, "gadget/magic_8_ball_3d"));
+            d.setBillboard(Display.Billboard.CENTER);
+            d.setTeleportDuration(1);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+        });
+        fx.tagged(ball, "eight_ball");
+        fx.sound(spot, "block.amethyst_block.chime", 1f, 0.6f);
+        TextDisplay[] text = new TextDisplay[1];
+        fx.every(90, t -> {
+            if (!ball.isValid()) return;
+            float size = t < 5 ? 0.55f * (t + 1) / 5f : t > 82 ? 0.55f * (90 - t) / 8f : 0.55f;
+            float shake = t >= 5 && t < 28 ? (float) Math.sin(t * 1.9) * 0.35f : 0f;       // a good shake while it thinks
+            float bob = (float) Math.sin(t * 0.15) * 0.04f;
+            ball.setInterpolationDelay(0);
+            ball.setInterpolationDuration(1);
+            ball.setTransformation(new Transformation(new Vector3f(shake * 0.15f, bob, 0), new AxisAngle4f(shake, 0, 0, 1),
+                    new Vector3f(Math.max(0.01f, size)), new AxisAngle4f()));
+            if (t >= 5 && t < 28 && t % 4 == 0) fx.sound(spot, "block.bubble_column.bubble_pop", 0.6f, 0.7f + t * 0.02f);
+            if (t == 28) {
+                text[0] = label(spot.clone().add(0, 0.55, 0), text(answer, 0xE2D0FF), 0);
+                world.spawnParticle(Particle.WITCH, spot, 12, 0.2, 0.2, 0.2, 0.05);
+                fx.sound(spot, "block.amethyst_block.resonate", 0.9f, 1.4f);
+            }
+        }, () -> {
+            ball.remove();
+            if (text[0] != null) text[0].remove();
+        });
     }
 
     private void hotPotato(Player player) {

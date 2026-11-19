@@ -18,5 +18,18 @@
     "name": "fractal:gadget/paint_splat_3"
    }
   ]
+ },
+ "gadget.trampoline_boing": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/trampoline_boing_1"
+   },
+   {
+    "name": "fractal:gadget/trampoline_boing_2"
+   },
+   {
+    "name": "fractal:gadget/trampoline_boing_3"
+   }
+  ]
  }
 }

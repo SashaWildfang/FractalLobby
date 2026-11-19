@@ -1304,11 +1304,12 @@ def trampoline2():
     c.shape('ellipse', (1, 8, 31, 20.5), '#ffcf3a')
     c.shape('ellipse', (3.5, 9.5, 28.5, 19), '#2f6fe0')
     c.shape('ellipse', (8, 11, 24, 17), '#4a8cff')
-    for x in range(5, 29, 4):                                                                # springs
-        c.line([(x, 9.2), (x + 0.6, 10.4)], '#c9ccd8', 0.6)
-    for (x, y) in [(11, 5), (16, 3), (21, 5)]:
-        c.line([(x, y + 3), (x, y)], '#ffffff', 1.0)
-    return c.done()
+    im = c.done()                                    # (no spring or bounce lines: just the trampoline, centred)
+    from PIL import Image as _Image
+    b = im.getbbox()
+    out = _Image.new('RGBA', im.size, (0, 0, 0, 0))
+    out.alpha_composite(im, (round(16 - (b[0] + b[2]) / 2), round(16 - (b[1] + b[3]) / 2)))
+    return out
 
 
 SEASONS['halloween'] = season_halloween2

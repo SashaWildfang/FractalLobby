@@ -299,6 +299,44 @@ def build(out):
     bal += [Box((7.2, 4.8, 7.2), (8.8, 5.8, 8.8), '#d0d0d0', 'flat', tint=True), Box((6.8, 4.3, 6.8), (9.2, 4.8, 9.2), '#c0c0c0', 'flat', tint=True),
 ]                                                     # (no string: the lead ties straight to the knot)
     write(out, 'gadget/balloon_3d', bal, scale=H, tints=True)
+    # one link of the grappling hook's chain (the plugin strings them along the line, every other one turned a quarter)
+    steel, steel_l, steel_d = '#a4aabe', '#d8dcea', '#6a7086'
+    write(out, 'gadget/chain_link', [Box((5.6, 3.5, 7.4), (6.8, 12.5, 8.6), steel_l, 'flat'), Box((9.2, 3.5, 7.4), (10.4, 12.5, 8.6), steel_d, 'flat'),
+                                      Box((6.8, 11.3, 7.4), (9.2, 12.5, 8.6), steel, 'flat'), Box((6.8, 3.5, 7.4), (9.2, 4.7, 8.6), steel, 'flat')],
+          scale=0.4)
+    # the magic 8 ball: a glossy black ball with the white "8" window on both sides (it always turns to face you)
+    eight = []
+    R8 = 6.0
+    for i in range(12):
+        for k in range(12):
+            x0, y0 = 2 + i, 2 + k
+            mx, my = x0 + 0.5 - 8, y0 + 0.5 - 8
+            d2 = mx * mx + my * my
+            if d2 > R8 * R8 * 0.96:
+                continue
+            h = round(math.sqrt(R8 * R8 - d2) * 2) / 2
+            shade = '#3a3c4e' if (mx + my) < -5 else '#1c1d28' if d2 < 16 else '#111218'
+            eight.append(Box((x0, y0, 8 - h), (x0 + 1, y0 + 1, 8 + h), shade, 'flat'))
+    for side in (-1, 1):
+        z0 = 8 + side * 6.05
+        for i in range(6):
+            for k in range(6):
+                x0, y0 = 5 + i, 5 + k
+                if (x0 + 0.5 - 8) ** 2 + (y0 + 0.5 - 8) ** 2 > 9.2:
+                    continue
+                eight.append(Box((x0, y0, min(z0, z0 + side * 0.3)), (x0 + 1, y0 + 1, max(z0, z0 + side * 0.3)), '#f4f4fa', 'flat'))
+        for (gx, gy) in [(7, 9.5), (8, 9.5), (7, 8.5), (8, 8.5), (7, 7.5), (8, 7.5), (7, 6.5), (8, 6.5)]:
+            pass
+        # the 8: two little stacked rings, drawn just in front of the window
+        pix = ["###", "#.#", "###", "#.#", "###"]
+        for r, row in enumerate(pix):
+            for c, ch in enumerate(row):
+                if ch != '#':
+                    continue
+                x0, y0 = 7.25 + c * 0.5 * (1 if side > 0 else -1) - (0 if side > 0 else -1.0), 9.25 - r * 0.5
+                zf = z0 + side * 0.3
+                eight.append(Box((x0, y0, min(zf, zf + side * 0.1)), (x0 + 0.5, y0 + 0.5, max(zf, zf + side * 0.1)), '#111218', 'flat'))
+    write(out, 'gadget/magic_8_ball_3d', eight, scale=0.5)
     # a grappling rope: a thin cord one block long along +z from the model's middle (the plugin stretches it to length)
     write(out, 'gadget/rope', [Box((7.5, 7.5, 8), (8.5, 8.5, 24), '#9a7a4f', 'flat', faces=('north', 'south', 'east', 'west', 'up', 'down'))], scale=0.5)
     # ------------------------------------------------ a soap bubble (a flat sprite the plugin turns to face you): a thin
@@ -337,6 +375,10 @@ def build(out):
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'paint_splat_{i}.ogg'),
                     f'{out}/assets/fractal/sounds/gadget/paint_splat_{i}.ogg')
     sounds['gadget.paint_splat'] = {"sounds": [{"name": f"fractal:gadget/paint_splat_{i}"} for i in (1, 2, 3)]}
+    for i in (1, 2, 3):
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'trampoline_boing_{i}.ogg'),
+                    f'{out}/assets/fractal/sounds/gadget/trampoline_boing_{i}.ogg')
+    sounds['gadget.trampoline_boing'] = {"sounds": [{"name": f"fractal:gadget/trampoline_boing_{i}"} for i in (1, 2, 3)]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)

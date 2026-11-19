@@ -529,7 +529,7 @@ final class Effects implements Listener {
     /** A grappling hook out: its head, its rope, where it's stuck (null while flying) and its task. */
     private static final class Grapple {
         ItemDisplay head;
-        final List<BlockDisplay> links = new ArrayList<>();
+        final List<ItemDisplay> links = new ArrayList<>();
         Location stuck;
         BukkitTask task;
         boolean reeling;
@@ -538,18 +538,13 @@ final class Effects implements Listener {
     private final Map<UUID, Grapple> grapples = new HashMap<>();
 
     /**
-     * The grappling hook takes two clicks: the first fires the hook out on a rope (up to 30 blocks); when it bites into
-     * a block it stays there; the second click reels you in to it. Clicking while it's still flying pulls it back.
+     * The grappling hook: one click fires the hook out on a chain (up to 24 blocks). If it bites into a block it pulls you
+     * straight in to it; if it finds nothing it winds back to your hand. The chain is a real chain of links that hangs a
+     * little as it goes.
      */
     private void grapple(Player player) {
         UUID id = player.getUniqueId();
-        Grapple g = grapples.get(id);
-        if (g != null) {
-            if (g.stuck != null && !g.reeling && !parkour(player)) reel(player, g);
-            else if (g.stuck == null) dropGrapple(id, true);
-            return;
-        }
-        if (parkour(player)) return;
+        if (grapples.containsKey(id) || parkour(player)) return;
         Grapple fresh = new Grapple();
         grapples.put(id, fresh);
         Location eye = player.getEyeLocation();
@@ -564,7 +559,7 @@ final class Effects implements Listener {
         });
         tagged(fresh.head, "grapple");
         sound(eye, "item.crossbow.shoot", 0.8f, 1.3f);
-        sound(eye, "entity.fishing_bobber.throw", 0.8f, 0.8f);
+        sound(eye, "block.chain.fall", 0.8f, 1.2f);
         Location[] tip = {eye.clone().add(look.clone().multiply(0.8))};
         double[] out = {0};
         fresh.task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
@@ -580,28 +575,23 @@ final class Effects implements Listener {
                     sound(tip[0], "block.chain.place", 1f, 1.2f);
                     sound(tip[0], "entity.arrow.hit", 0.6f, 1.4f);
                     world.spawnParticle(Particle.BLOCK, tip[0], 8, 0.1, 0.1, 0.1, 0, hit.getHitBlock().getBlockData());
+                    later(2, () -> {
+                        if (grapples.get(id) == fresh && !parkour(player)) reel(player, fresh);
+                    });
                 } else {
                     tip[0].add(look.clone().multiply(1.6));
                     out[0] += 1.6;
-                    if (out[0] > 30) {
+                    if (out[0] > 24) {                           // nothing to bite: wind it back in
                         dropGrapple(id, true);
                         return;
                     }
                 }
-            } else if (player.getLocation().distanceSquared(fresh.stuck) > 45 * 45) {
-                dropGrapple(id, false);
-                return;
             }
-            Location hand = ropeHand(player);
             Location head = tip[0].clone();
             head.setDirection(look);
             fresh.head.teleport(head);
-            stretchRope(fresh, hand, tip[0]);
+            layChain(fresh, ropeHand(player), tip[0], fresh.reeling ? 0.02 : 0.06);
         }, 1L, 1L);
-        // let go on its own if it isn't used
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            if (grapples.get(id) == fresh) dropGrapple(id, true);
-        }, 200L);
     }
 
     /** Reels the player in to where the hook is stuck, over a few ticks, then lets go. */
@@ -650,52 +640,77 @@ final class Effects implements Listener {
             Location hand = ropeHand(player);
             Location at = from.clone().add(hand.toVector().subtract(from.toVector()).multiply((t + 1) / 6.0));
             g.head.teleport(at);
-            stretchRope(g, hand, at);
+            layChain(g, hand, at, 0.05);
         }, () -> {
             g.head.remove();
             g.links.forEach(Entity::remove);
         });
     }
 
-    /** Where the rope leaves the player: their right hand. */
+    /** Where the chain leaves the player: low and to the right of where they look (where the hook is held). */
     private Location ropeHand(Player player) {
-        double yaw = Math.toRadians(player.getLocation().getYaw());
-        Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
-        return player.getLocation().add(right.multiply(0.38)).add(0, 1.05, 0);
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        if (right.lengthSquared() < 1e-4) right = new Vector(1, 0, 0);
+        right.normalize();
+        return eye.add(look.multiply(0.45)).add(right.multiply(0.3)).add(0, -0.4, 0);
     }
 
     /**
-     * Lays the chain from the hand to the hook: a row of iron chain pieces, each turned to point along the line, the
-     * last one cut to length, so it ends exactly at the hook.
+     * Lays the chain from the hand to the hook along a gently hanging curve: links placed evenly along it, each pointing
+     * along the curve, every other one turned a quarter so they look linked, all kept upright the same way so the
+     * chain doesn't twist when the player turns.
      */
-    private void stretchRope(Grapple g, Location from, Location to) {
-        Vector line = to.toVector().subtract(from.toVector());
-        double length = line.length();
-        if (length < 1e-3) return;
-        Vector dir = line.clone().multiply(1 / length);
-        org.joml.Quaternionf aim = new org.joml.Quaternionf().rotationTo(new Vector3f(0, 1, 0),
-                new Vector3f((float) dir.getX(), (float) dir.getY(), (float) dir.getZ()));
-        float link = 0.9f, width = 0.75f;
-        int needed = (int) Math.ceil(length / link);
+    private void layChain(Grapple g, Location from, Location to, double sagPerBlock) {
+        Vector a = from.toVector(), c = to.toVector();
+        double straight = c.distance(a);
+        if (straight < 1e-3) return;
+        Vector control = a.clone().add(c).multiply(0.5).add(new Vector(0, -2 * Math.min(1.2, straight * sagPerBlock), 0));
+        int samples = 40;
+        Vector[] pts = new Vector[samples + 1];
+        double[] along = new double[samples + 1];
+        for (int i = 0; i <= samples; i++) {
+            double t = i / (double) samples, u = 1 - t;
+            pts[i] = a.clone().multiply(u * u).add(control.clone().multiply(2 * u * t)).add(c.clone().multiply(t * t));
+            if (i > 0) along[i] = along[i - 1] + pts[i].distance(pts[i - 1]);
+        }
+        double total = along[samples], spacing = 0.38;
+        int needed = Math.max(1, (int) Math.floor(total / spacing));
         World world = from.getWorld();
         while (g.links.size() < needed) {
-            BlockDisplay piece = world.spawn(from, BlockDisplay.class, d -> {
-                d.setBlock(Material.IRON_CHAIN.createBlockData());
+            ItemDisplay link = world.spawn(from, ItemDisplay.class, d -> {
+                d.setItemStack(modelled(Material.IRON_NUGGET, "gadget/chain_link"));
                 d.setTeleportDuration(1);
                 d.setPersistent(false);
             });
-            tagged(piece, "grapple");
-            g.links.add(piece);
+            tagged(link, "grapple");
+            g.links.add(link);
         }
         while (g.links.size() > needed) g.links.remove(g.links.size() - 1).remove();
-        Vector3f centre = new Vector3f(-0.5f * width, 0, -0.5f * width).rotate(aim);    // keeps the chain on the line
-        for (int i = 0; i < needed; i++) {
-            BlockDisplay piece = g.links.get(i);
-            float span = (float) Math.min(link, length - i * link);
-            piece.teleport(from.clone().add(dir.clone().multiply(i * link)));
-            piece.setInterpolationDelay(0);
-            piece.setInterpolationDuration(1);
-            piece.setTransformation(new Transformation(centre, aim, new Vector3f(width, span, width), new org.joml.Quaternionf()));
+        int seg = 1;
+        for (int k = 0; k < needed; k++) {
+            double want = (k + 0.5) * spacing;
+            while (seg < samples && along[seg] < want) seg++;
+            double f = (want - along[seg - 1]) / Math.max(1e-6, along[seg] - along[seg - 1]);
+            Vector pos = pts[seg - 1].clone().add(pts[seg].clone().subtract(pts[seg - 1]).multiply(f));
+            Vector tan = pts[seg].clone().subtract(pts[seg - 1]).normalize();
+            Vector3f fwd = new Vector3f((float) tan.getX(), (float) tan.getY(), (float) tan.getZ());
+            Vector3f side = new Vector3f(0, 1, 0).cross(fwd);
+            if (side.lengthSquared() < 1e-4) side.set(1, 0, 0);
+            side.normalize();
+            Vector3f normal = new Vector3f(side).cross(fwd).normalize();           // side, along, normal: a right-handed frame
+            if (k % 2 == 1) {                               // every other link turned a quarter round the chain
+                Vector3f swap = side;
+                side = normal;
+                normal = new Vector3f(swap).negate();
+            }
+            org.joml.Quaternionf turn = new org.joml.Quaternionf().setFromNormalized(new org.joml.Matrix3f(side, fwd, normal));
+            ItemDisplay link = g.links.get(k);
+            link.teleport(new Location(world, pos.getX(), pos.getY(), pos.getZ()));
+            link.setInterpolationDelay(0);
+            link.setInterpolationDuration(1);
+            link.setTransformation(new Transformation(new Vector3f(), turn, new Vector3f(1f), new org.joml.Quaternionf()));
         }
     }
 
@@ -893,20 +908,51 @@ final class Effects implements Listener {
     }
 
     /** A trampoline on the ground for fifteen seconds; anyone who lands on it bounces high. */
+    /**
+     * A big trampoline (about four blocks across) on the ground: anyone landing on it bounces high with a springy boing.
+     * It needs a flat open spot: solid ground under all of it, room above for jumping, and no other trampoline or disco
+     * right there; if not, the player is told and gets their cooldown back.
+     */
     private void trampoline(Player player) {
-        unplace(player.getUniqueId());
         Location at = ground(player);
-        ItemDisplay trampoline = at.getWorld().spawn(at, ItemDisplay.class, d -> {
+        World world = at.getWorld();
+        Location centre = at.getBlock().getLocation().add(0.5, 0, 0.5);
+        String why = null;
+        for (int dx = -1; dx <= 1 && why == null; dx++) {
+            for (int dz = -1; dz <= 1 && why == null; dz++) {
+                if (!centre.clone().add(dx, -1, dz).getBlock().getType().isOccluding()) why = "floor";
+                for (int dy = 0; dy < 4 && why == null; dy++) {
+                    if (!centre.clone().add(dx, dy, dz).getBlock().isPassable()) why = "room";
+                }
+            }
+        }
+        if (why == null) {
+            for (Entity near : world.getNearbyEntities(centre, 4, 3, 4)) {
+                if (near.getScoreboardTags().contains("lobby_trampoline") || near.getScoreboardTags().contains("lobby_disco_floor")) why = "taken";
+            }
+        }
+        if (why != null) {
+            plugin.messages().send(player, "collectibles.gadget.trampoline-" + why);
+            sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+            collectibles.refund(player, "gadget:trampoline");
+            return;
+        }
+        unplace(player.getUniqueId());
+        float size = 3.6f;
+        ItemDisplay trampoline = world.spawn(centre, ItemDisplay.class, d -> {
             d.setItemStack(modelled(Material.SLIME_BLOCK, "gadget/trampoline_3d"));
+            d.setPersistent(false);
             d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
         });
+        trampoline.addScoreboardTag("lobby_trampoline");
         tagged(trampoline, "trampoline");
         later(1, () -> {
             trampoline.setInterpolationDelay(0);
             trampoline.setInterpolationDuration(6);
-            trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
+            trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(size, 1.1f, size), new AxisAngle4f()));
         });
-        sound(at, "block.wool.place", 1f, 0.8f);
+        sound(centre, "block.wool.place", 1f, 0.8f);
+        double reach = 1.9;
         Map<UUID, Integer> bounced = new HashMap<>();
         BukkitTask run = every(300, t -> {
             if (t < 6 || t >= 290) {
@@ -917,30 +963,30 @@ final class Effects implements Listener {
                 }
                 return;
             }
-            for (Player jumper : at.getWorld().getPlayers()) {
+            for (Player jumper : world.getPlayers()) {
                 Location feet = jumper.getLocation();
-                double dx = feet.getX() - at.getX(), dz = feet.getZ() - at.getZ(), dy = feet.getY() - at.getY();
-                if (dx * dx + dz * dz > 1.6 * 1.6 || dy < -0.1 || dy > 1.0 || parkour(jumper)) continue;
+                double dx = feet.getX() - centre.getX(), dz = feet.getZ() - centre.getZ(), dy = feet.getY() - centre.getY();
+                if (dx * dx + dz * dz > reach * reach || dy < -0.1 || dy > 1.1 || parkour(jumper)) continue;
                 if (jumper.getVelocity().getY() > 0.2) continue;
                 Integer last = bounced.get(jumper.getUniqueId());
                 if (last != null && t - last < 6) continue;
                 bounced.put(jumper.getUniqueId(), t);
-                jumper.setVelocity(jumper.getVelocity().setY(1.25));
+                jumper.setVelocity(jumper.getVelocity().setY(1.3));
                 jumper.setFallDistance(0);
-                sound(at, "entity.slime.jump", 1f, 0.8f + ThreadLocalRandom.current().nextFloat() * 0.3f);
-                at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.8, 0), 18, 0.9, 0.05, 0.9, 0, dust(Color.fromRGB(0x5BC0FF), 1f));
+                sound(centre, "fractal:gadget.trampoline_boing", 1f, 0.9f + ThreadLocalRandom.current().nextFloat() * 0.25f);
+                world.spawnParticle(Particle.DUST, centre.clone().add(0, 0.9, 0), 22, 1.1, 0.05, 1.1, 0, dust(Color.fromRGB(0x5BC0FF), 1f));
                 trampoline.setInterpolationDelay(0);
                 trampoline.setInterpolationDuration(2);
-                trampoline.setTransformation(new Transformation(new Vector3f(0, 0.45f, 0), new AxisAngle4f(), new Vector3f(3.15f, 0.65f, 3.15f), new AxisAngle4f()));
+                trampoline.setTransformation(new Transformation(new Vector3f(0, 0.45f, 0), new AxisAngle4f(), new Vector3f(size * 1.05f, 0.7f, size * 1.05f), new AxisAngle4f()));
                 later(3, () -> {
                     if (!trampoline.isValid()) return;
                     trampoline.setInterpolationDelay(0);
                     trampoline.setInterpolationDuration(5);
-                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(3f, 1f, 3f), new AxisAngle4f()));
+                    trampoline.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(size, 1.1f, size), new AxisAngle4f()));
                 });
             }
         }, () -> {
-            at.getWorld().spawnParticle(Particle.POOF, at.clone().add(0, 0.3, 0), 20, 1.0, 0.1, 1.0, 0.02);
+            world.spawnParticle(Particle.POOF, centre.clone().add(0, 0.3, 0), 20, 1.2, 0.1, 1.2, 0.02);
             trampoline.remove();
             placed.remove(player.getUniqueId());
         });
