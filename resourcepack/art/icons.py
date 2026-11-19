@@ -1994,3 +1994,5 @@ GADGETS['mob_gun'] = _mob_gun_icon        # the Pig Blaster (Sasha picked #1)
 
 from pong_icon import diamond_shower as _diamond_shower_icon
 GADGETS['diamond_shower'] = _diamond_shower_icon   # a cloud raining diamonds
+from pong_icon import pong1 as _pong_icon
+GADGETS['pong'] = _pong_icon                       # the arcade screen (Sasha picked #1)
