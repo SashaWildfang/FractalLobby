@@ -171,6 +171,7 @@ final class Effects implements Listener {
                 if (held != null) floatBalloons(player, new ArrayList<>(held));
                 passive(player);
                 charge(player);
+                blinkMarker(player);
                 if (tick % 20 == 0) viewers(player);
             }
         }, 2L, 2L);
@@ -184,6 +185,8 @@ final class Effects implements Listener {
         emotes.clear();
         for (UUID id : new ArrayList<>(rigs.keySet())) unrig(id);
         for (UUID id : new ArrayList<>(grapples.keySet())) dropGrapple(id, false);
+        blinkMarkers.values().forEach(Entity::remove);
+        blinkMarkers.clear();
         propellers.values().forEach(Entity::remove);
         propellers.clear();
         clones.values().forEach(Entity::remove);
@@ -213,6 +216,8 @@ final class Effects implements Listener {
         if (clone != null) clone.remove();
         popBalloons(id);
         dropGrapple(id, false);
+        BlockDisplay marker = blinkMarkers.remove(id);
+        if (marker != null) marker.remove();
         unplace(id);
         bonus(player, null);
         stopGadget(player);
@@ -505,17 +510,7 @@ final class Effects implements Listener {
             }
             case "fake_tnt" -> fakeTnt(player);
             case "disco_ball" -> discoBall(player);
-            case "snow_cannon" -> {
-                sound(eye, "entity.snow_golem.shoot", 1f, 1f);
-                for (int i = 0; i < 5; i++) {
-                    int n = i;
-                    later(i * 3, () -> {
-                        Snowball ball = toss(player, ItemStack.of(Material.SNOWBALL), "snow", 1.6);
-                        ball.setVelocity(ball.getVelocity().add(new Vector(rand(0.12), rand(0.08), rand(0.12))));
-                        if (n == 0) world.spawnParticle(Particle.SNOWFLAKE, eye, 20, 0.3, 0.3, 0.3, 0.05);
-                    });
-                }
-            }
+            case "snow_cannon" -> snowCannon(player);
             case "pumpkin_launcher" -> {
                 toss(player, ItemStack.of(Material.JACK_O_LANTERN), "pumpkin", 1.3);
                 sound(eye, "entity.witch.throw", 1f, 1f);
@@ -533,7 +528,8 @@ final class Effects implements Listener {
 
     /** A grappling hook out: its head, its rope, where it's stuck (null while flying) and its task. */
     private static final class Grapple {
-        ItemDisplay head, rope;
+        ItemDisplay head;
+        final List<BlockDisplay> links = new ArrayList<>();
         Location stuck;
         BukkitTask task;
         boolean reeling;
@@ -566,13 +562,7 @@ final class Effects implements Listener {
             d.setPersistent(false);
             d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.55f), new AxisAngle4f()));
         });
-        fresh.rope = world.spawn(start, ItemDisplay.class, d -> {
-            d.setItemStack(modelled(Material.STRING, "gadget/rope"));
-            d.setTeleportDuration(1);
-            d.setPersistent(false);
-        });
         tagged(fresh.head, "grapple");
-        tagged(fresh.rope, "grapple");
         sound(eye, "item.crossbow.shoot", 0.8f, 1.3f);
         sound(eye, "entity.fishing_bobber.throw", 0.8f, 0.8f);
         Location[] tip = {eye.clone().add(look.clone().multiply(0.8))};
@@ -606,7 +596,7 @@ final class Effects implements Listener {
             Location head = tip[0].clone();
             head.setDirection(look);
             fresh.head.teleport(head);
-            stretchRope(fresh.rope, hand, tip[0]);
+            stretchRope(fresh, hand, tip[0]);
         }, 1L, 1L);
         // let go on its own if it isn't used
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
@@ -650,7 +640,7 @@ final class Effects implements Listener {
         Player player = plugin.getServer().getPlayer(id);
         if (!pullBack || player == null || !g.head.isValid()) {
             g.head.remove();
-            g.rope.remove();
+            g.links.forEach(Entity::remove);
             return;
         }
         sound(player.getLocation(), "entity.fishing_bobber.retrieve", 0.7f, 1.4f);
@@ -660,10 +650,10 @@ final class Effects implements Listener {
             Location hand = ropeHand(player);
             Location at = from.clone().add(hand.toVector().subtract(from.toVector()).multiply((t + 1) / 6.0));
             g.head.teleport(at);
-            stretchRope(g.rope, hand, at);
+            stretchRope(g, hand, at);
         }, () -> {
             g.head.remove();
-            g.rope.remove();
+            g.links.forEach(Entity::remove);
         });
     }
 
@@ -674,18 +664,141 @@ final class Effects implements Listener {
         return player.getLocation().add(right.multiply(0.38)).add(0, 1.05, 0);
     }
 
-    /** Points the rope from the hand to the hook and stretches it to reach. */
-    private void stretchRope(ItemDisplay rope, Location from, Location to) {
+    /**
+     * Lays the chain from the hand to the hook: a row of iron chain pieces, each turned to point along the line, the
+     * last one cut to length, so it ends exactly at the hook.
+     */
+    private void stretchRope(Grapple g, Location from, Location to) {
         Vector line = to.toVector().subtract(from.toVector());
-        float length = (float) line.length();
-        rope.teleport(from);
+        double length = line.length();
         if (length < 1e-3) return;
-        // an item display shows its model turned half round, so the rope (built along +z) runs along -z here
-        org.joml.Quaternionf aim = new org.joml.Quaternionf().rotationTo(new Vector3f(0, 0, -1),
-                new Vector3f((float) line.getX(), (float) line.getY(), (float) line.getZ()).normalize());
-        rope.setInterpolationDelay(0);
-        rope.setInterpolationDuration(1);
-        rope.setTransformation(new Transformation(new Vector3f(), aim, new Vector3f(1, 1, length), new org.joml.Quaternionf()));
+        Vector dir = line.clone().multiply(1 / length);
+        org.joml.Quaternionf aim = new org.joml.Quaternionf().rotationTo(new Vector3f(0, 1, 0),
+                new Vector3f((float) dir.getX(), (float) dir.getY(), (float) dir.getZ()));
+        float link = 0.9f, width = 0.75f;
+        int needed = (int) Math.ceil(length / link);
+        World world = from.getWorld();
+        while (g.links.size() < needed) {
+            BlockDisplay piece = world.spawn(from, BlockDisplay.class, d -> {
+                d.setBlock(Material.IRON_CHAIN.createBlockData());
+                d.setTeleportDuration(1);
+                d.setPersistent(false);
+            });
+            tagged(piece, "grapple");
+            g.links.add(piece);
+        }
+        while (g.links.size() > needed) g.links.remove(g.links.size() - 1).remove();
+        Vector3f centre = new Vector3f(-0.5f * width, 0, -0.5f * width).rotate(aim);    // keeps the chain on the line
+        for (int i = 0; i < needed; i++) {
+            BlockDisplay piece = g.links.get(i);
+            float span = (float) Math.min(link, length - i * link);
+            piece.teleport(from.clone().add(dir.clone().multiply(i * link)));
+            piece.setInterpolationDelay(0);
+            piece.setInterpolationDuration(1);
+            piece.setTransformation(new Transformation(centre, aim, new Vector3f(width, span, width), new org.joml.Quaternionf()));
+        }
+    }
+
+    /**
+     * The snow cannon: one big packed snowball fired with a boom, spinning and shedding snow as it arcs; where it hits
+     * it bursts into a blizzard of flakes and snow, a patch of snow settles on the ground around it (only shown; it
+     * melts away bit by bit), and anyone caught in it is frosted over and knocked back a little. Nobody gets hurt.
+     */
+    private void snowCannon(Player player) {
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        World world = eye.getWorld();
+        Location start = eye.clone().add(look.clone().multiply(1.0)).add(0, -0.2, 0);
+        sound(eye, "entity.snow_golem.shoot", 1f, 0.6f);
+        sound(eye, "entity.generic.explode", 0.35f, 1.8f);
+        world.spawnParticle(Particle.SNOWFLAKE, start, 20, 0.15, 0.15, 0.15, 0.08);
+        world.spawnParticle(Particle.CLOUD, start, 6, 0.1, 0.1, 0.1, 0.03);
+        ItemDisplay ball = world.spawn(start, ItemDisplay.class, d -> {
+            d.setItemStack(new ItemStack(Material.SNOW_BLOCK));
+            d.setTeleportDuration(1);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.55f), new AxisAngle4f()));
+        });
+        tagged(ball, "snowball");
+        Vector velocity = look.clone().multiply(1.15);
+        boolean[] done = {false};
+        every(60, t -> {
+            if (done[0] || !ball.isValid()) return;
+            velocity.setY(velocity.getY() - 0.03);
+            Location at = ball.getLocation();
+            RayTraceResult hit = world.rayTraceBlocks(at, velocity.clone().normalize(), velocity.length() + 0.25);
+            Player struck = null;
+            for (Player other : world.getPlayers()) {
+                if (other != player && t > 1 && other.getLocation().add(0, 1, 0).distanceSquared(at) < 1.2) struck = other;
+            }
+            if (hit != null || struck != null) {
+                done[0] = true;
+                Location boom = hit != null ? hit.getHitPosition().toLocation(world) : at;
+                ball.remove();
+                snowBlast(player, boom);
+                return;
+            }
+            ball.teleport(at.add(velocity));
+            ball.setInterpolationDelay(0);
+            ball.setInterpolationDuration(1);
+            ball.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * 0.6f, 1, 0.3f, 0), new Vector3f(0.55f), new AxisAngle4f()));
+            world.spawnParticle(Particle.SNOWFLAKE, at, 3, 0.12, 0.12, 0.12, 0.01);
+            if (t % 2 == 0) world.spawnParticle(Particle.ITEM, at, 2, 0.1, 0.1, 0.1, 0.02, new ItemStack(Material.SNOWBALL));
+        }, () -> {
+            if (!done[0] && ball.isValid()) {
+                Location at = ball.getLocation();
+                ball.remove();
+                snowBlast(player, at);
+            }
+        });
+    }
+
+    private void snowBlast(Player shooter, Location at) {
+        World world = at.getWorld();
+        world.spawnParticle(Particle.SNOWFLAKE, at, 90, 0.8, 0.6, 0.8, 0.12);
+        world.spawnParticle(Particle.ITEM, at, 40, 0.3, 0.3, 0.3, 0.25, new ItemStack(Material.SNOWBALL));
+        world.spawnParticle(Particle.BLOCK, at, 50, 0.6, 0.4, 0.6, 0, Material.SNOW_BLOCK.createBlockData());
+        world.spawnParticle(Particle.CLOUD, at, 25, 0.6, 0.3, 0.6, 0.05);
+        world.spawnParticle(Particle.WHITE_ASH, at, 60, 1.5, 1, 1.5, 0);
+        sound(at, "block.powder_snow.break", 1.2f, 0.8f);
+        sound(at, "block.snow.break", 1f, 0.6f);
+        sound(at, "entity.player.hurt_freeze", 0.6f, 1.3f);
+        // a patch of snow settles round where it hit, then melts away a bit at a time (only shown: nothing is placed)
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Block centre = at.getBlock();
+        List<Block> patch = new ArrayList<>();
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dz = -3; dz <= 3; dz++) {
+                if (dx * dx + dz * dz > 7 + r.nextInt(3)) continue;
+                for (int dy = 2; dy >= -2; dy--) {
+                    Block spot = centre.getRelative(dx, dy, dz);
+                    if (spot.getType().isAir() && spot.getRelative(0, -1, 0).getType().isOccluding()) {
+                        patch.add(spot);
+                        int layers = Math.max(1, 3 - (int) Math.sqrt(dx * dx + dz * dz));
+                        org.bukkit.block.data.type.Snow snow = (org.bukkit.block.data.type.Snow) Material.SNOW.createBlockData();
+                        snow.setLayers(layers);
+                        for (Player viewer : world.getPlayers()) viewer.sendBlockChange(spot.getLocation(), snow);
+                        break;
+                    }
+                }
+            }
+        }
+        for (Block spot : patch) {
+            later(70 + r.nextInt(50), () -> {
+                for (Player viewer : world.getPlayers()) viewer.sendBlockChange(spot.getLocation(), spot.getBlockData());
+            });
+        }
+        // anyone caught in it is frosted over (the frosty screen, no damage) and pushed back a little
+        for (Player near : world.getPlayers()) {
+            double d = near.getLocation().add(0, 1, 0).distance(at);
+            if (d > 3) continue;
+            near.setFreezeTicks(Math.max(near.getFreezeTicks(), 80));
+            near.getWorld().spawnParticle(Particle.SNOWFLAKE, near.getLocation().add(0, 1, 0), 20, 0.3, 0.6, 0.3, 0.02);
+            if (near != shooter && !parkour(near)) {
+                Vector push = near.getLocation().toVector().subtract(at.toVector()).setY(0);
+                if (push.lengthSquared() > 1e-4) near.setVelocity(near.getVelocity().add(push.normalize().multiply(0.45).setY(0.3)));
+            }
+        }
     }
 
     /** Where to put something on the ground: the block looked at (within 5), else just in front. */
@@ -1312,24 +1425,69 @@ final class Effects implements Listener {
     }
 
     /** A short teleport forward (never into a wall). */
-    private void blink(Player player) {
+    /** Where the blink stick would take the player right now (null if nowhere): never into a wall. */
+    private Location blinkTarget(Player player) {
         Location from = player.getLocation();
         Vector look = from.getDirection().setY(0);
-        if (look.lengthSquared() < 0.01) return;
+        if (look.lengthSquared() < 0.01) return null;
         look.normalize();
         if (from.getPitch() < -35) look.setY(0.45).normalize(); // looking up: blink up a little too
         Location body = from.clone().add(0, 1, 0);
         RayTraceResult wall = player.getWorld().rayTraceBlocks(body, look, 7.5, org.bukkit.FluidCollisionMode.NEVER, true);
         double max = wall == null ? 7 : wall.getHitPosition().distance(body.toVector()) - 0.7;
-        Location to = null;
         for (double d = max; d >= 1; d -= 0.5) {
             Location test = from.clone().add(look.clone().multiply(d));
             Block feet = test.getBlock(), head = feet.getRelative(0, 1, 0);
-            if (feet.isPassable() && head.isPassable()) {
-                to = test;
-                break;
-            }
+            if (feet.isPassable() && head.isPassable()) return test;
         }
+        return null;
+    }
+
+    /** Each player's blink marker: a glowing square (only they can see) on the spot the blink stick would take them. */
+    private final Map<UUID, BlockDisplay> blinkMarkers = new HashMap<>();
+    private static final NamespacedKey BLINK_MODEL = new NamespacedKey("fractal", "gadget/blink_stick");
+
+    private void blinkMarker(Player player) {
+        UUID id = player.getUniqueId();
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        boolean holding = hand.hasItemMeta() && BLINK_MODEL.equals(hand.getItemMeta().getItemModel()) && !parkour(player);
+        Location to = holding ? blinkTarget(player) : null;
+        BlockDisplay marker = blinkMarkers.get(id);
+        if (to == null) {
+            if (marker != null) {
+                marker.remove();
+                blinkMarkers.remove(id);
+            }
+            return;
+        }
+        // stand it on whatever is under the landing spot (if it's in the air, right where the feet would be)
+        Location spot = to.clone();
+        Block below = spot.clone().add(0, -0.05, 0).getBlock();
+        double floor = below.isPassable() ? spot.getY() : below.getBoundingBox().getMaxY();
+        Location at = new Location(spot.getWorld(), spot.getX() - 0.45, floor + 0.02, spot.getZ() - 0.45);
+        if (marker == null || !marker.isValid() || marker.getWorld() != at.getWorld()) {
+            if (marker != null) marker.remove();
+            marker = at.getWorld().spawn(at, BlockDisplay.class, d -> {
+                d.setBlock(Material.PURPLE_STAINED_GLASS.createBlockData());
+                d.setVisibleByDefault(false);
+                d.setPersistent(false);
+                d.setGlowing(true);
+                d.setGlowColorOverride(Color.fromRGB(0xC77DFF));
+                d.setBrightness(new Display.Brightness(15, 15));
+                d.setTeleportDuration(2);
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.9f, 0.05f, 0.9f), new AxisAngle4f()));
+            });
+            tagged(marker, "blink_marker");
+            player.showEntity(plugin, marker);
+            blinkMarkers.put(id, marker);
+        } else {
+            marker.teleport(at);
+        }
+    }
+
+    private void blink(Player player) {
+        Location from = player.getLocation();
+        Location to = blinkTarget(player);
         if (to == null) {
             sound(from, "entity.enderman.hurt", 0.4f, 1.6f);
             return;
