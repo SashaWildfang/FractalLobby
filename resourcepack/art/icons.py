@@ -1961,12 +1961,12 @@ def gi_magic_8_ball_big():
             if d > 14: continue
             light = -dx - dy
             col = (74, 76, 96) if light > 14 else (44, 46, 60) if light > 2 else (28, 29, 40)
-            if math.hypot(dx + 0.5, dy + 0.5) <= 8.6: col = (244, 244, 250)
+            if math.hypot(dx + 0.5, dy + 0.5) <= 6.4: col = (244, 244, 250)
             px[x, y] = col + (255,)
-    eight = [".####.", "##..##", "##..##", ".####.", "##..##", "##..##", ".####."]
+    eight = [".###.", "#...#", ".###.", "#...#", ".###."]
     for r, row in enumerate(eight):
         for c, ch in enumerate(row):
-            if ch == '#': px[13 + c - 0, 12 + r] = (17, 18, 26, 255)
+            if ch == '#': px[13 + c, 13 + r] = (17, 18, 26, 255)
     for (x, y) in [(8, 7), (9, 7), (8, 8)]:
         px[x, y] = (140, 144, 170, 255)
     src = im.copy(); sp = src.load()
@@ -1982,3 +1982,6 @@ GADGETS['magic_8_ball'] = gi_magic_8_ball_big
 
 from fortune_fx import icon as _fortune_icon
 GADGETS['fortune_cookie'] = _fortune_icon
+
+from rps_fx import shears_icon as _rps_icon
+GADGETS['rock_paper_shears'] = _rps_icon

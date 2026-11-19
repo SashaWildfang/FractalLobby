@@ -356,8 +356,9 @@ final class MoreGadgets implements Listener {
                 if (t % 5 == 0) fx.sound(spot, "block.bamboo_wood.step", 0.6f, 1.4f + t * 0.01f);
             } else if (t == 26) {                                          // snap!
                 whole.remove();
-                halves[0] = sprite(spot, "gadget/fc_left", size);
-                halves[1] = sprite(spot, "gadget/fc_right", size);
+                // (a picture turned to face you shows mirrored, so the half on your left is drawn as the right half)
+                halves[0] = sprite(spot, "gadget/fc_right", size);
+                halves[1] = sprite(spot, "gadget/fc_left", size);
                 fx.sound(spot, "entity.generic.eat", 1f, 1.5f);
                 fx.sound(spot, "block.bamboo_wood.break", 0.8f, 1.6f);
                 world.spawnParticle(Particle.ITEM, spot, 14, 0.12, 0.12, 0.12, 0.08, new ItemStack(Material.COOKIE));
@@ -939,45 +940,69 @@ final class MoreGadgets implements Listener {
         }, () -> clear(player.getUniqueId()));
     }
 
+    /**
+     * Rock paper shears against the nearest player (or the lobby): in front of each player a fist pumps three times with
+     * "Rock... Paper... Shears..." over it, then turns into their pick, and the result shows in chat.
+     */
     private void rockPaperShears(Player player) {
         Player rival = nearest(player, 8);
-        String[] picks = {"✊ Rock", "✋ Paper", "✌ Shears"};
+        String[] picks = {"Rock", "Paper", "Shears"};
+        String[] models = {"gadget/rps_rock", "gadget/rps_paper", "gadget/rps_shears"};
         int mine = ThreadLocalRandom.current().nextInt(3), theirs = ThreadLocalRandom.current().nextInt(3);
         String rivalName = rival == null ? "the Lobby" : rival.getName();
-        String[] count = {"Rock...", "Paper...", "Shears..."};
-        for (int i = 0; i < 3; i++) {
-            int n = i;
-            fx.later(i * 12, () -> {
-                TextDisplay c = label(player.getLocation().add(0, 2.6, 0), text(count[n], 0xFFFFFF), 11);
-                player.addPassenger(c);
-                if (rival != null) {
-                    TextDisplay r = label(rival.getLocation().add(0, 2.6, 0), text(count[n], 0xFFFFFF), 11);
-                    rival.addPassenger(r);
-                }
-                fx.sound(player.getLocation(), "block.note_block.hat", 1f, 1f + n * 0.2f);
-            });
+        List<Player> playing = new ArrayList<>(List.of(player));
+        if (rival != null) playing.add(rival);
+        List<ItemDisplay> hands = new ArrayList<>();
+        List<Location> spots = new ArrayList<>();
+        for (Player who : playing) {
+            Location eye = who.getEyeLocation();
+            Vector look = eye.getDirection().setY(0);
+            if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+            Location at = eye.clone().add(look.normalize().multiply(1.6)).add(0, -0.3, 0);
+            if (!at.getBlock().isPassable()) at = eye.clone().add(0, 0.7, 0);
+            spots.add(at);
+            hands.add(sprite(at, "gadget/rps_rock", 0.6f));
         }
-        fx.later(36, () -> {
-            int result = (mine - theirs + 3) % 3;      // 0 draw, 1 I win, 2 they win
-            TextDisplay a = label(player.getLocation().add(0, 2.6, 0), text(picks[mine], 0xFFE14D), 60);
-            player.addPassenger(a);
-            if (rival != null) {
-                TextDisplay b = label(rival.getLocation().add(0, 2.6, 0), text(picks[theirs], 0xFFE14D), 60);
-                rival.addPassenger(b);
+        String[] count = {"Rock...", "Paper...", "Shears..."};
+        TextDisplay[] words = new TextDisplay[playing.size()];
+        fx.every(110, t -> {
+            if (t < 36) {                                                   // three pumps of the fist, a word on each
+                float bob = (float) Math.abs(Math.sin(t * Math.PI / 12)) * 0.18f;
+                for (ItemDisplay hand : hands) scale(hand, 0.6f, 0, 0, bob);
+                if (t % 12 == 0) {
+                    int n = t / 12;
+                    for (int i = 0; i < playing.size(); i++) {
+                        if (words[i] != null) words[i].remove();
+                        words[i] = label(spots.get(i).clone().add(0, 0.6, 0), text(count[n], 0xFFFFFF), 0);
+                    }
+                    fx.sound(player.getLocation(), "block.note_block.hat", 1f, 1f + n * 0.2f);
+                }
+            } else if (t == 36) {                                           // the reveal
+                int result = (mine - theirs + 3) % 3;                       // 0 draw, 1 I win, 2 they win
+                for (int i = 0; i < playing.size(); i++) {
+                    int pick = i == 0 ? mine : theirs;
+                    hands.get(i).setItemStack(fx.modelled(Material.PAPER, models[pick]));
+                    scale(hands.get(i), 0.7f, 0, 0, 0);
+                    if (words[i] != null) words[i].remove();
+                    boolean won = result == (i == 0 ? 1 : 2);
+                    words[i] = label(spots.get(i).clone().add(0, 0.65, 0), text(picks[pick] + (result == 0 ? " - Draw!" : won ? " - Win!" : ""),
+                            result == 0 ? 0xFFE14D : won ? 0x7FE39A : 0xFFFFFF), 0);
+                    if (won) fx.confetti(spots.get(i).clone().add(0, 0.3, 0), 25, 0.4);
+                }
+                String key = result == 0 ? "collectibles.gadget.rps-draw" : result == 1 ? "collectibles.gadget.rps-win" : "collectibles.gadget.rps-lose";
+                var tags = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
+                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", player.getName()),
+                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("rival", rivalName),
+                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("mine", picks[mine]),
+                        net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("theirs", picks[theirs]));
+                for (Player who : playing) plugin.messages().send(who, key, tags);
+                fx.sound(player.getLocation(), result == 1 ? "entity.player.levelup" : result == 0 ? "block.note_block.pling" : "entity.villager.no", 0.8f, 1.4f);
+            } else if (t > 100) {
+                for (ItemDisplay hand : hands) scale(hand, 0.7f * (110 - t) / 10f, 0, 0, 0);
             }
-            String key = result == 0 ? "collectibles.gadget.rps-draw" : result == 1 ? "collectibles.gadget.rps-win" : "collectibles.gadget.rps-lose";
-            var tags = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
-                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", player.getName()),
-                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("rival", rivalName),
-                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("mine", picks[mine]),
-                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("theirs", picks[theirs]));
-            plugin.messages().send(player, key, tags);
-            if (rival != null) plugin.messages().send(rival, key, tags);
-            if (result != 0) {
-                Player winner = result == 1 ? player : rival;
-                if (winner != null) fx.confetti(winner.getLocation().add(0, 2.2, 0), 25, 0.5);
-            }
-            fx.sound(player.getLocation(), result == 1 ? "entity.player.levelup" : "entity.villager.no", 0.8f, 1.4f);
+        }, () -> {
+            hands.forEach(Entity::remove);
+            for (TextDisplay word : words) if (word != null) word.remove();
         });
     }
 
