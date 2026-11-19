@@ -1016,34 +1016,150 @@ final class Effects implements Listener {
     }
 
     /** A TNT block that hisses and flashes, then "explodes" (just particles and sound). */
+    /**
+     * TNT Throw: toss a lit TNT. It tumbles through the air, bounces and skids along the ground hissing and flashing
+     * faster and faster, swells up, then goes off with a big (harmless) bang: a flash, a shockwave, smoke, sparks and
+     * bits flying out, and anyone close is bounced up and away. Nothing breaks and nobody gets hurt.
+     */
     private void fakeTnt(Player player) {
-        Location at = ground(player);
-        Location corner = at.clone();
-        BlockDisplay tnt = at.getWorld().spawn(corner, BlockDisplay.class, d -> {
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        World world = eye.getWorld();
+        Location start = eye.clone().add(look.clone().multiply(0.8)).add(0, -0.2, 0);
+        if (!start.getBlock().isPassable()) start = eye.clone();
+        float size = 0.7f;
+        BlockDisplay tnt = world.spawn(start, BlockDisplay.class, d -> {
             d.setBlock(Material.TNT.createBlockData());
-            d.setTransformation(new Transformation(new Vector3f(-0.5f, 0, -0.5f), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+            d.setTeleportDuration(2);
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-size / 2), new org.joml.Quaternionf(), new Vector3f(size), new org.joml.Quaternionf()));
         });
         tagged(tnt, "tnt");
-        sound(at, "entity.tnt.primed", 1f, 1f);
-        every(50, t -> {
-            if (t % 8 == 0) {
-                boolean flash = (t / 8) % 2 == 0;
-                tnt.setBrightness(flash ? new Display.Brightness(15, 15) : null);
-                tnt.setInterpolationDelay(0);
-                tnt.setInterpolationDuration(4);
-                float s = flash ? 1.08f + t * 0.004f : 1f;
-                // grows from its centre, so it never leans
-                tnt.setTransformation(new Transformation(new Vector3f(-s / 2, (1 - s) / 2, -s / 2), new AxisAngle4f(), new Vector3f(s), new AxisAngle4f()));
+        sound(eye, "entity.snowball.throw", 1f, 0.6f);
+        sound(eye, "entity.tnt.primed", 1f, 1f);
+        Vector velocity = look.clone().multiply(0.42).add(new Vector(0, 0.28, 0));
+        org.joml.Quaternionf turn = new org.joml.Quaternionf();
+        Vector3f axis = new Vector3f((float) look.getZ(), 0, (float) -look.getX());
+        if (axis.lengthSquared() < 1e-4) axis.set(1, 0, 0);
+        axis.normalize();
+        float[] spin = {0.35f};
+        int fuse = 48;
+        double half = size / 2;
+        every(fuse, t -> {
+            if (!tnt.isValid()) return;
+            Location at = tnt.getLocation();
+            velocity.setY(velocity.getY() - 0.04);
+            velocity.multiply(0.985);
+            double x = at.getX(), y = at.getY(), z = at.getZ();
+            double nx = x + velocity.getX();
+            if (!world.getBlockAt((int) Math.floor(nx + Math.signum(velocity.getX()) * half), (int) Math.floor(y), (int) Math.floor(z)).isPassable()) {
+                velocity.setX(-velocity.getX() * 0.4);
+                nx = x;
             }
-            at.getWorld().spawnParticle(Particle.SMOKE, at.clone().add(0, 1.05, 0), 1, 0.05, 0, 0.05, 0.01);
+            double nz = z + velocity.getZ();
+            if (!world.getBlockAt((int) Math.floor(nx), (int) Math.floor(y), (int) Math.floor(nz + Math.signum(velocity.getZ()) * half)).isPassable()) {
+                velocity.setZ(-velocity.getZ() * 0.4);
+                nz = z;
+            }
+            double ny = y + velocity.getY();
+            boolean grounded = false;
+            org.bukkit.block.Block under = world.getBlockAt((int) Math.floor(nx), (int) Math.floor(ny - half), (int) Math.floor(nz));
+            if (velocity.getY() <= 0 && !under.isPassable()) {
+                double top = under.getBoundingBox().getHeight() > 0 ? under.getBoundingBox().getMaxY() : under.getY() + 1;
+                ny = top + half;
+                if (velocity.getY() < -0.15) {                       // a heavy little bounce
+                    velocity.setY(-velocity.getY() * 0.3);
+                    sound(at, "block.wood.place", 0.8f, 0.7f);
+                    world.spawnParticle(Particle.BLOCK, at.clone().add(0, -half, 0), 6, 0.2, 0.05, 0.2, 0, under.getBlockData());
+                } else {
+                    velocity.setY(0);
+                    grounded = true;
+                }
+                velocity.setX(velocity.getX() * 0.75).setZ(velocity.getZ() * 0.75);   // skids to a stop
+            }
+            tnt.teleport(new Location(world, nx, ny, nz));
+            // tumbles in the air, settles flat on the ground
+            spin[0] = grounded ? spin[0] * 0.6f : spin[0];
+            if (spin[0] > 0.01f) turn.premul(new org.joml.Quaternionf().rotateAxis(spin[0], axis));
+            if (grounded && spin[0] <= 0.01f) {
+                turn.set(new org.joml.Quaternionf());
+            }
+            // flashes faster and faster, and swells up just before it goes
+            int left = fuse - t;
+            boolean flash = left > 20 ? (t / 6) % 2 == 0 : left > 8 ? (t / 3) % 2 == 0 : t % 2 == 0;
+            tnt.setBrightness(flash ? new Display.Brightness(15, 15) : null);
+            float swell = size * (left < 10 ? 1f + (10 - left) * 0.045f : 1f);
+            Vector3f corner = new Vector3f(-swell / 2).rotate(turn);
+            tnt.setInterpolationDelay(0);
+            tnt.setInterpolationDuration(2);
+            tnt.setTransformation(new Transformation(corner, new org.joml.Quaternionf(turn), new Vector3f(swell), new org.joml.Quaternionf()));
+            Location fuseTop = tnt.getLocation().add(0, half + 0.1, 0);
+            world.spawnParticle(Particle.SMOKE, fuseTop, 1, 0.03, 0, 0.03, 0.01);
+            if (t % 3 == 0) world.spawnParticle(Particle.SMALL_FLAME, fuseTop, 1, 0.02, 0, 0.02, 0.005);
+            if (left == 10) sound(fuseTop, "entity.creeper.primed", 1f, 1.4f);
         }, () -> {
+            Location centre = tnt.getLocation();
+            org.bukkit.block.Block floor = centre.clone().add(0, -1, 0).getBlock();
+            BlockData debris = floor.getType().isSolid() ? floor.getBlockData() : Material.TNT.createBlockData();
             tnt.remove();
-            Location centre = at.clone().add(0, 0.5, 0);
-            at.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, centre, 1);
-            at.getWorld().spawnParticle(Particle.FIREWORK, centre, 40, 0.2, 0.2, 0.2, 0.3);
-            confetti(centre, 60, 1.2);
-            sound(centre, "entity.generic.explode", 1f, 1.1f);
-            sound(centre, "entity.firework_rocket.twinkle", 0.8f, 1f);
+            // the bang
+            world.spawnParticle(Particle.EXPLOSION_EMITTER, centre, 1);
+            world.spawnParticle(Particle.FLASH, centre, 1, 0, 0, 0, 0, Color.WHITE);
+            world.spawnParticle(Particle.LARGE_SMOKE, centre, 30, 0.6, 0.4, 0.6, 0.06);
+            world.spawnParticle(Particle.LAVA, centre, 12, 0.3, 0.2, 0.3, 0);
+            world.spawnParticle(Particle.FIREWORK, centre, 25, 0.1, 0.1, 0.1, 0.25);
+            sound(centre, "entity.generic.explode", 1.2f, 0.9f);
+            sound(centre, "entity.dragon_fireball.explode", 0.5f, 1.2f);
+            // a shockwave ring rolling out along the ground
+            every(8, k -> {
+                double r = 0.6 + k * 0.45;
+                for (int i = 0; i < 24; i++) {
+                    double a = Math.PI * 2 * i / 24;
+                    world.spawnParticle(Particle.CLOUD, centre.clone().add(Math.cos(a) * r, -0.2, Math.sin(a) * r), 1, 0, 0, 0, 0.01);
+                }
+            }, null);
+            // bits flying out (only pictures of blocks: nothing breaks)
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            for (int i = 0; i < 10; i++) {
+                BlockData bit = i % 3 == 0 ? Material.TNT.createBlockData() : debris;
+                float s = 0.18f + r.nextFloat() * 0.14f;
+                BlockDisplay piece = world.spawn(centre, BlockDisplay.class, d -> {
+                    d.setBlock(bit);
+                    d.setTeleportDuration(2);
+                    d.setPersistent(false);
+                    d.setTransformation(new Transformation(new Vector3f(-s / 2), new org.joml.Quaternionf(), new Vector3f(s), new org.joml.Quaternionf()));
+                });
+                tagged(piece, "debris");
+                Vector fly = new Vector(rand(0.5), 0.35 + r.nextDouble() * 0.35, rand(0.5));
+                org.joml.Quaternionf roll = new org.joml.Quaternionf();
+                Vector3f rollAxis = new Vector3f(r.nextFloat() - 0.5f, r.nextFloat() - 0.5f, r.nextFloat() - 0.5f).normalize();
+                every(30, k -> {
+                    if (!piece.isValid()) return;
+                    fly.setY(fly.getY() - 0.045);
+                    Location next = piece.getLocation().add(fly);
+                    if (!next.getBlock().isPassable()) {
+                        fly.multiply(0);
+                        return;
+                    }
+                    piece.teleport(next);
+                    roll.premul(new org.joml.Quaternionf().rotateAxis(0.4f, rollAxis));
+                    float shrink = k > 20 ? s * (30 - k) / 10f : s;
+                    piece.setInterpolationDelay(0);
+                    piece.setInterpolationDuration(2);
+                    piece.setTransformation(new Transformation(new Vector3f(-shrink / 2).rotate(roll), new org.joml.Quaternionf(roll),
+                            new Vector3f(shrink), new org.joml.Quaternionf()));
+                }, piece::remove);
+            }
+            // anyone close is bounced up and away (no damage)
+            for (Player near : world.getPlayers()) {
+                double d = near.getLocation().distance(centre);
+                if (d > 4 || parkour(near)) continue;
+                Vector push = near.getLocation().toVector().subtract(centre.toVector()).setY(0);
+                if (push.lengthSquared() < 1e-4) push = new Vector(0, 0, 0);
+                else push.normalize().multiply(0.6 * (1 - d / 4));
+                near.setVelocity(near.getVelocity().add(push.setY(0.55 * (1 - d / 5))));
+                near.setFallDistance(0);
+            }
         });
     }
 

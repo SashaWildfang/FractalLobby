@@ -217,7 +217,7 @@ public final class Catalog {
         add(Category.GADGET, "firework_launcher", N, RARE, "Firework Launcher", "Light up the sky.", null, null);
         add(Category.GADGET, "cookie_fountain", N, RARE, "Cookie Fountain", "Place a fountain that sprays cookies for a while.", null, null);
         add(Category.GADGET, "bat_blaster", N, EPIC, "Bat Blaster", "Send a flock of bats flying.", null, null);
-        add(Category.GADGET, "fake_tnt", N, EPIC, "Fake TNT", "It's fine. Probably.", null, null);
+        add(Category.GADGET, "fake_tnt", N, EPIC, "TNT Throw", "Toss a lit TNT. Big bang, no damage.", null, null);
         add(Category.GADGET, "disco_ball", N, LEGENDARY, "Disco Ball", "Start a party wherever you are.", null, null);
         add(Category.GADGET, "balloon", N, COMMON, "Balloon", "A balloon floats over you for a while.", null, null);
         add(Category.GADGET, "melody_maker", N, COMMON, "Melody Maker", "Play a little tune for everyone.", null, null);
