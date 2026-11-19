@@ -1420,9 +1420,12 @@ final class MoreGadgets implements Listener {
         Location base = fx.ground(player);
         World world = base.getWorld();
         keep(p, model(base.clone(), "gadget/tetherball_pole", Material.IRON_BARS, 1.4f, 0.7f));
-        final double TOP = 2.7, ROPE = 1.9, POLE = 0.1, WRAP = POLE + 0.03, PITCH = 0.24, BALL = 0.3;
-        final double SHORTEST = 0.4;                                   // rope left when it's wound all the way up
-        final double MAX_ANGLE = (ROPE - SHORTEST) / WRAP;             // how far round it can wind, in radians
+        final double TOP = 2.7, ROPE = 1.9, POLE = 0.1, WRAP = POLE + 0.03, PITCH = 0.19, BALL = 0.3;
+        final double SHORTEST = 0.35;                                  // rope left when it's wound all the way up
+        final double PER_RADIAN = 0.07;                                // rope taken up per radian wound (about 3.5 turns in all)
+        final double MAX_ANGLE = (ROPE - SHORTEST) / PER_RADIAN;       // how far round it can wind, in radians
+        final int SAG = 14;                                            // the free rope: points pulled about by gravity
+        Vector[] now = new Vector[SAG], was = new Vector[SAG];
         Location top = base.clone().add(0, TOP, 0);
         top.setYaw(0);                                                 // the rope's pieces are placed in plain world directions
         top.setPitch(0);
@@ -1481,7 +1484,7 @@ final class MoreGadgets implements Listener {
                 fx.confetti(at, 20, 0.4);
                 reset[0] = 70;
             }
-            double wound = Math.abs(st[2]) * WRAP;                     // rope used up round the pole
+            double wound = Math.abs(st[2]) * PER_RADIAN;               // rope used up round the pole
             double free = ROPE - wound;
             double turns = Math.abs(st[2]) / (Math.PI * 2);
             double drop = turns * PITCH;                               // the coils step down the pole as they wind
@@ -1498,21 +1501,56 @@ final class MoreGadgets implements Listener {
             hit.teleport(at.clone().add(0, -0.4, 0));
 
             List<Vector> pts = new ArrayList<>();
-            int helix = (int) Math.min(pieces - 14, Math.ceil(Math.abs(st[2]) / (Math.PI / 6)));
+            int helix = (int) Math.min(pieces - SAG - 2, Math.ceil(Math.abs(st[2]) / (Math.PI / 4)));
             for (int k = 0; k <= helix; k++) {                         // the coils, just outside the pole
                 double f = helix == 0 ? 1 : k / (double) helix;
                 double ang = st[0] - st[2] * (1 - f);
                 pts.add(new Vector(Math.cos(ang) * WRAP, -drop * f, Math.sin(ang) * WRAP));
             }
             Vector attach = centre.clone().add(end.clone().subtract(centre).normalize().multiply(BALL * 0.9));
-            Vector span = attach.clone().subtract(end);
-            Vector mid = end.clone().add(span.clone().multiply(0.5));
-            mid.setY(mid.getY() - (0.03 + (1 - taut) * 0.12) * span.length());   // a little slack, more when it's slow
-            int slack = pieces - 1 - helix;
-            for (int k = 1; k <= slack; k++) {
-                double f = k / (double) slack, g = 1 - f;
-                pts.add(end.clone().multiply(g * g).add(mid.clone().multiply(2 * f * g)).add(attach.clone().multiply(f * f)));
+            // the free rope is a real (simple) rope: points with weight, joined by links that can go slack but not
+            // stretch, fixed at the coils and at the ball, kept outside the pole. It sags, trails and whips as it swings.
+            if (now[0] == null) {
+                for (int k = 0; k < SAG; k++) {
+                    double f = (k + 1) / (double) (SAG + 1);
+                    now[k] = end.clone().multiply(1 - f).add(attach.clone().multiply(f));
+                    was[k] = now[k].clone();
+                }
             }
+            double link = end.distance(attach) * (1.04 + 0.14 * (1 - taut)) / (SAG + 1);   // slacker when it's slow
+            for (int k = 0; k < SAG; k++) {
+                Vector v = now[k].clone().subtract(was[k]).multiply(0.94);
+                was[k] = now[k].clone();
+                now[k].add(v).add(new Vector(0, -0.035, 0));
+            }
+            for (int pass = 0; pass < 14; pass++) {
+                for (int k = -1; k < SAG; k++) {
+                    Vector p0 = k < 0 ? end : now[k], p1 = k + 1 < SAG ? now[k + 1] : attach;
+                    Vector gap = p1.clone().subtract(p0);
+                    double dist = gap.length();
+                    if (dist <= link || dist < 1e-6) continue;          // slack links are left alone
+                    Vector fix = gap.multiply((dist - link) / dist);
+                    boolean fixed0 = k < 0, fixed1 = k + 1 >= SAG;
+                    if (!fixed0 && !fixed1) {
+                        p0.add(fix.clone().multiply(0.5));
+                        p1.subtract(fix.clone().multiply(0.5));
+                    } else if (!fixed0) {
+                        p0.add(fix);
+                    } else if (!fixed1) {
+                        p1.subtract(fix);
+                    }
+                }
+                for (Vector q : now) {                                 // never through the pole, never through the ground
+                    double h = Math.hypot(q.getX(), q.getZ());
+                    if (h < WRAP && q.getY() > -TOP) {
+                        if (h < 1e-6) q.setX(WRAP);
+                        else { q.setX(q.getX() * WRAP / h); q.setZ(q.getZ() * WRAP / h); }
+                    }
+                    if (q.getY() < -TOP + 0.03) q.setY(-TOP + 0.03);
+                }
+            }
+            for (Vector q : now) pts.add(q.clone());
+            pts.add(attach);
             for (int i = 0; i < pieces; i++) {
                 BlockDisplay piece = rope[i];
                 piece.setInterpolationDelay(0);
