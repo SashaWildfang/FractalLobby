@@ -319,23 +319,22 @@ def build(out):
             eight.append(Box((x0, y0, 8 - h), (x0 + 1, y0 + 1, 8 + h), shade, 'flat'))
     for side in (-1, 1):
         z0 = 8 + side * 6.05
-        for i in range(6):
-            for k in range(6):
-                x0, y0 = 5 + i, 5 + k
-                if (x0 + 0.5 - 8) ** 2 + (y0 + 0.5 - 8) ** 2 > 9.2:
+        for i in range(8):                                  # the white window, bigger
+            for k in range(8):
+                x0, y0 = 4 + i, 4 + k
+                if (x0 + 0.5 - 8) ** 2 + (y0 + 0.5 - 8) ** 2 > 13.5:
                     continue
                 eight.append(Box((x0, y0, min(z0, z0 + side * 0.3)), (x0 + 1, y0 + 1, max(z0, z0 + side * 0.3)), '#f4f4fa', 'flat'))
-        for (gx, gy) in [(7, 9.5), (8, 9.5), (7, 8.5), (8, 8.5), (7, 7.5), (8, 7.5), (7, 6.5), (8, 6.5)]:
-            pass
-        # the 8: two little stacked rings, drawn just in front of the window
+        # a big bold 8 filling most of the window: two stacked rings, 0.8-unit pixels
         pix = ["###", "#.#", "###", "#.#", "###"]
+        cell = 0.8
         for r, row in enumerate(pix):
             for c, ch in enumerate(row):
                 if ch != '#':
                     continue
-                x0, y0 = 7.25 + c * 0.5 * (1 if side > 0 else -1) - (0 if side > 0 else -1.0), 9.25 - r * 0.5
+                x0, y0 = 8 - 1.5 * cell + c * cell, 8 + 2.5 * cell - (r + 1) * cell
                 zf = z0 + side * 0.3
-                eight.append(Box((x0, y0, min(zf, zf + side * 0.1)), (x0 + 0.5, y0 + 0.5, max(zf, zf + side * 0.1)), '#111218', 'flat'))
+                eight.append(Box((x0, y0, min(zf, zf + side * 0.12)), (x0 + cell, y0 + cell, max(zf, zf + side * 0.12)), '#111218', 'flat'))
     write(out, 'gadget/magic_8_ball_3d', eight, scale=0.5)
     # a grappling rope: a thin cord one block long along +z from the model's middle (the plugin stretches it to length)
     write(out, 'gadget/rope', [Box((7.5, 7.5, 8), (8.5, 8.5, 24), '#9a7a4f', 'flat', faces=('north', 'south', 'east', 'west', 'up', 'down'))], scale=0.5)
@@ -358,6 +357,8 @@ def build(out):
         bub.putpixel((x, y), (255, 255, 255, al))
     flat_item(out, 'gadget/bubble', bub)
     import wand_fx
+    import fortune_fx
+    fortune_fx.build(out, flat_item)                # the fortune cookie that cracks open
     wand_fx.build(out, flat_item)                   # the magic wand's starry particles
     import party_popper_icon as _pp
     for _i in range(len(_pp.CONFETTI)):

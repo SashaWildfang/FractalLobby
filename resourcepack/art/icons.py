@@ -1948,3 +1948,37 @@ GADGETS['disco_ball'] = _disco_ball_icon
 
 from blink_stick_icon import blink_stick_icon as _blink_stick_icon
 GADGETS['blink_stick'] = _blink_stick_icon
+
+
+def gi_magic_8_ball_big():
+    """The magic 8 ball: a black ball with a big white window and a bold 8 (pixel by pixel)."""
+    from PIL import Image as _I
+    im = _I.new('RGBA', (32, 32), (0, 0, 0, 0)); px = im.load()
+    for y in range(32):
+        for x in range(32):
+            dx, dy = x + 0.5 - 16, y + 0.5 - 16
+            d = math.hypot(dx, dy)
+            if d > 14: continue
+            light = -dx - dy
+            col = (74, 76, 96) if light > 14 else (44, 46, 60) if light > 2 else (28, 29, 40)
+            if math.hypot(dx + 0.5, dy + 0.5) <= 8.6: col = (244, 244, 250)
+            px[x, y] = col + (255,)
+    eight = [".####.", "##..##", "##..##", ".####.", "##..##", "##..##", ".####."]
+    for r, row in enumerate(eight):
+        for c, ch in enumerate(row):
+            if ch == '#': px[13 + c - 0, 12 + r] = (17, 18, 26, 255)
+    for (x, y) in [(8, 7), (9, 7), (8, 8)]:
+        px[x, y] = (140, 144, 170, 255)
+    src = im.copy(); sp = src.load()
+    for y in range(32):
+        for x in range(32):
+            if sp[x, y][3]: continue
+            if any(0 <= x + a < 32 and 0 <= y + b < 32 and sp[x + a, y + b][3] for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                px[x, y] = (0x1a, 0x1b, 0x26, 255)
+    return im
+
+
+GADGETS['magic_8_ball'] = gi_magic_8_ball_big
+
+from fortune_fx import icon as _fortune_icon
+GADGETS['fortune_cookie'] = _fortune_icon

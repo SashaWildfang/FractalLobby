@@ -174,17 +174,7 @@ final class MoreGadgets implements Listener {
         switch (key) {
             case "hot_potato" -> hotPotato(player);
             case "magic_8_ball" -> magic8(player);
-            case "fortune_cookie" -> {
-                String[] fortunes = {"A big win is in your future.", "Today is a lucky day.", "Someone will GG you soon.",
-                        "You will find something legendary.", "A friend is closer than you think.", "Adventure awaits on another server.",
-                        "Your next box holds a surprise.", "Patience brings great dust."};
-                String fortune = fortunes[ThreadLocalRandom.current().nextInt(fortunes.length)];
-                TextDisplay d = label(player.getLocation().add(0, 2.6, 0), text("\"" + fortune + "\"", 0xFFE8A0), 70);
-                player.addPassenger(d);
-                world.spawnParticle(Particle.ITEM, eye.clone().add(look.clone().multiply(0.6)), 14, 0.15, 0.15, 0.15, 0.08,
-                        new ItemStack(Material.COOKIE));
-                fx.sound(eye, "entity.generic.eat", 1f, 1.2f);
-            }
+            case "fortune_cookie" -> fortuneCookie(player);
             case "tetherball" -> tetherball(player);
             case "rock_paper_shears" -> rockPaperShears(player);
             case "catapult" -> {
@@ -331,6 +321,90 @@ final class MoreGadgets implements Listener {
             ball.remove();
             if (text[0] != null) text[0].remove();
         });
+    }
+
+    /**
+     * The fortune cookie: a fortune cookie appears floating in front of the player, wobbles while they crack it, then
+     * snaps in two: the halves fall apart, crumbs fly, and the fortune slip rises out with the fortune above it.
+     */
+    private void fortuneCookie(Player player) {
+        String[] fortunes = {"A big win is in your future.", "Today is a lucky day.", "Someone will GG you soon.",
+                "You will find something legendary.", "A friend is closer than you think.", "Adventure awaits on another server.",
+                "Your next box holds a surprise.", "Patience brings great dust."};
+        String fortune = fortunes[ThreadLocalRandom.current().nextInt(fortunes.length)];
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().setY(0);
+        if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+        look.normalize();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        Location at = eye.clone().add(look.clone().multiply(1.6)).add(0, -0.25, 0);
+        if (!at.getBlock().isPassable()) at = eye.clone().add(0, 0.6, 0);
+        World world = at.getWorld();
+        Location spot = at;
+        float size = 0.7f;
+        ItemDisplay whole = sprite(spot, "gadget/fc_whole", 0.01f);
+        ItemDisplay[] halves = new ItemDisplay[2];
+        ItemDisplay[] slip = new ItemDisplay[1];
+        TextDisplay[] text = new TextDisplay[1];
+        fx.sound(spot, "entity.item.pickup", 0.8f, 0.8f);
+        fx.every(100, t -> {
+            if (t < 5) {                                                   // pops in
+                scale(whole, size * (t + 1) / 5f, 0, 0, 0);
+            } else if (t < 26) {                                           // a wobble that grows as it's squeezed
+                float wobble = (float) Math.sin(t * 1.7) * 0.06f * (t - 5) / 7f;
+                scale(whole, size * (1 - (t - 5) * 0.006f), wobble, 0, 0);
+                if (t % 5 == 0) fx.sound(spot, "block.bamboo_wood.step", 0.6f, 1.4f + t * 0.01f);
+            } else if (t == 26) {                                          // snap!
+                whole.remove();
+                halves[0] = sprite(spot, "gadget/fc_left", size);
+                halves[1] = sprite(spot, "gadget/fc_right", size);
+                fx.sound(spot, "entity.generic.eat", 1f, 1.5f);
+                fx.sound(spot, "block.bamboo_wood.break", 0.8f, 1.6f);
+                world.spawnParticle(Particle.ITEM, spot, 14, 0.12, 0.12, 0.12, 0.08, new ItemStack(Material.COOKIE));
+            } else if (t < 40) {                                           // the halves fall apart, the slip rises out
+                float k = (t - 26) / 14f;
+                for (int i = 0; i < 2; i++) {
+                    int side = i == 0 ? -1 : 1;
+                    halves[i].teleport(spot.clone().add(right.clone().multiply(side * 0.32 * k)).add(0, -0.12 * k * k, 0));
+                    scale(halves[i], size, -side * 0.45f * k, 0, 0);
+                }
+                if (t == 28) slip[0] = sprite(spot, "gadget/fc_slip", 0.01f);
+                if (slip[0] != null) {
+                    slip[0].teleport(spot.clone().add(0, 0.28 * k, 0));
+                    scale(slip[0], 0.75f * Math.min(1, k * 1.4f), 0, 0, 0);
+                }
+            } else if (t == 40) {
+                text[0] = label(spot.clone().add(0, 0.7, 0), text("\"" + fortune + "\"", 0xFFE8A0), 0);
+                fx.sound(spot, "block.amethyst_block.chime", 0.9f, 1.3f);
+            } else if (t > 90) {                                           // and it all shrinks away
+                float k = (100 - t) / 10f;
+                for (ItemDisplay part : new ItemDisplay[]{halves[0], halves[1], slip[0]}) if (part != null) scale(part, size * k, 0, 0, 0);
+            }
+        }, () -> {
+            whole.remove();
+            for (ItemDisplay part : new ItemDisplay[]{halves[0], halves[1], slip[0]}) if (part != null) part.remove();
+            if (text[0] != null) text[0].remove();
+        });
+    }
+
+    /** A flat picture floating in the air, always facing whoever looks at it. */
+    private ItemDisplay sprite(Location at, String model, float size) {
+        ItemDisplay d = at.getWorld().spawn(at, ItemDisplay.class, e -> {
+            e.setItemStack(fx.modelled(Material.PAPER, model));
+            e.setBillboard(Display.Billboard.CENTER);
+            e.setTeleportDuration(1);
+            e.setPersistent(false);
+            e.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+        });
+        fx.tagged(d, "fortune");
+        return d;
+    }
+
+    private static void scale(ItemDisplay d, float size, float tilt, float x, float y) {
+        if (d == null || !d.isValid()) return;
+        d.setInterpolationDelay(0);
+        d.setInterpolationDuration(1);
+        d.setTransformation(new Transformation(new Vector3f(x, y, 0), new AxisAngle4f(tilt, 0, 0, 1), new Vector3f(Math.max(0.01f, size)), new AxisAngle4f()));
     }
 
     private void hotPotato(Player player) {
