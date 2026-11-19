@@ -52,7 +52,9 @@ import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,14 +185,7 @@ final class MoreGadgets implements Listener {
             case "duckling" -> ducklings(player);
             case "pinata" -> pinata(player);
             case "jetpack" -> jetpack(player);
-            case "mob_gun" -> {
-                EntityType[] mobs = {EntityType.PIG, EntityType.COW, EntityType.SHEEP, EntityType.CHICKEN, EntityType.RABBIT};
-                EntityType type = mobs[ThreadLocalRandom.current().nextInt(mobs.length)];
-                fx.sound(eye, "entity.chicken.egg", 1f, 0.6f);
-                launch(player, type.getEntityClass().asSubclass(LivingEntity.class), 1.6, null, e -> {
-                    if (e instanceof Ageable baby) baby.setBaby();
-                });
-            }
+            case "mob_gun" -> mobGun(player);
             case "railgun" -> railgun(player);
             case "explosive_bow" -> {
                 Arrow arrow = player.launchProjectile(Arrow.class, look.clone().multiply(2.6));
@@ -256,6 +251,104 @@ final class MoreGadgets implements Listener {
                 pop(mob, landSound);
             }
         }, () -> pop(mob, landSound));
+    }
+
+    private final Map<UUID, Deque<Entity>> critters = new HashMap<>();
+
+    /**
+     * The mob gun: a puff and a pop, and a baby animal goes tumbling out in a sparkly arc. It lands with a bounce and a
+     * happy noise, then trots about for fifteen seconds (hopping now and then, little hearts) before poofing away. Up to
+     * six of a player's critters are about at once; the oldest goes when a seventh is fired.
+     */
+    private void mobGun(Player player) {
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection();
+        World world = player.getWorld();
+        EntityType[] kinds = {EntityType.PIG, EntityType.COW, EntityType.SHEEP, EntityType.CHICKEN, EntityType.RABBIT,
+                EntityType.MOOSHROOM, EntityType.PANDA};
+        EntityType type = kinds[ThreadLocalRandom.current().nextInt(kinds.length)];
+        Location from = eye.clone().add(look.clone().multiply(1.1)).add(0, -0.25, 0);
+        if (!from.getBlock().isPassable()) from = eye.clone().add(0, -0.25, 0);
+        world.spawnParticle(Particle.POOF, from, 8, 0.08, 0.08, 0.08, 0.05);
+        fx.confetti(from, 10, 0.2);
+        fx.sound(from, "fractal:gadget.party_popper", 0.6f, 1.5f);
+        fx.sound(from, "entity.chicken.egg", 1f, 0.7f);
+        Entity critter = world.spawn(from, type.getEntityClass(), m -> {
+            m.setInvulnerable(true);
+            m.setPersistent(false);
+            if (m instanceof Ageable baby) {
+                baby.setBaby();
+                baby.setAgeLock(true);
+            }
+            if (m instanceof Mob ai) ai.setAware(false);
+            if (m instanceof Sheep sheep) sheep.setColor(DyeColor.values()[ThreadLocalRandom.current().nextInt(DyeColor.values().length)]);
+            if (m instanceof LivingEntity living) living.setRemoveWhenFarAway(false);
+        });
+        fx.tagged(critter, "critter");
+        critter.setVelocity(look.clone().multiply(1.2).add(new Vector(0, 0.22, 0)));
+        Deque<Entity> mine = critters.computeIfAbsent(player.getUniqueId(), k -> new ArrayDeque<>());
+        mine.removeIf(e -> !e.isValid());
+        while (mine.size() >= 6) critterPop(mine.pollFirst());
+        mine.addLast(critter);
+        Color trail = switch (type) {
+            case PIG -> Color.fromRGB(0xF4A3B8);
+            case COW -> Color.fromRGB(0x8A5A3A);
+            case CHICKEN -> Color.fromRGB(0xFFE14D);
+            case RABBIT -> Color.fromRGB(0xD8B48A);
+            case MOOSHROOM -> Color.fromRGB(0xE0443A);
+            case PANDA -> Color.fromRGB(0x2C2A40);
+            default -> critter instanceof Sheep sheep && sheep.getColor() != null ? sheep.getColor().getColor() : Color.WHITE;
+        };
+        String noise = switch (type) {
+            case MOOSHROOM -> "entity.cow.ambient";
+            default -> "entity." + type.getKey().getKey() + ".ambient";
+        };
+        int[] landed = {-1};
+        float[] spin = {critter.getLocation().getYaw()};
+        fx.every(360, t -> {
+            if (!critter.isValid()) return;
+            Location at = critter.getLocation();
+            if (landed[0] < 0) {                                       // flying: tumbling round, a sparkly trail
+                spin[0] += 40;
+                critter.setRotation(spin[0], 0);
+                world.spawnParticle(Particle.DUST, at.clone().add(0, 0.3, 0), 2, 0.08, 0.08, 0.08, 0, new Particle.DustOptions(trail, 1.1f));
+                if (t % 3 == 0) fx.driftFx(at.clone().add(0, 0.3, 0), "gadget/fx_sparkle", 0.16f, new Vector(), 10);
+                if (t > 3 && critter.isOnGround()) {
+                    landed[0] = t;
+                    critter.setVelocity(new Vector(0, 0.34, 0));       // a bounce on landing
+                    world.spawnParticle(Particle.POOF, at, 6, 0.2, 0.05, 0.2, 0.02);
+                    world.spawnParticle(Particle.HEART, at.clone().add(0, 0.7, 0), 2, 0.2, 0.1, 0.2, 0);
+                    fx.sound(at, noise, 0.9f, 1.5f);
+                    fx.sound(at, "entity.slime.jump_small", 0.6f, 1.4f);
+                }
+                if (t > 120) landed[0] = t;                            // stuck somewhere odd: just start trotting
+                return;
+            }
+            int since = t - landed[0];
+            if (since == 8 && critter instanceof Mob ai) ai.setAware(true);   // off it trots
+            if (since > 8 && since % 45 == 0 && critter.isOnGround()) {      // a happy hop now and then
+                critter.setVelocity(critter.getVelocity().setY(0.3));
+                world.spawnParticle(Particle.HEART, at.clone().add(0, 0.7, 0), 1, 0.1, 0.1, 0.1, 0);
+                if (ThreadLocalRandom.current().nextBoolean()) fx.sound(at, noise, 0.6f, 1.5f);
+            }
+            if (since > 300) critterPop(critter);                      // fifteen seconds of fun, then it poofs
+        }, () -> {
+            critterPop(critter);
+            Deque<Entity> list = critters.get(player.getUniqueId());
+            if (list != null) list.remove(critter);
+        });
+    }
+
+    private void critterPop(Entity e) {
+        if (e == null || !e.isValid()) {
+            return;
+        }
+        Location at = e.getLocation().add(0, 0.4, 0);
+        at.getWorld().spawnParticle(Particle.POOF, at, 10, 0.2, 0.2, 0.2, 0.03);
+        fx.driftFx(at, "gadget/fx_star", 0.25f, new Vector(0, 0.04, 0), 12);
+        fx.sound(at, "entity.chicken.egg", 0.8f, 1.6f);
+        fx.sound(at, "fractal:gadget.party_popper", 0.4f, 1.8f);
+        e.remove();
     }
 
     private void pop(Entity e, String sound) {
@@ -794,10 +887,12 @@ final class MoreGadgets implements Listener {
         ItemDisplay[] clouds = new ItemDisplay[2];
         for (int i = 0; i < 2; i++) {
             int side = i == 0 ? -1 : 1;
-            Location at = base.clone().add(right.clone().multiply(side * 2.35)).add(0, 0.25, 0);   // under each end of the arc
+            // a big soft cloud over each end of the arc, a little in front of it (towards the player)
+            Location at = base.clone().add(right.clone().multiply(side * 2.4)).add(look.clone().multiply(-0.35)).add(0, 0.7, 0);
             clouds[i] = world.spawn(at, ItemDisplay.class, d -> {
-                d.setItemStack(fx.modelled(Material.WHITE_WOOL, "cloak/part/cloud"));
+                d.setItemStack(fx.modelled(Material.WHITE_WOOL, "gadget/rainbow_cloud"));
                 d.setBillboard(Display.Billboard.VERTICAL);
+                d.setBrightness(new Display.Brightness(15, 15));
                 d.setPersistent(false);
                 d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
             });
@@ -815,7 +910,8 @@ final class MoreGadgets implements Listener {
             for (ItemDisplay cloud : clouds) {
                 cloud.setInterpolationDelay(0);
                 cloud.setInterpolationDuration(2);
-                cloud.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(Math.max(0.01f, 1.6f * Math.min(1, grow * 1.5f))), new AxisAngle4f()));
+                float c = Math.max(0.01f, 1.5f * Math.min(1, grow * 1.4f));
+                cloud.setTransformation(new Transformation(new Vector3f(0, 0.75f * (c / 1.5f) - 0.75f, 0), new AxisAngle4f(), new Vector3f(c), new AxisAngle4f()));
             }
             if (t < 24 && t % 3 == 0) {                                // the chimes as it rises
                 int note = scale[(t / 3) % scale.length];
@@ -867,14 +963,15 @@ final class MoreGadgets implements Listener {
         World world = base.getWorld();
         Location spot = base;
         float yaw = spot.getYaw();
+        final float S = 1.4f;                                          // a good bit bigger than a block
         ItemDisplay frame = world.spawn(spot, ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.OAK_PLANKS, "gadget/catapult_base"));
             d.setPersistent(false);
             d.setRotation(yaw, 0);
-            d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
+            d.setTransformation(new Transformation(new Vector3f(0, 0.5f * S, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
         });
-        // the arm's pivot: model (8, 4, 11) on the base, which is just behind the middle (the base is turned half round)
-        Location pivot = spot.clone().add(0, 4 / 16.0, 0).add(look.clone().multiply(-3 / 16.0));
+        // the arm's pivot: the winch, model (8, 5, 11) on the base, just behind the middle (the base is turned half round)
+        Location pivot = spot.clone().add(0, 5 / 16.0 * S, 0).add(look.clone().multiply(-3 / 16.0 * S));
         ItemDisplay arm = world.spawn(pivot, ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.OAK_PLANKS, "gadget/catapult_arm"));
             d.setPersistent(false);
@@ -892,7 +989,7 @@ final class MoreGadgets implements Listener {
                 float k = t / 6f;
                 frame.setInterpolationDelay(0);
                 frame.setInterpolationDuration(2);
-                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(Math.max(0.01f, k)), new AxisAngle4f()));
+                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f * S, 0), new AxisAngle4f(), new Vector3f(Math.max(0.01f, k * S)), new AxisAngle4f()));
             }
             // each throw takes 40 ticks: wind back slowly (0-20), whip over (20-25), rest (25-40)
             int phase = (t - 10) % 40, shot = (t - 10) / 40;
@@ -904,18 +1001,18 @@ final class MoreGadgets implements Listener {
             float size = t < 6 ? Math.max(0.01f, t / 6f) : t > 140 ? Math.max(0.01f, (150 - t) / 10f) : 1f;
             arm.setInterpolationDelay(0);
             arm.setInterpolationDuration(1);
-            arm.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(angle, 1, 0, 0), new Vector3f(size), new AxisAngle4f()));
+            arm.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(angle, 1, 0, 0), new Vector3f(size * S), new AxisAngle4f()));
             if (t > 140) {
                 frame.setInterpolationDelay(0);
                 frame.setInterpolationDuration(1);
-                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+                frame.setTransformation(new Transformation(new Vector3f(0, 0.5f * S, 0), new AxisAngle4f(), new Vector3f(size * S), new AxisAngle4f()));
             }
             if (t >= 10 && shot < 3) {
                 if (phase == 2) fx.sound(spot, "block.wooden_trapdoor.close", 0.6f, 0.6f);     // creak
                 if (phase == 22) {                                     // the throw
                     fx.sound(spot, "block.wood.hit", 1f, 0.7f);
                     fx.sound(spot, "entity.cat.hiss", 0.6f, 1.5f);
-                    Location release = pivot.clone().add(0, 1.0, 0);
+                    Location release = pivot.clone().add(0, 1.0 * S, 0);
                     Cat.Type type = types[(shot + ThreadLocalRandom.current().nextInt(types.length)) % types.length];
                     Cat cat = world.spawn(release, Cat.class, c -> {
                         c.setInvulnerable(true);
@@ -1082,12 +1179,82 @@ final class MoreGadgets implements Listener {
      * Rock paper shears against the nearest player (or the lobby): in front of each player a fist pumps three times with
      * "Rock... Paper... Shears..." over it, then turns into their pick, and the result shows in chat.
      */
+    /**
+     * Rock Paper Shears never drags anyone in: the player's fist floats in front of them with an open invite. Anyone
+     * who wants to play clicks it and the two play; the player can click it themselves to play the Lobby straight
+     * away, and if nobody joins in a few seconds they play the Lobby anyway.
+     */
     private void rockPaperShears(Player player) {
-        Player rival = nearest(player, 8);
+        Location eye = player.getEyeLocation();
+        Vector look = eye.getDirection().setY(0);
+        if (look.lengthSquared() < 1e-4) look = new Vector(0, 0, 1);
+        Location at = eye.clone().add(look.normalize().multiply(1.6)).add(0, -0.3, 0);
+        if (!at.getBlock().isPassable()) at = eye.clone().add(0, 0.7, 0);
+        final Location spot = at;
+        int wait = 140;
+        ItemDisplay fist = sprite(at, "gadget/rps_rock", 0.6f);
+        TextDisplay invite = label(at.clone().add(0, 0.55, 0), inviteText(player, wait / 20), 0);
+        Interaction box = at.getWorld().spawn(at.clone().add(0, -0.4, 0), Interaction.class, i -> {
+            i.setInteractionWidth(0.9f);
+            i.setInteractionHeight(0.9f);
+            i.setResponsive(true);
+            i.setPersistent(false);
+        });
+        fx.tagged(box, "rps");
+        boolean[] started = {false};
+        Runnable tidy = () -> {
+            clicks.remove(box.getUniqueId());
+            box.remove();
+            fist.remove();
+            invite.remove();
+        };
+        clicks.put(box.getUniqueId(), clicker -> {
+            if (started[0] || !player.isOnline()) return;
+            started[0] = true;
+            tidy.run();
+            if (clicker.equals(player)) {
+                playRps(player, null);
+            } else {
+                fx.sound(spot, "entity.experience_orb.pickup", 0.8f, 1.4f);
+                playRps(player, clicker);
+            }
+        });
+        fx.sound(at, "block.note_block.bell", 0.8f, 1.2f);
+        fx.every(wait, t -> {
+            if (started[0]) return;
+            if (!player.isOnline()) {
+                started[0] = true;
+                tidy.run();
+                return;
+            }
+            float bob = (float) Math.sin(t * 0.25) * 0.05f;
+            scale(fist, 0.6f, 0, 0, bob);
+            if (t % 20 == 0) invite.text(inviteText(player, (wait - t) / 20));
+            if (t == wait - 1) {                                       // nobody joined: play the Lobby
+                started[0] = true;
+                tidy.run();
+                playRps(player, null);
+            }
+        }, () -> {
+            if (!started[0]) {
+                started[0] = true;
+                tidy.run();
+            }
+        });
+    }
+
+    private static Component inviteText(Player player, int seconds) {
+        return text("Rock Paper Shears?", 0xFFE14D)
+                .append(Component.newline())
+                .append(text("Click to play " + player.getName() + "!", 0xFFFFFF))
+                .append(Component.newline())
+                .append(text("(vs the Lobby in " + Math.max(0, seconds) + ")", 0xA9A3C2));
+    }
+
+    private void playRps(Player player, Player rival) {
         String[] picks = {"Rock", "Paper", "Shears"};
         String[] models = {"gadget/rps_rock", "gadget/rps_paper", "gadget/rps_shears"};
         int mine = ThreadLocalRandom.current().nextInt(3), theirs = ThreadLocalRandom.current().nextInt(3);
-        String rivalName = rival == null ? "the Lobby" : rival.getName();
         List<Player> playing = new ArrayList<>(List.of(player));
         if (rival != null) playing.add(rival);
         List<ItemDisplay> hands = new ArrayList<>();
@@ -1123,7 +1290,8 @@ final class MoreGadgets implements Listener {
                     scale(hands.get(i), 0.7f, 0, 0, 0);
                     if (words[i] != null) words[i].remove();
                     boolean won = result == (i == 0 ? 1 : 2);
-                    words[i] = label(spots.get(i).clone().add(0, 0.65, 0), text(picks[pick] + (result == 0 ? " - Draw!" : won ? " - Win!" : ""),
+                    String shown = rival == null ? picks[mine] + " vs " + picks[theirs] : picks[pick];   // playing the Lobby: show its pick too
+                    words[i] = label(spots.get(i).clone().add(0, 0.65, 0), text(shown + (result == 0 ? " - Draw!" : won ? " - Win!" : rival == null ? " - Lose!" : ""),
                             result == 0 ? 0xFFE14D : won ? 0x7FE39A : 0xFFFFFF), 0);
                     if (won) fx.confetti(spots.get(i).clone().add(0, 0.3, 0), 25, 0.4);
                 }

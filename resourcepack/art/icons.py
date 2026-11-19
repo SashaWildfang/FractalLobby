@@ -1988,3 +1988,6 @@ GADGETS['rock_paper_shears'] = _rps_icon
 
 from catapult_icon import catapult_icon as _catapult_icon
 GADGETS['catapult'] = _catapult_icon
+
+from mob_gun_icon import opt1 as _mob_gun_icon
+GADGETS['mob_gun'] = _mob_gun_icon        # the Pig Blaster (Sasha picked #1)
