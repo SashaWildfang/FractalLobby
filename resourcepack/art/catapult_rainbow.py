@@ -37,7 +37,7 @@ def build(out):
     write(out, 'gadget/catapult_arm', arm, scale=1)
 
     # the rainbow's clouds: a soft round cloud sheet, finely drawn (no blocks), shown facing the player
-    cloud = Image.new('RGBA', (64, 40), (0, 0, 0, 0))
+    cloud = Image.new('RGBA', (64, 40), (0, 0, 0, 0))   # drawn 64 x 40, then set at the bottom of a square sprite
     puffs = [(14, 27, 11), (27, 20, 14), (41, 22, 12), (52, 28, 9), (33, 29, 12), (20, 31, 8), (46, 31, 8)]
     tones = [(255, 255, 255), (241, 245, 255), (222, 230, 248), (198, 208, 236)]
     for y in range(40):
@@ -52,13 +52,14 @@ def build(out):
             if py > 33:
                 shade = max(shade, 3 if py > 35 else 2)
             cloud.putpixel((x, y), tones[shade] + (255,))
+    square = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+    square.alpha_composite(cloud, (0, 26))
     os.makedirs(f'{out}/assets/fractal/textures/item/gadget', exist_ok=True)
-    cloud.save(f'{out}/assets/fractal/textures/item/gadget/rainbow_cloud.png')
-    faces = {f: {"uv": [0, 0, 16, 16], "texture": "#t"} for f in ("north", "south")}
-    model = {"textures": {"t": "fractal:item/gadget/rainbow_cloud", "particle": "fractal:item/gadget/rainbow_cloud"},
-             "elements": [{"from": [-8, 0, 8], "to": [24, 20, 8], "shade": False, "light_emission": 15, "faces": faces}]}
+    square.save(f'{out}/assets/fractal/textures/item/gadget/rainbow_cloud.png')
+    # a plain flat item sprite: lit like the game's own items (a bare sheet came out grey and flickered)
     os.makedirs(f'{out}/assets/fractal/models/item/gadget', exist_ok=True)
-    json.dump(model, open(f'{out}/assets/fractal/models/item/gadget/rainbow_cloud.json', 'w'))
+    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": "fractal:item/gadget/rainbow_cloud"}},
+              open(f'{out}/assets/fractal/models/item/gadget/rainbow_cloud.json', 'w'))
     os.makedirs(f'{out}/assets/fractal/items/gadget', exist_ok=True)
     json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/gadget/rainbow_cloud"}},
               open(f'{out}/assets/fractal/items/gadget/rainbow_cloud.json', 'w'))

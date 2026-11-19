@@ -302,6 +302,10 @@ final class Effects implements Listener {
     private final Map<UUID, List<Running>> running = new HashMap<>();
 
     /** Ends everything the player's gadgets are still doing: placed things go, flying things land, balloons pop. */
+    void refund(Player player, String what) {
+        collectibles.refund(player, what);
+    }
+
     void stopGadget(Player player) {
         UUID id = player.getUniqueId();
         List<Running> list = running.remove(id);

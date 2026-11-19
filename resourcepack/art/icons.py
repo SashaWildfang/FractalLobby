@@ -1991,3 +1991,6 @@ GADGETS['catapult'] = _catapult_icon
 
 from mob_gun_icon import opt1 as _mob_gun_icon
 GADGETS['mob_gun'] = _mob_gun_icon        # the Pig Blaster (Sasha picked #1)
+
+from pong_icon import diamond_shower as _diamond_shower_icon
+GADGETS['diamond_shower'] = _diamond_shower_icon   # a cloud raining diamonds

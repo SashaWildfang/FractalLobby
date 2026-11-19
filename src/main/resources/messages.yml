@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 43
+messages-version: 44
 
 theme:
   primary: "#B266FF"
@@ -1220,6 +1220,7 @@ collectibles:
     trampoline-room: "<prefix><muted>There isn't enough room here for the trampoline. Try somewhere more open."
     trampoline-taken: "<prefix><muted>There's already something set up here. Try a bit further away."
     catapult-room: "<prefix><muted>There isn't room in front of you for the catapult."
+    pong-room: "<prefix><muted>Pong needs a flat, open space about 6 by 10 blocks in front of you."
     disco-air: "<prefix><muted>Stand on the ground to set up the disco."
     disco-floor: "<prefix><muted>The disco needs flat, solid ground all around you (5 by 5). Try somewhere more open."
     disco-room: "<prefix><muted>There isn't enough room above you for the disco. Try somewhere more open."

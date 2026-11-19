@@ -523,7 +523,8 @@ public final class Collectibles implements Listener {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
             case "tetherball", "pinata", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe", "dj_booth",
-                 "pong", "beach_ball" -> 20;
+                 "beach_ball" -> 20;
+            case "pong" -> 10;
             case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "duckling", "ghost", "rainbow", "pumpkin_rain",
                  "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
             case "rock_paper_shears", "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;
