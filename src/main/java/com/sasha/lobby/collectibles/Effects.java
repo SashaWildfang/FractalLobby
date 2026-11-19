@@ -1017,27 +1017,123 @@ final class Effects implements Listener {
     }
 
     /** A beam of sparkles to where the player looks, bursting into stars. */
+    /**
+     * The magic wand: a spell bolt. A glowing star flies out of the wand leaving a trail of twinkles and sparkles; where
+     * it lands it bursts into a shower of stars and a star circle glows on the ground, spins and fades. All the
+     * particles are the wand's own little pictures (gadget/fx_*), not the game's.
+     */
     private void magicWand(Player player) {
         Location eye = player.getEyeLocation();
         Vector look = eye.getDirection();
-        RayTraceResult hit = player.getWorld().rayTraceBlocks(eye, look, 16);
-        double length = hit == null ? 16 : hit.getHitPosition().distance(eye.toVector());
-        sound(eye, "block.amethyst_block.resonate", 1f, 1.6f);
-        sound(eye, "entity.illusioner.cast_spell", 0.6f, 1.6f);
-        every(8, t -> {
-            for (double d = t * 2; d < Math.min(length, t * 2 + 2); d += 0.25) {
-                Location at = eye.clone().add(look.clone().multiply(d));
-                player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 1, 0.03, 0.03, 0.03, 0,
-                        new Particle.DustTransition(Color.fromRGB(0xC77DFF), Color.fromRGB(0xFFF3B0), 0.9f));
-                if (ThreadLocalRandom.current().nextInt(4) == 0) player.getWorld().spawnParticle(Particle.END_ROD, at, 0, 0, 0, 0, 0);
+        World world = eye.getWorld();
+        Vector right = new Vector(-look.getZ(), 0, look.getX());
+        if (right.lengthSquared() < 1e-4) right = new Vector(1, 0, 0);
+        right.normalize();
+        Location tip = eye.clone().add(look.clone().multiply(0.9)).add(right.clone().multiply(0.3)).add(0, -0.15, 0);
+        RayTraceResult hit = world.rayTraceBlocks(eye, look, 24);
+        Location end = hit == null ? eye.clone().add(look.clone().multiply(24)) : hit.getHitPosition().toLocation(world);
+        org.bukkit.block.BlockFace face = hit == null ? null : hit.getHitBlockFace();
+        sound(eye, "block.amethyst_block.resonate", 1f, 1.7f);
+        sound(eye, "block.beacon.power_select", 0.5f, 2f);
+        ItemDisplay orb = fx(tip, "gadget/fx_orb", 0.5f);
+        Vector path = end.toVector().subtract(tip.toVector());
+        double length = path.length();
+        Vector step = path.clone().normalize().multiply(0.9);
+        int flight = Math.max(2, (int) Math.ceil(length / 0.9));
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        every(flight, t -> {
+            if (!orb.isValid()) return;
+            Location at = orb.getLocation().add(step);
+            orb.teleport(at);
+            float pulse = 0.5f + (float) Math.sin(t * 0.9) * 0.06f;
+            orb.setInterpolationDelay(0);
+            orb.setInterpolationDuration(1);
+            orb.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * 0.5f, 0, 0, 1), new Vector3f(pulse), new AxisAngle4f()));
+            // the trail: twinkles and sparkles left hanging in the air, drifting and shrinking away
+            for (int i = 0; i < 2; i++) {
+                Location spot = at.clone().subtract(step.clone().multiply(r.nextDouble())).add(rand(0.18), rand(0.18), rand(0.18));
+                boolean big = r.nextInt(3) == 0;
+                driftFx(spot, big ? "gadget/fx_twinkle" : "gadget/fx_sparkle", big ? 0.32f : 0.2f,
+                        new Vector(rand(0.01), 0.008 + r.nextDouble() * 0.01, rand(0.01)), 12 + r.nextInt(10));
             }
+            if (t % 4 == 0) sound(at, "block.amethyst_block.chime", 0.35f, 1.6f + r.nextFloat() * 0.4f);
         }, () -> {
-            Location end = eye.clone().add(look.clone().multiply(length - 0.3));
-            player.getWorld().spawnParticle(Particle.FIREWORK, end, 25, 0.1, 0.1, 0.1, 0.12);
-            player.getWorld().spawnParticle(Particle.ENCHANT, end, 40, 0.4, 0.4, 0.4, 0.6);
-            player.getWorld().spawnParticle(Particle.DUST, end, 20, 0.4, 0.4, 0.4, 0, dust(Color.fromRGB(0xFFE680), 1.2f));
-            sound(end, "entity.firework_rocket.twinkle", 0.8f, 1.4f);
+            orb.remove();
+            Location at = end.clone();
+            if (face != null) at.add(face.getDirection().multiply(0.25));
+            sound(at, "entity.firework_rocket.twinkle", 1f, 1.2f);
+            sound(at, "block.amethyst_block.resonate", 0.8f, 1.2f);
+            // the burst: stars flying out every way, slowing, spinning and shrinking
+            for (int i = 0; i < 12; i++) {
+                Vector out = new Vector(r.nextGaussian(), r.nextGaussian() + 0.4, r.nextGaussian()).normalize().multiply(0.18 + r.nextDouble() * 0.12);
+                driftFx(at, i % 3 == 0 ? "gadget/fx_twinkle" : "gadget/fx_star", 0.28f + r.nextFloat() * 0.14f, out, 18 + r.nextInt(10));
+            }
+            // the star circle, laid flat on what it hit (the ground, a wall or a ceiling), growing in and spinning
+            if (face != null) starCircle(end.clone().add(face.getDirection().multiply(0.08)), face);
         });
+    }
+
+    /** One of the wand's particle pictures, facing whoever looks at it. */
+    private ItemDisplay fx(Location at, String model, float size) {
+        ItemDisplay d = at.getWorld().spawn(at, ItemDisplay.class, e -> {
+            e.setItemStack(modelled(Material.NETHER_STAR, model));
+            e.setBillboard(Display.Billboard.CENTER);
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setTeleportDuration(1);
+            e.setPersistent(false);
+            e.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+        });
+        tagged(d, "wand_fx");
+        return d;
+    }
+
+    /** A particle picture that drifts (slowing down), turns, and shrinks away over its life. */
+    private void driftFx(Location at, String model, float size, Vector velocity, int life) {
+        ItemDisplay d = fx(at, model, size);
+        float spin = (ThreadLocalRandom.current().nextFloat() - 0.5f) * 0.5f;
+        every(life, t -> {
+            if (!d.isValid()) return;
+            velocity.multiply(0.88);
+            d.teleport(d.getLocation().add(velocity));
+            float k = size * (t < 3 ? 0.6f + t * 0.15f : (float) (life - t) / (life - 3));     // pops in, then shrinks away
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(1);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * spin, 0, 0, 1), new Vector3f(Math.max(0.01f, k)), new AxisAngle4f()));
+        }, d::remove);
+    }
+
+    /** The star circle where the spell lands: lies flat on the face it hit, grows in turning, glows, then shrinks away. */
+    private void starCircle(Location at, org.bukkit.block.BlockFace face) {
+        org.joml.Quaternionf lay = switch (face) {                 // the picture is upright (facing +z): turn it onto the face
+            case UP -> new org.joml.Quaternionf().rotateX((float) -Math.PI / 2);
+            case DOWN -> new org.joml.Quaternionf().rotateX((float) Math.PI / 2);
+            case NORTH -> new org.joml.Quaternionf().rotateY((float) Math.PI);
+            case EAST -> new org.joml.Quaternionf().rotateY((float) Math.PI / 2);
+            case WEST -> new org.joml.Quaternionf().rotateY((float) -Math.PI / 2);
+            default -> new org.joml.Quaternionf();
+        };
+        Vector3f normal = new Vector3f(0, 0, 1).rotate(lay);
+        ItemDisplay circle = at.getWorld().spawn(at, ItemDisplay.class, e -> {
+            e.setItemStack(modelled(Material.NETHER_STAR, "gadget/fx_circle"));
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setPersistent(false);
+            e.setTransformation(new Transformation(new Vector3f(), lay, new Vector3f(0.01f), new org.joml.Quaternionf()));
+        });
+        tagged(circle, "wand_fx");
+        int life = 50;
+        every(life, t -> {
+            if (!circle.isValid()) return;
+            float size = t < 8 ? 2.2f * (t + 1) / 8f : t > life - 10 ? 2.2f * (life - t) / 10f : 2.2f;
+            org.joml.Quaternionf turn = new org.joml.Quaternionf().rotateAxis(t * 0.06f, normal).mul(lay);
+            circle.setInterpolationDelay(0);
+            circle.setInterpolationDuration(1);
+            circle.setTransformation(new Transformation(new Vector3f(), turn, new Vector3f(Math.max(0.01f, size)), new org.joml.Quaternionf()));
+            if (t % 6 == 0 && t < life - 10) {                    // a few twinkles rising off it
+                Vector off = new Vector(rand(0.8), rand(0.8), rand(0.8));
+                driftFx(circle.getLocation().add(off), "gadget/fx_twinkle", 0.22f,
+                        face.getDirection().multiply(0.03 + ThreadLocalRandom.current().nextDouble() * 0.02), 16);
+            }
+        }, circle::remove);
     }
 
     /** A short teleport forward (never into a wall). */

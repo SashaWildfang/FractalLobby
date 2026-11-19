@@ -318,6 +318,8 @@ def build(out):
     for (x, y, al) in [(4, 3, 255), (5, 3, 255), (3, 4, 255), (4, 4, 255), (3, 5, 200), (6, 3, 160), (11, 12, 150), (12, 11, 150)]:
         bub.putpixel((x, y), (255, 255, 255, al))
     flat_item(out, 'gadget/bubble', bub)
+    import wand_fx
+    wand_fx.build(out, flat_item)                   # the magic wand's starry particles
     import party_popper_icon as _pp
     for _i in range(len(_pp.CONFETTI)):
         flat_item(out, f'gadget/confetti_{_i}', _pp.confetti_piece(_i))
