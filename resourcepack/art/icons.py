@@ -1944,3 +1944,6 @@ GADGETS['firework_launcher'] = gun_firework_launcher
 
 from disco_ball_icon import disco_ball_icon as _disco_ball_icon
 GADGETS['disco_ball'] = _disco_ball_icon
+
+from blink_stick_icon import blink_stick_icon as _blink_stick_icon
+GADGETS['blink_stick'] = _blink_stick_icon
