@@ -593,9 +593,20 @@ final class MoreGadgets implements Listener {
             for (int lift = 0; lift < 8 && !(go.getBlock().isPassable() && go.clone().add(0, 1, 0).getBlock().isPassable()
                     && go.clone().add(0, 2, 0).getBlock().isPassable()); lift++) go.add(0, 1, 0);   // never into a block
             Vector move = go.toVector().subtract(last[0].toVector());
-            if (move.lengthSquared() > 1e-4) go.setDirection(move);
+            // which way it faces: where it's heading across the ground, turning at most 7 degrees a tick (and holding
+            // its heading while it's mostly just dropping), with its body set to match, so the body never lags behind
+            // the wings on a tight turn
+            float yawNow = last[0].getYaw();
+            Vector across = move.clone().setY(0);
+            if (across.lengthSquared() > 0.0004) {
+                float want = (float) Math.toDegrees(Math.atan2(-across.getX(), across.getZ()));
+                float diff = ((want - yawNow) % 360 + 540) % 360 - 180;
+                yawNow += Math.max(-7, Math.min(7, diff));
+            }
+            go.setYaw(yawNow);
             go.setPitch(0);
             pig.teleport(go, io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+            pig.setBodyYaw(yawNow);
             boolean climbing = move.getY() > 0.02;
             placeWings(wings, go, climbing ? t * 2 : t);
             last[0] = go;
