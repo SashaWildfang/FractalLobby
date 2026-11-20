@@ -231,7 +231,7 @@ public final class Collectibles implements Listener {
             if (what != null && what.startsWith("ability:")) inventory.setItem(oldAbility, null);
         }
         if (plugin.getConfig().getBoolean("join-items.collectibles.enabled", true)) {
-            inventory.setItem(joinSlot(plugin), joinItem());
+            inventory.setItem(joinSlot(plugin), joinItem(player));
         }
         effects.worn(player);
         if (plugin.doubleJump() != null) plugin.doubleJump().refresh(player);
@@ -458,11 +458,16 @@ public final class Collectibles implements Listener {
         return itemKey;
     }
 
-    private ItemStack joinItem() {
+    private ItemStack joinItem(Player player) {
         ItemStack item = ItemStack.of(Material.ENDER_CHEST);
+        MysteryData.Stash stash = data().get(player.getUniqueId());
+        long found = Catalog.ITEMS.stream().filter(each -> owns(player, each)).count();
+        TagResolver tags = TagResolver.resolver(Messages.arg("found", found), Messages.arg("total", Catalog.ITEMS.size()),
+                Messages.arg("dust", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust())),
+                Messages.arg("boxes", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes())));
         item.editMeta(meta -> {
             meta.displayName(plugin.messages().item("collectibles.join-item.name"));
-            meta.lore(plugin.messages().lore("collectibles.join-item.lore"));
+            meta.lore(plugin.messages().lore("collectibles.join-item.lore", tags));
             meta.addItemFlags(ItemFlag.values());
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, "menu");
         });
@@ -531,7 +536,25 @@ public final class Collectibles implements Listener {
                     Messages.arg("seconds", String.format(java.util.Locale.ROOT, "%.1f", (until - now) / 1000.0))));
             return false;
         }
-        cooldowns.put(key, now + Math.round(seconds * 1000));
+        long until2 = now + Math.round(seconds * 1000);
+        cooldowns.put(key, until2);
+        if (seconds >= 2 && what.startsWith("gadget:")) {             // tell them when it's ready again
+            Item item = Catalog.get(what);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (!player.isOnline() || !Long.valueOf(until2).equals(cooldowns.get(key))) return;   // reused or refunded
+                boolean holding = false;
+                for (ItemStack it : player.getInventory().getContents()) {
+                    if (it != null && it.hasItemMeta() && what.equals(it.getItemMeta().getPersistentDataContainer().get(itemKey, PersistentDataType.STRING))) {
+                        holding = true;
+                        break;
+                    }
+                }
+                if (!holding) return;                                  // swapped to something else since
+                player.sendActionBar(plugin.messages().component("collectibles.gadget-ready",
+                        Messages.arg("name", item == null ? "Gadget" : item.name())));
+                player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 0.4f, 2f);
+            }, Math.max(1, Math.round(seconds * 20)));
+        }
         return true;
     }
 
@@ -865,6 +888,19 @@ public final class Collectibles implements Listener {
             meta.addItemFlags(ItemFlag.values());
         });
         return icon;
+    }
+
+    /** Keeps the Collectibles item's numbers (found, dust, boxes) up to date: after any menu is closed. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onMenuClose(org.bukkit.event.inventory.InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player player) || !enabled()) return;
+        if (!plugin.getConfig().getBoolean("join-items.collectibles.enabled", true)) return;
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
+            ItemStack there = player.getInventory().getItem(joinSlot(plugin));
+            if (there == null || !there.hasItemMeta() || !"menu".equals(there.getItemMeta().getPersistentDataContainer().get(itemKey, PersistentDataType.STRING))) return;
+            player.getInventory().setItem(joinSlot(plugin), joinItem(player));
+        });
     }
 
     /**

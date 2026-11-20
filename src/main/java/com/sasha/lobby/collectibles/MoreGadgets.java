@@ -646,44 +646,119 @@ final class MoreGadgets implements Listener {
         }
     }
 
+    /**
+     * Creeper Astronaut: a creeper in a glass space helmet stands on a little launch pad. A countdown floats over it
+     * (3... 2... 1... LIFTOFF!) with beeps and steam; then it blasts off on a roaring column of flame and smoke,
+     * slowly spinning, faster and faster, a ring of smoke rolling out across the ground. High up it starts to hiss...
+     * and goes off as a giant green creeper-face firework, its helmet shattering, a shower of green sparks drifting down.
+     */
     private void creeperAstronaut(Player player) {
-        Location at = fx.ground(player);
-        Creeper creeper = player.getWorld().spawn(at, Creeper.class, c -> {
+        Location pad = fx.ground(player);
+        World world = pad.getWorld();
+        float facing = player.getLocation().getYaw() + 180;
+        pad.setYaw(facing);
+        Creeper creeper = world.spawn(pad, Creeper.class, c -> {
             c.setInvulnerable(true);
             c.setAware(false);
             c.setGravity(false);
+            c.setSilent(true);
+            c.setPersistent(false);
             c.setMaxFuseTicks(Integer.MAX_VALUE);
+            c.setRotation(facing, 0);
         });
         fx.tagged(creeper, "creeper");
-        ItemDisplay helmet = player.getWorld().spawn(at, ItemDisplay.class, d -> {
+        // the helmet: a glass block round its head (the head is the top half-block, centred 1.45 up), kept on it by
+        // moving it with the creeper every tick rather than riding (riding put it too low)
+        ItemDisplay helmet = world.spawn(pad.clone().add(0, 1.45, 0), ItemDisplay.class, d -> {
             d.setItemStack(new ItemStack(Material.GLASS));
-            d.setTransformation(new Transformation(new Vector3f(0, -0.55f, 0), new AxisAngle4f(), new Vector3f(0.62f), new AxisAngle4f()));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.6f), new AxisAngle4f()));
         });
         fx.tagged(helmet, "helmet");
-        creeper.addPassenger(helmet);
-        fx.sound(at, "entity.creeper.primed", 1f, 0.6f);
-        fx.every(70, t -> {
+        BlockDisplay base = world.spawn(pad.clone().add(0, 0.01, 0), BlockDisplay.class, d -> {   // the launch pad
+            d.setBlock(Material.IRON_TRAPDOOR.createBlockData());
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.6f, 0, -0.6f), new AxisAngle4f(), new Vector3f(1.2f, 1f, 1.2f), new AxisAngle4f()));
+        });
+        fx.tagged(base, "pad");
+        TextDisplay count = label(pad.clone().add(0, 2.6, 0), text("3", 0xFF5A5A), 0);
+        fx.tagged(count, "count");
+        final int COUNT = 60, FLY = 70;
+        float[] spin = {facing};
+        double[] height = {0}, speed = {0};
+        fx.every(COUNT + FLY, t -> {
             if (!creeper.isValid()) return;
-            if (t < 20) {
-                creeper.getWorld().spawnParticle(Particle.SMOKE, at, 4, 0.3, 0.05, 0.3, 0.02);
+            Location at = pad.clone().add(0, height[0], 0);
+            if (t < COUNT) {                                           // the countdown
+                if (t % 20 == 0) {
+                    int n = 3 - t / 20;
+                    count.text(text(String.valueOf(n), n == 1 ? 0x5CFF7A : n == 2 ? 0xFFD23A : 0xFF5A5A));
+                    fx.sound(pad, "block.note_block.bit", 1f, n == 1 ? 2f : 1.4f);
+                }
+                if (t % 4 == 0) world.spawnParticle(Particle.CLOUD, pad.clone().add(0, 0.1, 0), 2, 0.4, 0.02, 0.4, 0.02);
+                if (t > COUNT - 20 && t % 2 == 0) world.spawnParticle(Particle.SMALL_FLAME, pad.clone().add(0, 0.15, 0), 3, 0.15, 0, 0.15, 0.01);
+                helmet.teleport(at.clone().add(0, 1.45, 0));
                 return;
             }
-            Location up = at.clone().add(0, (t - 20) * (t - 20) * 0.008, 0);
+            if (t == COUNT) {                                          // LIFTOFF!
+                count.text(text("LIFTOFF!", 0x5CFF7A));
+                fx.sound(pad, "entity.firework_rocket.launch", 1f, 0.5f);
+                fx.sound(pad, "entity.generic.explode", 0.4f, 1.8f);
+                for (int i = 0; i < 24; i++) {                         // a ring of smoke rolling out across the ground
+                    double a = i * Math.PI * 2 / 24;
+                    world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, pad.clone().add(0, 0.2, 0), 0, Math.cos(a), 0.02, Math.sin(a), 0.12);
+                    world.spawnParticle(Particle.CLOUD, pad.clone().add(0, 0.2, 0), 0, Math.cos(a), 0, Math.sin(a), 0.3);
+                }
+                fx.later(30, count::remove);
+            }
+            int f = t - COUNT;
+            speed[0] = Math.min(0.9, speed[0] + 0.022);
+            height[0] += speed[0];
+            spin[0] += 4 + f * 0.3f;                                   // spinning up as it climbs
+            Location up = pad.clone().add(0, height[0], 0);
+            if (!up.clone().add(0, 2, 0).getBlock().isPassable()) {    // hit a ceiling: go off now
+                height[0] = Math.max(0, height[0] - speed[0]);
+                creeper.setMaxFuseTicks(1);
+                return;
+            }
+            up.setYaw(spin[0]);
             creeper.teleport(up);
-            creeper.getWorld().spawnParticle(Particle.FLAME, up, 4, 0.1, 0, 0.1, 0.02);
-            creeper.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, up, 1, 0.1, 0, 0.1, 0.01);
-            if (t == 20) fx.sound(at, "entity.firework_rocket.launch", 1f, 0.6f);
+            creeper.setRotation(spin[0], 0);
+            Location head = up.clone().add(0, 1.45, 0);
+            head.setYaw(spin[0]);
+            helmet.teleport(head);
+            // the engine: a roaring flame column and smoke pouring out below
+            world.spawnParticle(Particle.FLAME, up, 0, 0, -1, 0, 0.35);
+            world.spawnParticle(Particle.FLAME, up, 6, 0.12, 0.05, 0.12, 0.04);
+            world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, up.clone().add(0, -0.3, 0), 2, 0.15, 0.1, 0.15, 0.02);
+            world.spawnParticle(Particle.LAVA, up, 1, 0.05, 0, 0.05, 0);
+            if (f % 5 == 0) fx.sound(up, "entity.blaze.shoot", 0.5f, 0.6f);
+            if (f == FLY - 20) fx.sound(up, "entity.creeper.primed", 1.4f, 0.8f);   // ...hiss
+            if (f > FLY - 20) world.spawnParticle(Particle.DUST, head, 3, 0.3, 0.3, 0.3, 0, new Particle.DustOptions(Color.WHITE, 1.2f));
         }, () -> {
             Location boom = creeper.getLocation().add(0, 1, 0);
             helmet.remove();
             creeper.remove();
-            Firework fw = boom.getWorld().spawn(boom, Firework.class, f -> {
-                FireworkMeta meta = f.getFireworkMeta();
-                meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.CREEPER).withColor(Color.LIME, Color.GREEN).withFlicker().build());
-                f.setFireworkMeta(meta);
-            });
-            fx.tagged(fw, "firework");
-            fw.detonate();
+            base.remove();
+            count.remove();
+            fx.sound(boom, "block.glass.break", 1.2f, 0.9f);           // the helmet shatters
+            world.spawnParticle(Particle.BLOCK, boom.clone().add(0, 0.45, 0), 30, 0.3, 0.3, 0.3, 0.1, Material.GLASS.createBlockData());
+            for (int i = 0; i < 2; i++) {                              // the big creeper-face firework, twice for size
+                Firework fw = world.spawn(boom, Firework.class, fwk -> {
+                    FireworkMeta meta = fwk.getFireworkMeta();
+                    meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.CREEPER).withColor(Color.LIME, Color.GREEN)
+                            .withFade(Color.fromRGB(0xB8FFB0)).withFlicker().withTrail().build());
+                    fwk.setFireworkMeta(meta);
+                });
+                fx.tagged(fw, "firework");
+                fw.detonate();
+            }
+            world.spawnParticle(Particle.FIREWORK, boom, 60, 0.4, 0.4, 0.4, 0.25);
+            for (int i = 0; i < 14; i++) {                             // green sparks drifting down
+                Vector drift = new Vector(fx.rand(0.08), -0.02 - Math.random() * 0.03, fx.rand(0.08));
+                fx.driftFx(boom.clone().add(fx.rand(1.5), fx.rand(1), fx.rand(1.5)), "gadget/fx_sparkle", 0.3f, drift, 40);
+            }
         });
     }
 
@@ -811,29 +886,71 @@ final class MoreGadgets implements Listener {
         }, () -> line.forEach(d -> pop(d, "entity.chicken.ambient")));
     }
 
+    /**
+     * The jetpack: a pair of silver tanks on the player's back. It fires up with a burst of flame and smoke, then two
+     * flickering flames roar out of the nozzles (real flame models riding with the pack, plus jets of fire and smoke
+     * pouring down) while it lifts them, the pack rocking a little with the thrust. Near the end it sputters, the
+     * flames shrinking and coughing smoke, and it lets them float down gently. Sneak to drop.
+     */
     private void jetpack(Player player) {
         if (fx.parkour(player)) return;
+        World world = player.getWorld();
         ItemDisplay pack = fx.rider(player, "gadget/jetpack_3d");
-        fx.sound(player.getLocation(), "entity.firework_rocket.launch", 1f, 0.6f);
-        fx.every(60, t -> {
+        ItemDisplay[] flames = {fx.rider(player, "gadget/jet_flame"), fx.rider(player, "gadget/jet_flame")};
+        for (ItemDisplay flame : flames) flame.setBrightness(new Display.Brightness(15, 15));
+        Location feet = player.getLocation();
+        fx.sound(feet, "entity.firework_rocket.launch", 1f, 0.5f);
+        fx.sound(feet, "entity.blaze.shoot", 0.8f, 0.6f);
+        world.spawnParticle(Particle.FLAME, feet, 20, 0.3, 0.05, 0.3, 0.08);
+        world.spawnParticle(Particle.CLOUD, feet, 16, 0.4, 0.05, 0.4, 0.06);
+        final int FUEL = 70;
+        fx.every(FUEL, t -> {
             if (!player.isOnline()) return;
             float yaw = (float) Math.toRadians(player.getLocation().getYaw());
+            boolean sputter = t > FUEL - 14;
+            boolean thrust = !player.isSneaking() && !sputter;
+            float rock = (float) Math.sin(t * 0.5) * (thrust ? 0.06f : 0.02f);
             pack.setInterpolationDelay(0);
             pack.setInterpolationDuration(2);
-            pack.setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(0, -0.65f, -0.28f).scale(0.6f));
-            if (!player.isSneaking()) {
+            pack.setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(0, -0.65f, -0.28f).rotateZ(rock).scale(0.6f));
+            // the flames, hanging from each nozzle (model x = 5 and 11, bottom y = 1.5 at size 0.6: 0.11 out and 0.24
+            // below the pack's middle), flickering and shrinking as it sputters
+            float size = sputter ? Math.max(0.05f, 0.5f * (FUEL - t) / 14f) : thrust ? 0.5f + (float) Math.random() * 0.12f : 0.25f;
+            for (int i = 0; i < 2; i++) {
+                float side = i == 0 ? -0.11f : 0.11f;
+                flames[i].setInterpolationDelay(0);
+                flames[i].setInterpolationDuration(2);
+                flames[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(0, -0.65f, -0.28f).rotateZ(rock)
+                        .translate(side, -0.25f, 0).scale(size).translate(0, -0.5f, 0));
+            }
+            if (thrust) {
                 Vector v = player.getVelocity();
-                player.setVelocity(new Vector(v.getX() + player.getLocation().getDirection().getX() * 0.05, Math.min(0.55, v.getY() + 0.18),
-                        v.getZ() + player.getLocation().getDirection().getZ() * 0.05));
+                Vector look = player.getLocation().getDirection();
+                player.setVelocity(new Vector(v.getX() + look.getX() * 0.05, Math.min(0.55, v.getY() + 0.18), v.getZ() + look.getZ() * 0.05));
             }
             player.setFallDistance(0);
-            Location behind = player.getLocation().add(player.getLocation().getDirection().setY(0).normalize().multiply(-0.35)).add(0, 0.8, 0);
-            player.getWorld().spawnParticle(Particle.FLAME, behind, 3, 0.08, 0.05, 0.08, 0.02);
-            player.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, behind, 1, 0.05, 0.05, 0.05, 0.01);
-            if (t % 6 == 0) fx.sound(behind, "block.fire.ambient", 0.6f, 1.6f);
+            // jets of fire and smoke pouring down out of the nozzles
+            Vector back = player.getLocation().getDirection().setY(0);
+            if (back.lengthSquared() < 1e-4) back = new Vector(0, 0, 1);
+            back.normalize().multiply(-0.28);
+            Vector right = new Vector(-back.getZ(), 0, back.getX()).normalize().multiply(0.11);
+            for (int i = 0; i < 2; i++) {
+                Location nozzle = player.getLocation().add(back).add(right.clone().multiply(i == 0 ? 1 : -1)).add(0, 0.9, 0);
+                if (thrust) {
+                    world.spawnParticle(Particle.FLAME, nozzle.clone().add(0, -0.35, 0), 0, 0, -1, 0, 0.25);
+                    world.spawnParticle(Particle.SMALL_FLAME, nozzle.clone().add(0, -0.4, 0), 2, 0.04, 0.05, 0.04, 0.02);
+                    if (t % 2 == 0) world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, nozzle.clone().add(0, -0.7, 0), 0, 0, -1, 0, 0.06);
+                } else if (sputter && t % 3 == 0) {
+                    world.spawnParticle(Particle.LARGE_SMOKE, nozzle.clone().add(0, -0.3, 0), 2, 0.05, 0.05, 0.05, 0.02);
+                }
+            }
+            if (thrust && t % 5 == 0) fx.sound(player.getLocation(), "entity.blaze.burn", 0.5f, 0.7f);
+            if (sputter && t % 4 == 0) fx.sound(player.getLocation(), "block.fire.extinguish", 0.4f, 1.6f);
         }, () -> {
             pack.remove();
+            for (ItemDisplay flame : flames) flame.remove();
             player.setFallDistance(0);
+            if (player.isOnline()) player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOW_FALLING, 60, 0, false, false, false));
         });
     }
 

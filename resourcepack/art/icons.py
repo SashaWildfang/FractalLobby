@@ -2012,3 +2012,7 @@ GADGETS['explosive_bow'] = _boomerang_icon         # the Boomerang (it replaced 
 
 from pigs_fly_icon import crisp as _pigs_fly_icon
 GADGETS['pigs_fly'] = _pigs_fly_icon               # side-on pig with a feathered wing (Sasha picked #1)
+
+from astro_jet_icons import astro1 as _astro_icon, jet1 as _jet_icon
+GADGETS['creeper_astronaut'] = _astro_icon         # creeper in a bubble helmet (Sasha picked #1)
+GADGETS['jetpack'] = _jet_icon                     # silver twin tanks with flames (Sasha picked #1)

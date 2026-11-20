@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 55
+messages-version: 56
 
 theme:
   primary: "#B266FF"
@@ -951,10 +951,17 @@ mystery:
 collectibles:
   title: "<brand><bold>Collectibles</bold></brand>"
   join-item:
-    name: "<primary>Collectibles <muted>(Right-click)"
+    name: "<primary>Collectibles"
     lore:
       - "<muted>Hats, suits, gadgets, cloaks,"
-      - "<muted>emotes and gestures."
+      - "<muted>emotes and gestures: wear them,"
+      - "<muted>play with them, show them off."
+      - ""
+      - "<muted>Found: <white><found></white><dark_gray>/<total>"
+      - "<muted>Dust <white><font:fractal:lobby>\uF024</font></white>: <#FFD27F><dust>"
+      - "<muted>Mystery Boxes: <white><boxes>"
+      - ""
+      - "<accent><right-click></accent> <muted>to open"
   worn-name: "<name>"
   stash:
     name: "<#FFD27F>Your Collection"
@@ -1319,6 +1326,8 @@ collectibles:
       description: 'Turn into a swarm of bats for 3s.'
       how: "Right-click a block with an empty hand, or press F"
   cooldown: "<muted>Ready in <white><seconds>s"
+  # Shown in the action bar when a gadget's cooldown is over. <name>
+  gadget-ready: "<good><name> <muted>is ready!"
   equipped: "<prefix><secondary>Now wearing <name><secondary>."
   equipped-gadget: "<prefix><secondary>Equipped <name><secondary>. It's in your hotbar!"
   # Bits some gadgets say

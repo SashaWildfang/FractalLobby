@@ -573,10 +573,12 @@ def build(out):
           Box((4.6, 8, 6), (7.6, 8.6, 10), '#1a1b26', 'flat'), Box((8.4, 8, 6), (11.4, 8.6, 10), '#1a1b26', 'flat'),
           Box((5.6, 8.6, 7.5), (6.6, 8.8, 8.5), '#e03a3a', 'flat', glow=12), Box((9.4, 8.6, 7.5), (10.4, 8.8, 8.5), '#5b9dff', 'flat', glow=12)]
     write(out, G + 'dj_booth_3d', dj, scale=H)
-    write(out, G + 'jetpack_3d', [Box((3, 3, 6), (7, 13, 10), '#c8322e', 'solid'), Box((9, 3, 6), (13, 13, 10), '#c8322e', 'solid'),
+    write(out, G + 'jetpack_3d', [Box((3, 3, 6), (7, 13, 10), '#c9ccd8', 'solid'), Box((9, 3, 6), (13, 13, 10), '#c9ccd8', 'solid'),
                                     Box((7, 6, 7), (9, 11, 9), '#5a6078', 'metal'), Box((3.5, 1.5, 6.5), (6.5, 3, 9.5), '#5a6078', 'metal'),
-                                    Box((9.5, 1.5, 6.5), (12.5, 3, 9.5), '#5a6078', 'metal'), Box((3, 9, 5.8), (7, 10, 6.1), '#e8e8f0', 'flat'),
-                                    Box((9, 9, 5.8), (13, 10, 6.1), '#e8e8f0', 'flat')], scale=H)
+                                    Box((9.5, 1.5, 6.5), (12.5, 3, 9.5), '#5a6078', 'metal'), Box((2.6, 9, 5.6), (13.4, 10.2, 10.4), '#3a3d56', 'flat'),
+                                    Box((2.6, 5, 5.6), (13.4, 6.2, 10.4), '#3a3d56', 'flat')], scale=H)   # silver tanks, dark straps
+    import astro_jet_icons as _aj
+    _aj.write_flame(out)                                              # the jetpack's animated thruster flame
 
     # the disco ball (texture used by sprites.py's model): mirror tiles
     t = Image.new('RGBA', (16, 16))
