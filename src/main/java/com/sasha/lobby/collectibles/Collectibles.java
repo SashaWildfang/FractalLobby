@@ -867,6 +867,27 @@ public final class Collectibles implements Listener {
         return icon;
     }
 
+    /**
+     * What a player wears in the lobby (hats, suits, anything in the armour slots) stays on: it can't be clicked off,
+     * swapped, dragged or shift-clicked out. Players in creative mode (builders) are left alone.
+     */
+    @EventHandler(priority = EventPriority.LOW)
+    public void onArmourClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || player.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
+        if (event.getSlotType() == org.bukkit.event.inventory.InventoryType.SlotType.ARMOR) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onArmourDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || player.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
+        for (int raw : event.getRawSlots()) {
+            if (event.getView().getSlotType(raw) == org.bukkit.event.inventory.InventoryType.SlotType.ARMOR) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onClick(InventoryClickEvent event) {
         if (!(event.getView().getTopInventory().getHolder(false) instanceof Menu menu)) return;

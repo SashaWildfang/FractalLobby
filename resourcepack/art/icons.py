@@ -1601,8 +1601,6 @@ def gi_exploding_sheep():
     c.shape('rect', (2, 13, 3.5, 14.5), '#ffffff')
     for x in (8, 13, 19, 24):
         c.shape('rect', (x, 23, x + 2.4, 29), '#3a3a44')
-    for (x, y) in [(28, 5), (25, 2), (30, 10)]:
-        c.star(x, y, 2, '#ffe14d', inner=0.3)
     return c.done()
 
 
@@ -2002,3 +2000,6 @@ GADGETS['tetherball'] = _tetherball_icon           # wound round the pole (Sasha
 
 from pinata_icon import opt3 as _pinata_icon
 GADGETS['pinata'] = _pinata_icon                   # the donkey getting whacked by the bat (Sasha picked #3)
+
+from railgun_icon import opt3 as _railgun_icon
+GADGETS['railgun'] = _railgun_icon                 # mid-shot with the cyan beam (Sasha picked #3)

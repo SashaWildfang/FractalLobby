@@ -615,37 +615,97 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    /**
+     * Exploding Sheep: a sheep pops out and starts to swell up like a balloon, flashing through the rainbow faster and
+     * faster, wobbling, bleating higher and higher, with a fizzing fuse... then POP: its wool bursts off in a cloud of
+     * rainbow tufts that drift down, and what's left is one very bald, very confused sheep, who bleats and poofs away.
+     */
     private void explodingSheep(Player player) {
         Location at = fx.ground(player);
-        Sheep sheep = player.getWorld().spawn(at, Sheep.class, s -> {
+        World world = at.getWorld();
+        Sheep sheep = world.spawn(at, Sheep.class, s -> {
             s.setInvulnerable(true);
             s.setAware(false);
+            s.setPersistent(false);
+            s.setRotation(player.getLocation().getYaw() + 180, 0);   // facing the player
         });
         fx.tagged(sheep, "sheep");
-        DyeColor[] colours = {DyeColor.RED, DyeColor.ORANGE, DyeColor.YELLOW, DyeColor.LIME, DyeColor.LIGHT_BLUE, DyeColor.PURPLE, DyeColor.MAGENTA};
-        fx.every(60, t -> {
+        org.bukkit.attribute.AttributeInstance size = sheep.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+        DyeColor[] colours = {DyeColor.RED, DyeColor.ORANGE, DyeColor.YELLOW, DyeColor.LIME, DyeColor.LIGHT_BLUE, DyeColor.BLUE,
+                DyeColor.PURPLE, DyeColor.MAGENTA, DyeColor.PINK};
+        float facing = player.getLocation().getYaw() + 180;
+        fx.sound(at, "entity.sheep.ambient", 1f, 1f);
+        final int SWELL = 80;
+        fx.every(SWELL, t -> {
             if (!sheep.isValid()) return;
-            if (t % Math.max(1, 8 - t / 10) == 0) {
-                sheep.setColor(colours[(t / 2) % colours.length]);
-                fx.sound(sheep.getLocation(), "block.note_block.hat", 0.7f, 0.8f + t * 0.02f);
-            }
+            double k = t / (double) SWELL;
+            if (size != null) size.setBaseValue(1 + 1.6 * k * k);      // swelling up, faster at the end
+            int every = Math.max(1, 8 - t / 10);
+            if (t % every == 0) sheep.setColor(colours[(t / every) % colours.length]);
+            sheep.setRotation(facing + (float) Math.sin(t * (0.3 + k)) * 12 * (float) k, 0);   // wobbling
+            if (t % 12 == 0) fx.sound(sheep.getLocation(), "entity.sheep.ambient", 0.8f, (float) (0.9 + k * 1.1));
+            if (t % 4 == 0) fx.sound(sheep.getLocation(), "block.note_block.hat", 0.4f, (float) (0.8 + k * 1.2));
+            if (t == SWELL - 30) fx.sound(sheep.getLocation(), "entity.creeper.primed", 0.8f, 1.6f);   // the fuse
+            Location top = sheep.getLocation().add(0, 1.0 + 1.2 * k, 0);
+            if (t > SWELL - 30) world.spawnParticle(Particle.SMALL_FLAME, top, 1, 0.05, 0.05, 0.05, 0.01);
+            if (t % 3 == 0) world.spawnParticle(Particle.DUST, sheep.getLocation().add(0, 0.8 + k, 0), 2, 0.4 + k * 0.6, 0.3 + k * 0.4,
+                    0.4 + k * 0.6, 0, new Particle.DustOptions(colours[ThreadLocalRandom.current().nextInt(colours.length)].getColor(), 1.2f));
         }, () -> {
             if (!sheep.isValid()) return;
-            Location boom = sheep.getLocation().add(0, 0.6, 0);
-            sheep.remove();
-            boom.getWorld().spawnParticle(Particle.EXPLOSION, boom, 1);
-            fx.confetti(boom, 60, 0.9);
-            fx.sound(boom, "entity.generic.explode", 0.9f, 1.3f);
-            for (int i = 0; i < 6; i++) {     // little lambs scatter
-                Sheep lamb = boom.getWorld().spawn(boom, Sheep.class, l -> {
-                    l.setBaby();
-                    l.setInvulnerable(true);
-                    l.setColor(colours[ThreadLocalRandom.current().nextInt(colours.length)]);
-                });
-                fx.tagged(lamb, "lamb");
-                lamb.setVelocity(new Vector(fx.rand(0.5), 0.45, fx.rand(0.5)));
-                fx.later(60, () -> pop(lamb, "entity.sheep.ambient"));
+            Location boom = sheep.getLocation().add(0, 1.3, 0);
+            // POP!
+            fx.sound(boom, "fractal:gadget.party_popper", 1f, 0.8f);
+            fx.sound(boom, "entity.generic.explode", 0.6f, 1.6f);
+            fx.sound(boom, "entity.sheep.shear", 1f, 0.8f);
+            world.spawnParticle(Particle.EXPLOSION, boom, 1);
+            world.spawnParticle(Particle.CLOUD, boom, 30, 0.6, 0.5, 0.6, 0.08);
+            fx.confetti(boom, 70, 1);
+            for (Player near : world.getPlayers()) {                   // a puff of air
+                if (fx.parkour(near) || near.getLocation().distanceSquared(boom) > 16) continue;
+                Vector away = near.getLocation().toVector().subtract(boom.toVector()).setY(0);
+                if (away.lengthSquared() < 1e-4) away = new Vector(0.1, 0, 0);
+                near.setVelocity(near.getVelocity().add(away.normalize().multiply(0.45).setY(0.3)));
             }
+            // the wool: rainbow tufts that burst off and drift down like snow, then melt away
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            for (int i = 0; i < 26; i++) {
+                Material wool = Material.valueOf(colours[i % colours.length].name() + "_WOOL");
+                Vector vel = new Vector(r.nextDouble(-0.3, 0.3), r.nextDouble(0.15, 0.45), r.nextDouble(-0.3, 0.3));
+                float tuft = (float) r.nextDouble(0.18, 0.32);
+                BlockDisplay piece = world.spawn(boom, BlockDisplay.class, d -> {
+                    d.setBlock(wool.createBlockData());
+                    d.setPersistent(false);
+                    d.setTeleportDuration(1);
+                    d.setTransformation(new Transformation(new Vector3f(-tuft / 2), new AxisAngle4f(), new Vector3f(tuft), new AxisAngle4f()));
+                });
+                fx.tagged(piece, "wool");
+                Location[] where = {boom.clone()};
+                float spin = (float) r.nextDouble(-20, 20);
+                fx.every(70, t -> {
+                    if (!piece.isValid()) return;
+                    vel.multiply(0.9).setY(Math.max(-0.06, vel.getY() - 0.025));   // floaty: wool drifts
+                    Location next = where[0].clone().add(vel);
+                    if (next.getBlock().isPassable()) where[0] = next;
+                    else vel.multiply(0);
+                    where[0].setYaw(t * spin);
+                    piece.teleport(where[0]);
+                    if (t == 55) {
+                        piece.setInterpolationDelay(0);
+                        piece.setInterpolationDuration(14);
+                        piece.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+                    }
+                }, piece::remove);
+            }
+            // and the sheep: back to size, bald as anything, looking about, embarrassed
+            if (size != null) size.setBaseValue(1);
+            sheep.setSheared(true);
+            sheep.setColor(DyeColor.WHITE);
+            fx.every(50, t -> {
+                if (!sheep.isValid()) return;
+                if (t % 10 == 0) sheep.setRotation(facing + (t % 20 == 0 ? 35 : -35), 0);
+                if (t == 12) fx.sound(sheep.getLocation(), "entity.sheep.ambient", 1f, 0.6f);
+                if (t == 30) world.spawnParticle(Particle.FALLING_WATER, sheep.getLocation().add(0, 1.1, 0), 4, 0.2, 0.05, 0.2, 0);
+            }, () -> pop(sheep, "entity.sheep.ambient"));
         });
     }
 
@@ -705,22 +765,125 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    /**
+     * The railgun: a quick charge-up (a rising whine, sparks of light pulled into the muzzle), then it fires a solid
+     * beam of light, a white-hot core in a cyan glow, with energy rings rippling out along it and a spiral of light
+     * round it. Where it hits: a flash, a shockwave ring on the surface and a shower of sparks. It kicks back a bit too.
+     */
     private void railgun(Player player) {
-        Location eye = player.getEyeLocation();
-        Vector look = eye.getDirection();
-        RayTraceResult hit = player.getWorld().rayTraceBlocks(eye, look, 40);
-        double length = hit == null ? 40 : hit.getHitPosition().distance(eye.toVector());
-        fx.sound(eye, "block.beacon.deactivate", 1f, 2f);
-        fx.sound(eye, "entity.warden.sonic_boom", 0.4f, 1.8f);
-        for (double d = 0.8; d < length; d += 0.3) {
-            Location at = eye.clone().add(look.clone().multiply(d));
-            player.getWorld().spawnParticle(Particle.DUST, at, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(0x9FE8FF), 0.8f));
-            if (((int) (d * 10)) % 6 == 0) player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, at, 1, 0.05, 0.05, 0.05, 0.02);
-        }
-        Location end = eye.clone().add(look.clone().multiply(length));
-        player.getWorld().spawnParticle(Particle.FLASH, end, 1, 0, 0, 0, 0, Color.fromRGB(0x9FE8FF));
-        player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, end, 30, 0.3, 0.3, 0.3, 0.3);
-        fx.sound(end, "entity.lightning_bolt.impact", 0.5f, 1.8f);
+        World world = player.getWorld();
+        Color cyan = Color.fromRGB(0x3FE0FF);
+        // ---- the charge (about half a second)
+        fx.every(10, t -> {
+            if (!player.isOnline()) return;
+            Location eye = player.getEyeLocation();
+            Vector look = eye.getDirection();
+            Location muzzle = eye.clone().add(look.clone().multiply(0.9)).add(0, -0.15, 0);
+            fx.sound(muzzle, "block.note_block.bit", 0.5f, (float) (0.6 + t * 0.14));
+            for (int i = 0; i < 3; i++) {                              // light pulled in to the muzzle
+                Vector off = new Vector(fx.rand(1), fx.rand(1), fx.rand(1)).normalize().multiply(0.8);
+                world.spawnParticle(Particle.END_ROD, muzzle.clone().add(off), 0, -off.getX(), -off.getY(), -off.getZ(), 0.08);
+            }
+            world.spawnParticle(Particle.DUST, muzzle, 2, 0.05, 0.05, 0.05, 0, new Particle.DustOptions(cyan, 0.6f + t * 0.08f));
+        }, () -> {
+            if (!player.isOnline()) return;
+            Location eye = player.getEyeLocation();
+            Vector look = eye.getDirection();
+            Location muzzle = eye.clone().add(look.clone().multiply(0.9)).add(0, -0.15, 0);
+            RayTraceResult hit = world.rayTraceBlocks(muzzle, look, 45);
+            double length = hit == null ? 45 : hit.getHitPosition().distance(muzzle.toVector());
+            Location end = muzzle.clone().add(look.clone().multiply(length));
+            // ---- BOOM
+            fx.sound(muzzle, "entity.warden.sonic_boom", 0.5f, 1.7f);
+            fx.sound(muzzle, "item.trident.thunder", 0.4f, 2f);
+            fx.sound(muzzle, "block.beacon.deactivate", 1f, 2f);
+            player.setVelocity(player.getVelocity().add(look.clone().multiply(-0.35)));   // the kick
+            // the beam: a white core and a cyan glow, stretched from the muzzle to the hit, then thinning away
+            Location from = muzzle.clone();
+            from.setYaw(0);
+            from.setPitch(0);
+            org.joml.Quaternionf along = new org.joml.Quaternionf().rotationTo(0, 0, 1, (float) look.getX(), (float) look.getY(), (float) look.getZ());
+            BlockDisplay[] beam = new BlockDisplay[2];
+            float[] width = {0.07f, 0.26f};
+            Material[] stuff = {Material.WHITE_CONCRETE, Material.LIGHT_BLUE_STAINED_GLASS};
+            for (int i = 0; i < 2; i++) {
+                float w = width[i];
+                Material m = stuff[i];
+                beam[i] = world.spawn(from, BlockDisplay.class, d -> {
+                    d.setBlock(m.createBlockData());
+                    d.setBrightness(new Display.Brightness(15, 15));
+                    d.setPersistent(false);
+                    d.setTransformationMatrix(new Matrix4f().rotate(along).translate(-w / 2, -w / 2, 0).scale(w, w, (float) length));
+                });
+                fx.tagged(beam[i], "beam");
+            }
+            beam[0].setGlowing(true);
+            beam[0].setGlowColorOverride(cyan);
+            // energy rings rippling out along it
+            List<ItemDisplay> rings = new ArrayList<>();
+            for (double d = 1.5; d < length; d += 3) {
+                Location on = muzzle.clone().add(look.clone().multiply(d));
+                on.setYaw(0);
+                on.setPitch(0);
+                ItemDisplay ring = world.spawn(on, ItemDisplay.class, e -> {
+                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/fx_circle"));
+                    e.setBrightness(new Display.Brightness(15, 15));
+                    e.setPersistent(false);
+                    e.setTransformationMatrix(new Matrix4f().rotate(along).scale(0.3f));
+                });
+                fx.tagged(ring, "beam");
+                rings.add(ring);
+            }
+            // a spiral of light round the beam
+            Vector up = Math.abs(look.getY()) > 0.95 ? new Vector(1, 0, 0) : new Vector(0, 1, 0);
+            Vector sideA = look.clone().crossProduct(up).normalize(), sideB = look.clone().crossProduct(sideA).normalize();
+            for (double d = 0.5; d < length; d += 0.25) {
+                double a = d * 2.2;
+                Location on = muzzle.clone().add(look.clone().multiply(d)).add(sideA.clone().multiply(Math.cos(a) * 0.3)).add(sideB.clone().multiply(Math.sin(a) * 0.3));
+                world.spawnParticle(Particle.DUST, on, 1, 0, 0, 0, 0, new Particle.DustOptions(cyan, 0.7f));
+            }
+            // the hit
+            world.spawnParticle(Particle.FLASH, end, 1, 0, 0, 0, 0, Color.fromRGB(0x9FE8FF));
+            world.spawnParticle(Particle.ELECTRIC_SPARK, end, 40, 0.3, 0.3, 0.3, 0.4);
+            world.spawnParticle(Particle.END_ROD, end, 20, 0.1, 0.1, 0.1, 0.15);
+            fx.sound(end, "entity.lightning_bolt.impact", 0.6f, 1.8f);
+            if (hit != null && hit.getHitBlockFace() != null) {        // a shockwave ring flat on what it hit
+                Vector n = hit.getHitBlockFace().getDirection();
+                Location on = end.clone().add(n.clone().multiply(0.03));
+                on.setYaw(0);
+                on.setPitch(0);
+                org.joml.Quaternionf flat = new org.joml.Quaternionf().rotationTo(0, 0, 1, (float) n.getX(), (float) n.getY(), (float) n.getZ());
+                ItemDisplay wave = world.spawn(on, ItemDisplay.class, e -> {
+                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/fx_circle"));
+                    e.setBrightness(new Display.Brightness(15, 15));
+                    e.setPersistent(false);
+                    e.setTransformationMatrix(new Matrix4f().rotate(flat).scale(0.2f));
+                });
+                fx.tagged(wave, "beam");
+                fx.later(1, () -> {
+                    wave.setInterpolationDelay(0);
+                    wave.setInterpolationDuration(10);
+                    wave.setTransformationMatrix(new Matrix4f().rotate(flat).scale(2.4f));
+                });
+                fx.later(12, wave::remove);
+            }
+            fx.later(1, () -> {                                        // the rings ripple outwards, the beam thins away
+                for (ItemDisplay ring : rings) {
+                    ring.setInterpolationDelay(0);
+                    ring.setInterpolationDuration(8);
+                    ring.setTransformationMatrix(new Matrix4f().rotate(along).scale(1.3f));
+                }
+                for (int i = 0; i < 2; i++) {
+                    beam[i].setInterpolationDelay(2);
+                    beam[i].setInterpolationDuration(8);
+                    beam[i].setTransformationMatrix(new Matrix4f().rotate(along).scale(0.001f, 0.001f, (float) length));
+                }
+            });
+            fx.later(11, () -> {
+                for (ItemDisplay ring : rings) ring.remove();
+                for (BlockDisplay piece : beam) piece.remove();
+            });
+        });
     }
 
     /**
@@ -1157,14 +1320,14 @@ final class MoreGadgets implements Listener {
             d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
         });
         fx.tagged(arc, "rainbow");
-        float cloudSize = 2.2f;                                        // the sprite's cloud sits in its lower part
+        float cloudSize = 2.8f;                                        // the sprite's cloud sits in its lower part; big enough to hide the arc's feet
         ItemDisplay[] clouds = new ItemDisplay[2];
         for (int i = 0; i < 2; i++) {
             int side = i == 0 ? -1 : 1;
             Location at = base.clone().add(right.clone().multiply(side * 2.35)).add(0, cloudSize / 2 - 0.05, 0);
             clouds[i] = world.spawn(at, ItemDisplay.class, d -> {
                 d.setItemStack(fx.modelled(Material.WHITE_WOOL, "gadget/rainbow_cloud"));
-                d.setBillboard(Display.Billboard.VERTICAL);
+                d.setRotation(yaw, 0);                                 // set in the rainbow's own plane: it doesn't turn to follow anyone
                 d.setBrightness(new Display.Brightness(15, 15));
                 d.setPersistent(false);
                 d.setTransformation(new Transformation(new Vector3f(0, -cloudSize / 2, 0), new AxisAngle4f(), new Vector3f(0.01f), new AxisAngle4f()));
