@@ -33,8 +33,9 @@ import java.util.UUID;
 
 /**
  * The friends menu (from the profile): every friend as a head, online ones first with the server they're on.
- * Left-click an online friend to join them; Shift + right-click removes a friend. Along the bottom: Back, Add a
- * Friend, Friend Requests and Ignored Players. Friends come from Core on the proxy.
+ * Left-click an online friend to join them; Shift + right-click asks "Remove them?" first. Along the bottom: Back,
+ * Add a Friend, Friend Requests and Ignored Players. Friends come from Core on the proxy. Offline friends' heads show
+ * their skin too (from {@link Skins}).
  */
 public final class FriendsMenu implements Listener {
 
@@ -113,7 +114,8 @@ public final class FriendsMenu implements Listener {
             ItemStack head = ItemStack.of(Material.PLAYER_HEAD);
             Player online = plugin.getServer().getPlayer(entry.getKey());
             head.editMeta(SkullMeta.class, meta -> {
-                meta.setPlayerProfile(online != null ? online.getPlayerProfile() : Bukkit.createProfile(entry.getKey(), friend.name()));
+                meta.setPlayerProfile(online != null ? online.getPlayerProfile()
+                        : plugin.skins().profile(entry.getKey(), friend.name(), () -> refresh(player)));
                 meta.displayName(messages.item(key + ".name", tags));
                 meta.lore(messages.lore(key + ".lore", tags));
             });
@@ -169,12 +171,18 @@ public final class FriendsMenu implements Listener {
                 if (friend == null || state == null) return;
                 CoreLink.Friend data = state.friends().get(friend);
                 if (data == null) return;
-                if (click == ClickType.SHIFT_RIGHT) {
-                    plugin.coreLink().unfriend(player, friend);
-                    plugin.messages().send(player, "friends.menu.removed", Messages.name("player", data.name()));
+                if (click == ClickType.SHIFT_RIGHT) {               // "Remove them?" first
                     click(player, 0);
-                    CoreLink.State now = plugin.coreLink().state(player);
-                    if (now != null) draw(player, menu, now);
+                    ItemStack shown = ItemStack.of(Material.PLAYER_HEAD);
+                    Player online = plugin.getServer().getPlayer(friend);
+                    shown.editMeta(SkullMeta.class, meta -> meta.setPlayerProfile(online != null ? online.getPlayerProfile()
+                            : plugin.skins().profile(friend, data.name(), () -> { })));
+                    ConfirmMenu.describe(shown, plugin.messages(), "friends.menu.remove-confirm", Messages.name("player", data.name()));
+                    plugin.confirm().open(player, shown, () -> {
+                        plugin.coreLink().unfriend(player, friend);
+                        plugin.messages().send(player, "friends.menu.removed", Messages.name("player", data.name()));
+                        open(player);
+                    }, () -> open(player));
                 } else if (data.online()) {
                     player.closeInventory();
                     click(player, 1);

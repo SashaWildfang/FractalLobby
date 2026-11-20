@@ -83,6 +83,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private com.sasha.lobby.items.ConfirmMenu confirm;
     private com.sasha.lobby.collectibles.Collectibles collectibles;
     private com.sasha.lobby.items.FriendsMenu friendsMenu;
+    private com.sasha.lobby.items.Skins skins;
     private ParkourLobby parkour;
     private PlayerFormat playerFormat;
     private boolean placeholderApi;
@@ -128,6 +129,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         holograms = new com.sasha.lobby.hologram.Holograms(this);
         npcs = new com.sasha.lobby.npc.Npcs(this);
         profile = new Profile(this);
+        skins = new com.sasha.lobby.items.Skins(this);
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
         confirm = new com.sasha.lobby.items.ConfirmMenu(this);
         mystery = new com.sasha.lobby.mystery.MysteryBoxes(this);
@@ -135,7 +137,7 @@ public final class Lobby extends JavaPlugin implements Listener {
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, confirm, mystery, collectibles, collectibles.effectsListener(), new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, mystery, collectibles, collectibles.effectsListener(), new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -165,6 +167,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (display != null) display.stop();
         if (proxyCounts != null) proxyCounts.stop();
         if (coreLink != null) coreLink.stop();
+        if (skins != null) skins.save();
         if (voidRescue != null) voidRescue.stopAll();
         if (flyingMinecarts != null) flyingMinecarts.stop();
         if (parkour != null) parkour.shutdown();
@@ -239,6 +242,11 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public com.sasha.lobby.mystery.MysteryBoxes mystery() {
         return mystery;
+    }
+
+    /** Everyone's skins, for heads of players who are offline. */
+    public com.sasha.lobby.items.Skins skins() {
+        return skins;
     }
 
     public com.sasha.lobby.items.FriendsMenu friendsMenu() {
