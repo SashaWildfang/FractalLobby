@@ -141,7 +141,7 @@ def grid(rows):  # 7 across, one row in from each side, above the bottom row
     return [(1 + r) * 9 + 1 + c for r in range(rows - 2) for c in range(7)]
 for rows in range(3, 7):
     bottom = (rows - 1) * 9
-    add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5]))
+    add(0xF180 + rows, f'chatcolor_{rows}', background(rows, [], "CHAT COLOR", cells=grid(rows) + [bottom + 3, bottom + 5, bottom + 8]))
     add(0xF190 + rows, f'trails_{rows}', background(rows, [], "TRAILS", cells=grid(rows) + [bottom + 3, bottom + 5]))
 # the Mystery Vault: your stash on top, your boxes (4 rows of 7), and pages / craft / open all below
 _grid = [r * 9 + c for r in (1, 2, 3, 4) for c in range(1, 8)]

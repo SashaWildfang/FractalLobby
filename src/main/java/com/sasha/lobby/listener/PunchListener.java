@@ -42,8 +42,12 @@ public final class PunchListener implements Listener {
         LobbyConfig.Punch config = plugin.lobbyConfig().punch();
         if (!config.enabled() || !(event.getAttacked() instanceof Player target)) return;
         Player puncher = event.getPlayer();
-        if (!puncher.hasPermission(PERMISSION) || target.hasPermission(IMMUNE)) return;
+        if (!puncher.hasPermission(PERMISSION)) return;
         if (config.staffOnly() && !plugin.settings().isStaff(target)) return;
+        if (immune(target)) {
+            plugin.messages().actionBar(puncher, "punch.immune", Messages.name("target", target.getName()));
+            return;
+        }
         if (target.getVehicle() != null || puncher.getVehicle() != null) return;
         event.setCancelled(true); // no damage, no knockback of its own: the launch below is the punch
 
@@ -82,6 +86,15 @@ public final class PunchListener implements Listener {
             messages.send(puncher, "punch.you-punched", names);
             messages.send(target, "punch.punched", names);
         }
+    }
+
+    /**
+     * Only an explicit lobby.punch.immune protects someone: staff with a wildcard (* or lobby.*) can still be punched,
+     * which is the whole point of punching staff.
+     */
+    private boolean immune(Player target) {
+        if (plugin.luckPerms()) return com.sasha.lobby.hook.LuckPermsHook.hasExactly(target, IMMUNE);
+        return target.isPermissionSet(IMMUNE) && target.hasPermission(IMMUNE);
     }
 
     @EventHandler

@@ -25,10 +25,26 @@ def mix(a, b, t):
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def colour(key, x, y):
-    """Like the music note: deep purple at the bottom left shading to pink at the top right."""
+# The chest is orange with purple metal (the music note's purple-pink, swapped round for some more colour).
+ORANGE_BOTTOM, ORANGE_TOP = (214, 96, 24), (255, 184, 72)
+METAL_TOP, METAL_BOTTOM = (206, 160, 255), (124, 66, 206)
+SCHEME = {"chest": "orange"}
+
+
+def colour(key, x, y, scheme="purple"):
+    """Like the music note: dark at the bottom left shading lighter to the top right."""
     if key == "O":
         return INK
+    if scheme == "orange":
+        if key in ("G", "Y", "g"):
+            metal = mix(METAL_TOP, METAL_BOTTOM, y / 15)
+            return mix(metal, (255, 255, 255), 0.35) if key == "Y" else mix(metal, (70, 30, 130), 0.3) if key == "g" else metal
+        base = mix(ORANGE_BOTTOM, ORANGE_TOP, ((15 - y) + x) / 30 * 1.2 - 0.05)
+        if key == "H":
+            return mix(base, (255, 232, 190), 0.55)
+        if key == "s":
+            return mix(base, (140, 52, 16), 0.4)
+        return base
     if key == "G":
         return mix(GOLD_TOP, GOLD_BOTTOM, y / 15)
     if key == "Y":
@@ -101,13 +117,13 @@ OPTIONS = {
 }
 
 
-def draw(rows):
+def draw(rows, scheme="purple"):
     assert len(rows) == 16 and all(len(r) == 16 for r in rows), [len(r) for r in rows]
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     for y, row in enumerate(rows):
         for x, key in enumerate(row):
             if key != ".":
-                img.putpixel((x, y), colour(key, x, y) + (255,))
+                img.putpixel((x, y), colour(key, x, y, scheme) + (255,))
     box = img.getbbox()
     out = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     out.paste(img, ((16 - (box[2] - box[0])) // 2 - box[0], (16 - (box[3] - box[1])) // 2 - box[1]))
@@ -125,6 +141,7 @@ if __name__ == "__main__":
         sheet.save(sys.argv[2])
         print("the music note for reference, then " + ", ".join(OPTIONS))
     else:
-        rows = next(v for k, v in OPTIONS.items() if k.startswith(sys.argv[2]))
-        draw(rows).save(Path(sys.argv[1]) / "assets/fractal/textures/item/menu/collectibles.png")
+        name, rows = next((k, v) for k, v in OPTIONS.items() if k.startswith(sys.argv[2]))
+        scheme = "orange" if "chest" in name else "purple"
+        draw(rows, scheme).save(Path(sys.argv[1]) / "assets/fractal/textures/item/menu/collectibles.png")
         print("Wrote fractal:menu/collectibles")

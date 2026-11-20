@@ -46,6 +46,17 @@ for f in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'):
 os.makedirs(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book', exist_ok=True)
 for f in ('button', 'button_highlighted'):
     Image.new('RGBA', (20, 18), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book/{f}.png')
+# and the book itself is see-through: if someone clicks where the hidden button is, the book that flashes open (the
+# plugin closes it) shows nothing
+for f, size in {'tab': (35, 27), 'tab_selected': (35, 27), 'filter_enabled': (26, 16), 'filter_disabled': (26, 16),
+                'filter_enabled_highlighted': (26, 16), 'filter_disabled_highlighted': (26, 16), 'page_forward': (12, 17),
+                'page_forward_highlighted': (12, 17), 'page_backward': (12, 17), 'page_backward_highlighted': (12, 17),
+                'slot_craftable': (25, 25), 'slot_uncraftable': (25, 25), 'slot_many_craftable': (25, 25),
+                'slot_many_uncraftable': (25, 25), 'overlay_recipe': (24, 24), 'crafting_overlay': (24, 24),
+                'crafting_overlay_highlighted': (24, 24), 'crafting_overlay_disabled': (24, 24),
+                'crafting_overlay_disabled_highlighted': (24, 24)}.items():
+    Image.new('RGBA', size, (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/sprites/recipe_book/{f}.png')
+Image.new('RGBA', (256, 256), (0, 0, 0, 0)).save(f'{OUT}/assets/minecraft/textures/gui/recipe_book.png')
 gui = f'{OUT}/assets/fractal/textures/gui'
 for f in os.listdir(gui): slate(Image.open(f'{gui}/{f}').convert('RGBA')).save(f'{gui}/{f}')
 # no "Inventory" label over the player's items in menus

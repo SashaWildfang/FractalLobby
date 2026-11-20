@@ -746,7 +746,7 @@ public final class Collectibles implements Listener {
                 ? style.icon(button(Material.ARROW, null, "collectibles.next", Messages.arg("page", page + 2)), "next")
                 : style.icon(button(Material.GRAY_DYE, null, "collectibles.no-next", TagResolver.empty()), "next-off"));
         if (count == 0) {
-            menu.inventory.setItem(22, button(Material.GRAY_DYE, "mystery/locked", "collectibles.empty", TagResolver.empty()));
+            menu.inventory.setItem(22, plugin.menuStyle().icon(button(Material.BARRIER, null, "collectibles.empty", TagResolver.empty()), "none"));
         }
         menu.inventory.setItem(BACK, style.icon(button(Material.ARROW, null, "collectibles.back", TagResolver.empty()), "back"));
         if (!category.action()) {

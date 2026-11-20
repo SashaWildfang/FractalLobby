@@ -275,6 +275,31 @@ public final class MysteryBoxes implements Listener {
         return picked;
     }
 
+    /**
+     * The chance (whole percent) of each rarity a box can actually give: the box's odds shared out among only the
+     * rarities its prizes have, so they add up to exactly 100 (rounded so the leftovers go to the biggest fractions).
+     * This is what opening it does (see roll).
+     */
+    Map<Reward.Rarity, Integer> chances(MysteryData.Box box) {
+        Map<Reward.Rarity, Double> odds = odds(box.stars());
+        Map<Reward.Rarity, Double> present = new EnumMap<>(Reward.Rarity.class);
+        for (Reward reward : contents(box)) present.put(reward.rarity(), odds.getOrDefault(reward.rarity(), 1.0));
+        Map<Reward.Rarity, Integer> out = new EnumMap<>(Reward.Rarity.class);
+        double total = present.values().stream().mapToDouble(Double::doubleValue).sum();
+        if (total <= 0) return out;
+        int given = 0;
+        List<Map.Entry<Reward.Rarity, Double>> remainders = new ArrayList<>();
+        for (Map.Entry<Reward.Rarity, Double> entry : present.entrySet()) {
+            double exact = entry.getValue() / total * 100;
+            out.put(entry.getKey(), (int) Math.floor(exact));
+            given += (int) Math.floor(exact);
+            remainders.add(Map.entry(entry.getKey(), exact - Math.floor(exact)));
+        }
+        remainders.sort(Map.Entry.<Reward.Rarity, Double>comparingByValue().reversed());
+        for (int i = 0; given < 100 && i < remainders.size(); i++, given++) out.merge(remainders.get(i).getKey(), 1, Integer::sum);
+        return out;
+    }
+
     /** Opens a box: one of its prizes, each rarity as likely as the box's odds say. */
     Reward roll(MysteryData.Box box) {
         List<Reward> inside = contents(box);
@@ -512,8 +537,11 @@ public final class MysteryBoxes implements Listener {
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-next", TagResolver.empty()), "next-off"));
         menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
                 TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
-        String openAll = !multi ? "mystery.menu.open-all-locked" : all.isEmpty() ? "mystery.menu.open-all-none" : "mystery.menu.open-all";
-        menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/open_all" : "menu/locked",
+        // in colour only with two or more boxes to open; greyed out with one or none, a padlock without the perk
+        String openAll = !multi ? "mystery.menu.open-all-locked" : all.isEmpty() ? "mystery.menu.open-all-none"
+                : all.size() == 1 ? "mystery.menu.open-all-one" : "mystery.menu.open-all";
+        String openAllIcon = !multi ? "menu/locked" : all.size() > 1 ? "mystery/open_all" : "mystery/open_all_off";
+        menu.inventory.setItem(OPEN_ALL, item(multi && all.size() > 1 ? Material.CHEST : Material.GRAY_DYE, openAllIcon,
                 openAll, TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
         player.openInventory(menu.inventory);
     }
@@ -524,11 +552,12 @@ public final class MysteryBoxes implements Listener {
         TagResolver tags = TagResolver.resolver(starsTag(box.stars()), Messages.arg("count", sameStars));
         List<Component> lore = new ArrayList<>(messages.lore("mystery.menu.box.lore", tags));
         Reward.Rarity last = null;
+        Map<Reward.Rarity, Integer> chances = chances(box);
         for (Reward reward : contents(box)) {
             if (reward.rarity() != last) {
                 last = reward.rarity();
                 lore.add(messages.item("mystery.menu.box.rarity", Placeholder.parsed("rarity", rarityName(last)),
-                        Messages.arg("chance", trim(odds(box.stars()).getOrDefault(last, 0.0)))));
+                        Messages.arg("chance", chances.getOrDefault(last, 0))));
             }
             lore.add(messages.item("mystery.menu.box.prize", Placeholder.parsed("reward", rarityColourTag(reward.rarity()) + reward.name(plugin))));
         }
@@ -645,7 +674,7 @@ public final class MysteryBoxes implements Listener {
                     }
                     case OPEN_ALL -> {
                         List<MysteryData.Box> every = data.get(player.getUniqueId()).boxList();
-                        if (every.isEmpty() || !player.hasPermission(MULTI)) {
+                        if (every.size() < 2 || !player.hasPermission(MULTI)) {
                             if (!player.hasPermission(MULTI)) openMany(player, menu.spot, every); // says it's a donor perk
                             return;
                         }

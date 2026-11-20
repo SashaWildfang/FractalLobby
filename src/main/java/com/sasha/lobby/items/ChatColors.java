@@ -158,11 +158,28 @@ public final class ChatColors implements Listener {
 
     // ---------------------------------------------------------------- menu
 
+    /** What the menu shows (the Sort button). Remembered per player while online. */
+    enum Sort {
+        ALL, UNLOCKED, LOCKED;
+
+        Sort step(int by) {
+            Sort[] all = values();
+            return all[Math.floorMod(ordinal() + by, all.length)];
+        }
+
+        String key() {
+            return name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    private final Map<java.util.UUID, Sort> sorts = new java.util.concurrent.ConcurrentHashMap<>();
+
     private static final class Menu implements InventoryHolder {
         private Inventory inventory;
         private final Map<Integer, String> slots = new HashMap<>();
         private int resetSlot = -1;
         private int backSlot = -1;
+        private int sortSlot = -1;
 
         @Override
         public Inventory getInventory() {
@@ -172,9 +189,16 @@ public final class ChatColors implements Listener {
 
     /** The menu: every colour on a dark background, with a reset button at the bottom. */
     public void open(Player player) {
-        List<LobbyConfig.ChatColor> colours = plugin.lobbyConfig().chatColors().colors();
+        List<LobbyConfig.ChatColor> every = plugin.lobbyConfig().chatColors().colors();
         Messages messages = plugin.messages();
-        int colourRows = Math.max(1, Math.min(4, (colours.size() + 6) / 7));
+        // the rows fit every colour, so the menu keeps its size whatever the Sort button shows
+        int colourRows = Math.max(1, Math.min(4, (every.size() + 6) / 7));
+        Sort sort = sorts.getOrDefault(player.getUniqueId(), Sort.ALL);
+        List<LobbyConfig.ChatColor> colours = switch (sort) {
+            case ALL -> every;
+            case UNLOCKED -> every.stream().filter(colour -> allowed(player, colour)).toList();
+            case LOCKED -> every.stream().filter(colour -> !allowed(player, colour)).toList();
+        };
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
         menu.inventory = Bukkit.createInventory(menu, (colourRows + 2) * 9,
@@ -202,6 +226,10 @@ public final class ChatColors implements Listener {
             menu.slots.put(slot, colour.id());
         }
 
+        if (colours.isEmpty()) { // the Sort button shows nothing: say so, with the red X
+            ItemStack none = Profile.button(messages, Material.BARRIER, "chat-color.sort-empty");
+            menu.inventory.setItem((1 + (colourRows - 1) / 2) * 9 + 4, style.icon(none, "none"));
+        }
         ItemStack reset = ItemStack.of(Material.BARRIER);
         reset.editMeta(meta -> {
             meta.displayName(messages.item("chat-color.reset-item.name"));
@@ -211,7 +239,29 @@ public final class ChatColors implements Listener {
         menu.inventory.setItem(menu.resetSlot, style.icon(reset, "reset"));
         menu.backSlot = menu.inventory.getSize() - 6;
         menu.inventory.setItem(menu.backSlot, style.icon(Profile.button(plugin.messages(), Material.ARROW, "profile.back"), "back"));
+        menu.sortSlot = menu.inventory.getSize() - 1;
+        menu.inventory.setItem(menu.sortSlot, sortButton(sort));
         player.openInventory(menu.inventory);
+    }
+
+    /** The Sort button: what's shown now, every choice listed, Left-click for the next and Right-click to go back. */
+    private ItemStack sortButton(Sort sort) {
+        Messages messages = plugin.messages();
+        ItemStack icon = ItemStack.of(Material.HOPPER);
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("chat-color.sort.name",
+                    Placeholder.component("mode", messages.component("chat-color.sort.modes." + sort.key()))));
+            List<Component> lore = new java.util.ArrayList<>(messages.lore("chat-color.sort.lore"));
+            for (Sort option : Sort.values()) {
+                lore.add(messages.item(option == sort ? "chat-color.sort.option-selected" : "chat-color.sort.option",
+                        Placeholder.component("mode", messages.component("chat-color.sort.modes." + option.key()))));
+            }
+            lore.addAll(messages.lore("chat-color.sort.hint"));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.values());
+        });
+        if (plugin.menuStyle().custom()) icon.editMeta(meta -> meta.setItemModel(new org.bukkit.NamespacedKey("fractal", "radio/sort")));
+        return icon;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -222,7 +272,14 @@ public final class ChatColors implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         int slot = event.getRawSlot();
-        if (event.getClick() != ClickType.LEFT) return; // every button here says Left-click
+        if (slot == menu.sortSlot && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)) {
+            Sort now = sorts.getOrDefault(player.getUniqueId(), Sort.ALL);
+            sorts.put(player.getUniqueId(), now.step(event.getClick() == ClickType.RIGHT ? -1 : 1));
+            player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 1.2f), Sound.Emitter.self());
+            open(player);
+            return;
+        }
+        if (event.getClick() != ClickType.LEFT) return; // every other button here says Left-click
         if (slot == menu.backSlot) {
             plugin.profile().open(player);
             return;

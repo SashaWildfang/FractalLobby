@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 52
+messages-version: 53
 
 theme:
   primary: "#B266FF"
@@ -57,8 +57,8 @@ scoreboard:
     - "<center><gray><date>"
     - ""
     - "<secondary>You"
-    - " <primary>▪</primary> <white>Dust <white><font:fractal:lobby>\uF024</font></white><white>: <#FFD27F>%lobby_dust%"
-    - " <primary>▪</primary> <white>Boxes <white><font:fractal:lobby>\uF025</font></white><white>: <primary>%lobby_boxes%"
+    - " <white><font:fractal:lobby>\uF024</font></white> <white>Dust: <#FFD27F>%lobby_dust%"
+    - " <white><font:fractal:lobby>\uF025</font></white> <white>Boxes: %lobby_boxes_flash%"
     - ""
     - "<secondary>Realms <muted>(<online:all>)"
     - " <primary>▪</primary> <white>Lobby: <primary><online:lobby>"
@@ -357,6 +357,7 @@ void-rescued: "<secondary>Whoosh! <muted>Flying you back to solid ground."
 
 # Punching staff (players with lobby.punch). <puncher> <target> <seconds>
 punch:
+  immune: "<bad><target> <bad>can't be punched."   # <target>
   announce: "<prefix><accent><puncher></accent> <secondary>punched <primary><target></primary> <secondary>into the sky!"
   you-punched: "<prefix><secondary>You punched <primary><target></primary> <secondary>into the sky!"
   punched: "<prefix><accent><puncher></accent> <secondary>punched you into the sky!"
@@ -581,6 +582,26 @@ chat-color:
     - "<muted>Preview: <preview>"
     - ""
     - "<bad>✖ Locked"
+  sort-empty:
+    name: "<bad>Nothing here"
+    lore:
+      - "<muted>No colours match this sort."
+  # The Sort button in the bottom right. <mode>
+  sort:
+    name: "<primary>Sort: <white><mode>"
+    lore:
+      - "<muted>What this menu shows."
+      - ""
+    option: "<dark_gray>  <muted><mode>"
+    option-selected: "<accent>» <white><mode>"
+    hint:
+      - ""
+      - "<accent><left-click></accent> <muted>for the next"
+      - "<accent><right-click></accent> <muted>to go back"
+    modes:
+      all: "Everything"
+      unlocked: "Unlocked"
+      locked: "Locked"
   reset-item:
     name: "<bad>Reset"
     lore:
@@ -751,11 +772,11 @@ confirm:
 mystery:
   disabled: "<prefix><bad>Mystery Boxes aren't open right now."
   glow-name: "<#FFE680>Glow"
-  dust-name: "<#FFD27F><amount> Mystery Dust"
+  dust-name: "<#FFD27F><amount> <white><font:fractal:lobby>\uF024</font></white>"
   dust: "<prefix><secondary>Dust <white><font:fractal:lobby>\uF024</font></white><secondary>: <#FFD27F><dust> <dark_gray>· <secondary>Boxes <white><font:fractal:lobby>\uF025</font></white><secondary>: <primary><boxes> <dark_gray>▸ <white>/mysterybox"
   received: "<prefix><secondary>You got <white><amount></white> <stars> <secondary>Mystery Box(es)! <dark_gray>▸ <white>/mysterybox"
-  craft-short: "<prefix><bad>You need <white><need></white> more Mystery Dust for a <stars> <bad>box."
-  crafted: "<prefix><secondary>Crafted a <stars> <secondary>Mystery Box for <#FFD27F><cost> Mystery Dust</#FFD27F><secondary>."
+  craft-short: "<prefix><bad>You need <white><need></white> more <white><font:fractal:lobby>\uF024</font></white> for a <stars> <bad>box."
+  crafted: "<prefix><secondary>Crafted a <stars> <secondary>Mystery Box for <#FFD27F><cost></#FFD27F> <white><font:fractal:lobby>\uF024</font></white><secondary>."
   already-opening: "<prefix><muted>Your box is still opening!"
   vault-only: "<prefix><bad>Boxes open at a Mystery Vault. <muted>Go to one and right-click it."
   multi-locked: "<prefix><bad>Opening many boxes at once is a donor perk."
@@ -766,17 +787,17 @@ mystery:
     new-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <#9BFFC4>NEW"
     dupe-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <dark_gray>x<times> <muted>(had it: dust)"
     dust-line: " <dark_gray>▪ <rarity> <dark_gray>• <white><reward> <dark_gray>x<times>"
-    footer: " <#FFD27F>+<dust> Mystery Dust <muted>(<white><total></white> now)"
+    footer: " <#FFD27F>+<dust> <white><font:fractal:lobby>\uF024</font></white> <muted>(<white><total></white> now)"
   # What the player is told when the box bursts
   found: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>! <#9BFFC4>It's yours now."
-  found-duplicate: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>, which you already have: <#FFD27F>+<dust> Mystery Dust"
-  found-dust: "<prefix><secondary>You found <#FFD27F><dust> Mystery Dust</#FFD27F><secondary>!"
+  found-duplicate: "<prefix><secondary>You found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray><secondary>, which you already have: <#FFD27F>+<dust> <white><font:fractal:lobby>\uF024</font></white>"
+  found-dust: "<prefix><secondary>You found <#FFD27F><dust></#FFD27F> <white><font:fractal:lobby>\uF024</font></white><secondary>!"
   # Everyone sees this for rare finds (mystery-boxes.announce in config.yml)
   announce: "<prefix><white><player></white> <secondary>found <reward> <dark_gray>(<rarity><dark_gray>)</dark_gray> <secondary>in a <stars> <secondary>Mystery Box!"
   # Admin commands
   unknown-player: "<prefix><bad>Nobody called <white><input></white> has been in the lobby."
   given: "<prefix><good>Gave <white><player></white> <white><amount></white> <stars> <good>Mystery Box(es)."
-  dust-given: "<prefix><good>Gave <white><player></white> <white><amount></white> Mystery Dust. <muted>They have <white><dust></white> now."
+  dust-given: "<prefix><good>Gave <white><player></white> <white><amount></white> <white><font:fractal:lobby>\uF024</font></white>. <muted>They have <white><dust></white> now."
   reset: "<prefix><secondary>Took away <white><player></white>'s boxes, dust and found cosmetics."
   # The hologram over the prize while a box opens. The rarity line can be animated (like holograms).
   opening:
@@ -811,7 +832,7 @@ mystery:
     stash:
       name: "<#FFD27F>Your Stash"
       lore:
-        - "<muted>Mystery Dust: <#FFD27F><dust>"
+        - "<muted>Dust <white><font:fractal:lobby>\uF024</font></white>: <#FFD27F><dust>"
         - "<muted>Boxes: <white><boxes>"
         - "<muted>Opened: <white><opened>"
     # Each box is different: what it can give is listed under it.
@@ -848,7 +869,7 @@ mystery:
     craft-button:
       name: "<secondary>Craft Boxes"
       lore:
-        - "<muted>Make boxes from Mystery Dust."
+        - "<muted>Make boxes from <white><font:fractal:lobby>\uF024</font></white>."
         - "<muted>You have <#FFD27F><dust></#FFD27F><muted>."
         - ""
         - "<accent><left-click></accent> <muted>to craft"
@@ -860,8 +881,17 @@ mystery:
         - "<muted>you got."
         - ""
         - "<accent><left-click></accent> <muted>to open all"
+    open-all-one:
+      name: "<dark_gray>Open Everything"
+      lore:
+        - "<muted>Open all your boxes at once:"
+        - "<muted>no show, just a list of what"
+        - "<muted>you got."
+        - ""
+        - "<muted>You have just one box:"
+        - "<muted>click it above to open it."
     open-all-none:
-      name: "<#FFD27F>Open Everything"
+      name: "<dark_gray>Open Everything"
       lore:
         - "<muted>Open all your boxes at once:"
         - "<muted>no show, just a list of what"
@@ -878,7 +908,7 @@ mystery:
     craft:
       name: "<white>Craft a <stars> <white>Mystery Box?"
       lore:
-        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<muted>Costs <#FFD27F><cost> <white><font:fractal:lobby>\uF024</font></white>"
         - "<muted>You have <#FFD27F><dust>"
     open:
       name: "<white>Open a <stars> <white>Mystery Box?"
@@ -896,18 +926,18 @@ mystery:
     craft:
       name: "<secondary>Craft a <stars> <secondary>Box"
       lore:
-        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<muted>Costs <#FFD27F><cost> <white><font:fractal:lobby>\uF024</font></white>"
         - ""
         - "<accent><left-click></accent> <muted>to craft"
     short:
       name: "<dark_gray>Craft a <stars> <dark_gray>Box"
       lore:
-        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<muted>Costs <#FFD27F><cost> <white><font:fractal:lobby>\uF024</font></white>"
         - "<bad>You need <white><need></white> more"
     locked:
       name: "<dark_gray>Craft a <stars> <dark_gray>Box"
       lore:
-        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<muted>Costs <#FFD27F><cost> <white><font:fractal:lobby>\uF024</font></white>"
         - "<bad>Donor perk"
     back:
       name: "<secondary>← Back"
@@ -930,10 +960,10 @@ collectibles:
     name: "<#FFD27F>Your Collection"
     lore:
       - "<muted>Unlocked: <white><found></white><dark_gray>/<total>"
-      - "<muted>Mystery Dust: <#FFD27F><dust>"
+      - "<muted>Dust <white><font:fractal:lobby>\uF024</font></white>: <#FFD27F><dust>"
       - "<muted>Mystery Boxes: <white><boxes>"
       - ""
-      - "<white>How to get Mystery Dust:"
+      - "<white>How to get <white><font:fractal:lobby>\uF024</font></white>:"
       - "<dark_gray> ▪ <muted>Prizes from Mystery Boxes"
       - "<dark_gray> ▪ <muted>Prizes you already have turn"
       - "<muted>   into dust"
@@ -1067,7 +1097,7 @@ collectibles:
     buy:
       name: "<white>Buy <name><white>?"
       lore:
-        - "<muted>Costs <#FFD27F><price> Mystery Dust"
+        - "<muted>Costs <#FFD27F><price> <white><font:fractal:lobby>\uF024</font></white>"
         - "<muted>You have <#FFD27F><dust>"
     take-off:
       name: "<white>Take off <name><white>?"
@@ -1143,10 +1173,10 @@ collectibles:
       - "<accent><left-click></accent> <muted>to do it"
     buy:
       - "<muted>Find it in Mystery Boxes, or"
-      - "<accent><left-click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
+      - "<accent><left-click></accent> <muted>to buy for <#FFD27F><price> <white><font:fractal:lobby>\uF024</font></white>"
     cant-afford:
       - "<muted>Find it in Mystery Boxes, or"
-      - "<muted>buy for <#FFD27F><price> Mystery Dust"
+      - "<muted>buy for <#FFD27F><price> <white><font:fractal:lobby>\uF024</font></white>"
       - "<bad>You need <white><need></white> more"
     out-of-season:
       - "<muted>Out of season: only found in"
@@ -1342,8 +1372,8 @@ collectibles:
   took-off-piece: "<prefix><muted>Took off your <name><muted>."
   full-set: "<prefix><#FFD27F>Full <set><#FFD27F>! <white><ability></white> <muted>(<how>)"
   boxes-only: "<prefix><bad><name> <bad>is seasonal: it only comes from Mystery Boxes."
-  bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price> Mystery Dust</#FFD27F><secondary>!"
-  cant-afford: "<prefix><bad>You need <white><need></white> more Mystery Dust for <name><bad>."
+  bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price></#FFD27F> <white><font:fractal:lobby>\uF024</font></white><secondary>!"
+  cant-afford: "<prefix><bad>You need <white><need></white> more <white><font:fractal:lobby>\uF024</font></white> for <name><bad>."
   out-of-season: "<prefix><bad><name> <bad>is only found during <season><bad>."
   not-owned: "<prefix><bad>You haven't found <name> <bad>yet."
   unknown: "<prefix><bad>There's no <white><input></white>."

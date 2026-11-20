@@ -130,33 +130,43 @@ def empty_icon():
 
 
 def craft_icon():
-    """Mystery Dust swirling into a new box: a small box with sparkles and a gold +."""
+    """Craft Boxes: a box with a green +, nothing else."""
     return with_ribbons(_craft)
 
 
 def _craft(c):
-    gift(c, BOX_COLOURS[3], GOLD, ox=5, oy=7, k=0.78)
-    # the dust: a swirl of gold specks coming in from the top left
-    for (x, y, r) in ((4, 5, 1.6), (7.5, 2.5, 1.1), (3, 10, 1.0), (10.5, 5.5, 0.9)):
-        c.ball(x, y, r, '#FFD27F', shine=False)
-    c.star(13, 3, 2.4, WHITE)
+    gift(c, BOX_COLOURS[3], GOLD, ox=0, oy=3, k=0.88)
     # the plus, in green
     c.shape('rect', (25, 2, 28, 11), ('lin', light(PLUS, 0.3), dark(PLUS, 0.2), 90))
     c.shape('rect', (22, 5, 31, 8), ('lin', light(PLUS, 0.3), dark(PLUS, 0.2), 0))
 
 
 def open_all_icon():
-    """A pile of boxes, the top one bursting open with light."""
+    """Open Everything: a stack of three boxes (lots of boxes at once), no sparkles."""
     return with_ribbons(_open_all)
 
 
 def _open_all(c):
     gift(c, BOX_COLOURS[2], GOLD, ox=-1, oy=13, k=0.6, bow=False)
     gift(c, BOX_COLOURS[4], GOLD, ox=14, oy=13, k=0.6, bow=False)
-    # a burst of light from the top box
-    for (x, y, r) in ((16, 4, 3.4), (8, 7, 2.0), (25, 6, 2.2)):
-        c.star(x, y, r, WHITE)
-    gift(c, BOX_COLOURS[5], PURPLE, ox=6.5, oy=6, k=0.6, bow=True)
+    gift(c, BOX_COLOURS[5], PURPLE, ox=6.5, oy=3, k=0.6, bow=True)
+
+
+def centred(img):
+    """Moves the drawing so its visible part sits in the middle of the square."""
+    box = img.getbbox()
+    out = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    out.paste(img, ((img.width - (box[2] - box[0])) // 2 - box[0], (img.height - (box[3] - box[1])) // 2 - box[1]))
+    return out
+
+
+def greyed(img):
+    """The same icon in greys, for a button that can't be used right now."""
+    arr = np.array(img).astype(float)
+    grey = arr[..., :3] @ np.array([0.3, 0.59, 0.11])
+    for i in range(3):
+        arr[..., i] = grey * 0.75 + 30
+    return Image.fromarray(arr.clip(0, 255).astype(np.uint8), 'RGBA')
 
 
 def box_textures(pack: Path):
@@ -204,6 +214,9 @@ def main():
     pack = Path(sys.argv[1])
     icons = {f"gift_{stars}": gift_icon(stars) for stars in BOX_COLOURS}
     icons.update({"empty": empty_icon(), "craft": craft_icon(), "open_all": open_all_icon()})
+    for name in ("craft", "open_all"):
+        icons[name] = centred(icons[name])
+    icons["open_all_off"] = greyed(icons["open_all"])
     for name, image in icons.items():
         save(pack, name, image)
     box_textures(pack)

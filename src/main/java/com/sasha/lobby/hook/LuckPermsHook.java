@@ -32,6 +32,16 @@ public final class LuckPermsHook {
         return group == null ? 0 : group.getWeight().orElse(0);
     }
 
+    /**
+     * Whether the player was given exactly this permission (directly or through their groups), not just through a
+     * wildcard like * or lobby.*.
+     */
+    public static boolean hasExactly(Player player, String permission) {
+        var user = LuckPermsProvider.get().getUserManager().getUser(player.getUniqueId());
+        if (user == null) return false;
+        return Boolean.TRUE.equals(user.getCachedData().getPermissionData().getPermissionMap().get(permission));
+    }
+
     /** A group's weight (its place in the rank order), or -1 if there's no such group. */
     public static int groupWeight(String name) {
         Group group = LuckPermsProvider.get().getGroupManager().getGroup(name.toLowerCase(java.util.Locale.ROOT));

@@ -161,7 +161,9 @@ def write(pack: Path, design: str):
                 "gold_dark": "fractal:item/mystery/vault_gold_dark", "particle": "fractal:item/mystery/vault_side"}
 
     def faces(uv_side, up, down_uv):
-        f = {d: {"uv": uv_side, "texture": "#front" if d in ("north", "south") else "#side"} for d in ("north", "south", "east", "west")}
+        # the lock only on the front: the side players stand at. The vault's item display shows the model turned half
+        # round, so the model's south face (high z) is the one facing them; its north face is the back.
+        f = {d: {"uv": uv_side, "texture": "#front" if d == "south" else "#side"} for d in ("north", "south", "east", "west")}
         f["up"] = {"uv": [0, 0, 16, 16], "texture": up}
         f["down"] = {"uv": down_uv, "texture": "#side"}
         return f

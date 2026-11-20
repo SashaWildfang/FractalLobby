@@ -16,7 +16,6 @@ permissions:
       lobby.staff: true
       lobby.donor: true
       lobby.punch: true
-      lobby.punch.immune: true
       lobby.trail.donor: true
       lobby.doublejump: true
       lobby.bypass.maintenance: true
@@ -41,7 +40,7 @@ permissions:
     description: Punch staff to launch them into the sky
     default: op
   lobby.punch.immune:
-    description: Can't be punched
+    description: Can't be punched (only when given on its own; lobby.* and * don't include it)
     default: false
   lobby.trail.donor:
     description: Use the donor particle trails (set per trail in config.yml)

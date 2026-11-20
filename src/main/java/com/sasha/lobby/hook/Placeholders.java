@@ -44,11 +44,17 @@ public final class Placeholders {
                 if (out.contains("%luckperms_prefix%")) out = out.replace("%luckperms_prefix%", LuckPermsHook.prefix(player));
                 if (out.contains("%luckperms_suffix%")) out = out.replace("%luckperms_suffix%", LuckPermsHook.suffix(player));
             }
-            if (out.contains("%lobby_dust%") || out.contains("%lobby_boxes%")) {
+            if (out.contains("%lobby_dust%") || out.contains("%lobby_boxes")) {
                 var mystery = plugin.mystery();
                 var stash = mystery == null ? null : mystery.stash(player.getUniqueId());
+                int boxes = stash == null ? 0 : stash.totalBoxes();
+                String count = com.sasha.lobby.mystery.MysteryBoxes.compact(boxes);
+                // %lobby_boxes_flash%: the count in its own colour, flashing red and pink while there are boxes to open
+                String flash = boxes == 0 ? "<#B266FF>" + count
+                        : (System.currentTimeMillis() / 500) % 2 == 0 ? "<#FF4D4D>" + count : "<#FFB0B0>" + count;
                 out = out.replace("%lobby_dust%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust()))
-                        .replace("%lobby_boxes%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes()));
+                        .replace("%lobby_boxes_flash%", flash)
+                        .replace("%lobby_boxes%", count);
             }
             if (out.contains("%lobby_parkour_")) {
                 var board = plugin.parkour().leaderboard();
