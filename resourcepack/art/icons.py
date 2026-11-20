@@ -1767,10 +1767,10 @@ def gi_swing():
     c = Canvas()
     c.line([(3, 29), (9, 3)], '#a8743a', 2.4)
     c.line([(29, 29), (23, 3)], '#a8743a', 2.4)
+    c.line([(11.5, 4), (11.5, 22.5)], '#e8e8f0', 1.0)     # the ropes, tied on under the bar and down into the seat
+    c.line([(20.5, 4), (20.5, 22.5)], '#e8e8f0', 1.0)
     c.shape('rect', (6, 2, 26, 5), '#8b5a2b')
-    c.line([(12, 5), (10, 22)], '#e8e8f0', 0.8)
-    c.line([(20, 5), (18, 22)], '#e8e8f0', 0.8)
-    c.shape('rect', (8, 21.5, 20, 24), '#e03a3a')
+    c.shape('rect', (9.5, 21.5, 22.5, 24), '#e03a3a')
     return c.done()
 
 
@@ -2003,3 +2003,6 @@ GADGETS['pinata'] = _pinata_icon                   # the donkey getting whacked 
 
 from railgun_icon import opt3 as _railgun_icon
 GADGETS['railgun'] = _railgun_icon                 # mid-shot with the cyan beam (Sasha picked #3)
+
+from rush_pearl_icon import opt1 as _rush_pearl_icon
+GADGETS['rush_pearl'] = _rush_pearl_icon           # a deep teal pearl with a swirl (Sasha picked #1, polished)

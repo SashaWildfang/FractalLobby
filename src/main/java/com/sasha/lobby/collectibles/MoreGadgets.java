@@ -2131,39 +2131,73 @@ final class MoreGadgets implements Listener {
         }, () -> clear(player.getUniqueId()));
     }
 
+    /**
+     * The swing: a wooden frame with a red seat hanging from the crossbar on two ropes that are always tied on. Sit on
+     * it (click the seat) and it swings forward and back like a real pendulum, building up to a good height; empty, it
+     * just sways a little. Sneak to get off.
+     */
     private void swing(Player player) {
         Placed p = place(player);
         Location base = fx.ground(player);
+        World world = base.getWorld();
         float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
+        Vector fwd = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        Vector side = new Vector(-fwd.getZ(), 0, fwd.getX());
         Location frameAt = base.clone().add(0, 0.5, 0);
-        keep(p, frameAt.getWorld().spawn(frameAt, ItemDisplay.class, d -> {
+        keep(p, world.spawn(frameAt, ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.OAK_FENCE, "gadget/swing_frame"));
             d.setRotation(yaw, 0);
             d.setTransformation(new Transformation(new Vector3f(0, 0.5f, 0), new AxisAngle4f(), new Vector3f(2f), new AxisAngle4f()));
         }));
-        Location pivot = base.clone().add(0, 2.4, 0);
-        ItemDisplay seat = keep(p, pivot.getWorld().spawn(pivot, ItemDisplay.class, d -> {
+        // the crossbar's underside (model y 30 at scale 2, on a frame whose middle is 1 block up) and the rope length
+        final double BAR = 3.75, SEAT = 0.55, ROPE = BAR - SEAT, TIE = 0.44;
+        Location pivot = base.clone().add(0, BAR, 0);
+        pivot.setYaw(0);
+        pivot.setPitch(0);
+        final float turn = (float) Math.atan2(-side.getZ(), side.getX());
+        ItemDisplay seat = keep(p, world.spawn(base.clone().add(0, SEAT, 0), ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.RED_CARPET, "gadget/swing_seat"));
-            d.setRotation(yaw, 0);
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
         }));
-        Interaction sit = box(p, base.clone().add(0, 0.4, 0), 0.9f, 0.6f, rider -> {
+        BlockDisplay[] ropes = new BlockDisplay[2];
+        boolean[] shown = {false, false};
+        for (int i = 0; i < 2; i++) {
+            ropes[i] = keep(p, world.spawn(pivot, BlockDisplay.class, d -> {
+                d.setBlock(Material.WHITE_CONCRETE.createBlockData());
+                d.setBrightness(new Display.Brightness(14, 14));
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            }));
+        }
+        Interaction sit = box(p, base.clone().add(0, 0.2, 0), 1.0f, 0.7f, rider -> {
             if (fx.parkour(rider) || !seat.getPassengers().isEmpty()) return;
             seat.addPassenger(rider);
             plugin.messages().send(rider, "collectibles.gadget.swing-sit");
         });
         fx.sound(base, "block.wood.place", 1f, 0.8f);
-        Vector forward = new Location(base.getWorld(), 0, 0, 0, yaw, 0).getDirection();
-        p.task = fx.every(600, t -> {
-            double swingAngle = Math.sin(t * 0.09) * (seat.getPassengers().isEmpty() ? 0.12 : 0.85);
-            // the seat hangs 1.9 below the bar and swings forward and back
-            Location at = pivot.clone().add(forward.clone().multiply(Math.sin(swingAngle) * 1.9)).add(0, -Math.cos(swingAngle) * 1.9, 0);
-            seat.teleport(at);
-            seat.setTeleportDuration(2);
+        double omega = Math.sqrt(0.08 / ROPE);                         // a real pendulum's pace for this rope
+        double[] amp = {0.06}, phase = {0};
+        p.task = fx.every(1200, t -> {
+            boolean riding = !seat.getPassengers().isEmpty();
+            amp[0] += riding ? (0.8 - amp[0]) * 0.02 : (0.06 - amp[0]) * 0.03;   // pumps up with a rider, settles when empty
+            phase[0] += omega;
+            double angle = Math.sin(phase[0]) * amp[0];
+            Vector down = fwd.clone().multiply(Math.sin(angle)).add(new Vector(0, -Math.cos(angle), 0));
+            Location at = pivot.clone().add(down.clone().multiply(ROPE));
+            seat.teleport(at, io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
             seat.setInterpolationDelay(0);
-            seat.setInterpolationDuration(2);
-            seat.setTransformation(new Transformation(new Vector3f(0, 0.95f, 0), new AxisAngle4f((float) -swingAngle, 1, 0, 0),
-                    new Vector3f(2f), new AxisAngle4f()));
-            sit.teleport(at.clone().add(0, -0.3, 0));
+            seat.setInterpolationDuration(1);
+            // tipped along the ropes, plank across the frame (the plank sits 0.94 below the model's middle at size 2)
+            seat.setTransformationMatrix(new Matrix4f()
+                    .rotate(new org.joml.Quaternionf().rotationTo(0, -1, 0, (float) down.getX(), (float) down.getY(), (float) down.getZ()))
+                    .rotateY(turn).translate(0, 0.94f, 0).scale(2f));
+            for (int i = 0; i < 2; i++) {                              // the ropes: from the bar to each end of the seat
+                Vector top = side.clone().multiply(i == 0 ? -TIE : TIE);
+                shown[i] = drawCord(ropes[i], top, top.clone().add(down.clone().multiply(ROPE)), shown[i]);
+            }
+            sit.teleport(at.clone().add(0, -0.35, 0));
+            if (riding && t % 40 == 0) fx.sound(pivot, "block.wood.step", 0.3f, 0.7f);    // a creak now and then
         }, () -> clear(player.getUniqueId()));
     }
 

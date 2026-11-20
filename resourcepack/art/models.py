@@ -535,8 +535,7 @@ def build(out):
                                          Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
     write(out, G + 'swing_frame', [Box((0, 0, 7), (1.5, 30, 9), '#a8743a', 'wood'), Box((14.5, 0, 7), (16, 30, 9), '#a8743a', 'wood'),
                                      Box((0, 30, 6.5), (16, 32, 9.5), '#8b5a2b', 'wood')], scale=H)
-    write(out, G + 'swing_seat', [Box((4, 0, 6.5), (12, 1, 9.5), '#e03a3a', 'solid'), Box((4.5, 1, 7.7), (5.1, 24, 8.3), '#e8e8f0', 'flat'),
-                                    Box((10.9, 1, 7.7), (11.5, 24, 8.3), '#e8e8f0', 'flat')], scale=H)
+    write(out, G + 'swing_seat', [Box((4, 0, 6.5), (12, 1, 9.5), '#e03a3a', 'solid')], scale=H)   # the ropes are drawn live
     scare = [Box((7.3, 0, 7.3), (8.7, 26, 8.7), '#8b5a2b', 'wood'), Box((0, 17, 7.3), (16, 18.4, 8.7), '#8b5a2b', 'wood'),
              Box((4, 12, 6), (12, 20, 10), '#5b8fd0', 'solid'), Box((1, 16.6, 6.6), (4, 19, 9.4), '#5b8fd0', 'solid'),
              Box((12, 16.6, 6.6), (15, 19, 9.4), '#5b8fd0', 'solid'), Box((4, 9, 6.4), (12, 12, 9.6), '#7a5a3a', 'solid')]
