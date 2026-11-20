@@ -2035,3 +2035,9 @@ GADGETS['scarecrow'] = _scarecrow_icon           # sack head, straw hat, plaid, 
 
 from cauldron_icon import ca1 as _cauldron_icon
 GADGETS['witch_cauldron'] = _cauldron_icon        # green bubbling brew, no fire (Sasha picked #1)
+
+from winter_icons import sn3 as _snow_icon
+GADGETS['let_it_snow'] = _snow_icon               # one big crystal snowflake (Sasha picked #3)
+
+from winter_icons import pb as _launcher_icon
+GADGETS['pumpkin_launcher'] = _launcher_icon      # the mortar mid-shot, muzzle flash and seeds (Sasha picked #2)

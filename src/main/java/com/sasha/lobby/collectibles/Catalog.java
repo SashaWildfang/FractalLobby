@@ -254,9 +254,9 @@ public final class Catalog {
         add(Category.GADGET, "pumpkin_rain", W, RARE, "Pumpkin Rain", "A spooky storm that rains jack-o'-lanterns.", null, null);
         add(Category.GADGET, "scarecrow", W, RARE, "Scarecrow", "A scarecrow with crows that watches you... and doesn't like you getting close.", null, null);
         add(Category.GADGET, "witch_cauldron", W, EPIC, "Witch's Cauldron", "Three witches brew up trouble round a bubbling cauldron.", null, null);
-        add(Category.GADGET, "let_it_snow", H, RARE, "Let It Snow", "A little snow cloud follows you.", null, null);
-        add(Category.GADGET, "ice_skate", H, RARE, "Ice Skates", "Skate on ice wherever you go.", null, null);
-        add(Category.GADGET, "pumpkin_launcher", W, RARE, "Pumpkin Launcher", "Lob a jack-o'-lantern.", null, null);
+        add(Category.GADGET, "let_it_snow", H, RARE, "Let It Snow", "A fluffy snow cloud follows you and snows the ground white.", null, null);
+        add(Category.GADGET, "ice_skate", H, RARE, "Ice Skates", "Lace up real skates and glide on ice wherever you go.", null, null);
+        add(Category.GADGET, "pumpkin_launcher", W, RARE, "Pumpkin Launcher", "THOOMP! Fire a blazing jack-o'-lantern that bursts into little ones.", null, null);
         // ---- cloaks (particles around you)
         add(Category.CLOAK, "sparkle_aura", N, COMMON, "Sparkle Aura", "A soft shimmer around you.", null, null);
         add(Category.CLOAK, "halo", N, RARE, "Halo", "A golden ring over your head.", null, null);

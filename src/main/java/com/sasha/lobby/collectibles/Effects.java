@@ -542,10 +542,6 @@ final class Effects implements Listener {
             case "fake_tnt" -> fakeTnt(player);
             case "disco_ball" -> discoBall(player);
             case "snow_cannon" -> snowCannon(player);
-            case "pumpkin_launcher" -> {
-                toss(player, ItemStack.of(Material.JACK_O_LANTERN), "pumpkin", 1.3);
-                sound(eye, "entity.witch.throw", 1f, 1f);
-            }
             case "balloon" -> balloon(player);
             case "magic_wand" -> magicWand(player);
             case "grappling_hook" -> grapple(player);

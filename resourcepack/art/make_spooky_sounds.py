@@ -104,7 +104,35 @@ def jumpscare():
     return finish(out / np.abs(out).max(), 2.2) * 0.95
 
 
+def scrape(seed):
+    """A skate blade carving ice: a bright, airy "shhhk" swelling and cut off, with a faint metallic ring."""
+    rng = np.random.default_rng(seed)
+    n = int(sr * 0.42); t = np.arange(n) / sr
+    hiss = band(rng.normal(0, 1, n), 2500, 9000) * 0.8 + band(rng.normal(0, 1, n), 900, 2500) * 0.3
+    shape = np.sin(np.pi * np.clip(t / 0.42, 0, 1)) ** 0.7 * np.minimum(1, (0.42 - t) / 0.03)
+    ring = tone(np.full(n, 3150.0), n) * np.exp(-t / 0.12) * 0.06
+    return finish(hiss * shape + ring, 1.3) * 0.6
+
+
+def launch():
+    """The pumpkin launcher's THOOMP: a deep punch, a burst of air and a rising whoosh."""
+    rng = np.random.default_rng(31)
+    n = int(sr * 0.7); t = np.arange(n) / sr
+    punch = tone(55 + 70 * np.exp(-t / 0.03), n) * np.exp(-t / 0.12) * 1.2
+    burst = band(rng.normal(0, 1, n), 150, 1800) * np.exp(-t / 0.05) * 0.9
+    sweep = 400 + 2400 * np.clip(t / 0.5, 0, 1)
+    whoosh = np.zeros(n)
+    for i in range(0, n, 512):
+        seg = rng.normal(0, 1, min(512, n - i))
+        whoosh[i:i + len(seg)] = band(seg, sweep[i] * 0.7, sweep[i] * 1.3)
+    whoosh *= np.sin(np.pi * np.clip(t / 0.6, 0, 1)) * 0.35
+    return finish(punch + burst + whoosh, 1.8) * 0.9
+
+
 if __name__ == '__main__':
+    for i in (1, 2, 3):
+        save(f'skate_scrape_{i}', scrape(40 + i))
+    save('pumpkin_launch', launch())
     for i, (seed, base, length) in enumerate([(3, 560, 0.34), (8, 520, 0.4), (14, 610, 0.3)], start=1):
         save(f'crow_caw_{i}', caw(seed, base, length))
     save('scarecrow_scare', jumpscare())

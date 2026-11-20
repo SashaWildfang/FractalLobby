@@ -225,6 +225,7 @@ final class MoreGadgets implements Listener {
             case "scarecrow" -> scarecrow(player);
             case "witch_cauldron" -> cauldron(player);
             case "let_it_snow" -> letItSnow(player);
+            case "pumpkin_launcher" -> pumpkinLauncher(player);
             case "ice_skate" -> iceSkate(player);
             case "frisbee" -> frisbee(player);
             case "sand_castle" -> sandCastle(player);
@@ -2366,48 +2367,323 @@ final class MoreGadgets implements Listener {
         }, pumpkin::remove);
     }
 
+    /**
+     * Let It Snow: a big fluffy snow cloud puffs up over your head and follows you for fifteen seconds, snowing
+     * properly: soft flakes drifting down all round you, and snow settling on the ground under it, layer on layer,
+     * spreading wider the longer it snows (it melts away after). Halfway through a little snowman pops up in the drift.
+     * At the end the cloud lets go a last flurry and puffs away.
+     */
     private void letItSnow(Player player) {
-        ItemDisplay cloud = fx.rider(player, "cloak/part/cloud");
-        cloud.setTransformation(new Transformation(new Vector3f(0, 1.3f, 0), new AxisAngle4f(), new Vector3f(2.2f, 1.2f, 2.2f), new AxisAngle4f()));
-        List<Block> snowed = new ArrayList<>();
-        BlockData snow = Material.SNOW.createBlockData();
-        fx.sound(player.getLocation(), "block.snow.place", 1f, 0.8f);
-        fx.every(200, t -> {
+        World world = player.getWorld();
+        ItemDisplay cloud = fx.rider(player, "gadget/snow_cloud");
+        cloud.setViewRange(1f);
+        fx.sound(player.getLocation(), "block.snow.place", 1f, 0.7f);
+        fx.sound(player.getLocation(), "block.amethyst_block.chime", 0.8f, 1.6f);
+        Map<Block, Integer> layers = new HashMap<>();
+        List<Entity> snowman = new ArrayList<>();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        final int LIFE = 300;
+        fx.every(LIFE, t -> {
             if (!player.isOnline()) return;
             Location at = player.getLocation();
-            at.getWorld().spawnParticle(Particle.SNOWFLAKE, at.clone().add(0, 3.0, 0), 4, 1.0, 0.1, 1.0, 0.01);
-            if (t % 5 == 0) {
-                Block ground = at.clone().add(fx.rand(2.5), 0, fx.rand(2.5)).getBlock();
-                for (int k = 0; k < 3 && !ground.getRelative(0, -1, 0).getType().isSolid(); k++) ground = ground.getRelative(0, -1, 0);
-                if (ground.getType().isAir() && ground.getRelative(0, -1, 0).getType().isOccluding()) {
-                    snowed.add(ground);
-                    for (Player viewer : at.getWorld().getPlayers()) viewer.sendBlockChange(ground.getLocation(), snow);
+            // the cloud: puffs up, then bobs and turns slowly
+            if (t == 1 || t % 4 == 0) {
+                float grow = Math.min(1f, t / 12f), puff = t > LIFE - 16 ? Math.max(0, (LIFE - t) / 16f) : 1f;
+                float sc = 2.8f * grow * (0.4f + 0.6f * puff);
+                cloud.setInterpolationDelay(0);
+                cloud.setInterpolationDuration(t == 1 ? 12 : 4);
+                cloud.setTransformationMatrix(new Matrix4f().translate((float) Math.sin(t * 0.05) * 0.06f, 1.2f + (float) Math.sin(t * 0.08) * 0.07f, 0)
+                        .rotateY(t * 0.006f).scale(sc, sc * 0.75f, sc));
+            }
+            Location under = at.clone().add(0, 2.9, 0);
+            if (t > 6 && t < LIFE - 10) {
+                world.spawnParticle(Particle.FALLING_DUST, under, 3, 1.1, 0.1, 1.1, 0, Material.SNOW_BLOCK.createBlockData());
+                world.spawnParticle(Particle.SNOWFLAKE, under, 2, 1.0, 0.1, 1.0, 0.005);
+                if (t % 3 == 0) world.spawnParticle(Particle.WHITE_ASH, under, 3, 1.2, 0.2, 1.2, 0);
+            }
+            // snow settling on the ground, spreading out and piling up
+            if (t > 10 && t < LIFE - 10 && t % 2 == 0) {
+                double reach = 1.2 + 2.6 * t / (double) LIFE;
+                for (int k = 0; k < 2; k++) {
+                    double a = r.nextDouble() * Math.PI * 2, d = Math.sqrt(r.nextDouble()) * reach;
+                    Block cell = at.clone().add(Math.cos(a) * d, 0.5, Math.sin(a) * d).getBlock();
+                    for (int down = 0; down < 3 && cell.getType().isAir() && cell.getRelative(0, -1, 0).getType().isAir(); down++)
+                        cell = cell.getRelative(0, -1, 0);
+                    if (!cell.getType().isAir() && !layers.containsKey(cell)) continue;
+                    if (!cell.getRelative(0, -1, 0).getType().isOccluding()) continue;
+                    int max = d < 1.5 ? 3 : 2;
+                    int now = Math.min(max, layers.getOrDefault(cell, 0) + 1);
+                    layers.put(cell, now);
+                    org.bukkit.block.data.type.Snow data = (org.bukkit.block.data.type.Snow) Material.SNOW.createBlockData();
+                    data.setLayers(now);
+                    for (Player viewer : world.getPlayers()) viewer.sendBlockChange(cell.getLocation(), data);
                 }
+            }
+            if (t % 50 == 25) fx.sound(at, "block.amethyst_block.chime", 0.5f, (float) (1.4 + r.nextDouble() * 0.6));
+            if (t % 30 == 0) fx.sound(at, "block.powder_snow.step", 0.4f, 0.8f);
+            if (t == 150) {                                           // a little snowman pops up in the drift
+                Vector side = at.getDirection().setY(0);
+                if (side.lengthSquared() < 1e-4) side = new Vector(1, 0, 0);
+                side.normalize().rotateAroundY(Math.PI / 2).multiply(1.8);
+                Location sm = at.clone().add(side);
+                sm.setY(at.getY());
+                sm.setPitch(0);
+                sm.setYaw(at.getYaw() + 180);
+                float[][] parts = {{0.75f, 0f}, {0.55f, 0.68f}, {0.42f, 1.18f}};
+                for (int k = 0; k < 3; k++) {
+                    float size = parts[k][0], lift = parts[k][1];
+                    Material m = k == 2 ? Material.CARVED_PUMPKIN : Material.SNOW_BLOCK;
+                    snowman.add(fx.tagged(world.spawn(sm, BlockDisplay.class, bd -> {
+                        bd.setBlock(m.createBlockData());
+                        bd.setPersistent(false);
+                        bd.setTransformation(new Transformation(new Vector3f(-size / 2, lift, -size / 2), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+                    }), "snowman"));
+                }
+                world.spawnParticle(Particle.SNOWFLAKE, sm.clone().add(0, 0.8, 0), 30, 0.3, 0.5, 0.3, 0.05);
+                world.spawnParticle(Particle.BLOCK, sm.clone().add(0, 0.4, 0), 20, 0.3, 0.3, 0.3, 0, Material.SNOW_BLOCK.createBlockData());
+                fx.sound(sm, "entity.snow_golem.ambient", 1f, 1.2f);
+            }
+            if (t == LIFE - 14) {                                     // a last flurry
+                world.spawnParticle(Particle.SNOWFLAKE, under, 60, 1.4, 0.4, 1.4, 0.04);
+                world.spawnParticle(Particle.CLOUD, under, 15, 1, 0.3, 1, 0.02);
+                fx.sound(at, "block.snow.break", 1f, 0.8f);
             }
         }, () -> {
             cloud.remove();
-            for (Player viewer : player.getWorld().getPlayers()) for (Block b : snowed) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
+            for (Entity e : snowman) {
+                world.spawnParticle(Particle.SNOWFLAKE, e.getLocation().add(0, 0.6, 0), 10, 0.3, 0.4, 0.3, 0.03);
+                e.remove();
+            }
+            // the snow melts away, a little at a time
+            List<Block> cells = new ArrayList<>(layers.keySet());
+            java.util.Collections.shuffle(cells);
+            for (int i = 0; i < cells.size(); i++) {
+                Block cell = cells.get(i);
+                fx.later(i * 20 / Math.max(1, cells.size()) + 1, () -> {
+                    for (Player viewer : world.getPlayers()) viewer.sendBlockChange(cell.getLocation(), cell.getBlockData());
+                    world.spawnParticle(Particle.SNOWFLAKE, cell.getLocation().add(0.5, 0.2, 0.5), 2, 0.2, 0, 0.2, 0.01);
+                });
+            }
         });
     }
 
+    /**
+     * Ice Skates: white skates with silver blades appear on your feet (everyone sees them), and for fifteen seconds
+     * the ground turns to ice wherever you skate (a wide patch, so you glide), with a sparkling frosty trail behind each
+     * blade, a "shhhk" as you carve, a spray of snow when you turn hard, and a little sparkle when you land a jump.
+     */
     private void iceSkate(Player player) {
+        World world = player.getWorld();
+        ItemStack skates = new ItemStack(Material.LEATHER_BOOTS);
+        skates.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
+                io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.FEET)
+                        .assetId(net.kyori.adventure.key.Key.key("fractal", "ice_skates")).build());
+        Runnable wear = () -> {
+            for (Player viewer : world.getPlayers()) viewer.sendEquipmentChange(player, org.bukkit.inventory.EquipmentSlot.FEET, skates);
+        };
+        wear.run();
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SPEED, 300, 0, false, false, false));
         BlockData ice = Material.PACKED_ICE.createBlockData();
-        fx.sound(player.getLocation(), "block.glass.place", 1f, 1.6f);
-        fx.every(200, t -> {
-            if (!player.isOnline() || !player.isOnGround()) return;
-            Block under = player.getLocation().add(0, -0.2, 0).getBlock();
-            if (!under.getType().isOccluding()) return;
-            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-                Block b = under.getRelative(dx, 0, dz);
-                if (!b.getType().isOccluding()) continue;
-                for (Player viewer : b.getWorld().getPlayers()) viewer.sendBlockChange(b.getLocation(), ice);
-                fx.later(40, () -> {
-                    for (Player viewer : b.getWorld().getPlayers()) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
-                });
+        Map<Block, Integer> iced = new HashMap<>();                    // each iced block, and when it thaws
+        Location start = player.getLocation();
+        world.spawnParticle(Particle.SNOWFLAKE, start.clone().add(0, 0.2, 0), 40, 1, 0.05, 1, 0.05);
+        fx.sound(start, "block.glass.place", 1f, 1.4f);
+        fx.sound(start, "block.amethyst_block.chime", 1f, 1.8f);
+        Vector[] lastDir = {null};
+        boolean[] wasOnGround = {true};
+        int[] scrape = {0};
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        fx.every(300, t -> {
+            if (!player.isOnline()) return;
+            if (t % 20 == 0) wear.run();
+            Location at = player.getLocation();
+            boolean ground = player.isOnGround();
+            if (ground) {                                             // ice under and round them
+                Block under = at.clone().add(0, -0.2, 0).getBlock();
+                for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+                    if (Math.abs(dx) + Math.abs(dz) > 3) continue;
+                    Block b = under.getRelative(dx, 0, dz);
+                    if (!b.getType().isOccluding() || !b.getRelative(0, 1, 0).isPassable()) continue;
+                    if (!iced.containsKey(b))
+                        for (Player viewer : world.getPlayers()) viewer.sendBlockChange(b.getLocation(), ice);
+                    iced.put(b, t + 70);
+                }
             }
-            if (t % 4 == 0) player.getWorld().spawnParticle(Particle.SNOWFLAKE, player.getLocation().add(0, 0.1, 0), 2, 0.2, 0, 0.2, 0.01);
-            if (t % 12 == 0) fx.sound(player.getLocation(), "block.glass.step", 0.4f, 1.6f);
-        }, null);
+            if (t % 5 == 0) {                                         // thawing behind
+                for (var it = iced.entrySet().iterator(); it.hasNext(); ) {
+                    var e = it.next();
+                    if (e.getValue() > t) continue;
+                    Block b = e.getKey();
+                    for (Player viewer : world.getPlayers()) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
+                    it.remove();
+                }
+            }
+            Vector vel = player.getVelocity().setY(0);
+            double speed = vel.length();
+            if (ground && speed > 0.05) {
+                Vector dir = vel.clone().normalize(), side = new Vector(-dir.getZ(), 0, dir.getX()).multiply(0.15);
+                for (int s2 = -1; s2 <= 1; s2 += 2) {                 // a frosty line behind each blade
+                    Location blade = at.clone().add(side.clone().multiply(s2)).add(0, 0.05, 0);
+                    world.spawnParticle(Particle.DUST, blade, 1, 0.02, 0, 0.02, 0, new Particle.DustOptions(Color.fromRGB(0xD8F2FF), 0.8f));
+                }
+                if (t % 3 == 0) world.spawnParticle(Particle.SNOWFLAKE, at.clone().add(0, 0.1, 0), 1, 0.1, 0, 0.1, 0.01);
+                if (++scrape[0] >= (speed > 0.25 ? 7 : 11)) {
+                    scrape[0] = 0;
+                    fx.sound(at, "fractal:gadget.skate_scrape", 0.5f, (float) (0.9 + r.nextDouble() * 0.25));
+                }
+                if (lastDir[0] != null && speed > 0.15 && lastDir[0].angle(dir) > 0.35) {   // a hard turn: snow spray
+                    Vector out = lastDir[0].clone().multiply(0.25);
+                    world.spawnParticle(Particle.SNOWFLAKE, at.clone().add(0, 0.2, 0), 12, 0.2, 0.1, 0.2, 0.08);
+                    world.spawnParticle(Particle.ITEM, at.clone().add(out).add(0, 0.2, 0), 6, 0.15, 0.1, 0.15, 0.12, new ItemStack(Material.SNOWBALL));
+                    fx.sound(at, "fractal:gadget.skate_scrape", 0.8f, 0.8f);
+                }
+                lastDir[0] = dir;
+            }
+            if (ground && !wasOnGround[0]) {                          // landed a jump
+                for (int k = 0; k < 16; k++) {
+                    double a = Math.PI * 2 * k / 16;
+                    world.spawnParticle(Particle.DUST, at.clone().add(Math.cos(a) * 0.7, 0.1, Math.sin(a) * 0.7), 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(Color.fromRGB(0xA8E4FF), 1f));
+                }
+                world.spawnParticle(Particle.SNOWFLAKE, at.clone().add(0, 0.2, 0), 10, 0.3, 0.1, 0.3, 0.03);
+                fx.sound(at, "block.glass.step", 0.7f, 1.7f);
+                fx.sound(at, "block.amethyst_block.chime", 0.5f, 1.9f);
+            }
+            wasOnGround[0] = ground;
+        }, () -> {
+            for (Block b : iced.keySet()) for (Player viewer : world.getPlayers()) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
+            if (!player.isOnline()) return;
+            player.removePotionEffect(org.bukkit.potion.PotionEffectType.SPEED);
+            ItemStack real = player.getEquipment().getBoots();
+            for (Player viewer : world.getPlayers())
+                viewer.sendEquipmentChange(player, org.bukkit.inventory.EquipmentSlot.FEET, real == null ? new ItemStack(Material.AIR) : real);
+            world.spawnParticle(Particle.SNOWFLAKE, player.getLocation().add(0, 0.2, 0), 20, 0.3, 0.1, 0.3, 0.03);
+            fx.sound(player.getLocation(), "block.glass.break", 0.5f, 1.6f);
+        });
+    }
+
+    /**
+     * Pumpkin Launcher: THOOMP. A glowing jack-o'-lantern blasts out of the mortar with a flash and a puff of smoke and
+     * sails off spinning, trailing fire and smoke. Where it lands (or whoever it hits) it bursts: a flash, a spray of
+     * pumpkin bits and orange-and-black sparks, a cackle, people nearby bumped back, and five little jack-o'-lanterns
+     * that bounce out and pop into sweets.
+     */
+    private void pumpkinLauncher(Player player) {
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        Vector dir = eye.getDirection();
+        Location muzzle = eye.clone().add(dir.clone().multiply(0.9)).add(0, -0.15, 0);
+        fx.sound(muzzle, "fractal:gadget.pumpkin_launch", 1f, (float) (0.95 + Math.random() * 0.1));
+        world.spawnParticle(Particle.FLAME, muzzle, 10, 0.1, 0.1, 0.1, 0.06);
+        world.spawnParticle(Particle.LARGE_SMOKE, muzzle, 8, 0.15, 0.15, 0.15, 0.03);
+        world.spawnParticle(Particle.DUST, muzzle, 12, 0.2, 0.2, 0.2, 0, new Particle.DustOptions(Color.fromRGB(0xFF8A1F), 1.6f));
+        player.setVelocity(player.getVelocity().add(dir.clone().multiply(-0.15)));   // a little kick
+        ItemDisplay ball = fx.tagged(world.spawn(muzzle, ItemDisplay.class, d -> {
+            d.setItemStack(new ItemStack(Material.JACK_O_LANTERN));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.7f), new AxisAngle4f()));
+        }), "pumpkin");
+        Vector vel = dir.clone().multiply(1.25).add(new Vector(0, 0.12, 0));
+        Location[] at = {muzzle.clone()};
+        fx.every(70, t -> {
+            if (!ball.isValid()) return;
+            Location from = at[0];
+            vel.setY(vel.getY() - 0.045);
+            Vector step = vel.clone();
+            // hit someone?
+            Player hit = null;
+            for (Player q : world.getPlayers()) {
+                if (q.equals(player) || fx.parkour(q)) continue;
+                if (q.getBoundingBox().expand(0.35).rayTrace(from.toVector(), step.clone().normalize(), step.length()) != null) hit = q;
+            }
+            var block = world.rayTraceBlocks(from, step.clone().normalize(), step.length(), org.bukkit.FluidCollisionMode.NEVER, true);
+            if (hit != null || block != null || t >= 69) {
+                Location boom = hit != null ? hit.getLocation().add(0, 1, 0)
+                        : block != null ? block.getHitPosition().toLocation(world).add(block.getHitBlockFace() == null ? new Vector()
+                        : block.getHitBlockFace().getDirection().multiply(0.3)) : from;
+                ball.remove();
+                pumpkinBurst(player, boom);
+                return;
+            }
+            at[0] = from.clone().add(step);
+            ball.teleport(at[0]);
+            ball.setInterpolationDelay(0);
+            ball.setInterpolationDuration(1);
+            ball.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * 0.35f, 1, 0, 0.4f), new Vector3f(0.7f), new AxisAngle4f()));
+            world.spawnParticle(Particle.FLAME, at[0], 2, 0.08, 0.08, 0.08, 0.01);
+            world.spawnParticle(Particle.SMOKE, at[0], 2, 0.1, 0.1, 0.1, 0.01);
+            if (t % 2 == 0) world.spawnParticle(Particle.DUST, at[0], 1, 0.05, 0.05, 0.05, 0, new Particle.DustOptions(Color.fromRGB(0xFF8A1F), 1.3f));
+        }, () -> { if (ball.isValid()) ball.remove(); });
+    }
+
+    private void pumpkinBurst(Player shooter, Location boom) {
+        World world = boom.getWorld();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        world.spawnParticle(Particle.EXPLOSION, boom, 1);
+        world.spawnParticle(Particle.FLASH, boom, 1, 0, 0, 0, 0, Color.fromRGB(0xFFB04A));
+        world.spawnParticle(Particle.BLOCK, boom, 45, 0.4, 0.4, 0.4, 0, Material.PUMPKIN.createBlockData());
+        world.spawnParticle(Particle.DUST, boom, 40, 0.9, 0.9, 0.9, 0, new Particle.DustOptions(Color.fromRGB(0xFF8A1F), 1.7f));
+        world.spawnParticle(Particle.DUST, boom, 25, 0.9, 0.9, 0.9, 0, new Particle.DustOptions(Color.fromRGB(0x1C1820), 1.5f));
+        world.spawnParticle(Particle.ITEM, boom, 15, 0.2, 0.2, 0.2, 0.2, new ItemStack(Material.PUMPKIN_SEEDS));
+        world.spawnParticle(Particle.LARGE_SMOKE, boom, 10, 0.3, 0.3, 0.3, 0.04);
+        fx.sound(boom, "entity.generic.explode", 0.6f, 1.3f);
+        fx.sound(boom, "fractal:gadget.pumpkin_thud", 1f, 0.7f);
+        fx.later(4, () -> fx.sound(boom, "entity.witch.celebrate", 0.8f, 1.1f));
+        for (Player q : world.getPlayers()) {                          // bumped back (just a bump)
+            if (q.equals(shooter) || fx.parkour(q)) continue;
+            Vector away = q.getLocation().toVector().subtract(boom.toVector());
+            double d = away.length();
+            if (d > 3.2) continue;
+            away.setY(0);
+            if (away.lengthSquared() < 1e-4) away = new Vector(0.1, 0, 0);
+            q.setVelocity(q.getVelocity().add(away.normalize().multiply(0.55 * (1 - d / 3.6))).setY(0.35));
+        }
+        for (int k = 0; k < 5; k++) {                                  // five little ones bounce out and pop into sweets
+            double a = Math.PI * 2 * k / 5 + r.nextDouble() * 0.5;
+            Vector v = new Vector(Math.cos(a) * 0.22, 0.42 + r.nextDouble() * 0.12, Math.sin(a) * 0.22);
+            ItemDisplay mini = fx.tagged(world.spawn(boom, ItemDisplay.class, d -> {
+                d.setItemStack(new ItemStack(Material.JACK_O_LANTERN));
+                d.setPersistent(false);
+                d.setTeleportDuration(1);
+                d.setBrightness(new Display.Brightness(15, 15));
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.32f), new AxisAngle4f()));
+            }), "pumpkin");
+            Location[] at = {boom.clone()};
+            int[] bounces = {0};
+            int life = 30 + k * 4;
+            fx.every(life, t -> {
+                if (!mini.isValid()) return;
+                v.setY(v.getY() - 0.05);
+                Location next = at[0].clone().add(v);
+                if (!next.getBlock().isPassable()) {
+                    if (bounces[0]++ < 1) {
+                        v.setY(Math.abs(v.getY()) * 0.5);
+                        v.multiply(new Vector(0.7, 1, 0.7));
+                        fx.sound(at[0], "fractal:gadget.pumpkin_thud", 0.4f, 1.4f);
+                        next = at[0].clone();
+                    } else {
+                        v.zero();
+                        next = at[0].clone();
+                    }
+                }
+                at[0] = next;
+                mini.teleport(next);
+                mini.setInterpolationDelay(0);
+                mini.setInterpolationDuration(1);
+                mini.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * 0.4f, 0, 1, 0), new Vector3f(0.32f), new AxisAngle4f()));
+                if (t % 3 == 0) world.spawnParticle(Particle.FLAME, next, 1, 0.03, 0.03, 0.03, 0.005);
+            }, () -> {
+                if (!mini.isValid()) return;
+                Location pop = mini.getLocation();
+                mini.remove();
+                world.spawnParticle(Particle.DUST, pop, 12, 0.2, 0.2, 0.2, 0, new Particle.DustOptions(Color.fromRGB(0xFF8A1F), 1.2f));
+                world.spawnParticle(Particle.SMOKE, pop, 4, 0.1, 0.1, 0.1, 0.02);
+                fx.burstItems(pop, new ItemStack(r.nextBoolean() ? Material.COOKIE : Material.SWEET_BERRIES), 2, 0.2, 40);
+                fx.sound(pop, "entity.chicken.egg", 0.6f, 1.6f);
+            });
+        }
     }
 
     /** A frisbee out in the world: whose it is, who has it (null while it's flying or on the ground), the disc. */

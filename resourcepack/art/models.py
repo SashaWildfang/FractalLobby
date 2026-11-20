@@ -397,13 +397,16 @@ def build(out):
     sounds['gadget.bat_swing'] = {"sounds": [{"name": "fractal:gadget/bat_swing"}]}
     # the ghost and the pumpkin rain (made by make_spooky_sounds.py)
     for name in ('ghost_woo', 'ghost_boo', 'pumpkin_thud_1', 'pumpkin_thud_2', 'pumpkin_thud_3', 'pumpkin_sting',
-                 'crow_caw_1', 'crow_caw_2', 'crow_caw_3', 'scarecrow_scare'):
+                 'crow_caw_1', 'crow_caw_2', 'crow_caw_3', 'scarecrow_scare',
+                 'skate_scrape_1', 'skate_scrape_2', 'skate_scrape_3', 'pumpkin_launch'):
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'{name}.ogg'),
                     f'{out}/assets/fractal/sounds/gadget/{name}.ogg')
     sounds['gadget.ghost_woo'] = {"sounds": [{"name": "fractal:gadget/ghost_woo"}]}
     sounds['gadget.ghost_boo'] = {"sounds": [{"name": "fractal:gadget/ghost_boo"}]}
     sounds['gadget.pumpkin_thud'] = {"sounds": [{"name": f"fractal:gadget/pumpkin_thud_{i}"} for i in (1, 2, 3)]}
     sounds['gadget.pumpkin_sting'] = {"sounds": [{"name": "fractal:gadget/pumpkin_sting"}]}
+    sounds['gadget.skate_scrape'] = {"sounds": [{"name": f"fractal:gadget/skate_scrape_{i}"} for i in (1, 2, 3)]}
+    sounds['gadget.pumpkin_launch'] = {"sounds": [{"name": "fractal:gadget/pumpkin_launch"}]}
     sounds['gadget.scarecrow_scare'] = {"sounds": [{"name": "fractal:gadget/scarecrow_scare"}]}
     sounds['gadget.crow_caw'] = {"sounds": [{"name": f"fractal:gadget/crow_caw_{i}"} for i in (1, 2, 3)]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
@@ -590,6 +593,9 @@ def build(out):
     for i, x in enumerate((5.0, 6.4, 8.9, 10.3)):                       # straw poking out of the hem
         body.append(Box((x, 8.0 + (i % 2) * 0.6, 7.0 - (i % 2)), (x + 0.5, 9.6, 7.5 - (i % 2)), STRAW_ if i % 2 else STRAW_D_, 'flat'))
     write(out, G + 'scarecrow_body', body, scale=H)
+    import winter_assets
+    winter_assets.write(out)                                           # the ice skates' equipment asset
+    write(out, G + 'snow_cloud', winter_assets.snow_cloud(Box, ball), scale=H)
     face = {'north'}
     head = [Box((4.8, 20.4, 5), (11.2, 26.6, 11), SACK_, 'flat'), Box((5.5, 26.6, 5.7), (10.5, 27.2, 10.3), SACK_, 'flat'),
             Box((10.6, 20.4, 5.6), (11.25, 26.6, 10.4), SACK_D_, 'flat'),

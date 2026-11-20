@@ -119,5 +119,25 @@
     "name": "fractal:gadget/scarecrow_scare"
    }
   ]
+ },
+ "gadget.skate_scrape": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/skate_scrape_1"
+   },
+   {
+    "name": "fractal:gadget/skate_scrape_2"
+   },
+   {
+    "name": "fractal:gadget/skate_scrape_3"
+   }
+  ]
+ },
+ "gadget.pumpkin_launch": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/pumpkin_launch"
+   }
+  ]
  }
 }

@@ -595,7 +595,8 @@ public final class Collectibles implements Listener {
             case "dj_booth" -> 26;                                     // (it lasts 24 seconds: ready just after it's gone)
             case "pong", "beach_ball" -> 10;                           // (Pong, and the Volleyball, which kept the old key)
             case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "rainbow",
-                 "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
+                 "jetpack", "diamond_shower" -> 12;
+            case "let_it_snow", "ice_skate" -> 17;                     // (both last 15 seconds)
             case "duckling" -> 17;                                     // (they stay 15 seconds)
             case "ghost" -> 22;                                        // (the ghosts haunt for 20 seconds)
             case "pumpkin_rain" -> 16;                                 // (the storm and the big one take 14)
@@ -607,7 +608,8 @@ public final class Collectibles implements Listener {
             case "fake_tnt" -> 4;
             case "blink_stick", "magic_wand" -> 3;
             case "grappling_hook" -> 0.25;
-            case "firework_launcher", "snow_cannon", "pumpkin_launcher" -> 3;
+            case "firework_launcher", "snow_cannon" -> 3;
+            case "pumpkin_launcher" -> 5;
             case "party_popper", "bubble_wand" -> 2;
             default -> 0.6; // paintball gun
         };
