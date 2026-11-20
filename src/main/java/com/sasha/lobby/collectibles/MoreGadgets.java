@@ -2389,17 +2389,17 @@ final class MoreGadgets implements Listener {
             // the cloud: puffs up, then bobs and turns slowly
             if (t == 1 || t % 4 == 0) {
                 float grow = Math.min(1f, t / 12f), puff = t > LIFE - 16 ? Math.max(0, (LIFE - t) / 16f) : 1f;
-                float sc = 2.8f * grow * (0.4f + 0.6f * puff);
+                float sc = 1.8f * grow * (0.4f + 0.6f * puff);           // about a block and a half across
                 cloud.setInterpolationDelay(0);
                 cloud.setInterpolationDuration(t == 1 ? 12 : 4);
-                cloud.setTransformationMatrix(new Matrix4f().translate((float) Math.sin(t * 0.05) * 0.06f, 1.2f + (float) Math.sin(t * 0.08) * 0.07f, 0)
-                        .rotateY(t * 0.006f).scale(sc, sc * 0.75f, sc));
+                cloud.setTransformationMatrix(new Matrix4f().translate((float) Math.sin(t * 0.05) * 0.05f, 0.95f + (float) Math.sin(t * 0.08) * 0.06f, 0)
+                        .rotateY(t * 0.006f).scale(sc));
             }
-            Location under = at.clone().add(0, 2.9, 0);
+            Location under = at.clone().add(0, 2.6, 0);
             if (t > 6 && t < LIFE - 10) {
-                world.spawnParticle(Particle.FALLING_DUST, under, 3, 1.1, 0.1, 1.1, 0, Material.SNOW_BLOCK.createBlockData());
-                world.spawnParticle(Particle.SNOWFLAKE, under, 2, 1.0, 0.1, 1.0, 0.005);
-                if (t % 3 == 0) world.spawnParticle(Particle.WHITE_ASH, under, 3, 1.2, 0.2, 1.2, 0);
+                world.spawnParticle(Particle.FALLING_DUST, under, 3, 0.6, 0.05, 0.4, 0, Material.SNOW_BLOCK.createBlockData());
+                world.spawnParticle(Particle.SNOWFLAKE, under, 2, 0.55, 0.05, 0.4, 0.004);
+                if (t % 3 == 0) world.spawnParticle(Particle.WHITE_ASH, under, 3, 0.7, 0.1, 0.5, 0);
             }
             // snow settling on the ground, spreading out and piling up
             if (t > 10 && t < LIFE - 10 && t % 2 == 0) {
@@ -2478,6 +2478,8 @@ final class MoreGadgets implements Listener {
         skates.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
                 io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.FEET)
                         .assetId(net.kyori.adventure.key.Key.key("fractal", "ice_skates")).build());
+        // in the boots slot it shows as the skate (the gadget's icon), not leather boots
+        skates.setData(io.papermc.paper.datacomponent.DataComponentTypes.ITEM_MODEL, net.kyori.adventure.key.Key.key("fractal", "gadget/ice_skate"));
         Runnable wear = () -> {
             for (Player viewer : world.getPlayers()) viewer.sendEquipmentChange(player, org.bukkit.inventory.EquipmentSlot.FEET, skates);
         };
