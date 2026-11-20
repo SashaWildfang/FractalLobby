@@ -2026,3 +2026,6 @@ GADGETS['beach_ball'] = _volleyball_icon           # the Volleyball (it replaced
 from pool_icons import sand_castle as _sand_castle_icon, db1 as _diving_icon
 GADGETS['sand_castle'] = _sand_castle_icon         # shorter middle tower, a proper pennant
 GADGETS['diving_board'] = _diving_icon             # ladder tower, board over the pool (Sasha picked #1)
+
+from spooky_icons import pr1 as _pumpkin_rain_icon
+GADGETS['pumpkin_rain'] = _pumpkin_rain_icon       # storm cloud raining jack-o'-lanterns (Sasha picked #1)

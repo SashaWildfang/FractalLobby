@@ -65,5 +65,39 @@
     "name": "fractal:gadget/bat_swing"
    }
   ]
+ },
+ "gadget.ghost_woo": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/ghost_woo"
+   }
+  ]
+ },
+ "gadget.ghost_boo": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/ghost_boo"
+   }
+  ]
+ },
+ "gadget.pumpkin_thud": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/pumpkin_thud_1"
+   },
+   {
+    "name": "fractal:gadget/pumpkin_thud_2"
+   },
+   {
+    "name": "fractal:gadget/pumpkin_thud_3"
+   }
+  ]
+ },
+ "gadget.pumpkin_sting": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/pumpkin_sting"
+   }
+  ]
  }
 }

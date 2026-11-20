@@ -395,6 +395,14 @@ def build(out):
     sounds['gadget.pinata_whack'] = {"sounds": [{"name": f"fractal:gadget/pinata_whack_{i}"} for i in (1, 2, 3)]}
     sounds['gadget.pinata_burst'] = {"sounds": [{"name": "fractal:gadget/pinata_burst"}]}
     sounds['gadget.bat_swing'] = {"sounds": [{"name": "fractal:gadget/bat_swing"}]}
+    # the ghost and the pumpkin rain (made by make_spooky_sounds.py)
+    for name in ('ghost_woo', 'ghost_boo', 'pumpkin_thud_1', 'pumpkin_thud_2', 'pumpkin_thud_3', 'pumpkin_sting'):
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'{name}.ogg'),
+                    f'{out}/assets/fractal/sounds/gadget/{name}.ogg')
+    sounds['gadget.ghost_woo'] = {"sounds": [{"name": "fractal:gadget/ghost_woo"}]}
+    sounds['gadget.ghost_boo'] = {"sounds": [{"name": "fractal:gadget/ghost_boo"}]}
+    sounds['gadget.pumpkin_thud'] = {"sounds": [{"name": f"fractal:gadget/pumpkin_thud_{i}"} for i in (1, 2, 3)]}
+    sounds['gadget.pumpkin_sting'] = {"sounds": [{"name": "fractal:gadget/pumpkin_sting"}]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
@@ -556,6 +564,22 @@ def build(out):
                                          Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
     write(out, G + 'swing_frame', [Box((0, 0, 7), (1.5, 30, 9), '#a8743a', 'wood'), Box((14.5, 0, 7), (16, 30, 9), '#a8743a', 'wood'),
                                      Box((0, 30, 6.5), (16, 32, 9.5), '#8b5a2b', 'wood')], scale=H)
+    # the ghost you turn into: a white sheet with a round dome head, sleeves, a wavy hem and big dark eyes (the eyes
+    # and mouth are front faces only, so from inside it, in first person, nothing gets in the way)
+    W_, W2, W3 = '#f4f6ff', '#dfe4f6', '#c8d0ec'
+    gh = []
+    # stacked layers, wide at the hem and narrowing up into a round dome: (bottom, top, half-width, half-depth)
+    for (y0, y1, hw, hd) in [(2, 7, 6.6, 4.6), (7, 12, 6.1, 4.3), (12, 18, 5.6, 4.0), (18, 22, 5.2, 3.8),
+                             (22, 25, 4.8, 3.6), (25, 27, 4.0, 3.1), (27, 28.5, 3.0, 2.4), (28.5, 29.3, 1.8, 1.4)]:
+        gh.append(Box((8 - hw, y0, 8 - hd), (8 + hw, y1, 8 + hd), W_, 'flat'))
+    gh += [Box((0.6, 11, 6.4), (1.6, 16, 9.6), W2, 'flat'), Box((14.4, 11, 6.4), (15.4, 16, 9.6), W2, 'flat'),   # little arms
+           Box((1.6, 12, 6.2), (2.4, 17, 9.8), W_, 'flat'), Box((13.6, 12, 6.2), (14.4, 17, 9.8), W_, 'flat')]
+    for i, x in enumerate([1.4, 3.6, 5.8, 8.0, 10.2, 12.4]):          # the wavy hem: tabs hanging lower and higher
+        gh.append(Box((x, 0 if i % 2 == 0 else 1.2, 3.4), (x + 2.2, 2, 12.6), W3, 'flat'))
+    face = {'north'}
+    gh += [Box((4.6, 20, 4.1), (6.8, 24.2, 4.2), '#1a1b26', 'flat', faces=face), Box((9.2, 20, 4.1), (11.4, 24.2, 4.2), '#1a1b26', 'flat', faces=face),
+           Box((7, 15.5, 3.9), (9, 18.5, 4.0), '#1a1b26', 'flat', faces=face)]   # big eyes and an "oooo" mouth
+    write(out, G + 'ghost_sheet', gh, scale=1)
     write(out, G + 'swing_seat', [Box((4, 0, 6.5), (12, 1, 9.5), '#e03a3a', 'solid')], scale=H)   # the ropes are drawn live
     scare = [Box((7.3, 0, 7.3), (8.7, 26, 8.7), '#8b5a2b', 'wood'), Box((0, 17, 7.3), (16, 18.4, 8.7), '#8b5a2b', 'wood'),
              Box((4, 12, 6), (12, 20, 10), '#5b8fd0', 'solid'), Box((1, 16.6, 6.6), (4, 19, 9.4), '#5b8fd0', 'solid'),

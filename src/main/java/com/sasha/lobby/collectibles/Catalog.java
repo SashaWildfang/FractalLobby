@@ -250,8 +250,8 @@ public final class Catalog {
         add(Category.GADGET, "frisbee", S, UNCOMMON, "Frisbee", "Throw it; someone might catch it.", null, null);
         add(Category.GADGET, "sand_castle", S, RARE, "Sand Castle", "Build a sand castle in seconds.", null, null);
         add(Category.GADGET, "diving_board", S, RARE, "Diving Board", "Place a board that launches you.", null, null);
-        add(Category.GADGET, "ghost", W, UNCOMMON, "Ghost", "A friendly ghost floats around you. Boo!", null, null);
-        add(Category.GADGET, "pumpkin_rain", W, RARE, "Pumpkin Rain", "It's raining pumpkins.", null, null);
+        add(Category.GADGET, "ghost", W, UNCOMMON, "Ghost", "Turn into a ghost for a bit. Float about and BOO people!", null, null);
+        add(Category.GADGET, "pumpkin_rain", W, RARE, "Pumpkin Rain", "A spooky storm that rains jack-o'-lanterns.", null, null);
         add(Category.GADGET, "scarecrow", W, RARE, "Scarecrow", "Place a scarecrow with crows overhead.", null, null);
         add(Category.GADGET, "witch_cauldron", W, EPIC, "Witch's Cauldron", "A bubbling brew.", null, null);
         add(Category.GADGET, "let_it_snow", H, RARE, "Let It Snow", "A little snow cloud follows you.", null, null);

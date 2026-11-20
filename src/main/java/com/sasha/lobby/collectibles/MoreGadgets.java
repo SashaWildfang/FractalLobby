@@ -1875,25 +1875,79 @@ final class MoreGadgets implements Listener {
         return !world.getBlockAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z)).isPassable();
     }
 
+    private final Set<UUID> ghosts = new HashSet<>();
+
+    /**
+     * Ghost: you turn into one for fifteen seconds. Your body (and everything you're wearing or holding) vanishes, and
+     * in its place floats a white sheet ghost with big dark eyes, bobbing gently and trailing wisps of soul light. You
+     * drift instead of falling, glide a little faster, and now and then let out a soft "woooo". Float up close behind
+     * someone and you'll BOO them (once in a while: a little jump and a BOO! over their head). Then poof, you're back.
+     */
     private void ghost(Player player) {
-        ItemDisplay ghost = fx.rider(player, "cloak/part/ghost");
-        ghost.setBrightness(new Display.Brightness(15, 15));
-        fx.sound(player.getLocation(), "entity.ghast.ambient", 0.5f, 1.6f);
-        fx.every(160, t -> {
-            double a = t * 0.12;
-            float bob = (float) Math.sin(t * 0.2) * 0.15f;
-            ghost.setInterpolationDelay(0);
-            ghost.setInterpolationDuration(2);
-            ghost.setTransformationMatrix(new Matrix4f().translate((float) Math.cos(a) * 1.3f, -0.3f + bob, (float) Math.sin(a) * 1.3f)
-                    .rotateY((float) -(a + Math.PI / 2)).scale(0.7f));
-            if (t % 40 == 20) {
-                TextDisplay boo = label(player.getLocation().add(Math.cos(a) * 1.3, 2.4, Math.sin(a) * 1.3), text("BOO!", 0xE8EEFF), 20);
-                boo.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-                fx.sound(player.getLocation(), "entity.ghast.scream", 0.3f, 1.8f);
+        if (!ghosts.add(player.getUniqueId())) return;
+        World world = player.getWorld();
+        Location start = player.getLocation();
+        world.spawnParticle(Particle.CLOUD, start.clone().add(0, 1, 0), 30, 0.3, 0.6, 0.3, 0.03);
+        fx.sound(start, "fractal:gadget.ghost_woo", 0.9f, 1f);
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY, 320, 0, false, false, false));
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOW_FALLING, 320, 0, false, false, false));
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SPEED, 320, 0, false, false, false));
+        ItemDisplay sheet = fx.rider(player, "gadget/ghost_sheet");
+        sheet.setBrightness(new Display.Brightness(15, 15));
+        org.bukkit.inventory.EquipmentSlot[] worn = {org.bukkit.inventory.EquipmentSlot.HEAD, org.bukkit.inventory.EquipmentSlot.CHEST,
+                org.bukkit.inventory.EquipmentSlot.LEGS, org.bukkit.inventory.EquipmentSlot.FEET, org.bukkit.inventory.EquipmentSlot.HAND,
+                org.bukkit.inventory.EquipmentSlot.OFF_HAND};
+        ItemStack nothing = new ItemStack(Material.AIR);
+        Runnable vanish = () -> {                                      // others don't see their armour or hands either
+            for (Player viewer : world.getPlayers()) {
+                if (viewer.equals(player)) continue;
+                for (org.bukkit.inventory.EquipmentSlot slot : worn) viewer.sendEquipmentChange(player, slot, nothing);
             }
-            if (t % 3 == 0) fx.show(player, Particle.DUST, player.getLocation().add(Math.cos(a) * 1.3, 1.4 + bob, Math.sin(a) * 1.3), 1, 0.1, 0.1, 0.1, 0,
-                    new Particle.DustOptions(Color.fromRGB(0xE8EEFF), 0.8f));
-        }, ghost::remove);
+        };
+        vanish.run();
+        Map<UUID, Integer> booed = new HashMap<>();
+        fx.every(300, t -> {
+            if (!player.isOnline()) return;
+            if (t % 20 == 0) vanish.run();
+            float yaw = (float) Math.toRadians(player.getLocation().getYaw());
+            float bob = (float) Math.sin(t * 0.15) * 0.08f;
+            // the sheet in place of their body: the rider sits at the top of their head; the sheet's foot (model y 0,
+            // half a block below its middle) sits just off the ground, so it floats
+            sheet.setInterpolationDelay(0);
+            sheet.setInterpolationDuration(2);
+            sheet.setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(0, -1.3f + 0.12f + bob, 0)
+                    .rotateZ((float) Math.sin(t * 0.1) * 0.05f).scale(1f));
+            Location at = player.getLocation();
+            if (t % 2 == 0) world.spawnParticle(Particle.SOUL, at.clone().add(0, 0.15, 0), 1, 0.2, 0.05, 0.2, 0.01);
+            if (t % 3 == 0) world.spawnParticle(Particle.WHITE_ASH, at.clone().add(0, 0.6, 0), 2, 0.3, 0.3, 0.3, 0);
+            if (player.isOnGround() && t % 12 == 0) player.setVelocity(player.getVelocity().setY(0.18));   // drifting, not walking
+            if (t % 90 == 45) fx.sound(at, "fractal:gadget.ghost_woo", 0.6f, (float) (0.9 + Math.random() * 0.25));
+            for (Player near : world.getPlayers()) {                   // BOO!
+                if (near.equals(player) || fx.parkour(near) || near.getLocation().distanceSquared(at) > 2.2 * 2.2) continue;
+                Integer last = booed.get(near.getUniqueId());
+                if (last != null && t - last < 80) continue;
+                booed.put(near.getUniqueId(), t);
+                TextDisplay boo = label(near.getLocation().add(0, 2.4, 0), text("BOO!", 0xE8EEFF), 25);
+                boo.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+                fx.sound(near.getLocation(), "fractal:gadget.ghost_boo", 1f, 1f);
+                near.setVelocity(near.getVelocity().setY(0.35));
+                near.sendActionBar(text(player.getName() + " the ghost scared you!", 0xE8EEFF));
+            }
+        }, () -> {
+            ghosts.remove(player.getUniqueId());
+            sheet.remove();
+            if (!player.isOnline()) return;
+            player.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
+            player.removePotionEffect(org.bukkit.potion.PotionEffectType.SLOW_FALLING);
+            player.removePotionEffect(org.bukkit.potion.PotionEffectType.SPEED);
+            for (Player viewer : world.getPlayers()) {                 // their things back, for everyone
+                if (viewer.equals(player)) continue;
+                for (org.bukkit.inventory.EquipmentSlot slot : worn) viewer.sendEquipmentChange(player, slot, player.getEquipment().getItem(slot));
+            }
+            Location end = player.getLocation().add(0, 1, 0);
+            world.spawnParticle(Particle.CLOUD, end, 30, 0.3, 0.6, 0.3, 0.04);
+            fx.sound(end, "entity.illusioner.mirror_move", 0.7f, 1.4f);
+        });
     }
 
     /**
@@ -2135,29 +2189,95 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    /**
+     * Pumpkin Rain: a spooky organ sting, a dark storm cloud gathers over the player (rumbling, flickering with
+     * lightning), and it rains pumpkins and jack-o'-lanterns for twelve seconds: they tumble down, land with a hollow
+     * THUD and a bounce, sit glowing a moment, then burst in a puff of orange and seeds. To finish, one giant
+     * jack-o'-lantern drops with a huge thud and bursts into a shower of sweets.
+     */
     private void pumpkinRain(Player player) {
-        fx.sound(player.getLocation(), "entity.witch.celebrate", 1f, 1f);
-        fx.every(120, t -> {
-            if (t % 4 != 0 || !player.isOnline()) return;
-            Location sky = player.getLocation().add(fx.rand(5), 7, fx.rand(5));
-            ItemDisplay p = sky.getWorld().spawn(sky, ItemDisplay.class, d -> {
-                d.setItemStack(new ItemStack(ThreadLocalRandom.current().nextInt(3) == 0 ? Material.JACK_O_LANTERN : Material.CARVED_PUMPKIN));
-                d.setTeleportDuration(2);
-                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.6f), new AxisAngle4f()));
-            });
-            fx.tagged(p, "pumpkin");
-            fx.every(40, s -> {
-                Location now = p.getLocation();
-                Location next = now.clone().add(0, -0.35, 0);
-                if (!next.getBlock().isPassable()) {
-                    now.getWorld().spawnParticle(Particle.BLOCK, now, 20, 0.2, 0.1, 0.2, 0, Material.PUMPKIN.createBlockData());
-                    fx.sound(now, "block.wood.break", 0.6f, 0.8f);
-                    p.remove();
+        World world = player.getWorld();
+        fx.sound(player.getLocation(), "fractal:gadget.pumpkin_sting", 1f, 1f);
+        Particle.DustOptions storm = new Particle.DustOptions(Color.fromRGB(0x3A3050), 2.2f), storm2 = new Particle.DustOptions(Color.fromRGB(0x5A4A78), 1.8f);
+        final int RAIN = 240;
+        fx.every(RAIN + 40, t -> {
+            if (!player.isOnline()) return;
+            Location over = player.getLocation().add(0, 7, 0);
+            if (t < RAIN) {                                           // the storm cloud
+                if (t % 2 == 0) {
+                    world.spawnParticle(Particle.DUST, over, 10, 2.6, 0.5, 2.6, 0, storm);
+                    world.spawnParticle(Particle.DUST, over.clone().add(0, 0.4, 0), 6, 2.2, 0.4, 2.2, 0, storm2);
+                    world.spawnParticle(Particle.LARGE_SMOKE, over, 2, 2.4, 0.3, 2.4, 0.005);
+                }
+                if (t % 50 == 10) {                                    // a flicker of lightning and a rumble
+                    world.spawnParticle(Particle.FLASH, over, 1, 0, 0, 0, 0, Color.fromRGB(0xC8B8FF));
+                    fx.sound(over, "entity.lightning_bolt.thunder", 0.25f, 1.6f);
+                }
+            }
+            if (t < RAIN && t % 5 == 0) dropPumpkin(player, over.clone().add(fx.rand(4.5), -0.8, fx.rand(4.5)), 0.32f + (float) Math.random() * 0.28f, false);
+            if (t == RAIN + 5) dropPumpkin(player, over.clone().add(fx.rand(1.5), 1, fx.rand(1.5)), 1.3f, true);   // the big one
+        }, null);
+    }
+
+    private void dropPumpkin(Player player, Location from, float size, boolean giant) {
+        World world = from.getWorld();
+        boolean lit = giant || ThreadLocalRandom.current().nextInt(5) < 2;
+        ItemDisplay pumpkin = world.spawn(from, ItemDisplay.class, d -> {
+            d.setItemStack(new ItemStack(lit ? Material.JACK_O_LANTERN : Material.CARVED_PUMPKIN));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+            if (lit) d.setBrightness(new Display.Brightness(15, 15));
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(size), new AxisAngle4f()));
+        });
+        fx.tagged(pumpkin, "pumpkin");
+        double[] vy = {0};
+        int[] bounced = {0}, sat = {-1};
+        float tumble = (float) (Math.random() * 0.4 - 0.2), yaw0 = (float) (Math.random() * Math.PI * 2);
+        Location[] at = {from.clone()};
+        fx.every(140, s -> {
+            if (!pumpkin.isValid()) return;
+            if (sat[0] >= 0) {                                         // sitting there, then bursting
+                if (s - sat[0] == (giant ? 12 : 26)) {
+                    Location c = at[0].clone().add(0, size * 0.4, 0);
+                    world.spawnParticle(Particle.BLOCK, c, giant ? 70 : 18, size * 0.4, size * 0.3, size * 0.4, 0, Material.PUMPKIN.createBlockData());
+                    world.spawnParticle(Particle.ITEM, c, giant ? 30 : 6, 0.2, 0.2, 0.2, 0.12, new ItemStack(Material.PUMPKIN_SEEDS));
+                    world.spawnParticle(Particle.LARGE_SMOKE, c, giant ? 12 : 3, 0.2, 0.2, 0.2, 0.02);
+                    fx.sound(c, "block.wood.break", giant ? 1f : 0.5f, giant ? 0.6f : 1f);
+                    if (giant) {                                       // a shower of sweets
+                        for (Material sweet : new Material[]{Material.COOKIE, Material.SWEET_BERRIES, Material.HONEY_BOTTLE, Material.PUMPKIN_PIE, Material.CAKE})
+                            fx.burstItems(c, new ItemStack(sweet), 4, 0.35, 60);
+                        fx.confetti(c, 60, 1);
+                        fx.sound(c, "entity.witch.celebrate", 1f, 1f);
+                    }
+                    pumpkin.remove();
+                }
+                return;
+            }
+            vy[0] = Math.max(-0.9, vy[0] - 0.04);
+            Location next = at[0].clone().add(0, vy[0], 0);
+            if (!next.getBlock().isPassable() || !next.clone().add(0, -size * 0.5, 0).getBlock().isPassable()) {   // landed
+                Location ground = at[0].clone();
+                while (ground.getY() > world.getMinHeight() && ground.clone().add(0, -size * 0.5 - 0.05, 0).getBlock().isPassable()) ground.add(0, -0.05, 0);
+                at[0] = ground;
+                fx.sound(ground, "fractal:gadget.pumpkin_thud", giant ? 1.4f : 0.7f, giant ? 0.6f : (float) (0.9 + Math.random() * 0.3));
+                world.spawnParticle(Particle.BLOCK, ground, giant ? 30 : 6, size * 0.4, 0.05, size * 0.4, 0, Material.PUMPKIN.createBlockData());
+                if (bounced[0]++ == 0 && !giant) {
+                    vy[0] = 0.22;                                      // one little bounce
+                } else {
+                    sat[0] = s;
+                    if (lit) world.spawnParticle(Particle.FLAME, ground.clone().add(0, size * 0.6, 0), 3, 0.05, 0.05, 0.05, 0.01);
                     return;
                 }
-                p.teleport(next);
-            }, p::remove);
-        }, null);
+            } else {
+                at[0] = next;
+            }
+            pumpkin.teleport(at[0]);
+            pumpkin.setInterpolationDelay(0);
+            pumpkin.setInterpolationDuration(1);
+            float spin = sat[0] < 0 && bounced[0] < 2 ? s * tumble : 0;
+            pumpkin.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(yaw0 + spin * 3, 0, 1, 0), new Vector3f(size),
+                    new AxisAngle4f(spin, 1, 0, 0)));
+        }, pumpkin::remove);
     }
 
     private void letItSnow(Player player) {
@@ -2942,6 +3062,10 @@ final class MoreGadgets implements Listener {
      * (the board flexing, a boing); hit the water with a huge splash, bubbles and a splash sound, and the three judges
      * by the pool hold up their scorecards. (The tower top and board are solid to stand on; the pool is just for show, you land on the ground.)
      */
+    private static String fmtScore(double v) {
+        return v == Math.floor(v) ? String.valueOf((int) v) : String.valueOf(v);
+    }
+
     private void divingBoard(Player player) {
         World world = player.getWorld();
         float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
@@ -3052,7 +3176,7 @@ final class MoreGadgets implements Listener {
                 a.getEquipment().setLeggings(legs);
                 a.getEquipment().setHelmet(new ItemStack(Material.PLAYER_HEAD));
             }));
-            Location card = seat.clone().add(side.clone().multiply(-0.15)).add(0, 1.25, 0);
+            Location card = seat.clone().add(side.clone().multiply(-0.1)).add(0, 1.15, 0);
             cards[j] = keep(p, world.spawn(card, TextDisplay.class, d -> {
                 d.setBillboard(Display.Billboard.CENTER);
                 d.setBackgroundColor(Color.fromARGB(255, 250, 250, 250));
@@ -3118,22 +3242,44 @@ final class MoreGadgets implements Listener {
                         double a = i * Math.PI * 2 / 20;
                         world.spawnParticle(Particle.SPLASH, splash, 0, Math.cos(a), 1.2, Math.sin(a), 0.6);
                     }
-                    // the judges hold up their scorecards, one after another
+                    // the judges: wearing the diver's face, they each raise a scorecard high over their head (one after
+                    // another), say what they thought, and the diver gets their total in chat
                     ThreadLocalRandom r = ThreadLocalRandom.current();
+                    ItemStack face = new ItemStack(Material.PLAYER_HEAD);
+                    face.editMeta(org.bukkit.inventory.meta.SkullMeta.class, m -> m.setOwningPlayer(who));
+                    double[] scores = new double[3];
+                    for (int j = 0; j < 3; j++) scores[j] = Math.round((5 + r.nextDouble() * 5) * 2) / 2.0;
                     for (int j = 0; j < 3; j++) {
                         int jj = j;
-                        double score = Math.round((6 + r.nextDouble() * 4) * 2) / 2.0;
+                        double score = scores[j];
                         String shown = score == Math.floor(score) ? String.valueOf((int) score) : String.valueOf(score);
-                        fx.later(8 + j * 6, () -> {
-                            judges[jj].setRightArmPose(new org.bukkit.util.EulerAngle(-2.7, 0, 0));
-                            judges[jj].setLeftArmPose(new org.bukkit.util.EulerAngle(-2.7, 0, 0));
-                            cards[jj].text(text(shown, score >= 9.5 ? 0x1F9A3A : score >= 8 ? 0xC07A00 : 0x2C2A40).decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+                        String[] says = score >= 9.5 ? new String[]{"PERFECT!", "What a dive!", "Incredible!", "Ten out of ten!"}
+                                : score >= 8 ? new String[]{"Lovely!", "Great splash!", "Very nice!", "Ooh, stylish"}
+                                : score >= 6.5 ? new String[]{"Not bad", "Decent", "Bit wobbly...", "Solid effort"}
+                                : new String[]{"That was awful", "My eyes!", "Ouch...", "Belly flop!"};
+                        String line = says[r.nextInt(says.length)];
+                        fx.later(8 + j * 8, () -> {
+                            judges[jj].getEquipment().setHelmet(face);
+                            Location look = judges[jj].getLocation();
+                            look.setDirection(who.getLocation().toVector().subtract(look.toVector()).setY(0));
+                            judges[jj].teleport(look);
+                            judges[jj].setRightArmPose(new org.bukkit.util.EulerAngle(Math.toRadians(-175), 0, Math.toRadians(-8)));   // right up
+                            judges[jj].setLeftArmPose(new org.bukkit.util.EulerAngle(Math.toRadians(-175), 0, Math.toRadians(8)));
+                            cards[jj].text(text(shown, score >= 9.5 ? 0x1F9A3A : score >= 8 ? 0xC07A00 : score >= 6.5 ? 0x2C2A40 : 0xC0302A)
+                                    .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
                             cards[jj].setInterpolationDelay(0);
-                            cards[jj].setInterpolationDuration(4);
-                            cards[jj].setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(1.6f), new AxisAngle4f()));
-                            fx.sound(cards[jj].getLocation(), "block.note_block.pling", 0.6f, (float) (0.8 + score / 10));
+                            cards[jj].setInterpolationDuration(6);
+                            // up from the hands to high over the head
+                            cards[jj].setTransformation(new Transformation(new Vector3f(0, 0.55f, 0), new AxisAngle4f(), new Vector3f(1.7f), new AxisAngle4f()));
+                            fx.sound(cards[jj].getLocation(), "block.note_block.pling", 0.6f, (float) (0.6 + score / 10));
+                            TextDisplay speech = label(judges[jj].getLocation().add(0, 2.55, 0), text(line, 0xFFFFFF), 50);
+                            speech.setBackgroundColor(Color.fromARGB(150, 20, 20, 30));
+                            fx.sound(judges[jj].getLocation(), score >= 8 ? "entity.villager.celebrate" : score >= 6.5 ? "entity.villager.ambient" : "entity.villager.no",
+                                    0.7f, 1.3f);
+                            plugin.messages().send(who, "collectibles.gadget.diving-judge",
+                                    com.sasha.lobby.config.Messages.arg("n", jj + 1), com.sasha.lobby.config.Messages.arg("line", line));
                         });
-                        fx.later(80 + j * 6, () -> {
+                        fx.later(90 + j * 6, () -> {
                             judges[jj].setRightArmPose(new org.bukkit.util.EulerAngle(0, 0, 0));
                             judges[jj].setLeftArmPose(new org.bukkit.util.EulerAngle(0, 0, 0));
                             cards[jj].setInterpolationDelay(0);
@@ -3141,6 +3287,10 @@ final class MoreGadgets implements Listener {
                             cards[jj].setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
                         });
                     }
+                    double total = scores[0] + scores[1] + scores[2];
+                    fx.later(34, () -> plugin.messages().send(who, "collectibles.gadget.diving-score",
+                            com.sasha.lobby.config.Messages.arg("a", fmtScore(scores[0])), com.sasha.lobby.config.Messages.arg("b", fmtScore(scores[1])), com.sasha.lobby.config.Messages.arg("c", fmtScore(scores[2])),
+                            com.sasha.lobby.config.Messages.arg("total", fmtScore(total))));
                 } else if (when != null && t - when > 80) {
                     diving.remove(who.getUniqueId());
                 }
