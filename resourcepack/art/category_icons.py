@@ -133,8 +133,8 @@ def trails():
     return c
 
 
-# Hats, suits, gadgets and cloaks are now 16x16 pixel art in section_icons.py; these three stay as they are.
-ICONS = {"emotes": emotes, "gestures": gestures, "trails": trails}
+# Hats, suits, gadgets, cloaks and gestures are now 16x16 pixel art in section_icons.py; these two stay as they are.
+ICONS = {"emotes": emotes, "trails": trails}
 
 
 def save(pack: Path, name: str, image):
