@@ -612,15 +612,16 @@ final class MoreGadgets implements Listener {
     }
 
     /**
-     * The pig's wings: each wing model grows sideways out of its own middle (the spine, model x = 8) as a flat sheet
-     * of feathers, and the display shows the model turned half round, so wing_left reaches out to -x. Each is moved out
-     * to the pig's flank (so no feathers are hidden in the body), turned with the pig, and flapped up and down about
-     * the pig's front-to-back line.
+     * The pig's wings. Each wing model is a flat sheet of feathers growing sideways out of the spine (model x = 8)
+     * with the feathers hanging down from the bone; the display shows the model turned half round, so wing_left
+     * reaches out to -x. Here each wing is laid flat (turned a quarter about its own side-to-side line, so the bone
+     * leads and the feathers trail back), moved out to the pig's flank so none of it is inside the body, then flapped
+     * up and down about the pig's front-to-back line, and finally turned with the pig.
      */
     private static void placeWings(ItemDisplay[] wings, Location pig, int t) {
         float yaw = (float) Math.toRadians(pig.getYaw());
-        float flap = (float) Math.toRadians(12 + 38 * Math.abs(Math.sin(t * 0.45)));
-        Location root = pig.clone().add(0, 0.55, 0);
+        float flap = (float) Math.toRadians(10 + 32 * Math.sin(t * 0.5));   // from a little below level to well up
+        Location root = pig.clone().add(0, 0.62, 0);
         root.setYaw(0);
         root.setPitch(0);
         for (int i = 0; i < 2; i++) {
@@ -628,8 +629,8 @@ final class MoreGadgets implements Listener {
             wings[i].teleport(root);
             wings[i].setInterpolationDelay(0);
             wings[i].setInterpolationDuration(1);
-            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.3f, 0, 0)
-                    .rotateZ(side * flap).scale(0.7f));
+            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.44f, 0, 0.05f)
+                    .rotateZ(side * flap).rotateX((float) (Math.PI / 2)).scale(0.7f));
         }
     }
 
