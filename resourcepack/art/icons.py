@@ -2022,3 +2022,7 @@ GADGETS['creeper_astronaut'] = _astro_sharp        # sharpened, with the right c
 
 from volleyball_icon import crisp_ball as _volleyball_icon
 GADGETS['beach_ball'] = _volleyball_icon           # the Volleyball (it replaced the Beach Ball but kept its key)
+
+from pool_icons import sand_castle as _sand_castle_icon, db1 as _diving_icon
+GADGETS['sand_castle'] = _sand_castle_icon         # shorter middle tower, a proper pennant
+GADGETS['diving_board'] = _diving_icon             # ladder tower, board over the pool (Sasha picked #1)

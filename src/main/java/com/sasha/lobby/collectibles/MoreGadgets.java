@@ -656,7 +656,7 @@ final class MoreGadgets implements Listener {
     /**
      * Creeper Astronaut: a creeper in a glass space helmet stands on a little launch pad. A countdown floats over it
      * (3... 2... 1... LIFTOFF!) with beeps and steam; then it blasts off on a roaring column of flame and smoke,
-     * slowly spinning, faster and faster, a ring of smoke rolling out across the ground. High up it starts to hiss...
+     * faster and faster, a ring of smoke rolling out across the ground. High up it starts to hiss...
      * and goes off as a giant green creeper-face firework, its helmet shattering, a shower of green sparks drifting down.
      */
     private void creeperAstronaut(Player player) {
@@ -723,16 +723,15 @@ final class MoreGadgets implements Listener {
             int f = t - COUNT;
             speed[0] = Math.min(0.9, speed[0] + 0.022);
             height[0] += speed[0];
-            spin[0] += 4 + f * 0.3f;                                   // spinning up as it climbs
+            // (it climbs straight, facing the way it was put down: no spinning)
             Location up = pad.clone().add(0, height[0], 0);
             if (!up.clone().add(0, 2, 0).getBlock().isPassable()) {    // hit a ceiling: go off now
                 height[0] = Math.max(0, height[0] - speed[0]);
                 creeper.setMaxFuseTicks(1);
                 return;
             }
-            up.setYaw(spin[0]);
+            up.setYaw(facing);
             creeper.teleport(up);
-            creeper.setRotation(spin[0], 0);
             Location head = up.clone().add(0, 1.45, 0);                // (the helmet just rides along, it doesn't spin)
             // the engine: a roaring flame column and smoke pouring out below
             world.spawnParticle(Particle.FLAME, up, 0, 0, -1, 0, 0.35);
@@ -1169,7 +1168,18 @@ final class MoreGadgets implements Listener {
             Location muzzle = eye.clone().add(look.clone().multiply(0.9)).add(0, -0.15, 0);
             RayTraceResult hit = world.rayTraceBlocks(muzzle, look, 45);
             double length = hit == null ? 45 : hit.getHitPosition().distance(muzzle.toVector());
-            Location end = muzzle.clone().add(look.clone().multiply(length));
+            // a player in the way is hit: the beam stops on them and sends them flying
+            RayTraceResult struck = world.rayTraceEntities(muzzle, look, length, 0.35,
+                    e -> e instanceof Player other && !other.equals(player) && !fx.parkour(other));
+            if (struck != null && struck.getHitEntity() instanceof Player victim) {
+                length = struck.getHitPosition().distance(muzzle.toVector());
+                victim.setVelocity(victim.getVelocity().add(look.clone().setY(0).normalize().multiply(1.6)).setY(0.55));
+                fx.sound(victim.getLocation(), "entity.player.hurt_sweet_berry_bush", 0.6f, 1.4f);
+                fx.sound(victim.getLocation(), "entity.generic.explode", 0.4f, 1.9f);
+                world.spawnParticle(Particle.ELECTRIC_SPARK, victim.getLocation().add(0, 1, 0), 40, 0.3, 0.6, 0.3, 0.3);
+            }
+            final double reach = length;
+            Location end = muzzle.clone().add(look.clone().multiply(reach));
             // ---- BOOM
             fx.sound(muzzle, "entity.warden.sonic_boom", 0.5f, 1.7f);
             fx.sound(muzzle, "item.trident.thunder", 0.4f, 2f);
@@ -1190,7 +1200,7 @@ final class MoreGadgets implements Listener {
                     d.setBlock(m.createBlockData());
                     d.setBrightness(new Display.Brightness(15, 15));
                     d.setPersistent(false);
-                    d.setTransformationMatrix(new Matrix4f().rotate(along).translate(-w / 2, -w / 2, 0).scale(w, w, (float) length));
+                    d.setTransformationMatrix(new Matrix4f().rotate(along).translate(-w / 2, -w / 2, 0).scale(w, w, (float) reach));
                 });
                 fx.tagged(beam[i], "beam");
             }
@@ -1198,12 +1208,12 @@ final class MoreGadgets implements Listener {
             beam[0].setGlowColorOverride(cyan);
             // energy rings rippling out along it
             List<ItemDisplay> rings = new ArrayList<>();
-            for (double d = 1.5; d < length; d += 3) {
+            for (double d = 1.5; d < reach; d += 3) {
                 Location on = muzzle.clone().add(look.clone().multiply(d));
                 on.setYaw(0);
                 on.setPitch(0);
                 ItemDisplay ring = world.spawn(on, ItemDisplay.class, e -> {
-                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/fx_circle"));
+                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/rail_ring"));
                     e.setBrightness(new Display.Brightness(15, 15));
                     e.setPersistent(false);
                     e.setTransformationMatrix(new Matrix4f().rotate(along).scale(0.3f));
@@ -1214,7 +1224,7 @@ final class MoreGadgets implements Listener {
             // a spiral of light round the beam
             Vector up = Math.abs(look.getY()) > 0.95 ? new Vector(1, 0, 0) : new Vector(0, 1, 0);
             Vector sideA = look.clone().crossProduct(up).normalize(), sideB = look.clone().crossProduct(sideA).normalize();
-            for (double d = 0.5; d < length; d += 0.25) {
+            for (double d = 0.5; d < reach; d += 0.25) {
                 double a = d * 2.2;
                 Location on = muzzle.clone().add(look.clone().multiply(d)).add(sideA.clone().multiply(Math.cos(a) * 0.3)).add(sideB.clone().multiply(Math.sin(a) * 0.3));
                 world.spawnParticle(Particle.DUST, on, 1, 0, 0, 0, 0, new Particle.DustOptions(cyan, 0.7f));
@@ -1231,7 +1241,7 @@ final class MoreGadgets implements Listener {
                 on.setPitch(0);
                 org.joml.Quaternionf flat = new org.joml.Quaternionf().rotationTo(0, 0, 1, (float) n.getX(), (float) n.getY(), (float) n.getZ());
                 ItemDisplay wave = world.spawn(on, ItemDisplay.class, e -> {
-                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/fx_circle"));
+                    e.setItemStack(fx.modelled(Material.PAPER, "gadget/rail_ring"));
                     e.setBrightness(new Display.Brightness(15, 15));
                     e.setPersistent(false);
                     e.setTransformationMatrix(new Matrix4f().rotate(flat).scale(0.2f));
@@ -1253,7 +1263,7 @@ final class MoreGadgets implements Listener {
                 for (int i = 0; i < 2; i++) {
                     beam[i].setInterpolationDelay(2);
                     beam[i].setInterpolationDuration(8);
-                    beam[i].setTransformationMatrix(new Matrix4f().rotate(along).scale(0.001f, 0.001f, (float) length));
+                    beam[i].setTransformationMatrix(new Matrix4f().rotate(along).scale(0.001f, 0.001f, (float) reach));
                 }
             });
             fx.later(11, () -> {
@@ -2193,31 +2203,107 @@ final class MoreGadgets implements Listener {
         }, null);
     }
 
+    /**
+     * The frisbee: thrown, it glides out spinning flat with a bright trail; anyone it comes close to catches it (it sits
+     * spinning on their hand a moment) and passes it straight back to whoever threw it, and so on: a game of catch, up
+     * to a dozen passes. Nobody to catch it, it curves round and comes back to the thrower. Missed, it drops to the
+     * ground, skids, and poofs.
+     */
     private void frisbee(Player player) {
+        World world = player.getWorld();
         Location eye = player.getEyeLocation();
-        Vector dir = eye.getDirection().setY(Math.max(-0.1, Math.min(0.2, eye.getDirection().getY()))).normalize();
         ItemDisplay disc = model(eye, "gadget/frisbee_3d", Material.RED_CARPET, 0.8f, 0);
+        disc.setTeleportDuration(1);
         fx.tagged(disc, "frisbee");
         fx.sound(eye, "entity.snowball.throw", 1f, 0.6f);
-        Vector right = new Vector(-dir.getZ(), 0, dir.getX());
-        fx.every(60, t -> {
-            double out = t < 30 ? t : 60 - t;            // out and back, curving
-            Location at = eye.clone().add(dir.clone().multiply(out * 0.45)).add(right.clone().multiply(Math.sin(t / 60.0 * Math.PI) * 2.5))
-                    .add(0, Math.sin(t / 60.0 * Math.PI) * 0.8, 0);
-            if (!at.getBlock().isPassable()) return;
-            disc.teleport(at);
+        // where it is, and who threw it to whom; the flight's own clock
+        Location[] at = {eye.clone()};
+        Player[] from = {player}, to = {null};
+        Vector[] dir = {eye.getDirection().setY(Math.max(-0.1, Math.min(0.2, eye.getDirection().getY()))).normalize()};
+        int[] t0 = {0}, passes = {0}, held = {0}, dropped = {-1};
+        boolean[] home = {false}, toldOwner = {false};
+        float[] spin = {0};
+        Particle.DustOptions red = new Particle.DustOptions(Color.fromRGB(0xFF4A4A), 0.8f), white = new Particle.DustOptions(Color.WHITE, 0.6f);
+        fx.every(400, t -> {
+            if (!disc.isValid()) return;
+            spin[0] += 0.8f;
+            int ft = t - t0[0];
+            Location next;
+            if (dropped[0] >= 0) {                                     // missed: it's on the ground, skidding to a stop
+                if (t - dropped[0] > 50) disc.remove();
+                return;
+            }
+            if (held[0] > 0) {                                         // caught: spinning on the catcher's hand a moment...
+                Player catcher = from[0];
+                if (!catcher.isOnline()) { disc.remove(); return; }
+                next = catcher.getEyeLocation().add(catcher.getLocation().getDirection().multiply(0.6)).add(0, -0.35, 0);
+                if (--held[0] == 0) {                                  // ...then passes it back
+                    fx.sound(next, "entity.snowball.throw", 1f, 0.8f);
+                    t0[0] = t;
+                }
+            } else if (to[0] != null && to[0].isOnline() && to[0].getWorld() == world) {   // flying to someone: a curving glide
+                Location target = to[0].getEyeLocation().add(0, -0.2, 0);
+                Vector go = target.toVector().subtract(at[0].toVector());
+                double dist = go.length();
+                Vector side = new Vector(-go.getZ(), 0, go.getX()).normalize().multiply(Math.sin(ft * 0.12) * 0.08);
+                next = at[0].clone().add(go.multiply(Math.min(0.6, dist) / Math.max(dist, 1e-3))).add(side);
+            } else if (!home[0] && ft < 28) {                          // thrown out: gliding away
+                double lift = Math.sin(ft / 28.0 * Math.PI) * 0.05;
+                next = at[0].clone().add(dir[0].clone().multiply(0.62)).add(0, lift, 0);
+            } else {                                                   // nobody caught it: it curves back to the thrower
+                home[0] = true;
+                to[0] = from[0];
+                return;
+            }
+            if (held[0] == 0 && !next.getBlock().isPassable()) {      // hit something: it drops
+                dropped[0] = t;
+                Location ground = at[0].clone();
+                while (ground.getY() > world.getMinHeight() && ground.clone().add(0, -0.2, 0).getBlock().isPassable()) ground.add(0, -0.2, 0);
+                ground.add(0, 0.05, 0);
+                disc.teleport(ground);
+                fx.sound(ground, "block.wood.hit", 0.8f, 1.4f);
+                return;
+            }
+            at[0] = next;
+            disc.teleport(next);
             disc.setInterpolationDelay(0);
-            disc.setInterpolationDuration(2);
-            disc.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(t * 0.8f, 0, 1, 0), new Vector3f(0.8f), new AxisAngle4f()));
-            if (t % 3 == 0) at.getWorld().spawnParticle(Particle.CLOUD, at, 1, 0, 0, 0, 0);
-            for (Player catcher : at.getWorld().getPlayers()) {
-                if (catcher != player && t > 8 && catcher.getEyeLocation().distanceSquared(at) < 1.2) {
-                    plugin.messages().send(player, "collectibles.gadget.frisbee-caught",
-                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", catcher.getName()));
-                    fx.sound(at, "entity.item.pickup", 1f, 1f);
+            disc.setInterpolationDuration(1);
+            disc.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(spin[0], 0, 1, 0), new Vector3f(0.8f), new AxisAngle4f()));
+            if (held[0] > 0) return;
+            // a bright trail: red and white streaks, and a sparkle now and then
+            world.spawnParticle(Particle.DUST, next, 2, 0.08, 0.02, 0.08, 0, ft % 2 == 0 ? red : white);
+            if (ft % 4 == 0) fx.driftFx(next, "gadget/fx_sparkle", 0.16f, new Vector(0, -0.01, 0), 10);
+            if (ft % 6 == 0) fx.sound(next, "entity.player.attack.sweep", 0.25f, 1.8f);
+            // catches: anyone it reaches (not who just threw it, once it's away from them)
+            for (Player catcher : world.getPlayers()) {
+                if (fx.parkour(catcher) || (catcher.equals(from[0]) && !home[0]) || ft < 6) continue;
+                if (catcher.getEyeLocation().add(0, -0.3, 0).distanceSquared(next) > 1.6 * 1.6) continue;
+                fx.sound(next, "entity.item.pickup", 1f, 1.2f);
+                fx.sound(next, "block.note_block.hat", 0.6f, 1.6f);
+                catcher.swingMainHand();
+                if (catcher.equals(player) && (home[0] || passes[0] > 0) && passes[0] >= 12) {   // back home after a long rally
                     disc.remove();
                     return;
                 }
+                if (!catcher.equals(player) && !toldOwner[0]) {
+                    toldOwner[0] = true;
+                    plugin.messages().send(player, "collectibles.gadget.frisbee-caught",
+                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", catcher.getName()));
+                }
+                if (catcher.equals(player) && home[0] && passes[0] == 0) {   // came back round to the thrower: done
+                    disc.remove();
+                    return;
+                }
+                passes[0]++;
+                Player thrower = from[0];
+                from[0] = catcher;                                     // they'll pass it back to whoever threw it
+                to[0] = thrower;
+                home[0] = false;
+                held[0] = 25;
+                return;
+            }
+            if (ft > 140) {                                            // flying about too long: it just drops
+                dropped[0] = t;
             }
         }, disc::remove);
     }
@@ -2773,29 +2859,174 @@ final class MoreGadgets implements Listener {
         }, () -> clear(player.getUniqueId()));
     }
 
+    private final Map<UUID, Integer> diving = new HashMap<>();
+
+    /**
+     * The diving board: a white tower with a ladder up the front (walk into the ladder to climb), a springboard out
+     * from the top over a big pool. Walk out to the end of the board and it bounces you up and out in a big dive
+     * (the board flexing, a boing); hit the water with a huge splash, bubbles, a splash sound and three judges'
+     * scorecards. (The tower top and board are solid to stand on; the pool is just for show, you land on the ground.)
+     */
     private void divingBoard(Player player) {
-        Placed p = place(player);
-        Location base = fx.ground(player);
+        World world = player.getWorld();
         float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
-        Location placedAt = base.clone();
-        placedAt.setYaw(yaw);
-        keep(p, placedAt.getWorld().spawn(placedAt.clone().add(0, 0.5, 0), ItemDisplay.class, d -> {
-            d.setItemStack(fx.modelled(Material.BIRCH_SLAB, "gadget/diving_board_3d"));
-            d.setRotation(yaw - 90, 0);
-            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(1.5f), new AxisAngle4f()));
+        Vector f = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        final Vector fwd = new Vector(Math.round(f.getX()), 0, Math.round(f.getZ()));
+        final Vector side = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location feet = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
+        Location tower = feet.clone().add(fwd.clone().multiply(2));
+        tower.setYaw(0);
+        tower.setPitch(0);
+        final double H = 3, POOL = 6.5;                                // the board's height; the pool's middle (from the tower)
+        List<Block> hidden = new ArrayList<>();
+        for (int v = -1; v <= 9; v++) {                                // room: the tower, board and pool, 5 high, on a floor
+            for (int u = -2; u <= 2; u++) {
+                if (v < 3 && Math.abs(u) > 0) continue;               // (only the tower and board's line need to be clear near it)
+                Block cell = tower.clone().add(side.clone().multiply(u)).add(fwd.clone().multiply(v)).getBlock();
+                for (int y = 0; y < 5; y++) {
+                    Block bl = cell.getRelative(0, y, 0);
+                    boolean open = bl.isPassable() || bl.getType() == Material.SNOW;
+                    if (!open || (y == 0 && !cell.getRelative(0, -1, 0).getType().isSolid())) {
+                        plugin.messages().send(player, "collectibles.gadget.diving-room");
+                        fx.sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+                        fx.refund(player, "gadget:diving_board");
+                        return;
+                    }
+                    if (y < 2 && !bl.getType().isAir()) hidden.add(bl);
+                }
+            }
+        }
+        Placed p = place(player);
+        BlockData air = Material.AIR.createBlockData();
+        Runnable hide = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), air);
+        };
+        hide.run();
+        p.end = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), bl.getBlockData());
+        };
+        java.util.function.BiFunction<Double, Double, Location> at = (u, v) -> tower.clone().add(side.clone().multiply(u)).add(fwd.clone().multiply(v));
+        interface Slab { BlockDisplay make(double u, double v, double along, double across, double height, double lift, BlockData m); }
+        Slab slab = (u, v, along, across, height, lift, m) -> {
+            double sx = Math.abs(fwd.getX()) * along + Math.abs(side.getX()) * across;
+            double sz = Math.abs(fwd.getZ()) * along + Math.abs(side.getZ()) * across;
+            return keep(p, world.spawn(at.apply(u, v), BlockDisplay.class, d -> {
+                d.setBlock(m);
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f((float) (-sx / 2), (float) lift, (float) (-sz / 2)), new AxisAngle4f(),
+                        new Vector3f((float) sx, (float) height, (float) sz), new AxisAngle4f()));
+            }));
+        };
+        BlockData white = Material.WHITE_CONCRETE.createBlockData(), steel = Material.LIGHT_GRAY_CONCRETE.createBlockData();
+        // the tower: four posts and a top deck with a rail; the ladder on its front
+        for (double du : new double[]{-0.42, 0.42}) for (double dv : new double[]{-0.42, 0.42}) slab.make(du, dv, 0.14, 0.14, H, 0, steel);
+        slab.make(0, 0, 1, 1, 0.16, H - 0.16, white);
+        for (double du : new double[]{-0.45, 0.45}) slab.make(du, 0, 1, 0.06, 0.8, H, steel);   // side rails
+        org.bukkit.block.data.type.Ladder rung = (org.bukkit.block.data.type.Ladder) Material.LADDER.createBlockData();
+        rung.setFacing(org.bukkit.block.BlockFace.valueOf(fwd.getX() > 0.5 ? "WEST" : fwd.getX() < -0.5 ? "EAST" : fwd.getZ() > 0.5 ? "NORTH" : "SOUTH"));
+        for (int y = 0; y < H; y++) {
+            int yy = y;
+            Location l = at.apply(0d, -0.5).add(0, yy, 0);
+            keep(p, world.spawn(l, BlockDisplay.class, d -> {
+                d.setBlock(rung);
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f(-0.5f, 0, -0.5f), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+            }));
+        }
+        // the springboard, out from the top over the pool (flexes when it bounces)
+        BlockDisplay board = slab.make(0, 2.0, 3.0, 0.6, 0.12, H - 0.12, white);
+        BlockDisplay stripe = slab.make(0, 2.0, 3.0, 0.2, 0.01, H + 0.005, Material.BLUE_CONCRETE.createBlockData());
+        // the pool: a white rim, and animated water inside
+        for (int k = 0; k < 4; k++) {
+            boolean along = k < 2;
+            double off = (k % 2 == 0 ? -1 : 1) * 2.6;
+            slab.make(along ? off : 0, along ? POOL : POOL + off, along ? 5.4 : 0.3, along ? 0.3 : 5.4, 0.35, 0, white);
+        }
+        Location waterAt = at.apply(0d, POOL).add(0, 0.25, 0);
+        keep(p, world.spawn(waterAt, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.BLUE_STAINED_GLASS, "gadget/pool_water"));
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(5f, 1f, 5f), new AxisAngle4f()));
         }));
-        Vector out = placedAt.getDirection().setY(0).normalize();
-        Location tip = base.clone().add(out.clone().multiply(1.4)).add(0, 0.45, 0);
-        fx.sound(base, "block.wood.place", 1f, 1f);
-        p.task = fx.every(400, t -> {
-            for (Player jumper : base.getWorld().getPlayers()) {
-                if (fx.parkour(jumper)) continue;
-                Location feet = jumper.getLocation();
-                if (feet.distanceSquared(tip) < 0.8 && jumper.getVelocity().getY() <= 0.05) {
-                    jumper.setVelocity(out.clone().multiply(0.7).setY(1.15));
-                    fx.sound(tip, "block.wood.step", 1f, 0.6f);
-                    fx.sound(tip, "entity.player.splash", 0.8f, 1.4f);
-                    tip.getWorld().spawnParticle(Particle.SPLASH, tip, 30, 0.4, 0.1, 0.4, 0.2);
+        // invisible shulkers make the deck and the board solid to stand on
+        for (double v : new double[]{0, 1, 2, 3}) {
+            Location solid = at.apply(0d, v).add(0, H - 1, 0);
+            keep(p, world.spawn(solid, org.bukkit.entity.Shulker.class, sh -> {
+                sh.setAI(false);
+                sh.setInvisible(true);
+                sh.setInvulnerable(true);
+                sh.setGravity(false);
+                sh.setSilent(true);
+                sh.setPersistent(false);
+                sh.setCollidable(true);
+            }));
+        }
+        fx.sound(tower, "block.wood.place", 1f, 0.8f);
+        fx.sound(tower, "entity.generic.splash", 0.6f, 1.2f);
+        int[] flex = {0};
+        p.task = fx.every(1200, t -> {
+            if (t % 40 == 0) hide.run();
+            if (flex[0] > 0) {                                         // the board springing back
+                flex[0]--;
+                float dip = (float) Math.sin(flex[0] * 0.9) * 0.18f * flex[0] / 10f;
+                for (BlockDisplay piece : new BlockDisplay[]{board, stripe}) {
+                    piece.setInterpolationDelay(0);
+                    piece.setInterpolationDuration(1);
+                    Transformation tr = piece.getTransformation();
+                    piece.setTransformation(new Transformation(new Vector3f(tr.getTranslation().x, (float) (piece == board ? H - 0.12 : H + 0.005) - dip, tr.getTranslation().z),
+                            tr.getLeftRotation(), tr.getScale(), tr.getRightRotation()));
+                }
+            }
+            for (Player who : world.getPlayers()) {
+                if (fx.parkour(who)) continue;
+                Vector d = who.getLocation().toVector().subtract(tower.toVector());
+                double u = d.dot(side), v = d.dot(fwd), y = d.getY();
+                // the ladder: walk into it and up you go
+                if (Math.abs(u) < 0.5 && v > -1.1 && v < -0.35 && y > -0.2 && y < H) {
+                    who.setVelocity(new Vector(0, 0.32, 0).add(fwd.clone().multiply(0.05)));
+                    who.setFallDistance(0);
+                    if (t % 5 == 0) fx.sound(who.getLocation(), "block.ladder.step", 0.8f, 1f);
+                    if (y > H - 0.6) who.setVelocity(fwd.clone().multiply(0.35).setY(0.3));   // over the top onto the deck
+                }
+                // the end of the board: BOING, up and out
+                if (Math.abs(u) < 0.6 && v > 2.7 && v < 3.8 && Math.abs(y - H) < 0.35 && who.getVelocity().getY() <= 0.05
+                        && !diving.containsKey(who.getUniqueId())) {
+                    who.setVelocity(fwd.clone().multiply(0.42).setY(1.15));
+                    diving.put(who.getUniqueId(), t);
+                    flex[0] = 10;
+                    fx.sound(at.apply(0d, 3.4).add(0, H, 0), "fractal:gadget.trampoline_boing", 1f, 0.8f);
+                    fx.sound(at.apply(0d, 3.4).add(0, H, 0), "block.wood.step", 1f, 0.6f);
+                }
+                // and the splash
+                Integer when = diving.get(who.getUniqueId());
+                boolean inPool = Math.abs(u) < 2.5 && Math.abs(v - POOL) < 2.5 && y < 1.2;
+                if (when != null && inPool && t - when > 5) {
+                    diving.remove(who.getUniqueId());
+                    who.setFallDistance(0);
+                    Location splash = who.getLocation().add(0, 0.3, 0);
+                    fx.sound(splash, "entity.player.splash.high_speed", 1f, 1f);
+                    fx.sound(splash, "entity.generic.splash", 1f, 0.8f);
+                    fx.sound(splash, "ambient.underwater.enter", 0.6f, 1.2f);
+                    world.spawnParticle(Particle.SPLASH, splash, 120, 0.8, 0.3, 0.8, 0.4);
+                    world.spawnParticle(Particle.BUBBLE_POP, splash, 40, 0.8, 0.4, 0.8, 0.05);
+                    world.spawnParticle(Particle.FALLING_WATER, splash.clone().add(0, 1.5, 0), 40, 1, 0.6, 1, 0);
+                    for (int i = 0; i < 20; i++) {                     // a crown of water flying out
+                        double a = i * Math.PI * 2 / 20;
+                        world.spawnParticle(Particle.SPLASH, splash, 0, Math.cos(a), 1.2, Math.sin(a), 0.6);
+                    }
+                    // the judges' scorecards
+                    ThreadLocalRandom r = ThreadLocalRandom.current();
+                    Component cards = Component.empty();
+                    for (int j = 0; j < 3; j++) {
+                        double score = Math.round((6 + r.nextDouble() * 4) * 2) / 2.0;
+                        cards = cards.append(text((j > 0 ? "  " : "") + (score == Math.floor(score) ? String.valueOf((int) score) : String.valueOf(score)),
+                                score >= 9.5 ? 0x7FE39A : score >= 8 ? 0xFFE14D : 0xFFFFFF));
+                    }
+                    TextDisplay judges = keep(p, label(at.apply(0d, POOL).add(0, 2.4, 0), text(who.getName(), 0x8FD8FF).append(Component.newline()).append(cards), 0));
+                    fx.later(60, judges::remove);
+                } else if (when != null && t - when > 80) {
+                    diving.remove(who.getUniqueId());
                 }
             }
         }, () -> clear(player.getUniqueId()));
@@ -3139,6 +3370,25 @@ final class MoreGadgets implements Listener {
             d.setRotation(yaw, 0);                                     // speakers facing the crowd
             d.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(1.6f), new AxisAngle4f()));
         }));
+        // snow, grass and the like on the floor and where the booth stands are hidden while it's up
+        List<Block> hidden = new ArrayList<>();
+        Location floorAt = feet.clone().add(fwd.clone().multiply(4.5));
+        for (int u = -3; u <= 3; u++) {
+            for (int v = -3; v <= 3; v++) {
+                Block cell = floorAt.clone().add(right.clone().multiply(u)).add(fwd.clone().multiply(v)).getBlock();
+                for (Block bl : new Block[]{cell, cell.getRelative(0, 1, 0)}) if (!bl.getType().isAir() && bl.isPassable()) hidden.add(bl);
+            }
+        }
+        for (Block bl : new Block[]{base.getBlock(), base.getBlock().getRelative(0, 1, 0), feet.getBlock()})
+            if (!bl.getType().isAir() && bl.isPassable()) hidden.add(bl);
+        BlockData air = Material.AIR.createBlockData();
+        Runnable hide = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), air);
+        };
+        hide.run();
+        p.end = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), bl.getBlockData());
+        };
         // the dance floor: 5 by 5 tiles centred just in front of the player, over whatever's on the ground
         Material[] lights = {Material.MAGENTA_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE,
                 Material.ORANGE_CONCRETE, Material.PURPLE_CONCRETE, Material.PINK_CONCRETE, Material.CYAN_CONCRETE};
@@ -3158,10 +3408,26 @@ final class MoreGadgets implements Listener {
                 }));
             }
         }
+        for (int k = 0; k < 4; k++) {                                  // a black border round the floor
+            boolean alongFwd = k < 2;
+            double off = (k % 2 == 0 ? -1 : 1) * 2.58;
+            Location edge = floorMid.clone().add((alongFwd ? right : fwd).clone().multiply(off));
+            edge.setYaw(0);
+            edge.setPitch(0);
+            double lx = Math.abs(alongFwd ? fwd.getX() : right.getX()) * 5.32 + Math.abs(alongFwd ? right.getX() : fwd.getX()) * 0.16;
+            double lz = Math.abs(alongFwd ? fwd.getZ() : right.getZ()) * 5.32 + Math.abs(alongFwd ? right.getZ() : fwd.getZ()) * 0.16;
+            keep(p, world.spawn(edge, BlockDisplay.class, d -> {
+                d.setBlock(Material.BLACK_CONCRETE.createBlockData());
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f((float) (-lx / 2), 0.005f, (float) (-lz / 2)), new AxisAngle4f(),
+                        new Vector3f((float) lx, 0.045f, (float) lz), new AxisAngle4f()));
+            }));
+        }
         fx.sound(base, "block.note_block.chime", 1f, 1.5f);
         // a bouncy beat: bass on the beat, hats between, a melody over the top
         int[] melody = {0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, 3};
         p.task = fx.every(480, t -> {
+            if (t % 40 == 0) hide.run();
             Location top = base.clone().add(0, 1.4, 0);
             if (t % 8 == 0) fx.sound(top, "block.note_block.basedrum", 1f, 0.8f);
             if (t % 8 == 4) fx.sound(top, "block.note_block.snare", 0.8f, 1f);

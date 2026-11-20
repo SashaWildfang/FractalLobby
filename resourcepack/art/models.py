@@ -558,7 +558,30 @@ def build(out):
         castle.append(Box((x - 0.2, 10, z - 0.2), (x + 3.2, 11, z + 3.2), sand2, 'solid'))
     for x in (2.5, 5.5, 8.5, 11.5):
         castle.append(Box((x, 7, 1.8), (x + 1.5, 8, 2.8), sand, 'solid'))
-    write(out, G + 'sand_castle_3d', castle, scale=H)
+    # sharper: flat colours (no speckles), one texel a unit, and more detail: walls with battlements between four
+    # corner towers, a taller keep with its own battlements, a door, windows, and a red flag on top
+    sand, sand2, sand3, door = '#ecd08a', '#d6b46a', '#f6e2a8', '#8a6a38'
+    castle = [Box((0, 0, 0), (16, 0.8, 16), sand2, 'flat')]
+    for (x0, z0, x1, z1) in [(3, 1.5, 13, 3), (3, 13, 13, 14.5), (1.5, 3, 3, 13), (13, 3, 14.5, 13)]:
+        castle.append(Box((x0, 0.8, z0), (x1, 6, z1), sand, 'flat'))
+    for x in (4, 6.5, 9, 11.5):
+        for z0, z1 in ((1.5, 3), (13, 14.5)):
+            castle.append(Box((x, 6, z0), (x + 1.2, 7, z1), sand, 'flat'))
+            castle.append(Box((z0, 6, x), (z1, 7, x + 1.2), sand, 'flat'))
+    for (x, z) in [(0.5, 0.5), (11.5, 0.5), (0.5, 11.5), (11.5, 11.5)]:
+        castle.append(Box((x, 0.8, z), (x + 4, 9, z + 4), sand, 'flat'))
+        castle.append(Box((x, 0.8, z), (x + 0.6, 9, z + 4), sand3, 'flat'))
+        for (dx, dz) in ((0, 0), (3, 0), (0, 3), (3, 3)):
+            castle.append(Box((x + dx, 9, z + dz), (x + dx + 1, 10, z + dz + 1), sand, 'flat'))
+        castle.append(Box((x + 1.5, 5.5, z - 0.05), (x + 2.5, 7, z), door, 'flat'))
+    castle += [Box((5, 0.8, 5), (11, 12, 11), sand, 'flat'), Box((5, 0.8, 5), (5.6, 12, 11), sand3, 'flat')]
+    for (dx, dz) in ((0, 0), (2.5, 0), (5, 0), (0, 5), (2.5, 5), (5, 5), (0, 2.5), (5, 2.5)):
+        castle.append(Box((5 + dx, 12, 5 + dz), (6 + dx, 13, 6 + dz), sand, 'flat'))
+    castle += [Box((7, 0.8, 1.4), (9, 4.2, 1.5), door, 'flat'), Box((7.5, 8, 4.95), (8.5, 9.5, 5), door, 'flat'),
+               Box((7.7, 13, 7.7), (8.3, 18, 8.3), '#6b3e1e', 'flat'), Box((8.3, 16, 7.85), (11.8, 17.8, 8.15), '#e03a3a', 'flat')]
+    write(out, G + 'sand_castle_3d', castle, scale=1)
+    import pool_icons as _pool
+    _pool.write_extras(out)                                            # the pool's water and the railgun's ring
     write(out, G + 'ttt_board', [Box((0, 0, 0), (16, 0.6, 16), '#c49a5a', 'wood'), Box((5, 0.6, 0.5), (5.6, 0.8, 15.5), '#5a3a1e', 'flat'),
                                   Box((10.4, 0.6, 0.5), (11, 0.8, 15.5), '#5a3a1e', 'flat'), Box((0.5, 0.6, 5), (15.5, 0.8, 5.6), '#5a3a1e', 'flat'),
                                   Box((0.5, 0.6, 10.4), (15.5, 0.8, 11), '#5a3a1e', 'flat')], scale=H)
