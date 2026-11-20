@@ -359,6 +359,9 @@ VOX_PATTERN = {'knit': 'knit', 'felt': 'flat', 'cloth': 'solid', 'stars': 'solid
                'leaf': 'solid', 'pumpkin': 'solid'}
 
 
+GLOWING = set()   # colours drawn lit up (they glow in the dark)
+
+
 def build(out_root):
     """Every hat as a blocky model with its own pixels (2 per head pixel), in the game's style."""
     from vox import Box, write
@@ -372,7 +375,8 @@ def build(out_root):
             t = [round(max(-16, min(32, v)), 3) for v in (8 + x1 * U, TOP + y1 * U, 8 + z1 * U)]
             for k in range(3):
                 lo[k], hi[k] = min(lo[k], f[k]), max(hi[k], t[k])
-            vboxes.append(Box(f, t, c, VOX_PATTERN.get(mats.get(c, mats.get('*', 'cloth')), 'solid')))
+            vboxes.append(Box(f, t, c, VOX_PATTERN.get(mats.get(c, mats.get('*', 'cloth')), 'solid'),
+                              glow=15 if c in GLOWING else None))
         size = max(hi[k] - lo[k] for k in range(3))
         s = round(min(0.85, 14.0 / size), 3)
         cy = (lo[1] + hi[1]) / 2 - 8
@@ -444,3 +448,10 @@ def _old_build(out_root):
                   open(f'{out_root}/assets/fractal/items/hat/{name}.json', 'w'))
     propeller(out_root)
     return list(HATS)
+
+
+# Pumpkin Head, redone (Sasha picked #1): a round ribbed jack-o'-lantern with a curly stem, a leaf and a carved,
+# glowing face
+import pumpkin_hats as _ph
+HATS['pumpkin_head'] = _ph.ph1()
+GLOWING |= {_ph.LIT}
