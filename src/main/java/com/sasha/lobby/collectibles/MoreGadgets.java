@@ -202,6 +202,7 @@ final class MoreGadgets implements Listener {
             case "rush_pearl" -> {
                 if (fx.parkour(player)) return true;
                 EnderPearl pearl = player.launchProjectile(EnderPearl.class, look.clone().multiply(1.7));
+                pearl.setItem(fx.modelled(Material.ENDER_PEARL, "gadget/rush_pearl"));   // the teal Rush Pearl, not a plain ender pearl
                 fx.tagged(pearl, "rush");
                 pearl.addPassenger(player);
                 fx.sound(eye, "entity.ender_pearl.throw", 1f, 0.8f);
@@ -531,41 +532,105 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    /**
+     * When Pigs Fly: a pig with a pair of wings sprouting from its back pops up under the player, they're on it, and
+     * off it flies: up, a wide loop round the spot with a swoop or two, wings flapping harder on the climbs, and back
+     * down to land where it started about twelve seconds later. Sneaking off ends the flight early (the pig flies off).
+     */
     private void pigsFly(Player player) {
-        Location at = player.getLocation().add(0, 2.5, 0);
-        Pig pig = player.getWorld().spawn(at, Pig.class, p -> {
+        if (fx.parkour(player) || player.isInsideVehicle()) return;
+        World world = player.getWorld();
+        Location home = player.getLocation().clone();
+        Pig pig = world.spawn(home, Pig.class, p -> {
             p.setInvulnerable(true);
             p.setAware(false);
             p.setGravity(false);
+            p.setPersistent(false);
+            p.setSilent(true);
         });
         fx.tagged(pig, "pig");
         ItemDisplay[] wings = new ItemDisplay[2];
         for (int i = 0; i < 2; i++) {
             String model = i == 0 ? "cloak/part/wing_left" : "cloak/part/wing_right";
-            wings[i] = pig.getWorld().spawn(at, ItemDisplay.class, d -> d.setItemStack(fx.modelled(Material.FEATHER, model)));
+            wings[i] = world.spawn(home, ItemDisplay.class, d -> {
+                d.setItemStack(fx.modelled(Material.FEATHER, model));
+                d.setPersistent(false);
+                d.setTeleportDuration(1);
+            });
             fx.tagged(wings[i], "wing");
-            pig.addPassenger(wings[i]);
         }
-        fx.sound(at, "entity.pig.ambient", 1f, 1.4f);
-        fx.every(140, t -> {
-            if (!pig.isValid() || !player.isOnline()) return;
-            double a = t * 0.08;
-            Location go = player.getLocation().add(Math.cos(a) * 2.5, 2.4 + Math.sin(t * 0.15) * 0.4, Math.sin(a) * 2.5);
-            go.setYaw((float) Math.toDegrees(a) + 180);
-            pig.teleport(go);
-            float flap = (float) Math.toRadians(20 + 30 * Math.abs(Math.sin(t * 0.5)));
-            for (int i = 0; i < 2; i++) {
-                float side = i == 0 ? 1 : -1;
-                wings[i].setInterpolationDelay(0);
-                wings[i].setInterpolationDuration(2);
-                wings[i].setTransformationMatrix(new Matrix4f().rotateY((float) Math.toRadians(-go.getYaw()))
-                        .translate(0, -0.55f, -0.05f).rotateY(side * flap).scale(0.4f));
+        pig.addPassenger(player);
+        fx.sound(home, "entity.pig.ambient", 1f, 1.4f);
+        fx.sound(home, "entity.ender_dragon.flap", 0.6f, 1.6f);
+        final int FLIGHT = 240;
+        float startYaw = home.getYaw();
+        Location[] last = {home.clone()};
+        boolean[] gone = {false};
+        fx.every(FLIGHT, t -> {
+            if (!pig.isValid() || gone[0]) return;
+            if (!player.isOnline() || !pig.getPassengers().contains(player)) {   // hopped off: the pig flies away
+                gone[0] = true;
+                Location up = pig.getLocation();
+                fx.every(30, k -> {
+                    if (!pig.isValid()) return;
+                    Location next = pig.getLocation().add(0, 0.25, 0);
+                    pig.teleport(next);
+                    placeWings(wings, next, k);
+                }, () -> {
+                    for (ItemDisplay w : wings) w.remove();
+                    pop(pig, "entity.pig.ambient");
+                });
+                fx.sound(up, "entity.pig.ambient", 1f, 1.8f);
+                return;
             }
-            if (t % 30 == 0) fx.sound(go, "entity.pig.ambient", 0.8f, 1.6f);
+            // the flight: climb, loop round twice with a swoop, then glide back down to where it started
+            double k = t / (double) FLIGHT;
+            double climb = Math.min(1, t / 40.0), land = Math.max(0, (t - (FLIGHT - 50)) / 50.0);
+            double height = 5.5 * climb * (1 - land * land) + Math.sin(t * 0.09) * 0.8 * climb * (1 - land);
+            double angle = Math.toRadians(startYaw + 90) + k * Math.PI * 4;
+            double radius = 6 * Math.sin(Math.min(1, k * 1.25) * Math.PI);
+            Location go = home.clone().add(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            for (int lift = 0; lift < 8 && !(go.getBlock().isPassable() && go.clone().add(0, 1, 0).getBlock().isPassable()
+                    && go.clone().add(0, 2, 0).getBlock().isPassable()); lift++) go.add(0, 1, 0);   // never into a block
+            Vector move = go.toVector().subtract(last[0].toVector());
+            if (move.lengthSquared() > 1e-4) go.setDirection(move);
+            go.setPitch(0);
+            pig.teleport(go, io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+            boolean climbing = move.getY() > 0.02;
+            placeWings(wings, go, climbing ? t * 2 : t);
+            last[0] = go;
+            if (t % (climbing ? 6 : 10) == 0) fx.sound(go, "entity.ender_dragon.flap", 0.35f, 1.8f);
+            if (t % 40 == 0) fx.sound(go, "entity.pig.ambient", 0.8f, 1.6f);
+            if (t % 3 == 0) world.spawnParticle(Particle.CLOUD, go.clone().add(0, 0.3, 0), 1, 0.2, 0.05, 0.2, 0.01);
         }, () -> {
-            for (ItemDisplay w : wings) if (w != null) w.remove();
-            pop(pig, "entity.pig.death");
+            if (gone[0]) return;
+            player.leaveVehicle();
+            for (ItemDisplay w : wings) w.remove();
+            world.spawnParticle(Particle.HEART, pig.getLocation().add(0, 1, 0), 4, 0.3, 0.2, 0.3, 0);
+            pop(pig, "entity.pig.ambient");
         });
+    }
+
+    /**
+     * The pig's wings: each wing model grows sideways out of its own middle (the spine, model x = 8) as a flat sheet
+     * of feathers, and the display shows the model turned half round, so wing_left reaches out to -x. Each is moved out
+     * to the pig's flank (so no feathers are hidden in the body), turned with the pig, and flapped up and down about
+     * the pig's front-to-back line.
+     */
+    private static void placeWings(ItemDisplay[] wings, Location pig, int t) {
+        float yaw = (float) Math.toRadians(pig.getYaw());
+        float flap = (float) Math.toRadians(12 + 38 * Math.abs(Math.sin(t * 0.45)));
+        Location root = pig.clone().add(0, 0.55, 0);
+        root.setYaw(0);
+        root.setPitch(0);
+        for (int i = 0; i < 2; i++) {
+            float side = i == 0 ? -1 : 1;
+            wings[i].teleport(root);
+            wings[i].setInterpolationDelay(0);
+            wings[i].setInterpolationDuration(1);
+            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.3f, 0, 0)
+                    .rotateZ(side * flap).scale(0.7f));
+        }
     }
 
     private void creeperAstronaut(Player player) {
@@ -2389,17 +2454,35 @@ final class MoreGadgets implements Listener {
      */
     private void ticTacToe(Player player) {
         Placed p = place(player);
-        Location base = fx.ground(player);
-        World world = base.getWorld();
-        keep(p, model(base.clone().add(0, 0.5, 0), "gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, -0.48f));
+        World world = player.getWorld();
+        float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
+        Vector fwd = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        Vector right = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location base = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5).add(fwd.clone().multiply(3));
+        base.setYaw(0);
+        base.setPitch(0);
+        // the board stands up in the air facing the player, its middle 1.8 up, with the score floating just above it
+        Location centre = base.clone().add(0, 1.8, 0);
+        org.joml.Quaternionf face = new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) -fwd.getX(), 0, (float) -fwd.getZ());
+        // stands a flat (lying) model up to face the player: its top turned towards them, its middle at the spot
+        java.util.function.BiFunction<Location, Object[], ItemDisplay> upright = (spot, m) -> keep(p, world.spawn(spot, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled((Material) m[1], (String) m[0]));
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setPersistent(false);
+            float size = (Float) m[2], mid = (Float) m[3];             // mid: the model's middle height, in model units
+            d.setTransformationMatrix(new Matrix4f().rotate(face).translate(0, (8 - mid) / 16f * size, 0).scale(size));
+        }));
+        upright.apply(centre.clone(), new Object[]{"gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, 0.4f});
         char[] cells = new char[9];
         List<Entity> marks = new ArrayList<>();
         int[] turn = {0}, starter = {0}, pts = {0, 0}, think = {0};
         boolean[] over = {false}, roundOver = {false};
         Player[] rival = {null};
-        TextDisplay score = keep(p, label(base.clone().add(0, 2.0, 0), Component.empty(), 0));
+        TextDisplay score = keep(p, label(centre.clone().add(0, 1.75, 0), Component.empty(), 0));
         int[][] lines = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, {0, 4, 8}, {2, 4, 6}};
-        java.util.function.IntFunction<Location> cellAt = i -> base.clone().add(((i % 3) - 1) * 1.0, 0, ((i / 3) - 1) * 1.0);
+        // square i: columns left to right and rows top to bottom as the player sees it, a hair in front of the board
+        java.util.function.IntFunction<Location> cellAt = i -> centre.clone().add(right.clone().multiply(((i % 3) - 1) * 0.98))
+                .add(0, (1 - (i / 3)) * 0.98, 0).add(fwd.clone().multiply(-0.06));
         Runnable show = () -> {
             String o = rival[0] == null ? "Lobby" : rival[0].getName();
             String whose = roundOver[0] ? "" : turn[0] == 0 ? player.getName() + "'s turn" : (rival[0] == null ? "The Lobby is thinking..." : o + "'s turn");
@@ -2422,15 +2505,15 @@ final class MoreGadgets implements Listener {
             char mark = turn[0] == 0 ? 'X' : 'O';
             cells[cell] = mark;
             Location at = cellAt.apply(cell);
-            marks.add(keep(p, model(at.clone().add(0, 0.5, 0), mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
-                    mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET, 0.9f, -0.44f)));
+            marks.add(upright.apply(at.clone().add(fwd.clone().multiply(-0.04)), new Object[]{mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
+                    mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET, 0.85f, 0.5f}));
             fx.sound(at, "block.wood.place", 1f, mark == 'X' ? 1.2f : 0.9f);
             for (int[] line : lines) {
                 if (cells[line[0]] == mark && cells[line[1]] == mark && cells[line[2]] == mark) {
                     int winner = turn[0];
                     pts[winner]++;
                     roundOver[0] = true;
-                    for (int k : line) world.spawnParticle(Particle.FIREWORK, cellAt.apply(k).add(0, 0.6, 0), 8, 0.2, 0.2, 0.2, 0.05);
+                    for (int k : line) world.spawnParticle(Particle.FIREWORK, cellAt.apply(k), 8, 0.2, 0.2, 0.2, 0.05);
                     fx.sound(base, winner == 0 ? "entity.player.levelup" : "block.note_block.bass", 0.8f, winner == 0 ? 1.6f : 0.8f);
                     show.run();
                     if (pts[winner] >= 3) {
@@ -2438,7 +2521,7 @@ final class MoreGadgets implements Listener {
                         String name = winner == 0 ? player.getName() : rival[0] == null ? "The Lobby" : rival[0].getName();
                         score.text(text(name + " wins!", winner == 0 ? 0xE03A3A : 0x3C6AE0).append(Component.newline())
                                 .append(text(pts[0] + " : " + pts[1], 0xFFFFFF)));
-                        fx.confetti(base.clone().add(0, 1, 0), 60, 1);
+                        fx.confetti(centre.clone(), 60, 1);
                         fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
                         fx.later(80, () -> clear(player.getUniqueId()));
                     } else {
@@ -2462,7 +2545,7 @@ final class MoreGadgets implements Listener {
         };
         for (int i = 0; i < 9; i++) {
             int cell = i;
-            box(p, cellAt.apply(i), 0.95f, 0.2f, clicker -> {
+            box(p, cellAt.apply(i).add(0, -0.45, 0), 0.9f, 0.9f, clicker -> {
                 if (over[0] || roundOver[0] || cells[cell] != 0) return;
                 Player mover = turn[0] == 0 ? player : rival[0];
                 if (mover == null || !mover.equals(clicker)) return;   // not their turn (or the Lobby's): nothing happens
