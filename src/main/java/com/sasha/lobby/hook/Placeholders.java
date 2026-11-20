@@ -49,7 +49,7 @@ public final class Placeholders {
                 var stash = mystery == null ? null : mystery.stash(player.getUniqueId());
                 int boxes = stash == null ? 0 : stash.totalBoxes();
                 String count = com.sasha.lobby.mystery.MysteryBoxes.compact(boxes);
-                // %lobby_boxes_flash%: the count in its own colour, flashing red and pink while there are boxes to open
+                // %lobby_boxes_flash% (the vault hologram): the count, flashing red and pink while there are boxes to open
                 String flash = boxes == 0 ? "<#B266FF>" + count
                         : (System.currentTimeMillis() / 500) % 2 == 0 ? "<#FF4D4D>" + count : "<#FFB0B0>" + count;
                 out = out.replace("%lobby_dust%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust()))
