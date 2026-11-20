@@ -565,6 +565,14 @@ chat-color:
       permission: lobby.chatcolor.rainbow
 
 
+# ── Glow ────────────────────────────────────────────────────────
+# /glow and the Glow button in My Profile: an outline in the player's rank
+# colour. Players need this rank or a higher one (LuckPerms group weight),
+# or the lobby.cmd.glow permission. Leave empty for the permission only.
+glow:
+  min-rank: guardian
+
+
 # ── Nametags ────────────────────────────────────────────────────
 # Shown above players' heads. The colour code right before %player%
 # colours the name itself.

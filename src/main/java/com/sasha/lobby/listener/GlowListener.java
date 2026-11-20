@@ -20,9 +20,18 @@ public final class GlowListener implements Listener {
 
     public static final String PERMISSION = "lobby.cmd.glow";
 
-    /** Glow is a rank perk only (lobby.cmd.glow): it can't be found in Mystery Boxes. */
+    /**
+     * Glow is a rank perk: players whose rank is glow.min-rank (Guardian by default) or higher in LuckPerms'
+     * rank order (group weight), or anyone with lobby.cmd.glow. It can't be found in Mystery Boxes.
+     */
     public static boolean allowed(Player player) {
-        return player.hasPermission(PERMISSION);
+        if (player.hasPermission(PERMISSION)) return true;
+        Lobby lobby = org.bukkit.plugin.java.JavaPlugin.getPlugin(Lobby.class);
+        if (!lobby.luckPerms()) return false;
+        String minRank = lobby.getConfig().getString("glow.min-rank", "guardian").trim();
+        if (minRank.isEmpty()) return false;
+        int needed = com.sasha.lobby.hook.LuckPermsHook.groupWeight(minRank);
+        return needed >= 0 && com.sasha.lobby.hook.LuckPermsHook.weight(player) >= needed;
     }
 
     private final Lobby plugin;

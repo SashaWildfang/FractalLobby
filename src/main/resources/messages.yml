@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 45
+messages-version: 46
 
 theme:
   primary: "#B266FF"
@@ -484,7 +484,7 @@ profile:
       - "<muted>Glow in your rank colour."
       - ""
       - "<bad>✖ Locked"
-      - "<muted>A rank perk."
+      - "<muted>Guardian rank or higher."
   settings:
     name: "<primary>Settings"
     lore:

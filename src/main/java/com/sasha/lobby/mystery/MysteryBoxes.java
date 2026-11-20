@@ -93,7 +93,7 @@ public final class MysteryBoxes implements Listener {
             if (reward == null) {
                 plugin.getLogger().warning("config.yml mystery-boxes.rewards: '" + line + "' isn't \"type:value rarity\"");
             } else if (reward.type().equals("glow")) {
-                plugin.getLogger().info("mystery-boxes.rewards: glow is a rank perk (lobby.cmd.glow), so it's left out of boxes");
+                plugin.getLogger().info("mystery-boxes.rewards: glow is a rank perk (glow.min-rank), so it's left out of boxes");
             } else if (!reward.exists(plugin)) {
                 plugin.getLogger().warning("config.yml mystery-boxes.rewards: there's no " + reward.id() + " (left out)");
             } else if (reward.free(plugin)) {
@@ -512,7 +512,7 @@ public final class MysteryBoxes implements Listener {
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-next", TagResolver.empty()), "next-off"));
         menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
                 TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
-        menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/box_5" : "mystery/locked",
+        menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/open_all" : "menu/locked",
                 multi ? "mystery.menu.open-all" : "mystery.menu.open-all-locked", TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
         player.openInventory(menu.inventory);
     }
@@ -533,7 +533,7 @@ public final class MysteryBoxes implements Listener {
         }
         lore.add(Component.empty());
         lore.addAll(messages.lore(!atVault ? "mystery.menu.box.go-to-vault" : multi ? "mystery.menu.box.open-hint-multi" : "mystery.menu.box.open-hint", tags));
-        ItemStack icon = item(Material.CHEST, "mystery/box_" + box.stars(), null, tags);
+        ItemStack icon = item(Material.CHEST, "mystery/gift_" + box.stars(), null, tags); // the flat gift; the 3D box is for opening
         icon.editMeta(meta -> {
             meta.displayName(messages.item("mystery.menu.box.name", tags));
             meta.lore(lore);
@@ -558,7 +558,7 @@ public final class MysteryBoxes implements Listener {
             TagResolver tags = TagResolver.resolver(starsTag(stars), Messages.arg("cost", compact(cost)),
                     Messages.arg("need", compact(Math.max(0, cost - stash.dust()))));
             String key = !canCraft(player, stars) ? "mystery.craft-menu.locked" : stash.dust() >= cost ? "mystery.craft-menu.craft" : "mystery.craft-menu.short";
-            ItemStack icon = item(Material.CHEST, canCraft(player, stars) ? "mystery/box_" + stars : "mystery/locked", key, tags);
+            ItemStack icon = item(Material.CHEST, canCraft(player, stars) ? "mystery/gift_" + stars : "menu/locked", key, tags);
             menu.inventory.setItem(CRAFT_SLOTS[stars - 1], icon);
         }
         menu.inventory.setItem(CRAFT_BACK, style.icon(item(Material.ARROW, null, "mystery.craft-menu.back", TagResolver.empty()), "back"));

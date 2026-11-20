@@ -1,9 +1,9 @@
 """
 Lobby resource pack - built by Sasha Wildfang for Fractal Network.
 
-Draws two 16x16 menu icons in the pack's flat pixel style (dark outline, a few shades):
-  fractal:menu/locked   a padlock, shown in place of a cosmetic that isn't unlocked yet
-  fractal:mystery/empty an empty open box, for "No boxes yet" in the Mystery Vault
+Draws the 16x16 padlock menu icon in the pack's flat pixel style (dark outline, a few shades):
+  fractal:menu/locked   shown in place of a cosmetic that isn't unlocked yet, and for box crafting you can't do
+(The Mystery Vault's icons, "No boxes yet" included, are in mystery_icons.py.)
 
     python status_icons.py <FractalLobby folder>
 """
@@ -40,31 +40,6 @@ LOCK_COLOURS = {
     "K": OUTLINE,
 }
 
-EMPTY_BOX = [
-    "................",
-    "................",
-    "..OO........OO..",
-    ".OFFO......OFfO.",
-    ".OfFFO....OFFfO.",
-    "..OfFFOOOOFFfO..",
-    "..OOIIIIIIIIOO..",
-    "..OIIiiiiiiIIO..",
-    "..OOOOOOOOOOOO..",
-    "..OHHHHHHHHHbO..",
-    "..OBBBBBBBBBbO..",
-    "..OBBBBBBBBBbO..",
-    "..OBBBBBBBBBbO..",
-    "..ObbbbbbbbbdO..",
-    "..OOOOOOOOOOOO..",
-    "................",
-]
-BOX_COLOURS = {
-    "O": OUTLINE,
-    "F": (184, 150, 236, 255), "f": (130, 98, 190, 255),
-    "I": (40, 34, 56, 255), "i": (58, 50, 80, 255),
-    "H": (200, 170, 245, 255), "B": (160, 120, 220, 255), "b": (118, 86, 176, 255), "d": (84, 60, 130, 255),
-}
-
 
 def draw(rows, colours):
     assert len(rows) == 16 and all(len(r) == 16 for r in rows), "icons are 16x16"
@@ -90,8 +65,7 @@ def save(pack: Path, name: str, image: Image.Image):
 def main():
     pack = Path(sys.argv[1])
     save(pack, "menu/locked", draw(LOCK, LOCK_COLOURS))
-    save(pack, "mystery/empty", draw(EMPTY_BOX, BOX_COLOURS))
-    print("Drew fractal:menu/locked and fractal:mystery/empty")
+    print("Drew fractal:menu/locked")
 
 
 if __name__ == "__main__":

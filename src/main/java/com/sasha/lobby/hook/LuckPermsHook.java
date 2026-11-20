@@ -32,6 +32,12 @@ public final class LuckPermsHook {
         return group == null ? 0 : group.getWeight().orElse(0);
     }
 
+    /** A group's weight (its place in the rank order), or -1 if there's no such group. */
+    public static int groupWeight(String name) {
+        Group group = LuckPermsProvider.get().getGroupManager().getGroup(name.toLowerCase(java.util.Locale.ROOT));
+        return group == null ? -1 : group.getWeight().orElse(0);
+    }
+
     /** Prefixes by lower-case name, for players who may be offline (leaderboards). */
     private static final java.util.Map<String, Cached> BY_NAME = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long KEEP_MILLIS = 30 * 60 * 1000;

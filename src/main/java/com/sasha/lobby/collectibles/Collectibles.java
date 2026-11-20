@@ -607,7 +607,7 @@ public final class Collectibles implements Listener {
         }
         menu.inventory.setItem(TRAILS, button(Material.BLAZE_POWDER, "category/trails", "collectibles.trails", TagResolver.empty()));
         menu.inventory.setItem(CHAT_COLOURS, button(Material.NAME_TAG, "color/rainbow", "collectibles.chat-colours", TagResolver.empty()));
-        menu.inventory.setItem(VAULT, button(Material.ENDER_CHEST, "mystery/box_5", "collectibles.vault",
+        menu.inventory.setItem(VAULT, button(Material.ENDER_CHEST, "mystery/gift_5", "collectibles.vault",
                 TagResolver.resolver(Messages.arg("boxes", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes())))));
         menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "menu/take_off", "collectibles.take-off-all", TagResolver.empty()));
         player.openInventory(menu.inventory);

@@ -13,7 +13,7 @@ Commands every player can use.
 | `/afk` | `lobby.cmd.afk` | Show that you're AFK (or that you're back).<br>Moving, chatting or clicking also brings you back.<br>You go AFK by yourself after 5 minutes idle. |
 | `/parkour` | `lobby.cmd.parkour` | Start a parkour run, or stop the one you're on.<br>Clicking the Parkour NPC does the same.<br>Jump to the sparkling block; falling ends the run. |
 | `/chatcolor [colour\|reset]` | `lobby.cmd.chatcolor` | Pick the colour of your chat messages.<br>Without a colour it opens the menu.<br>Also /chatcolour. |
-| `/glow` | `lobby.cmd.glow` | Glow in your rank colour (or stop). |
+| `/glow` | `lobby.cmd.glow` | Glow in your rank colour (or stop).<br>Guardian rank or higher. |
 | `/flyingminecart` | `lobby.cmd.flyingminecart` | Summon a flying minecart anyone can ride.<br>W to fly, Space to climb, sneak to get out. Also /flycart. |
 | `/lobbyhelp [topic\|command]` | everyone | This help.<br>Example: /lobbyhelp npcs<br>Example: /lobbyhelp npc skin |
 | `/collectibles` | everyone | Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.<br>Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar. |
