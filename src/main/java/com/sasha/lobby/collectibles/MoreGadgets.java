@@ -621,7 +621,7 @@ final class MoreGadgets implements Listener {
     private static void placeWings(ItemDisplay[] wings, Location pig, int t) {
         float yaw = (float) Math.toRadians(pig.getYaw());
         float flap = (float) Math.toRadians(10 + 32 * Math.sin(t * 0.5));   // from a little below level to well up
-        Location root = pig.clone().add(0, 0.62, 0);
+        Location root = pig.clone().add(0, 0.78, 0);                  // up on its back...
         root.setYaw(0);
         root.setPitch(0);
         for (int i = 0; i < 2; i++) {
@@ -629,7 +629,8 @@ final class MoreGadgets implements Listener {
             wings[i].teleport(root);
             wings[i].setInterpolationDelay(0);
             wings[i].setInterpolationDuration(1);
-            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.44f, 0, 0.05f)
+            // ...at the shoulder blades: either side of the spine, towards the front
+            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.3f, 0, 0.28f)
                     .rotateZ(side * flap).rotateX((float) (Math.PI / 2)).scale(0.7f));
         }
     }
@@ -2450,7 +2451,7 @@ final class MoreGadgets implements Listener {
     /**
      * Tic tac toe, like Pong: the player is X against the Lobby (O), until someone else walks up to the board; then
      * they play O instead, and the Lobby takes back over if they walk off. Click a square to play it. The score floats
-     * over the board; three in a row wins it (a draw just replays, with the other side starting). The Lobby plays
+     * over the board; three in a row wins it. A draw replays with the letters swapped (X always goes first, so the starter alternates). The Lobby plays
      * sensibly (it takes a win, usually blocks yours) but can be beaten.
      */
     private void ticTacToe(Player player) {
@@ -2480,7 +2481,8 @@ final class MoreGadgets implements Listener {
         upright.apply(centre.clone().add(fwd.clone().multiply(0.12)), new Object[]{"gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, 0.4f, true});
         char[] cells = new char[9];
         List<Entity> marks = new ArrayList<>();
-        int[] turn = {0}, starter = {0}, pts = {0, 0}, think = {0};
+        int[] turn = {0}, pts = {0, 0}, think = {0};
+        char[] mine = {'X'};                                           // the player's letter; it swaps after a tie
         boolean[] over = {false}, roundOver = {false};
         Player[] rival = {null};
         TextDisplay score = keep(p, label(centre.clone().add(0, 1.75, 0), Component.empty(), 0));
@@ -2491,8 +2493,9 @@ final class MoreGadgets implements Listener {
         Runnable show = () -> {
             String o = rival[0] == null ? "Lobby" : rival[0].getName();
             String whose = roundOver[0] ? "" : turn[0] == 0 ? player.getName() + "'s turn" : (rival[0] == null ? "The Lobby is thinking..." : o + "'s turn");
-            score.text(text(player.getName() + " (X)  ", 0xE03A3A).append(text("vs", 0xFFFFFF))
-                    .append(text("  " + o + " (O)", 0x3C6AE0)).append(Component.newline()).append(text(whose, 0xA9A3C2))
+            char theirs = mine[0] == 'X' ? 'O' : 'X';
+            score.text(text(player.getName() + " (" + mine[0] + ")  ", mine[0] == 'X' ? 0xE03A3A : 0x3C6AE0).append(text("vs", 0xFFFFFF))
+                    .append(text("  " + o + " (" + theirs + ")", theirs == 'X' ? 0xE03A3A : 0x3C6AE0)).append(Component.newline()).append(text(whose, 0xA9A3C2))
                     .append(Component.newline()).append(text(rival[0] == null ? "Walk up to the board to play O!" : "Three in a row wins", 0x7A7F96)));
         };
         Runnable newRound = () -> {
@@ -2500,14 +2503,12 @@ final class MoreGadgets implements Listener {
             marks.clear();
             java.util.Arrays.fill(cells, (char) 0);
             roundOver[0] = false;
-            starter[0] = 1 - starter[0];
-            turn[0] = starter[0];                                      // X starts the first round, then it swaps
+            turn[0] = mine[0] == 'X' ? 0 : 1;                          // X always goes first
             think[0] = 0;
             show.run();
         };
-        starter[0] = 1;
         java.util.function.IntConsumer play = cell -> {               // put the mover's mark down and see what happens
-            char mark = turn[0] == 0 ? 'X' : 'O';
+            char mark = turn[0] == 0 ? mine[0] : (mine[0] == 'X' ? 'O' : 'X');
             cells[cell] = mark;
             Location at = cellAt.apply(cell);
             marks.add(upright.apply(at.clone().add(fwd.clone().multiply(-0.04)), new Object[]{mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
@@ -2526,7 +2527,7 @@ final class MoreGadgets implements Listener {
                     if (pts[winner] >= 1) {                            // one win and it's done (a draw replays)
                         over[0] = true;
                         String name = winner == 0 ? player.getName() : rival[0] == null ? "The Lobby" : rival[0].getName();
-                        score.text(text(name + " wins!", winner == 0 ? 0xE03A3A : 0x3C6AE0));
+                        score.text(text(name + " wins!", mark == 'X' ? 0xE03A3A : 0x3C6AE0));
                         fx.confetti(centre.clone(), 60, 1);
                         fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
                         fx.later(80, () -> clear(player.getUniqueId()));
@@ -2538,8 +2539,9 @@ final class MoreGadgets implements Listener {
             }
             boolean full = true;
             for (char c : cells) if (c == 0) full = false;
-            if (full) {                                                // a draw: play it again
+            if (full) {                                                // a draw: swap letters and play it again
                 roundOver[0] = true;
+                mine[0] = mine[0] == 'X' ? 'O' : 'X';
                 fx.sound(base, "entity.villager.no", 0.8f, 1f);
                 show.run();
                 fx.later(30, newRound);
@@ -2582,16 +2584,16 @@ final class MoreGadgets implements Listener {
             }
             // the Lobby's move: after a little think
             if (rival[0] == null && turn[0] == 1 && !roundOver[0] && ++think[0] >= 20) {
-                play.accept(lobbyMove(cells, lines));
+                play.accept(lobbyMove(cells, lines, mine[0] == 'X' ? 'O' : 'X', mine[0]));
             }
         }, () -> clear(player.getUniqueId()));
     }
 
     /** The Lobby's tic tac toe move: win if it can, usually block, else the middle, a corner, or anywhere. */
-    private static int lobbyMove(char[] cells, int[][] lines) {
+    private static int lobbyMove(char[] cells, int[][] lines, char own, char yours) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        for (char want : new char[]{'O', 'X'}) {
-            if (want == 'X' && r.nextDouble() < 0.25) continue;      // sometimes it misses your threat
+        for (char want : new char[]{own, yours}) {
+            if (want == yours && r.nextDouble() < 0.25) continue;    // sometimes it misses your threat
             for (int[] line : lines) {
                 int count = 0, empty = -1;
                 for (int k : line) {
