@@ -590,7 +590,8 @@ public final class Collectibles implements Listener {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
             case "pinata" -> 1;                                        // (while it's up, right-click just swings the bat)
             case "scarecrow" -> 26;                                    // (it stands 24 seconds)
-            case "tetherball", "swing", "diving_board", "witch_cauldron", "sand_castle", "tic_tac_toe" -> 20;
+            case "witch_cauldron" -> 24;                               // (the brewing takes 22 seconds)
+            case "tetherball", "swing", "diving_board", "sand_castle", "tic_tac_toe" -> 20;
             case "dj_booth" -> 26;                                     // (it lasts 24 seconds: ready just after it's gone)
             case "pong", "beach_ball" -> 10;                           // (Pong, and the Volleyball, which kept the old key)
             case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "rainbow",

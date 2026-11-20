@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 60
+messages-version: 61
 
 theme:
   primary: "#B266FF"
@@ -1342,6 +1342,8 @@ collectibles:
     diving-judge: "<prefix><#8FD8FF>Judge <n>: <white>\"<line>\""
     # A dive's three scores and their total, to the diver.
     diving-score: "<prefix><secondary>Your dive: <white><a></white> · <white><b></white> · <white><c></white> = <#FFD27F><total></#FFD27F><muted>/30"
+    # Ghost used with no one else near enough to haunt (the gadget isn't used up).
+    ghost-alone: "<prefix><muted>There's nobody around for your ghosts to haunt."
     diving-room: "<prefix><muted>The diving board and its pool need an open space about 5 wide, 10 long and 5 high in front of you."
     volleyball-room: "<prefix><muted>Volleyball needs a flat, open space about 7 by 13 blocks (and 4 high) in front of you."
     disco-air: "<prefix><muted>Stand on the ground to set up the disco."

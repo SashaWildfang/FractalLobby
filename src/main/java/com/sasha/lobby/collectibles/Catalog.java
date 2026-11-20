@@ -253,7 +253,7 @@ public final class Catalog {
         add(Category.GADGET, "ghost", W, UNCOMMON, "Ghost", "Let loose a gang of little ghosts that haunt the lobby and BOO everyone.", null, null);
         add(Category.GADGET, "pumpkin_rain", W, RARE, "Pumpkin Rain", "A spooky storm that rains jack-o'-lanterns.", null, null);
         add(Category.GADGET, "scarecrow", W, RARE, "Scarecrow", "A scarecrow with crows that watches you... and doesn't like you getting close.", null, null);
-        add(Category.GADGET, "witch_cauldron", W, EPIC, "Witch's Cauldron", "A bubbling brew.", null, null);
+        add(Category.GADGET, "witch_cauldron", W, EPIC, "Witch's Cauldron", "Three witches brew up trouble round a bubbling cauldron.", null, null);
         add(Category.GADGET, "let_it_snow", H, RARE, "Let It Snow", "A little snow cloud follows you.", null, null);
         add(Category.GADGET, "ice_skate", H, RARE, "Ice Skates", "Skate on ice wherever you go.", null, null);
         add(Category.GADGET, "pumpkin_launcher", W, RARE, "Pumpkin Launcher", "Lob a jack-o'-lantern.", null, null);

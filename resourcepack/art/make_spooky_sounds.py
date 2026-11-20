@@ -49,21 +49,65 @@ def sting():
     return finish(out * 0.5, 1.2) * 0.8
 
 
+def _resonate(x, f, bw):
+    """A two-pole resonator (a formant) at f Hz with bandwidth bw."""
+    from scipy.signal import lfilter
+    r = np.exp(-np.pi * bw / sr)
+    a1, a2 = -2 * r * np.cos(2 * np.pi * f / sr), r * r
+    return lfilter([1 - r], [1, a1, a2], x)
+
+
 def caw(seed, base, length):
-    """A crow's harsh "CAAW": a buzzy, slightly falling voice with rough jitter, pushed through two nasal formants."""
+    """A crow's "CAAW": a rough voice made of irregular glottal pulses (jittery spacing, alternating loud and soft
+    pulses for the rasp), with a quick rise then a falling pitch, through the crow's throat formants, plus a breathy
+    hiss, a hard start and a short tail."""
     rng = np.random.default_rng(seed)
-    n = int(sr * length); t = np.arange(n) / sr
-    f = base * (1.08 - 0.18 * t / length) * (1 + 0.03 * np.sin(2 * np.pi * 31 * t)) * (1 + 0.02 * rng.normal(0, 1, n).cumsum() / np.sqrt(n))
-    ph = np.cumsum(f) / sr
-    saw = 2 * (ph % 1) - 1                                          # buzzy source
-    voice = band(saw, 900, 1500) * 1.2 + band(saw, 2000, 3000) * 0.6 + band(rng.normal(0, 1, n), 1000, 3200) * 0.35
-    shape = np.minimum(1, t / 0.02) * np.exp(-np.maximum(0, t - length * 0.5) / (length * 0.25))
-    return finish(voice * shape, 2.2) * 0.85
+    n = int(sr * length)
+    src = np.zeros(n)
+    t, k = 0.0, 0
+    while True:
+        u = t / length
+        f0 = base * (1 + 0.12 * np.sin(np.pi * min(u / 0.25, 1) / 2) - 0.28 * max(0, u - 0.25))
+        period = sr / f0 * (1 + rng.normal(0, 0.06))                 # jitter
+        i = int(t * sr)
+        if i >= n - 40:
+            break
+        amp = (1.0 if k % 2 == 0 else 0.55) * (1 + rng.normal(0, 0.12))   # period doubling + shimmer: the rasp
+        w = np.arange(24)
+        src[i:i + 24] += amp * np.exp(-w / 5.0) * (1 - w / 24)
+        t += period / sr
+        k += 1
+    breath = rng.normal(0, 1, n) * 0.18
+    x = src + breath
+    voice = (_resonate(x, 1150, 220) * 1.0 + _resonate(x, 1750, 260) * 0.8 + _resonate(x, 2700, 420) * 0.45
+             + _resonate(x, 600, 180) * 0.25)
+    tt = np.arange(n) / sr
+    shape = np.minimum(1, tt / 0.008) * np.minimum(1, (length - tt) / 0.07)
+    shape *= 1 - 0.25 * np.exp(-((tt / length - 0.18) / 0.05) ** 2)  # the little "ca-AW" dip
+    return finish(voice * shape / (np.abs(voice).max() + 1e-9), 2.6) * 0.9
+
+
+def jumpscare():
+    """A loud horror stab: a dissonant cluster of rough low and high voices hitting at once, a noise blast, then a
+    shuddering tail."""
+    rng = np.random.default_rng(21)
+    n = int(sr * 1.3); t = np.arange(n) / sr
+    out = np.zeros(n)
+    for f in (92.5, 98, 138.6, 523, 554, 740, 784):                  # semitone clashes, low and high
+        ph = np.cumsum(f * (1 + 0.004 * rng.normal(0, 1, n).cumsum() / np.sqrt(n))) / sr
+        saw = 2 * (ph % 1) - 1
+        out += saw * (0.9 if f < 200 else 0.45)
+    out = low(out, 5000)
+    out += band(rng.normal(0, 1, n), 300, 6000) * np.exp(-t / 0.08) * 1.6   # the blast
+    out *= np.minimum(1, t / 0.004) * (0.35 + 0.65 * np.exp(-t / 0.35)) * (1 + 0.25 * np.sin(2 * np.pi * 11 * t))
+    out *= np.minimum(1, (1.3 - t) / 0.25)
+    return finish(out / np.abs(out).max(), 2.2) * 0.95
 
 
 if __name__ == '__main__':
-    for i, (seed, base, length) in enumerate([(3, 420, 0.32), (8, 380, 0.38), (14, 460, 0.28)], start=1):
+    for i, (seed, base, length) in enumerate([(3, 560, 0.34), (8, 520, 0.4), (14, 610, 0.3)], start=1):
         save(f'crow_caw_{i}', caw(seed, base, length))
+    save('scarecrow_scare', jumpscare())
     save('ghost_woo', woo())
     save('ghost_boo', boo())
     for i, (seed, body) in enumerate([(2, 95), (6, 110), (11, 82)], start=1):

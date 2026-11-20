@@ -1889,13 +1889,23 @@ final class MoreGadgets implements Listener {
 
     /**
      * Ghost: five little ghosts burst out of you with a "woooo" and go haunting round the lobby for twenty seconds.
-     * They drift and bob about, trailing wisps, then each picks someone (anyone near, you too if no one else is about),
+     * They drift and bob about, trailing wisps, then each picks someone near (never you: with nobody else about, it
+     * doesn't go off),
      * sneaks up behind them, swings round in front of their face and BOOs them (a BOO! over their head, a jump, a
      * spooky sound), then darts off giggling to find someone else. At the end they all swirl up and vanish in a puff.
      */
     private void ghost(Player player) {
         World world = player.getWorld();
         Location start = player.getLocation().add(0, 1.2, 0);
+        boolean anyone = false;
+        for (Player q : world.getPlayers())
+            if (!q.equals(player) && !fx.parkour(q) && q.getLocation().distanceSquared(start) < 28 * 28) anyone = true;
+        if (!anyone) {                                                 // nobody to haunt: keep it for later
+            plugin.messages().send(player, "collectibles.gadget.ghost-alone");
+            fx.sound(start, "entity.villager.no", 0.8f, 1.2f);
+            fx.refund(player, "gadget:ghost");
+            return;
+        }
         world.spawnParticle(Particle.CLOUD, start, 25, 0.3, 0.4, 0.3, 0.05);
         fx.sound(start, "fractal:gadget.ghost_woo", 1f, 1f);
         ThreadLocalRandom r = ThreadLocalRandom.current();
@@ -1934,9 +1944,8 @@ final class MoreGadgets implements Listener {
                 if (mode[i] == 0 && since[i] > 50 + i * 9) {             // time to haunt someone
                     List<Player> near = new ArrayList<>();
                     for (Player q : world.getPlayers())
-                        if (!fx.parkour(q) && q.getLocation().toVector().distanceSquared(here) < 28 * 28
-                                && spooked.getOrDefault(q.getUniqueId(), -999) < t - 70) near.add(q);
-                    if (near.size() > 1) near.remove(player);              // others first
+                        if (!q.equals(player) && !fx.parkour(q) && q.getLocation().toVector().distanceSquared(here) < 28 * 28
+                                && spooked.getOrDefault(q.getUniqueId(), -999) < t - 70) near.add(q);   // never their owner
                     if (!near.isEmpty()) {
                         victim[i] = near.get(r.nextInt(near.size()));
                         mode[i] = 1;
@@ -1974,7 +1983,7 @@ final class MoreGadgets implements Listener {
                         world.spawnParticle(Particle.SOUL, eye, 8, 0.3, 0.3, 0.3, 0.02);
                         world.spawnParticle(Particle.CLOUD, front.toLocation(world), 8, 0.2, 0.2, 0.2, 0.03);
                         if (v.isOnGround()) v.setVelocity(v.getVelocity().setY(0.38));
-                        if (!v.equals(player)) v.sendActionBar(text(player.getName() + "'s ghost spooked you!", 0xE8EEFF));
+                        v.sendActionBar(text(player.getName() + "'s ghost spooked you!", 0xE8EEFF));
                         spooked.put(v.getUniqueId(), t);
                         mode[i] = 2;
                         since[i] = 0;
@@ -3472,8 +3481,10 @@ final class MoreGadgets implements Listener {
      * Scarecrow: up out of the ground rises a scarecrow on its post (a burlap sack head with button eyes and a stitched
      * smile, a straw hat, a plaid shirt with straw hands), in a little patch of wheat with a hay bale and a pumpkin.
      * Three crows circle overhead, flapping, then land on its arms and hat to sit, peck and caw. Its head slowly turns
-     * to watch whoever is nearest... and if anyone walks right up, it shudders and snaps its head round at them, and
-     * the crows burst off cawing, circling until they settle again. Lasts 24 seconds.
+     * to watch whoever is nearest... and if anyone walks right up: JUMPSCARE. Its face turns into glowing eyes and a
+     * jagged gaping mouth, it lunges its head at them with a horror stab, and the crows burst off cawing, circling
+     * until they settle again. All in a little farm: tilled soil, wheat, carrots and potatoes, hay, pumpkins, a fence
+     * and a lantern. Lasts 24 seconds.
      */
     private void scarecrow(Player player) {
         Location base = fx.ground(player);
@@ -3485,7 +3496,7 @@ final class MoreGadgets implements Listener {
         mid.setPitch(0);
         // the snow and grass where it stands are hidden while it's up
         List<Block> hidden = new ArrayList<>();
-        for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++) {
+        for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) {
             Block cell = mid.clone().add(x, 0, z).getBlock();
             if (!cell.getType().isAir() && cell.isPassable()) hidden.add(cell);
         }
@@ -3506,8 +3517,10 @@ final class MoreGadgets implements Listener {
             d.setTransformationMatrix(new Matrix4f().scale(0.001f));
         }));
         ItemDisplay body = part.apply("gadget/scarecrow_body"), head = part.apply("gadget/scarecrow_head");
+        ItemStack calmFace = fx.modelled(Material.HAY_BLOCK, "gadget/scarecrow_head"), scareFace = fx.modelled(Material.HAY_BLOCK, "gadget/scarecrow_head_scare");
         // the scarecrow on the ground, swayed by `shake` (pivoting at its foot); the head turned `look` from the body,
         // tilted `tilt`, pivoting at the neck (model y 20)
+        float[] lean = {0};
         interface Pose { void set(float rise, float shake, float look, float tilt, int ticks); }
         Pose pose = (rise, shake, look, tilt, ticks) -> {
             Matrix4f root = new Matrix4f().rotateZ(shake).translate(0, LIFT - (1 - rise) * 2.4f, 0).rotateY(yaw0).scale(S);
@@ -3516,35 +3529,60 @@ final class MoreGadgets implements Listener {
             body.setTransformationMatrix(new Matrix4f(root));
             head.setInterpolationDelay(0);
             head.setInterpolationDuration(ticks);
-            head.setTransformationMatrix(new Matrix4f(root).translate(0, 12 / 16f, 0).rotateY(look).rotateZ(tilt).translate(0, -12 / 16f, 0));
+            head.setTransformationMatrix(new Matrix4f(root).translate(0, 12 / 16f, 0).rotateY(look).rotateZ(tilt)
+                    .rotateX(lean[0]).scale(1 + lean[0] * 0.5f).translate(0, -12 / 16f, 0));
         };
-        // the patch round it: wheat, a hay bale and a pumpkin (none on the side facing the player, so it's in view)
-        org.bukkit.block.data.Ageable wheat = (org.bukkit.block.data.Ageable) Material.WHEAT.createBlockData();
-        wheat.setAge(7);
+        // the little farm round it: tilled soil, rows of wheat with carrots and potatoes, hay bales (one stacked), pumpkins
+        // and a jack-o'-lantern, and a bit of fence behind with a lantern on a post. The side facing the player stays open.
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        for (int k = 0; k < 9; k++) {
-            double a = yaw0 + Math.PI * 0.35 + k * Math.PI * 1.3 / 8;
-            double d = 1.3 + r.nextDouble() * 0.7;
-            Location at = mid.clone().add(Math.sin(a) * d, 0, Math.cos(a) * d);
-            float sc = 0.7f + r.nextFloat() * 0.25f;
-            keep(p, world.spawn(at, BlockDisplay.class, bd -> {
-                bd.setBlock(wheat);
+        Vector fwdV = new Vector(Math.sin(yaw0), 0, Math.cos(yaw0)), sideV = new Vector(Math.cos(yaw0), 0, -Math.sin(yaw0));
+        java.util.function.BiFunction<Double, Double, Location> spot = (u, v) -> mid.clone().add(sideV.clone().multiply(u)).add(fwdV.clone().multiply(v));
+        interface Deco { void put(Location at, BlockData b, float size, float turn, float lift); }
+        Deco deco = (at, b, size, turn, lift) -> keep(p, world.spawn(at, BlockDisplay.class, bd -> {
+            bd.setBlock(b);
+            bd.setPersistent(false);
+            bd.setTransformation(new Transformation(new Vector3f(-size / 2, lift, -size / 2), new AxisAngle4f(turn, 0, 1, 0), new Vector3f(size),
+                    new AxisAngle4f()));
+        }));
+        BlockData soil = Material.FARMLAND.createBlockData();
+        for (int u = -2; u <= 2; u++) for (int v = -3; v <= 1; v++) {
+            int uu = u, vv = v;
+            keep(p, world.spawn(spot.apply((double) uu, (double) vv), BlockDisplay.class, bd -> {
+                bd.setBlock(soil);
                 bd.setPersistent(false);
-                bd.setTransformation(new Transformation(new Vector3f(-sc / 2, 0, -sc / 2), new AxisAngle4f(r.nextFloat() * 6.28f, 0, 1, 0),
-                        new Vector3f(sc), new AxisAngle4f()));
+                bd.setTransformation(new Transformation(new Vector3f(-0.5f, -0.86f, -0.5f), new AxisAngle4f(yaw0, 0, 1, 0), new Vector3f(1f),
+                        new AxisAngle4f()));
             }));
         }
-        double hayA = yaw0 + Math.PI * 0.75, pumpA = yaw0 - Math.PI * 0.62;
-        keep(p, world.spawn(mid.clone().add(Math.sin(hayA) * 1.5, 0, Math.cos(hayA) * 1.5), BlockDisplay.class, bd -> {
-            bd.setBlock(Material.HAY_BLOCK.createBlockData());
-            bd.setPersistent(false);
-            bd.setTransformation(new Transformation(new Vector3f(-0.35f, 0, -0.35f), new AxisAngle4f(0.4f, 0, 1, 0), new Vector3f(0.7f), new AxisAngle4f()));
-        }));
-        keep(p, world.spawn(mid.clone().add(Math.sin(pumpA) * 1.4, 0, Math.cos(pumpA) * 1.4), BlockDisplay.class, bd -> {
-            bd.setBlock(Material.CARVED_PUMPKIN.createBlockData());
-            bd.setPersistent(false);
-            bd.setTransformation(new Transformation(new Vector3f(-0.28f, 0, -0.28f), new AxisAngle4f(), new Vector3f(0.56f), new AxisAngle4f()));
-        }));
+        Material[] crops = {Material.WHEAT, Material.WHEAT, Material.WHEAT, Material.CARROTS, Material.POTATOES};
+        for (int u = -2; u <= 2; u++) for (int v = -3; v <= 1; v++) {
+            if (Math.abs(u) <= 0 && v >= -1) continue;                // the scarecrow's spot and the way in
+            for (int half = 0; half < 2; half++) {
+                Material crop = crops[r.nextInt(crops.length)];
+                org.bukkit.block.data.Ageable grown = (org.bukkit.block.data.Ageable) crop.createBlockData();
+                grown.setAge(grown.getMaximumAge() - (r.nextInt(4) == 0 ? 1 : 0));
+                double du = u + (half == 0 ? -0.22 : 0.22) + r.nextDouble() * 0.1, dv = v + r.nextDouble() * 0.3 - 0.15;
+                deco.put(spot.apply(du, dv), grown, 0.55f + r.nextFloat() * 0.2f, r.nextFloat() * 6.28f, 0.06f);
+            }
+        }
+        deco.put(spot.apply(-2.9, -1.0), Material.HAY_BLOCK.createBlockData(), 0.8f, yaw0 + 0.3f, 0);
+        deco.put(spot.apply(-2.9, -1.9), Material.HAY_BLOCK.createBlockData(), 0.8f, yaw0 - 0.2f, 0);
+        deco.put(spot.apply(-2.9, -1.45), Material.HAY_BLOCK.createBlockData(), 0.75f, yaw0 + 0.6f, 0.8f);   // stacked
+        deco.put(spot.apply(2.8, -0.4), Material.CARVED_PUMPKIN.createBlockData(), 0.6f, yaw0 + (float) Math.PI, 0);
+        deco.put(spot.apply(2.6, 0.5), Material.PUMPKIN.createBlockData(), 0.45f, 0.3f, 0);
+        deco.put(spot.apply(3.0, -1.4), Material.JACK_O_LANTERN.createBlockData(), 0.5f, yaw0 + (float) Math.PI + 0.4f, 0);
+        deco.put(spot.apply(-2.4, 1.1), Material.PUMPKIN.createBlockData(), 0.5f, 1.1f, 0);
+        for (double u = -2.5; u <= 2.5; u += 1) {                     // the fence along the back
+            deco.put(spot.apply(u, -3.9), Material.SPRUCE_FENCE.createBlockData(b -> {
+                ((org.bukkit.block.data.MultipleFacing) b).setFace(org.bukkit.block.BlockFace.EAST, true);
+                ((org.bukkit.block.data.MultipleFacing) b).setFace(org.bukkit.block.BlockFace.WEST, true);
+            }), 1f, yaw0 + (float) Math.PI / 2 * 0 , 0);
+        }
+        deco.put(spot.apply(3.0, -3.9), Material.SPRUCE_FENCE.createBlockData(), 1f, 0, 0);
+        deco.put(spot.apply(3.0, -3.9), Material.LANTERN.createBlockData(), 0.6f, 0, 1f);
+        for (int k = 0; k < 4; k++)                                    // a few poppies and grass tufts at the edges
+            deco.put(spot.apply(-3.3 + k * 2.2, 1.6 + (k % 2) * 0.3), (k % 2 == 0 ? Material.SHORT_GRASS : Material.POPPY).createBlockData(), 0.7f,
+                    r.nextFloat() * 6.28f, 0);
         world.spawnParticle(Particle.BLOCK, mid.clone().add(0, 0.2, 0), 30, 0.5, 0.1, 0.5, 0, Material.HAY_BLOCK.createBlockData());
         fx.sound(mid, "block.rooted_dirt.break", 1f, 0.8f);
         fx.sound(mid, "entity.witch.ambient", 0.6f, 0.7f);
@@ -3592,10 +3630,13 @@ final class MoreGadgets implements Listener {
                 }
             }
             boolean close = nearest != null && best < 2.6 * 2.6 && t > 30;
-            if (close && t - scared[0] > 120) {                      // too close: it comes alive
+            if (close && t - scared[0] > 120) {                      // too close: it comes alive. JUMPSCARE
                 scared[0] = t;
+                head.setItemStack(scareFace);
+                fx.later(22, () -> { if (head.isValid()) head.setItemStack(calmFace); });
+                fx.sound(nearest.getEyeLocation(), "fractal:gadget.scarecrow_scare", 1.4f, 1f);
                 fx.sound(mid, "block.grass.break", 1f, 0.6f);
-                fx.sound(mid, "entity.witch.ambient", 0.8f, 0.55f);
+                world.spawnParticle(Particle.LARGE_SMOKE, mid.clone().add(0, 2.2, 0), 12, 0.3, 0.3, 0.3, 0.03);
                 world.spawnParticle(Particle.BLOCK, mid.clone().add(0, 1.4, 0), 25, 0.5, 0.4, 0.5, 0, Material.HAY_BLOCK.createBlockData());
                 for (int k = 0; k < 3; k++) {
                     if (cmode[k] == 0) continue;
@@ -3613,6 +3654,7 @@ final class MoreGadgets implements Listener {
                     want = (float) Math.max(-1.6, Math.min(1.6, a));
                 }
                 boolean snapping = since < 25;
+                lean[0] = since < 22 ? 0.3f : 0f;                      // (the face model's front leans towards them)
                 look[0] += (want - look[0]) * (snapping ? 0.6f : 0.06f);
                 tilt[0] = snapping ? 0.25f : (float) (Math.sin(t * 0.03) * 0.12);
                 float shake = since < 18 ? (float) Math.sin(since * 1.7) * 0.06f * (1 - since / 18f) : (float) Math.sin(t * 0.05) * 0.012f;
@@ -3676,32 +3718,236 @@ final class MoreGadgets implements Listener {
         }, () -> clear(player.getUniqueId()));
     }
 
+    /**
+     * Witch's Cauldron: a bubbling cauldron over a crackling campfire, and three witches standing round it, slowly
+     * circling as they brew. Three times over, each witch in turn tosses an ingredient in (it arcs into the pot with a
+     * plop and a puff of colour), the brew changes colour and bubbles harder and harder, and then it ERUPTS: a spiralling
+     * column of spell, a ring of colour across the ground, the witches cackling. Out of the first come bats, out of the
+     * second floating potions that pop, and the last is a huge one that hexes everyone close (they glow and sparkle a
+     * moment). Then the witches vanish in smoke. 22 seconds.
+     */
     private void cauldron(Player player) {
-        Placed p = place(player);
         Location base = fx.ground(player);
-        BlockDisplay pot = keep(p, base.getWorld().spawn(base, BlockDisplay.class, d -> {
+        World world = base.getWorld();
+        Placed p = place(player);
+        Location mid = base.getBlock().getLocation().add(0.5, 0, 0.5);
+        mid.setY(base.getY());
+        mid.setYaw(0);
+        mid.setPitch(0);
+        List<Block> hidden = new ArrayList<>();
+        for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) {
+            Block cell = mid.clone().add(x, 0, z).getBlock();
+            if (!cell.getType().isAir() && cell.isPassable()) hidden.add(cell);
+        }
+        BlockData air = Material.AIR.createBlockData();
+        Runnable hide = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), air);
+        };
+        hide.run();
+        p.end = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), bl.getBlockData());
+        };
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        keep(p, world.spawn(mid, BlockDisplay.class, d -> {
+            d.setBlock(Material.CAMPFIRE.createBlockData());
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.55f, 0, -0.55f), new AxisAngle4f(), new Vector3f(1.1f), new AxisAngle4f()));
+        }));
+        keep(p, world.spawn(mid, BlockDisplay.class, d -> {
             d.setBlock(Material.CAULDRON.createBlockData());
-            d.setTransformation(new Transformation(new Vector3f(-0.5f, 0, -0.5f), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-0.6f, 0.3f, -0.6f), new AxisAngle4f(), new Vector3f(1.2f), new AxisAngle4f()));
         }));
-        BlockDisplay brew = keep(p, base.getWorld().spawn(base, BlockDisplay.class, d -> {
-            d.setBlock(Material.LIME_STAINED_GLASS.createBlockData());
+        Material[] brews = {Material.LIME_STAINED_GLASS, Material.PURPLE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.ORANGE_STAINED_GLASS};
+        Color[] tints = {Color.fromRGB(0x7FE35A), Color.fromRGB(0xB266FF), Color.fromRGB(0xFF6FD8), Color.fromRGB(0xFF8A1F)};
+        BlockDisplay brew = keep(p, world.spawn(mid, BlockDisplay.class, d -> {
+            d.setBlock(brews[0].createBlockData());
+            d.setPersistent(false);
             d.setBrightness(new Display.Brightness(15, 15));
-            d.setTransformation(new Transformation(new Vector3f(-0.4f, 0.75f, -0.4f), new AxisAngle4f(), new Vector3f(0.8f, 0.05f, 0.8f), new AxisAngle4f()));
+            d.setTransformation(new Transformation(new Vector3f(-0.5f, 1.32f, -0.5f), new AxisAngle4f(), new Vector3f(1f, 0.05f, 1f), new AxisAngle4f()));
         }));
-        fx.sound(base, "entity.witch.celebrate", 1f, 1f);
-        Color[] brews = {Color.fromRGB(0x7FE35A), Color.fromRGB(0xB266FF), Color.fromRGB(0xFF6FD8), Color.fromRGB(0xFF8A1F)};
-        p.task = fx.every(500, t -> {
-            Location surface = base.clone().add(0, 0.85, 0);
-            if (t % 2 == 0) surface.getWorld().spawnParticle(Particle.DUST, surface, 2, 0.25, 0.05, 0.25, 0,
-                    new Particle.DustOptions(brews[(t / 80) % brews.length], 1.2f));
-            if (t % 5 == 0) surface.getWorld().spawnParticle(Particle.BUBBLE_POP, surface, 2, 0.2, 0.05, 0.2, 0.02);
-            if (t % 25 == 0) fx.sound(surface, "block.brewing_stand.brew", 0.6f, 0.8f + (t % 75) / 100f);
-            if (t % 80 == 40) {   // a potion pops out and bursts in colour
-                Location pop = surface.clone().add(fx.rand(0.6), 1.2, fx.rand(0.6));
-                pop.getWorld().spawnParticle(Particle.WITCH, pop, 20, 0.3, 0.3, 0.3, 0.1);
-                fx.sound(pop, "entity.splash_potion.break", 0.7f, 1f);
+        Location surface = mid.clone().add(0, 1.4, 0);
+        // the witches
+        final int W = 3;
+        final double R = 2.0;
+        org.bukkit.entity.Witch[] witches = new org.bukkit.entity.Witch[W];
+        Material[] holding = {Material.POTION, Material.SPIDER_EYE, Material.GLOWSTONE_DUST};
+        for (int i = 0; i < W; i++) {
+            double a = Math.PI * 2 * i / W;
+            Location at = mid.clone().add(Math.cos(a) * R, 0, Math.sin(a) * R);
+            at.setDirection(mid.toVector().subtract(at.toVector()));
+            int ii = i;
+            witches[i] = keep(p, world.spawn(at, org.bukkit.entity.Witch.class, w -> {
+                w.setAI(false);
+                w.setSilent(true);
+                w.setInvulnerable(true);
+                w.setPersistent(false);
+                w.setCollidable(false);
+                w.setCanPickupItems(false);
+                w.setRemoveWhenFarAway(false);
+                w.getEquipment().setItemInMainHand(new ItemStack(holding[ii]));
+                w.getEquipment().setItemInMainHandDropChance(0);
+            }));
+            world.spawnParticle(Particle.LARGE_SMOKE, at.clone().add(0, 1, 0), 15, 0.3, 0.6, 0.3, 0.02);
+        }
+        fx.sound(mid, "entity.witch.celebrate", 1f, 0.9f);
+        fx.sound(mid, "block.fire.ambient", 1f, 1f);
+        Material[] ingredients = {Material.SPIDER_EYE, Material.GLOWSTONE_DUST, Material.NETHER_WART, Material.REDSTONE, Material.BLAZE_POWDER,
+                Material.FERMENTED_SPIDER_EYE, Material.RABBIT_FOOT, Material.PHANTOM_MEMBRANE, Material.GHAST_TEAR, Material.SUGAR};
+        final int CYCLE = 140, LIFE = 440;
+        double[] spin = {0};
+        int[] colour = {0};
+        p.task = fx.every(LIFE, t -> {
+            if (t % 40 == 0) hide.run();
+            // the witches slowly circle the pot, facing it, bobbing as they stir
+            spin[0] += 0.012;
+            for (int i = 0; i < W; i++) {
+                if (!witches[i].isValid()) continue;
+                double a = spin[0] + Math.PI * 2 * i / W;
+                Location at = mid.clone().add(Math.cos(a) * R, 0, Math.sin(a) * R);
+                at.setDirection(surface.toVector().subtract(at.clone().add(0, 1.6, 0).toVector()));
+                witches[i].teleport(at);
+                witches[i].setRotation(at.getYaw(), at.getPitch());
             }
-        }, () -> clear(player.getUniqueId()));
+            Color tint = tints[colour[0]];
+            int c = t % CYCLE, cycle = t / CYCLE;
+            if (t % 3 == 0) world.spawnParticle(Particle.DUST, surface, 2 + c / 40, 0.3, 0.05, 0.3, 0, new Particle.DustOptions(tint, 1.2f));
+            if (t % 4 == 0) world.spawnParticle(Particle.BUBBLE_POP, surface, 1 + c / 30, 0.25, 0.05, 0.25, 0.02);
+            if (t % 7 == 0) world.spawnParticle(Particle.SMOKE, mid.clone().add(0, 0.4, 0), 1, 0.2, 0.05, 0.2, 0.01);
+            if (t % 24 == 0) fx.sound(surface, "block.bubble_column.bubble_pop", 0.7f, 0.7f + c / 200f);
+            if (cycle >= 3) return;
+            // each witch tosses something in
+            if (c == 10 || c == 22 || c == 34) {
+                int i = (c - 10) / 12;
+                org.bukkit.entity.Witch w = witches[i];
+                if (!w.isValid()) return;
+                Location from = w.getLocation().add(0, 1.5, 0);
+                ItemStack thing = new ItemStack(ingredients[r.nextInt(ingredients.length)]);
+                w.getEquipment().setItemInMainHand(thing);
+                w.playEffect(org.bukkit.EntityEffect.WITCH_MAGIC);
+                fx.sound(from, "entity.witch.ambient", 0.9f, (float) (0.9 + r.nextDouble() * 0.3));
+                ItemDisplay flying = keep(p, world.spawn(from, ItemDisplay.class, d -> {
+                    d.setItemStack(thing);
+                    d.setPersistent(false);
+                    d.setTeleportDuration(1);
+                    d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.45f), new AxisAngle4f()));
+                }));
+                Vector start = from.toVector(), end = surface.toVector();
+                fx.every(12, s -> {
+                    double u = s / 12.0;
+                    Vector at = start.clone().multiply(1 - u).add(end.clone().multiply(u)).add(new Vector(0, Math.sin(u * Math.PI) * 1.4, 0));
+                    flying.teleport(at.toLocation(world));
+                    flying.setInterpolationDelay(0);
+                    flying.setInterpolationDuration(1);
+                    flying.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(s * 0.6f, 0, 0, 1), new Vector3f(0.45f), new AxisAngle4f()));
+                }, () -> {
+                    flying.remove();
+                    world.spawnParticle(Particle.SPLASH, surface, 15, 0.25, 0.05, 0.25, 0.1);
+                    world.spawnParticle(Particle.DUST, surface.clone().add(0, 0.3, 0), 12, 0.25, 0.2, 0.25, 0, new Particle.DustOptions(tint, 1.6f));
+                    fx.sound(surface, "entity.generic.splash", 0.5f, 1.6f);
+                    fx.sound(surface, "block.brewing_stand.brew", 0.8f, 1.2f);
+                });
+            }
+            if (c == 50) {                                             // the brew turns
+                colour[0] = (colour[0] + 1) % brews.length;
+                brew.setBlock(brews[colour[0]].createBlockData());
+                world.spawnParticle(Particle.WITCH, surface, 25, 0.3, 0.2, 0.3, 0.05);
+                fx.sound(surface, "block.amethyst_block.resonate", 0.8f, 1.4f);
+            }
+            if (c > 50 && c < 90 && c % 6 == 0) fx.sound(surface, "block.lava.pop", 0.6f, 0.6f + (c - 50) / 40f);   // building up
+            if (c == 90) {                                             // ERUPTION
+                boolean finale = cycle == 2;
+                Color col = tints[colour[0]];
+                fx.sound(surface, "entity.generic.explode", finale ? 0.7f : 0.35f, 1.6f);
+                fx.sound(surface, "entity.evoker.prepare_summon", 0.9f, finale ? 0.8f : 1.2f);
+                for (org.bukkit.entity.Witch w : witches) {
+                    if (!w.isValid()) continue;
+                    w.playEffect(org.bukkit.EntityEffect.WITCH_MAGIC);
+                    fx.later(r.nextInt(8), () -> fx.sound(w.getLocation(), "entity.witch.celebrate", 1f, (float) (0.8 + Math.random() * 0.4)));
+                }
+                int high = finale ? 70 : 45;
+                fx.every(high / 3, s -> {                              // the spiral column
+                    for (int arm = 0; arm < 3; arm++) {
+                        double a = s * 0.7 + arm * Math.PI * 2 / 3, h = s * 0.18;
+                        Location at = surface.clone().add(Math.cos(a) * (0.35 + h * 0.08), h, Math.sin(a) * (0.35 + h * 0.08));
+                        world.spawnParticle(Particle.DUST, at, 2, 0.03, 0.03, 0.03, 0, new Particle.DustOptions(col, 1.6f));
+                        world.spawnParticle(Particle.ENTITY_EFFECT, at, 1, 0.05, 0.05, 0.05, 0, col);
+                    }
+                    if (s % 3 == 0) world.spawnParticle(Particle.WITCH, surface.clone().add(0, s * 0.18, 0), 4, 0.15, 0.15, 0.15, 0.02);
+                }, null);
+                fx.every(14, s -> {                                    // the ring across the ground
+                    double rr = 0.6 + s * (finale ? 0.38 : 0.28);
+                    for (int k = 0; k < 28; k++) {
+                        double a = Math.PI * 2 * k / 28;
+                        world.spawnParticle(Particle.DUST, mid.clone().add(Math.cos(a) * rr, 0.15, Math.sin(a) * rr), 1, 0, 0, 0, 0,
+                                new Particle.DustOptions(col, 1.3f));
+                    }
+                }, null);
+                if (cycle == 0) {                                      // bats flutter out
+                    for (int k = 0; k < 4; k++) {
+                        org.bukkit.entity.Bat bat = keep(p, world.spawn(surface.clone().add(0, 0.6, 0), org.bukkit.entity.Bat.class, bt -> {
+                            bt.setPersistent(false);
+                            bt.setInvulnerable(true);
+                            bt.setSilent(true);
+                            bt.setAwake(true);
+                        }));
+                        fx.later(55 + k * 5, () -> {
+                            if (bat.isValid()) {
+                                world.spawnParticle(Particle.LARGE_SMOKE, bat.getLocation(), 6, 0.1, 0.1, 0.1, 0.02);
+                                bat.remove();
+                            }
+                        });
+                    }
+                } else if (cycle == 1) {                               // floating potions that pop
+                    for (int k = 0; k < 5; k++) {
+                        Color pc = tints[r.nextInt(tints.length)];
+                        ItemStack bottle = new ItemStack(Material.POTION);
+                        bottle.editMeta(org.bukkit.inventory.meta.PotionMeta.class, m -> m.setColor(pc));
+                        double a = Math.PI * 2 * k / 5;
+                        Vector drift = new Vector(Math.cos(a) * 0.05, 0.06, Math.sin(a) * 0.05);
+                        ItemDisplay pot = keep(p, world.spawn(surface.clone().add(0, 0.4, 0), ItemDisplay.class, d -> {
+                            d.setItemStack(bottle);
+                            d.setPersistent(false);
+                            d.setTeleportDuration(2);
+                            d.setBrightness(new Display.Brightness(15, 15));
+                            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.6f), new AxisAngle4f()));
+                        }));
+                        int life = 30 + k * 6;
+                        fx.every(life, s -> {
+                            pot.teleport(pot.getLocation().add(drift).add(0, Math.sin(s * 0.3) * 0.02, 0));
+                            if (s % 3 == 0) world.spawnParticle(Particle.ENTITY_EFFECT, pot.getLocation(), 1, 0.05, 0.05, 0.05, 0, pc);
+                        }, () -> {
+                            Location pop = pot.getLocation();
+                            pot.remove();
+                            world.spawnParticle(Particle.DUST, pop, 25, 0.35, 0.35, 0.35, 0, new Particle.DustOptions(pc, 1.5f));
+                            world.spawnParticle(Particle.ENTITY_EFFECT, pop, 12, 0.3, 0.3, 0.3, 0, pc);
+                            fx.sound(pop, "entity.splash_potion.break", 0.7f, (float) (0.9 + Math.random() * 0.4));
+                        });
+                    }
+                } else {                                               // the big one: a hex on everyone close
+                    world.spawnParticle(Particle.FLASH, surface.clone().add(0, 1, 0), 1, 0, 0, 0, 0, col);
+                    world.spawnParticle(Particle.WITCH, surface.clone().add(0, 1.5, 0), 80, 1.2, 1.2, 1.2, 0.1);
+                    for (Player q : world.getPlayers()) {
+                        if (fx.parkour(q) || q.getLocation().distanceSquared(mid) > 6 * 6) continue;
+                        q.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.GLOWING, 70, 0, false, false, false));
+                        fx.every(60, s -> {
+                            if (q.isOnline() && s % 2 == 0)
+                                world.spawnParticle(Particle.ENTITY_EFFECT, q.getLocation().add(Math.cos(s * 0.5) * 0.5, 0.2 + s * 0.03, Math.sin(s * 0.5) * 0.5),
+                                        1, 0, 0, 0, 0, col);
+                        }, null);
+                        q.sendActionBar(text("The witches hexed you!", 0xC77DFF));
+                    }
+                }
+            }
+        }, () -> {
+            for (org.bukkit.entity.Witch w : witches) {                // they vanish in a puff of smoke
+                if (!w.isValid()) continue;
+                world.spawnParticle(Particle.LARGE_SMOKE, w.getLocation().add(0, 1, 0), 20, 0.3, 0.6, 0.3, 0.03);
+                world.spawnParticle(Particle.WITCH, w.getLocation().add(0, 1, 0), 10, 0.3, 0.6, 0.3, 0.05);
+            }
+            fx.sound(mid, "entity.illusioner.mirror_move", 0.8f, 0.8f);
+            clear(player.getUniqueId());
+        });
     }
 
     private void sandCastle(Player player) {

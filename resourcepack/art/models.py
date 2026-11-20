@@ -397,13 +397,14 @@ def build(out):
     sounds['gadget.bat_swing'] = {"sounds": [{"name": "fractal:gadget/bat_swing"}]}
     # the ghost and the pumpkin rain (made by make_spooky_sounds.py)
     for name in ('ghost_woo', 'ghost_boo', 'pumpkin_thud_1', 'pumpkin_thud_2', 'pumpkin_thud_3', 'pumpkin_sting',
-                 'crow_caw_1', 'crow_caw_2', 'crow_caw_3'):
+                 'crow_caw_1', 'crow_caw_2', 'crow_caw_3', 'scarecrow_scare'):
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'{name}.ogg'),
                     f'{out}/assets/fractal/sounds/gadget/{name}.ogg')
     sounds['gadget.ghost_woo'] = {"sounds": [{"name": "fractal:gadget/ghost_woo"}]}
     sounds['gadget.ghost_boo'] = {"sounds": [{"name": "fractal:gadget/ghost_boo"}]}
     sounds['gadget.pumpkin_thud'] = {"sounds": [{"name": f"fractal:gadget/pumpkin_thud_{i}"} for i in (1, 2, 3)]}
     sounds['gadget.pumpkin_sting'] = {"sounds": [{"name": "fractal:gadget/pumpkin_sting"}]}
+    sounds['gadget.scarecrow_scare'] = {"sounds": [{"name": "fractal:gadget/scarecrow_scare"}]}
     sounds['gadget.crow_caw'] = {"sounds": [{"name": f"fractal:gadget/crow_caw_{i}"} for i in (1, 2, 3)]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
@@ -603,6 +604,19 @@ def build(out):
              Box((5, 27.5, 5.2), (11, 30.2, 10.8), HAT_, 'flat'), Box((4.9, 27.5, 5.1), (11.1, 28.4, 10.9), BAND_, 'flat'),
              Box((9.6, 28.4, 5.2), (11, 30.2, 10.8), HAT_D_, 'flat')]
     write(out, G + 'scarecrow_head', head, scale=H)
+    # the jumpscare face: huge glowing eyes and a gaping, jagged mouth (the same head, hat and all)
+    scare = [b for b in head if not (b.faces == face)]
+    scare += [Box((5.4, 22.9, 4.8), (7.6, 25.3, 5), '#ffef8a', 'flat', glow=15, faces=face),
+              Box((8.4, 22.9, 4.8), (10.6, 25.3, 5), '#ffef8a', 'flat', glow=15, faces=face),
+              Box((6.1, 23.6, 4.75), (6.9, 24.6, 4.8), '#ff3a1a', 'flat', glow=15, faces=face),
+              Box((9.1, 23.6, 4.75), (9.9, 24.6, 4.8), '#ff3a1a', 'flat', glow=15, faces=face),
+              Box((5.4, 20.6, 4.8), (10.6, 22.5, 5), '#1a0606', 'flat', faces=face)]
+    for x in (5.6, 6.9, 8.2, 9.5):                                     # jagged teeth, top and bottom
+        scare.append(Box((x, 21.8, 4.75), (x + 0.8, 22.5, 4.8), '#f4ead0', 'flat', faces=face))
+    for x in (6.2, 7.5, 8.8):
+        scare.append(Box((x, 20.6, 4.75), (x + 0.8, 21.2, 4.8), '#f4ead0', 'flat', faces=face))
+    write(out, G + 'scarecrow_head_scare', scare, scale=H)
+
     # crows (beaks to the north, like the scarecrow's face): sitting, and flying with wings up and down
     CROW_, CROW_L_, BEAK_ = '#24242e', '#454558', '#e8b23a'
     crow_body = [Box((5.5, 4, 5), (10.5, 8.5, 11.5), CROW_, 'flat'), Box((6, 7.5, 2.5), (10, 11, 6), CROW_, 'flat'),

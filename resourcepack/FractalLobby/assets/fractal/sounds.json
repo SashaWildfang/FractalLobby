@@ -112,5 +112,12 @@
     "name": "fractal:gadget/crow_caw_3"
    }
   ]
+ },
+ "gadget.scarecrow_scare": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/scarecrow_scare"
+   }
+  ]
  }
 }
