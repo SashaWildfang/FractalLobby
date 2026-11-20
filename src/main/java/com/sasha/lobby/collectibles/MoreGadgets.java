@@ -629,8 +629,9 @@ final class MoreGadgets implements Listener {
             wings[i].teleport(root);
             wings[i].setInterpolationDelay(0);
             wings[i].setInterpolationDuration(1);
-            // ...at the shoulder blades: either side of the spine, towards the front
-            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.3f, 0, 0.28f)
+            // ...at the shoulder blades: either side of the spine; the sheet reaches forward from its root, so it sits
+            // back a little to put the leading edge just behind the middle of the back
+            wings[i].setTransformationMatrix(new Matrix4f().rotateY(-yaw).translate(side * 0.3f, 0, -0.3f)
                     .rotateZ(side * flap).rotateX((float) (Math.PI / 2)).scale(0.7f));
         }
     }
