@@ -441,6 +441,24 @@ public final class Collectibles implements Listener {
                 Placeholder.parsed("how", plugin.messages().raw("collectibles.ability." + ability + ".how")));
     }
 
+    /** The hotbar slot the gadget sits in (0-based). */
+    int gadgetSlot() {
+        int configured = plugin.getConfig().getInt("collectibles.gadget-slot", 6);
+        return Math.max(0, Math.min(8, (configured == 4 ? 6 : configured) - 1));
+    }
+
+    /** Someone else's frisbee, caught: it sits in the gadget slot until thrown on. */
+    ItemStack caughtFrisbee(String owner) {
+        Item frisbee = Catalog.get("gadget:frisbee");
+        ItemStack item = frisbee == null ? new ItemStack(Material.RED_CARPET) : gadgetItem(frisbee);
+        item.editMeta(meta -> {
+            meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, "frisbee-held");
+            meta.displayName(plugin.messages().item("collectibles.gadget.frisbee-held", Messages.arg("player", owner)));
+            meta.lore(plugin.messages().lore("collectibles.gadget.frisbee-held-lore"));
+        });
+        return item;
+    }
+
     private ItemStack gadgetItem(Item gadget) {
         ItemStack item = icon(gadget);
         item.editMeta(meta -> {
@@ -498,6 +516,10 @@ public final class Collectibles implements Listener {
         if (what.equals("menu")) {
             sound(player, "block.ender_chest.open", 1.4f);
             open(player);
+            return;
+        }
+        if (what.equals("frisbee-held")) {                             // someone else's frisbee: throw it on
+            effects.throwFrisbee(player);
             return;
         }
         int colon = what.indexOf(':');

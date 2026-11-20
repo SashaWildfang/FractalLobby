@@ -307,6 +307,23 @@ final class Effects implements Listener {
         return collectibles.itemKey();
     }
 
+    void throwFrisbee(Player player) {
+        more.throwFrisbee(player);
+    }
+
+    int gadgetSlot() {
+        return collectibles.gadgetSlot();
+    }
+
+    ItemStack caughtFrisbee(String owner) {
+        return collectibles.caughtFrisbee(owner);
+    }
+
+    /** Puts a player's hotbar collectibles back as they should be (their own gadget in its slot, and so on). */
+    void reapply(Player player) {
+        collectibles.apply(player);
+    }
+
     void refund(Player player, String what) {
         collectibles.refund(player, what);
     }

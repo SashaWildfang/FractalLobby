@@ -96,6 +96,7 @@ final class MoreGadgets implements Listener {
 
     void quit(Player player) {
         clear(player.getUniqueId());
+        endFrisbeeOf(player.getUniqueId());
     }
 
     private void clear(UUID id) {
@@ -2203,109 +2204,183 @@ final class MoreGadgets implements Listener {
         }, null);
     }
 
+    /** A frisbee out in the world: whose it is, who has it (null while it's flying or on the ground), the disc. */
+    private final class Frisbee {
+        final Player owner;
+        Player holder, thrower;
+        ItemDisplay disc;
+        BukkitTask task;
+        ItemStack holderHad;                                           // what the holder had in their gadget slot
+        int idle;                                                      // ticks lying on the ground, or held by someone
+        Frisbee(Player owner) { this.owner = owner; }
+    }
+
+    private final Map<UUID, Frisbee> frisbees = new HashMap<>();      // by owner
+
     /**
-     * The frisbee: thrown, it glides out spinning flat with a bright trail; anyone it comes close to catches it (it sits
-     * spinning on their hand a moment) and passes it straight back to whoever threw it, and so on: a game of catch, up
-     * to a dozen passes. Nobody to catch it, it curves round and comes back to the thrower. Missed, it drops to the
-     * ground, skids, and poofs.
+     * The frisbee is a real thing you pass about. Throw it (right-click) and it leaves your hotbar; it glides out
+     * spinning with a bright red and white trail. Anyone it comes close to catches it: it goes into their gadget slot
+     * (their own gadget comes back when they throw it on), and they can throw it to whoever they like. When its owner
+     * catches it, it's theirs again. If it lands, anyone can pick it up by walking over it; left alone on the ground
+     * (or kept too long) it goes back to its owner.
      */
     private void frisbee(Player player) {
-        World world = player.getWorld();
-        Location eye = player.getEyeLocation();
-        ItemDisplay disc = model(eye, "gadget/frisbee_3d", Material.RED_CARPET, 0.8f, 0);
-        disc.setTeleportDuration(1);
-        fx.tagged(disc, "frisbee");
+        Frisbee old = frisbees.get(player.getUniqueId());
+        if (old != null && old.holder != player) return;              // it's out there somewhere
+        Frisbee f = old != null ? old : new Frisbee(player);
+        frisbees.put(player.getUniqueId(), f);
+        f.holder = player;
+        launch(f);
+    }
+
+    /** Someone holding another player's frisbee throws it on. */
+    void throwFrisbee(Player player) {
+        for (Frisbee f : frisbees.values()) {
+            if (player.equals(f.holder)) {
+                launch(f);
+                return;
+            }
+        }
+        fx.reapply(player);                                            // (a stale one: tidy their hotbar)
+    }
+
+    private void endFrisbeeOf(UUID owner) {
+        Frisbee f = frisbees.remove(owner);
+        if (f != null) returnHome(f, false);
+        for (Frisbee other : new ArrayList<>(frisbees.values())) {    // they were holding someone else's: it goes home
+            if (other.holder != null && other.holder.getUniqueId().equals(owner)) {
+                frisbees.remove(other.owner.getUniqueId());
+                returnHome(other, true);
+            }
+        }
+    }
+
+    /** Gives the frisbee back to its owner: the holder gets their own gadget back, the owner gets theirs. */
+    private void returnHome(Frisbee f, boolean toOwner) {
+        if (f.task != null) f.task.cancel();
+        if (f.disc != null) f.disc.remove();
+        if (f.holder != null && !f.holder.equals(f.owner) && f.holder.isOnline()) fx.reapply(f.holder);
+        if (toOwner && f.owner.isOnline()) {
+            fx.reapply(f.owner);
+            fx.sound(f.owner.getLocation(), "entity.item.pickup", 0.8f, 1.2f);
+        }
+    }
+
+    /** The holder throws it: out of their hand (and hotbar) and flying. */
+    private void launch(Frisbee f) {
+        Player thrower = f.holder;
+        int slot = fx.gadgetSlot();
+        if (thrower.equals(f.owner)) {
+            thrower.getInventory().setItem(slot, null);               // gone from your hotbar till it's caught
+        } else {
+            fx.reapply(thrower);                                       // they get their own gadget back
+        }
+        f.holder = null;
+        f.thrower = thrower;
+        f.idle = 0;
+        World world = thrower.getWorld();
+        Location eye = thrower.getEyeLocation();
+        Vector dir = eye.getDirection().setY(Math.max(-0.15, Math.min(0.3, eye.getDirection().getY()))).normalize();
+        Vector side = new Vector(-dir.getZ(), 0, dir.getX()).normalize();
+        if (f.disc != null) f.disc.remove();
+        Location start = eye.clone().add(dir.clone().multiply(0.6)).add(0, -0.2, 0);
+        start.setYaw(0);
+        start.setPitch(0);
+        f.disc = world.spawn(start, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.RED_CARPET, "gadget/frisbee_3d"));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+        });
+        fx.tagged(f.disc, "frisbee");
+        thrower.swingMainHand();
         fx.sound(eye, "entity.snowball.throw", 1f, 0.6f);
-        // where it is, and who threw it to whom; the flight's own clock
-        Location[] at = {eye.clone()};
-        Player[] from = {player}, to = {null};
-        Vector[] dir = {eye.getDirection().setY(Math.max(-0.1, Math.min(0.2, eye.getDirection().getY()))).normalize()};
-        int[] t0 = {0}, passes = {0}, held = {0}, dropped = {-1};
-        boolean[] home = {false}, toldOwner = {false};
+        fx.sound(eye, "entity.player.attack.sweep", 0.6f, 1.6f);
+        Location[] at = {start};
+        Vector vel = dir.clone().multiply(0.62);
         float[] spin = {0};
+        boolean[] landed = {false};
         Particle.DustOptions red = new Particle.DustOptions(Color.fromRGB(0xFF4A4A), 0.8f), white = new Particle.DustOptions(Color.WHITE, 0.6f);
-        fx.every(400, t -> {
-            if (!disc.isValid()) return;
-            spin[0] += 0.8f;
-            int ft = t - t0[0];
-            Location next;
-            if (dropped[0] >= 0) {                                     // missed: it's on the ground, skidding to a stop
-                if (t - dropped[0] > 50) disc.remove();
-                return;
-            }
-            if (held[0] > 0) {                                         // caught: spinning on the catcher's hand a moment...
-                Player catcher = from[0];
-                if (!catcher.isOnline()) { disc.remove(); return; }
-                next = catcher.getEyeLocation().add(catcher.getLocation().getDirection().multiply(0.6)).add(0, -0.35, 0);
-                if (--held[0] == 0) {                                  // ...then passes it back
-                    fx.sound(next, "entity.snowball.throw", 1f, 0.8f);
-                    t0[0] = t;
-                }
-            } else if (to[0] != null && to[0].isOnline() && to[0].getWorld() == world) {   // flying to someone: a curving glide
-                Location target = to[0].getEyeLocation().add(0, -0.2, 0);
-                Vector go = target.toVector().subtract(at[0].toVector());
-                double dist = go.length();
-                Vector side = new Vector(-go.getZ(), 0, go.getX()).normalize().multiply(Math.sin(ft * 0.12) * 0.08);
-                next = at[0].clone().add(go.multiply(Math.min(0.6, dist) / Math.max(dist, 1e-3))).add(side);
-            } else if (!home[0] && ft < 28) {                          // thrown out: gliding away
-                double lift = Math.sin(ft / 28.0 * Math.PI) * 0.05;
-                next = at[0].clone().add(dir[0].clone().multiply(0.62)).add(0, lift, 0);
-            } else {                                                   // nobody caught it: it curves back to the thrower
-                home[0] = true;
-                to[0] = from[0];
-                return;
-            }
-            if (held[0] == 0 && !next.getBlock().isPassable()) {      // hit something: it drops
-                dropped[0] = t;
-                Location ground = at[0].clone();
-                while (ground.getY() > world.getMinHeight() && ground.clone().add(0, -0.2, 0).getBlock().isPassable()) ground.add(0, -0.2, 0);
-                ground.add(0, 0.05, 0);
-                disc.teleport(ground);
-                fx.sound(ground, "block.wood.hit", 0.8f, 1.4f);
-                return;
-            }
-            at[0] = next;
-            disc.teleport(next);
-            disc.setInterpolationDelay(0);
-            disc.setInterpolationDuration(1);
-            disc.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(spin[0], 0, 1, 0), new Vector3f(0.8f), new AxisAngle4f()));
-            if (held[0] > 0) return;
-            // a bright trail: red and white streaks, and a sparkle now and then
-            world.spawnParticle(Particle.DUST, next, 2, 0.08, 0.02, 0.08, 0, ft % 2 == 0 ? red : white);
-            if (ft % 4 == 0) fx.driftFx(next, "gadget/fx_sparkle", 0.16f, new Vector(0, -0.01, 0), 10);
-            if (ft % 6 == 0) fx.sound(next, "entity.player.attack.sweep", 0.25f, 1.8f);
-            // catches: anyone it reaches (not who just threw it, once it's away from them)
-            for (Player catcher : world.getPlayers()) {
-                if (fx.parkour(catcher) || (catcher.equals(from[0]) && !home[0]) || ft < 6) continue;
-                if (catcher.getEyeLocation().add(0, -0.3, 0).distanceSquared(next) > 1.6 * 1.6) continue;
-                fx.sound(next, "entity.item.pickup", 1f, 1.2f);
-                fx.sound(next, "block.note_block.hat", 0.6f, 1.6f);
-                catcher.swingMainHand();
-                if (catcher.equals(player) && (home[0] || passes[0] > 0) && passes[0] >= 12) {   // back home after a long rally
-                    disc.remove();
+        if (f.task != null) f.task.cancel();
+        f.task = plugin.getServer().getScheduler().runTaskTimer(plugin, new Runnable() {
+            int t = 0;
+
+            @Override
+            public void run() {
+                t++;
+                if (!f.owner.isOnline()) {
+                    frisbees.remove(f.owner.getUniqueId());
+                    returnHome(f, false);
                     return;
                 }
-                if (!catcher.equals(player) && !toldOwner[0]) {
-                    toldOwner[0] = true;
-                    plugin.messages().send(player, "collectibles.gadget.frisbee-caught",
-                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", catcher.getName()));
-                }
-                if (catcher.equals(player) && home[0] && passes[0] == 0) {   // came back round to the thrower: done
-                    disc.remove();
+                if (!landed[0]) {                                      // gliding: a gentle curve, then sinking
+                    vel.add(side.clone().multiply(Math.sin(t * 0.08) * 0.006));
+                    vel.setY(t < 24 ? vel.getY() * 0.9 + 0.004 : vel.getY() - 0.012);
+                    Location next = at[0].clone().add(vel);
+                    if (!next.getBlock().isPassable()) {               // hit something or reached the ground
+                        landed[0] = true;
+                        Location ground = at[0].clone();
+                        while (ground.getY() > world.getMinHeight() && ground.clone().add(0, -0.1, 0).getBlock().isPassable()) ground.add(0, -0.1, 0);
+                        at[0] = ground.add(0, 0.06, 0);
+                        f.disc.teleport(at[0]);
+                        fx.sound(at[0], "block.wood.hit", 0.8f, 1.4f);
+                        world.spawnParticle(Particle.POOF, at[0], 4, 0.1, 0.02, 0.1, 0.01);
+                    } else {
+                        at[0] = next;
+                        spin[0] += 0.9f;
+                        f.disc.teleport(next);
+                        f.disc.setInterpolationDelay(0);
+                        f.disc.setInterpolationDuration(1);
+                        f.disc.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(spin[0], 0, 1, 0), new Vector3f(0.8f), new AxisAngle4f()));
+                        world.spawnParticle(Particle.DUST, next, 2, 0.08, 0.02, 0.08, 0, t % 2 == 0 ? red : white);
+                        if (t % 4 == 0) fx.driftFx(next, "gadget/fx_sparkle", 0.16f, new Vector(0, -0.01, 0), 10);
+                        if (t % 6 == 0) fx.sound(next, "entity.player.attack.sweep", 0.25f, 1.8f);
+                    }
+                } else if (++f.idle > 400) {                           // left on the ground: it goes home
+                    frisbees.remove(f.owner.getUniqueId());
+                    returnHome(f, true);
                     return;
                 }
-                passes[0]++;
-                Player thrower = from[0];
-                from[0] = catcher;                                     // they'll pass it back to whoever threw it
-                to[0] = thrower;
-                home[0] = false;
-                held[0] = 25;
-                return;
+                // catching it (in the air), or picking it up (off the ground)
+                for (Player catcher : world.getPlayers()) {
+                    if (fx.parkour(catcher) || catcher.isDead()) continue;
+                    if (catcher.equals(f.thrower) && t < 12) continue;  // not straight out of your own hand
+                    boolean busy = false;                              // already holding a frisbee
+                    for (Frisbee other : frisbees.values()) if (catcher.equals(other.holder)) busy = true;
+                    if (busy) continue;
+                    double reach = landed[0] ? 1.3 : 1.6;
+                    Location hand = landed[0] ? catcher.getLocation() : catcher.getEyeLocation().add(0, -0.3, 0);
+                    if (hand.distanceSquared(at[0]) > reach * reach) continue;
+                    catchIt(f, catcher, landed[0]);
+                    return;
+                }
             }
-            if (ft > 140) {                                            // flying about too long: it just drops
-                dropped[0] = t;
+        }, 1L, 1L);
+    }
+
+    private void catchIt(Frisbee f, Player catcher, boolean pickedUp) {
+        if (f.task != null) f.task.cancel();
+        Location at = f.disc.getLocation();
+        f.disc.remove();
+        f.disc = null;
+        f.holder = catcher;
+        catcher.swingMainHand();
+        fx.sound(at, "entity.item.pickup", 1f, 1.2f);
+        if (!pickedUp) fx.sound(at, "block.note_block.hat", 0.6f, 1.6f);
+        if (catcher.equals(f.owner)) {                                 // home: it's yours again
+            frisbees.remove(f.owner.getUniqueId());
+            fx.reapply(catcher);
+            return;
+        }
+        if (!pickedUp) plugin.messages().send(f.owner, "collectibles.gadget.frisbee-caught",
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", catcher.getName()));
+        catcher.getInventory().setItem(fx.gadgetSlot(), fx.caughtFrisbee(f.owner.getName()));
+        // held too long, it goes home on its own
+        f.task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (catcher.equals(f.holder)) {
+                frisbees.remove(f.owner.getUniqueId());
+                returnHome(f, true);
             }
-        }, disc::remove);
+        }, 20L * 60);
     }
 
     // ---------------------------------------------------------------- placed things
@@ -2862,10 +2937,10 @@ final class MoreGadgets implements Listener {
     private final Map<UUID, Integer> diving = new HashMap<>();
 
     /**
-     * The diving board: a white tower with a ladder up the front (walk into the ladder to climb), a springboard out
+     * The diving board: a white tower with a metal ladder up the front (walk into it to climb), a springboard out
      * from the top over a big pool. Walk out to the end of the board and it bounces you up and out in a big dive
-     * (the board flexing, a boing); hit the water with a huge splash, bubbles, a splash sound and three judges'
-     * scorecards. (The tower top and board are solid to stand on; the pool is just for show, you land on the ground.)
+     * (the board flexing, a boing); hit the water with a huge splash, bubbles and a splash sound, and the three judges
+     * by the pool hold up their scorecards. (The tower top and board are solid to stand on; the pool is just for show, you land on the ground.)
      */
     private void divingBoard(Player player) {
         World world = player.getWorld();
@@ -2922,17 +2997,10 @@ final class MoreGadgets implements Listener {
         for (double du : new double[]{-0.42, 0.42}) for (double dv : new double[]{-0.42, 0.42}) slab.make(du, dv, 0.14, 0.14, H, 0, steel);
         slab.make(0, 0, 1, 1, 0.16, H - 0.16, white);
         for (double du : new double[]{-0.45, 0.45}) slab.make(du, 0, 1, 0.06, 0.8, H, steel);   // side rails
-        org.bukkit.block.data.type.Ladder rung = (org.bukkit.block.data.type.Ladder) Material.LADDER.createBlockData();
-        rung.setFacing(org.bukkit.block.BlockFace.valueOf(fwd.getX() > 0.5 ? "WEST" : fwd.getX() < -0.5 ? "EAST" : fwd.getZ() > 0.5 ? "NORTH" : "SOUTH"));
-        for (int y = 0; y < H; y++) {
-            int yy = y;
-            Location l = at.apply(0d, -0.5).add(0, yy, 0);
-            keep(p, world.spawn(l, BlockDisplay.class, d -> {
-                d.setBlock(rung);
-                d.setPersistent(false);
-                d.setTransformation(new Transformation(new Vector3f(-0.5f, 0, -0.5f), new AxisAngle4f(), new Vector3f(1f), new AxisAngle4f()));
-            }));
-        }
+        // a metal ladder up the front: two rails and rungs
+        BlockData metal = Material.IRON_BLOCK.createBlockData();
+        for (double du : new double[]{-0.28, 0.28}) slab.make(du, -0.56, 0.06, 0.06, H + 0.7, 0, metal);
+        for (double y = 0.25; y < H; y += 0.33) slab.make(0, -0.56, 0.06, 0.56, 0.05, y, metal);
         // the springboard, out from the top over the pool (flexes when it bounces)
         BlockDisplay board = slab.make(0, 2.0, 3.0, 0.6, 0.12, H - 0.12, white);
         BlockDisplay stripe = slab.make(0, 2.0, 3.0, 0.2, 0.01, H + 0.005, Material.BLUE_CONCRETE.createBlockData());
@@ -2962,6 +3030,37 @@ final class MoreGadgets implements Listener {
                 sh.setCollidable(true);
             }));
         }
+        // the judges: three little armour stands at the pool's side, each with a scorecard to hold up
+        org.bukkit.entity.ArmorStand[] judges = new org.bukkit.entity.ArmorStand[3];
+        TextDisplay[] cards = new TextDisplay[3];
+        for (int j = 0; j < 3; j++) {
+            double v = POOL - 1.6 + j * 1.6;
+            Location seat = at.apply(3.7, v);
+            seat.setDirection(side.clone().multiply(-1));
+            judges[j] = keep(p, world.spawn(seat, org.bukkit.entity.ArmorStand.class, a -> {
+                a.setArms(true);
+                a.setSmall(true);
+                a.setBasePlate(false);
+                a.setInvulnerable(true);
+                a.setGravity(false);
+                a.setPersistent(false);
+                ItemStack shirt = new ItemStack(Material.LEATHER_CHESTPLATE);
+                shirt.editMeta(org.bukkit.inventory.meta.LeatherArmorMeta.class, m -> m.setColor(Color.fromRGB(0x2C2A40)));
+                a.getEquipment().setChestplate(shirt);
+                ItemStack legs = new ItemStack(Material.LEATHER_LEGGINGS);
+                legs.editMeta(org.bukkit.inventory.meta.LeatherArmorMeta.class, m -> m.setColor(Color.fromRGB(0x2C2A40)));
+                a.getEquipment().setLeggings(legs);
+                a.getEquipment().setHelmet(new ItemStack(Material.PLAYER_HEAD));
+            }));
+            Location card = seat.clone().add(side.clone().multiply(-0.15)).add(0, 1.25, 0);
+            cards[j] = keep(p, world.spawn(card, TextDisplay.class, d -> {
+                d.setBillboard(Display.Billboard.CENTER);
+                d.setBackgroundColor(Color.fromARGB(255, 250, 250, 250));
+                d.setPersistent(false);
+                d.text(Component.empty());
+                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            }));
+        }
         fx.sound(tower, "block.wood.place", 1f, 0.8f);
         fx.sound(tower, "entity.generic.splash", 0.6f, 1.2f);
         int[] flex = {0};
@@ -2982,12 +3081,16 @@ final class MoreGadgets implements Listener {
                 if (fx.parkour(who)) continue;
                 Vector d = who.getLocation().toVector().subtract(tower.toVector());
                 double u = d.dot(side), v = d.dot(fwd), y = d.getY();
-                // the ladder: walk into it and up you go
-                if (Math.abs(u) < 0.5 && v > -1.1 && v < -0.35 && y > -0.2 && y < H) {
-                    who.setVelocity(new Vector(0, 0.32, 0).add(fwd.clone().multiply(0.05)));
+                // the ladder: walk into it and up you go, held on the ladder (no drifting), then a small step onto the deck
+                if (Math.abs(u) < 0.65 && v > -1.35 && v < -0.25 && y > -0.3 && y < H + 0.1) {
+                    double pull = (-0.75 - v) * 0.2;                   // drawn gently onto the ladder's line
+                    if (y > H - 0.35) {
+                        who.setVelocity(fwd.clone().multiply(0.2).setY(0.2));   // over the top: just onto the deck
+                    } else {
+                        who.setVelocity(fwd.clone().multiply(pull).add(side.clone().multiply(-u * 0.2)).setY(0.24));
+                    }
                     who.setFallDistance(0);
-                    if (t % 5 == 0) fx.sound(who.getLocation(), "block.ladder.step", 0.8f, 1f);
-                    if (y > H - 0.6) who.setVelocity(fwd.clone().multiply(0.35).setY(0.3));   // over the top onto the deck
+                    if (t % 5 == 0) fx.sound(who.getLocation(), "block.chain.step", 0.8f, 1.2f);
                 }
                 // the end of the board: BOING, up and out
                 if (Math.abs(u) < 0.6 && v > 2.7 && v < 3.8 && Math.abs(y - H) < 0.35 && who.getVelocity().getY() <= 0.05
@@ -3015,16 +3118,29 @@ final class MoreGadgets implements Listener {
                         double a = i * Math.PI * 2 / 20;
                         world.spawnParticle(Particle.SPLASH, splash, 0, Math.cos(a), 1.2, Math.sin(a), 0.6);
                     }
-                    // the judges' scorecards
+                    // the judges hold up their scorecards, one after another
                     ThreadLocalRandom r = ThreadLocalRandom.current();
-                    Component cards = Component.empty();
                     for (int j = 0; j < 3; j++) {
+                        int jj = j;
                         double score = Math.round((6 + r.nextDouble() * 4) * 2) / 2.0;
-                        cards = cards.append(text((j > 0 ? "  " : "") + (score == Math.floor(score) ? String.valueOf((int) score) : String.valueOf(score)),
-                                score >= 9.5 ? 0x7FE39A : score >= 8 ? 0xFFE14D : 0xFFFFFF));
+                        String shown = score == Math.floor(score) ? String.valueOf((int) score) : String.valueOf(score);
+                        fx.later(8 + j * 6, () -> {
+                            judges[jj].setRightArmPose(new org.bukkit.util.EulerAngle(-2.7, 0, 0));
+                            judges[jj].setLeftArmPose(new org.bukkit.util.EulerAngle(-2.7, 0, 0));
+                            cards[jj].text(text(shown, score >= 9.5 ? 0x1F9A3A : score >= 8 ? 0xC07A00 : 0x2C2A40).decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+                            cards[jj].setInterpolationDelay(0);
+                            cards[jj].setInterpolationDuration(4);
+                            cards[jj].setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(1.6f), new AxisAngle4f()));
+                            fx.sound(cards[jj].getLocation(), "block.note_block.pling", 0.6f, (float) (0.8 + score / 10));
+                        });
+                        fx.later(80 + j * 6, () -> {
+                            judges[jj].setRightArmPose(new org.bukkit.util.EulerAngle(0, 0, 0));
+                            judges[jj].setLeftArmPose(new org.bukkit.util.EulerAngle(0, 0, 0));
+                            cards[jj].setInterpolationDelay(0);
+                            cards[jj].setInterpolationDuration(4);
+                            cards[jj].setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+                        });
                     }
-                    TextDisplay judges = keep(p, label(at.apply(0d, POOL).add(0, 2.4, 0), text(who.getName(), 0x8FD8FF).append(Component.newline()).append(cards), 0));
-                    fx.later(60, judges::remove);
                 } else if (when != null && t - when > 80) {
                     diving.remove(who.getUniqueId());
                 }
@@ -3157,6 +3273,39 @@ final class MoreGadgets implements Listener {
     private void sandCastle(Player player) {
         Placed p = place(player);
         Location base = fx.ground(player);
+        World world = base.getWorld();
+        Location mid = base.getBlock().getLocation().add(0.5, 0, 0.5);
+        mid.setYaw(0);
+        mid.setPitch(0);
+        // the beach it's on: a lumpy patch of sand (snow there is hidden while it's up), a bucket, a spade, shells
+        List<Block> hidden = new ArrayList<>();
+        for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++) {
+            Block cell = mid.clone().add(x, 0, z).getBlock();
+            if (!cell.getType().isAir() && cell.isPassable()) hidden.add(cell);
+        }
+        BlockData air = Material.AIR.createBlockData();
+        for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), air);
+        p.end = () -> {
+            for (Player viewer : world.getPlayers()) for (Block bl : hidden) viewer.sendBlockChange(bl.getLocation(), bl.getBlockData());
+        };
+        java.util.function.Consumer<float[]> bit = (b) -> keep(p, world.spawn(mid.clone().add(b[0], 0, b[1]), BlockDisplay.class, d -> {
+            d.setBlock((b.length > 5 ? Material.values()[(int) b[5]] : Material.SAND).createBlockData());
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(-b[2] / 2, b.length > 4 ? b[4] : 0.004f, -b[3] / 2), new AxisAngle4f(),
+                    new Vector3f(b[2], b.length > 6 ? b[6] : 0.05f, b[3]), new AxisAngle4f()));
+        }));
+        bit.accept(new float[]{0, 0, 3.6f, 2.6f});                     // the sand patch: overlapping slabs, so it's not square
+        bit.accept(new float[]{0, 0, 2.6f, 3.6f});
+        bit.accept(new float[]{0.6f, -0.9f, 1.6f, 1.4f, 0.01f, Material.SAND.ordinal(), 0.07f});
+        bit.accept(new float[]{-1.1f, 0.8f, 1.2f, 1.2f, 0.01f, Material.SAND.ordinal(), 0.08f});
+        bit.accept(new float[]{1.45f, 1.2f, 0.32f, 0.32f, 0.05f, Material.RED_CONCRETE.ordinal(), 0.34f});      // the bucket
+        bit.accept(new float[]{1.45f, 1.2f, 0.36f, 0.36f, 0.32f, Material.RED_CONCRETE.ordinal(), 0.05f});      // its rim
+        bit.accept(new float[]{1.45f, 1.2f, 0.24f, 0.24f, 0.33f, Material.SAND.ordinal(), 0.04f});             // sand in it
+        bit.accept(new float[]{-1.4f, -1.2f, 0.08f, 0.6f, 0.05f, Material.YELLOW_CONCRETE.ordinal(), 0.06f});   // the spade's handle
+        bit.accept(new float[]{-1.4f, -0.8f, 0.24f, 0.26f, 0.05f, Material.LIGHT_BLUE_CONCRETE.ordinal(), 0.05f});   // its blade
+        bit.accept(new float[]{0.9f, 1.5f, 0.14f, 0.1f, 0.05f, Material.WHITE_CONCRETE.ordinal(), 0.05f});       // shells
+        bit.accept(new float[]{-1.6f, 0.3f, 0.12f, 0.14f, 0.05f, Material.PINK_CONCRETE.ordinal(), 0.05f});
+        bit.accept(new float[]{1.7f, -0.6f, 0.1f, 0.12f, 0.05f, Material.WHITE_CONCRETE.ordinal(), 0.05f});
         ItemDisplay castle = keep(p, model(base.clone().add(0, 0.5, 0), "gadget/sand_castle_3d", Material.SAND, 0.01f, 0));
         fx.later(1, () -> {
             castle.setInterpolationDelay(0);

@@ -270,6 +270,14 @@ public final class ParkourGame implements Listener {
     private void place(Block block) {
         block.setType(blockType(), false);
         placed.add(block);
+        // now and then the client misses a single block change (it shows up a moment later, or not at all): send it
+        // again straight after to anyone close by, so the next block is always there to jump to
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!placed.contains(block)) return;
+            for (Player near : block.getWorld().getPlayers()) {
+                if (near.getLocation().distanceSquared(block.getLocation()) < 48 * 48) near.sendBlockChange(block.getLocation(), block.getBlockData());
+            }
+        });
     }
 
     private void unplace(Block block) {
@@ -360,6 +368,9 @@ public final class ParkourGame implements Listener {
                 continue;
             }
             guide(run);
+            if (ticks % 5 == 0) {                                      // and keep the runner's blocks showing for them
+                for (Block b : new Block[]{run.current, run.next}) if (b != null && placed.contains(b)) player.sendBlockChange(b.getLocation(), b.getBlockData());
+            }
             if (ticks % 10 == 0) {
                 if (!plugin.display().hasSidebarOverride(player)) plugin.display().setSidebarOverride(player, () -> sidebar(run));
                 else plugin.display().refreshSidebar(player); // the time ticks on

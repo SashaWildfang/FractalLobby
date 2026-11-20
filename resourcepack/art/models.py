@@ -1,3 +1,4 @@
+import math
 """
 Writes the HD collectible icons (icons.py), the suit textures (armor.py) and the 3D models the plugin shows in the
 world: cloak pieces, the cookie fountain, the trampoline, the balloon and the propeller (hats.py).
@@ -502,8 +503,24 @@ def build(out):
     def tether_colour(mx, mz):                            # a yellow tetherball with a white seam round its middle
         return '#ffffff' if abs(mx) < 0.55 else ('#ffd23a' if mx < 0 else '#ffc21a')
     write(out, G + 'tetherball_3d', sphere_columns(8, 8, 8, 6.5, tether_colour) + [Box((7.3, 14.4, 7.3), (8.7, 15.2, 8.7), '#c9ccd8', 'flat')], scale=H)
-    write(out, G + 'frisbee_3d', [Box((2, 7.4, 2), (14, 8.6, 14), '#ff5a4a', 'solid'), Box((3.5, 8.6, 3.5), (12.5, 9.0, 12.5), '#ff7a6a', 'flat'),
-                                    Box((1.4, 7.2, 4), (14.6, 8.2, 12), '#c8322e', 'flat'), Box((4, 7.2, 1.4), (12, 8.2, 14.6), '#c8322e', 'flat')], scale=H)
+    # a round frisbee: built from half-unit columns in a circle, a thick rolled rim round the edge and a pale ring on top
+    disc = []
+    def kind(i, k):
+        r = math.hypot(i * 0.5 + 0.25 - 8, k * 0.5 + 0.25 - 8)
+        return None if r > 7.0 else 'rim' if r > 6.0 else 'ring' if 3.4 < r < 4.2 else 'top'
+    look = {'rim': ((7.0, 8.4), '#c8322e'), 'ring': ((7.6, 8.5), '#ff9a8a'), 'top': ((7.6, 8.3), '#ff4a3a')}
+    for k in range(32):                                           # each row merged into runs (keeps the model light)
+        i = 0
+        while i < 32:
+            what = kind(i, k)
+            j = i
+            while j < 32 and kind(j, k) == what:
+                j += 1
+            if what:
+                (y0, y1), col = look[what]
+                disc.append(Box((i * 0.5, y0, k * 0.5), (j * 0.5, y1, k * 0.5 + 0.5), col, 'flat'))
+            i = j
+    write(out, G + 'frisbee_3d', disc, scale=2)
     P_ = ['#ff6fd8', '#ffcf3a', '#5be37c', '#5b9dff', '#ff8a1f']
     pinata = []
     for i, col in enumerate(P_):                                   # a striped donkey
