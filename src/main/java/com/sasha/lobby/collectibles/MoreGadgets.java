@@ -2449,7 +2449,7 @@ final class MoreGadgets implements Listener {
     /**
      * Tic tac toe, like Pong: the player is X against the Lobby (O), until someone else walks up to the board; then
      * they play O instead, and the Lobby takes back over if they walk off. Click a square to play it. The score floats
-     * over the board and it's first to 3 (a draw just replays); the starting side swaps each round. The Lobby plays
+     * over the board; three in a row wins it (a draw just replays, with the other side starting). The Lobby plays
      * sensibly (it takes a win, usually blocks yours) but can be beaten.
      */
     private void ticTacToe(Player player) {
@@ -2464,15 +2464,19 @@ final class MoreGadgets implements Listener {
         // the board stands up in the air facing the player, its middle 1.8 up, with the score floating just above it
         Location centre = base.clone().add(0, 1.8, 0);
         org.joml.Quaternionf face = new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) -fwd.getX(), 0, (float) -fwd.getZ());
+        org.joml.Quaternionf back = new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) fwd.getX(), 0, (float) fwd.getZ());
         // stands a flat (lying) model up to face the player: its top turned towards them, its middle at the spot
         java.util.function.BiFunction<Location, Object[], ItemDisplay> upright = (spot, m) -> keep(p, world.spawn(spot, ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled((Material) m[1], (String) m[0]));
             d.setBrightness(new Display.Brightness(15, 15));
             d.setPersistent(false);
             float size = (Float) m[2], mid = (Float) m[3];             // mid: the model's middle height, in model units
-            d.setTransformationMatrix(new Matrix4f().rotate(face).translate(0, (8 - mid) / 16f * size, 0).scale(size));
+            boolean rear = m.length > 4 && (Boolean) m[4];               // the copy on the back, facing the other way
+            d.setTransformationMatrix(new Matrix4f().rotate(rear ? back : face).translate(0, (8 - mid) / 16f * size, 0).scale(size));
         }));
+        // the board is two boards back to back, so it (and every mark) reads from either side
         upright.apply(centre.clone(), new Object[]{"gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, 0.4f});
+        upright.apply(centre.clone().add(fwd.clone().multiply(0.12)), new Object[]{"gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, 0.4f, true});
         char[] cells = new char[9];
         List<Entity> marks = new ArrayList<>();
         int[] turn = {0}, starter = {0}, pts = {0, 0}, think = {0};
@@ -2486,9 +2490,9 @@ final class MoreGadgets implements Listener {
         Runnable show = () -> {
             String o = rival[0] == null ? "Lobby" : rival[0].getName();
             String whose = roundOver[0] ? "" : turn[0] == 0 ? player.getName() + "'s turn" : (rival[0] == null ? "The Lobby is thinking..." : o + "'s turn");
-            score.text(text(player.getName() + " (X)  ", 0xE03A3A).append(text(pts[0] + " : " + pts[1], 0xFFFFFF))
+            score.text(text(player.getName() + " (X)  ", 0xE03A3A).append(text("vs", 0xFFFFFF))
                     .append(text("  " + o + " (O)", 0x3C6AE0)).append(Component.newline()).append(text(whose, 0xA9A3C2))
-                    .append(Component.newline()).append(text(rival[0] == null ? "Walk up to the board to play O!" : "First to 3", 0x7A7F96)));
+                    .append(Component.newline()).append(text(rival[0] == null ? "Walk up to the board to play O!" : "Three in a row wins", 0x7A7F96)));
         };
         Runnable newRound = () -> {
             for (Entity e : marks) e.remove();
@@ -2507,6 +2511,8 @@ final class MoreGadgets implements Listener {
             Location at = cellAt.apply(cell);
             marks.add(upright.apply(at.clone().add(fwd.clone().multiply(-0.04)), new Object[]{mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
                     mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET, 0.85f, 0.5f}));
+            marks.add(upright.apply(at.clone().add(fwd.clone().multiply(0.3)), new Object[]{mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
+                    mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET, 0.85f, 0.5f, true}));
             fx.sound(at, "block.wood.place", 1f, mark == 'X' ? 1.2f : 0.9f);
             for (int[] line : lines) {
                 if (cells[line[0]] == mark && cells[line[1]] == mark && cells[line[2]] == mark) {
@@ -2516,11 +2522,10 @@ final class MoreGadgets implements Listener {
                     for (int k : line) world.spawnParticle(Particle.FIREWORK, cellAt.apply(k), 8, 0.2, 0.2, 0.2, 0.05);
                     fx.sound(base, winner == 0 ? "entity.player.levelup" : "block.note_block.bass", 0.8f, winner == 0 ? 1.6f : 0.8f);
                     show.run();
-                    if (pts[winner] >= 3) {
+                    if (pts[winner] >= 1) {                            // one win and it's done (a draw replays)
                         over[0] = true;
                         String name = winner == 0 ? player.getName() : rival[0] == null ? "The Lobby" : rival[0].getName();
-                        score.text(text(name + " wins!", winner == 0 ? 0xE03A3A : 0x3C6AE0).append(Component.newline())
-                                .append(text(pts[0] + " : " + pts[1], 0xFFFFFF)));
+                        score.text(text(name + " wins!", winner == 0 ? 0xE03A3A : 0x3C6AE0));
                         fx.confetti(centre.clone(), 60, 1);
                         fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
                         fx.later(80, () -> clear(player.getUniqueId()));
