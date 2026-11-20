@@ -534,7 +534,7 @@ final class MoreGadgets implements Listener {
 
     /**
      * When Pigs Fly: a pig with a pair of wings sprouting from its back pops up under the player, they're on it, and
-     * off it flies: up, a wide loop round the spot with a swoop or two, wings flapping harder on the climbs, and back
+     * off it flies: up and round two wide loops with a swoop or two, wings flapping harder on the climbs, and back
      * down to land where it started about twelve seconds later. Sneaking off ends the flight early (the pig flies off).
      */
     private void pigsFly(Player player) {
@@ -583,29 +583,28 @@ final class MoreGadgets implements Listener {
                 fx.sound(up, "entity.pig.ambient", 1f, 1.8f);
                 return;
             }
-            // the flight: climb, loop round twice with a swoop, then glide back down to where it started
+            // the flight: two smooth loops round a circle that starts and ends where the player stood, setting off the
+            // way they faced (turning right). It climbs as it sets off and glides back down to land on the same spot,
+            // always moving forward and turning at the same gentle rate, so its body (which the game turns to face the
+            // way it's moving) and its wings stay lined up the whole way, landing included.
             double k = t / (double) FLIGHT;
-            double climb = Math.min(1, t / 40.0), land = Math.max(0, (t - (FLIGHT - 50)) / 50.0);
-            double height = 5.5 * climb * (1 - land * land) + Math.sin(t * 0.09) * 0.8 * climb * (1 - land);
-            double angle = Math.toRadians(startYaw + 90) + k * Math.PI * 4;
-            double radius = 6 * Math.sin(Math.min(1, k * 1.25) * Math.PI);
-            Location go = home.clone().add(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            double phi = k * Math.PI * 4;
+            final double R = 5;
+            Vector facing = new Location(world, 0, 0, 0, startYaw, 0).getDirection().setY(0).normalize();
+            Vector toRight = new Vector(-facing.getZ(), 0, facing.getX());
+            Vector centre = home.toVector().add(toRight.clone().multiply(R));
+            double height = 5.5 * Math.sin(Math.PI * k) + 0.8 * Math.sin(Math.PI * 6 * k) * Math.sin(Math.PI * k);
+            Location go = centre.clone().add(toRight.clone().multiply(-R * Math.cos(phi))).add(facing.clone().multiply(R * Math.sin(phi)))
+                    .toLocation(world).add(0, Math.max(0, height), 0);
             for (int lift = 0; lift < 8 && !(go.getBlock().isPassable() && go.clone().add(0, 1, 0).getBlock().isPassable()
                     && go.clone().add(0, 2, 0).getBlock().isPassable()); lift++) go.add(0, 1, 0);   // never into a block
             Vector move = go.toVector().subtract(last[0].toVector());
-            // which way it faces: where it's heading across the ground, turning at most 7 degrees a tick (and holding
-            // its heading while it's mostly just dropping), with its body set to match, so the body never lags behind
-            // the wings on a tight turn
-            float yawNow = last[0].getYaw();
-            Vector across = move.clone().setY(0);
-            if (across.lengthSquared() > 0.0004) {
-                float want = (float) Math.toDegrees(Math.atan2(-across.getX(), across.getZ()));
-                float diff = ((want - yawNow) % 360 + 540) % 360 - 180;
-                yawNow += Math.max(-7, Math.min(7, diff));
-            }
+            Vector heading = toRight.clone().multiply(Math.sin(phi)).add(facing.clone().multiply(Math.cos(phi)));
+            float yawNow = (float) Math.toDegrees(Math.atan2(-heading.getX(), heading.getZ()));
             go.setYaw(yawNow);
             go.setPitch(0);
             pig.teleport(go, io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+            pig.setRotation(yawNow, 0);                                // (its head too, so nothing turns it back)
             pig.setBodyYaw(yawNow);
             boolean climbing = move.getY() > 0.02;
             placeWings(wings, go, climbing ? t * 2 : t);
