@@ -601,8 +601,18 @@ public final class MysteryBoxes implements Listener {
                 }
                 for (int i = 0; i < MAX_STARS; i++) {
                     if (slot == CRAFT_SLOTS[i]) {
-                        craft(player, i + 1);
-                        if (player.getOpenInventory().getTopInventory() == menu.inventory) openCraft(player, menu.spot);
+                        int stars = i + 1;
+                        long cost = craftCost(stars);
+                        if (!canCraft(player, stars) || data.get(player.getUniqueId()).dust() < cost) {
+                            craft(player, stars); // says why it can't
+                            return;
+                        }
+                        TagResolver tags = TagResolver.resolver(starsTag(stars), Messages.arg("cost", compact(cost)),
+                                Messages.arg("dust", compact(data.get(player.getUniqueId()).dust())));
+                        plugin.confirm().open(player, item(Material.CHEST, "mystery/gift_" + stars, "mystery.confirm.craft", tags), () -> {
+                            craft(player, stars);
+                            openCraft(player, menu.spot);
+                        }, () -> openCraft(player, menu.spot));
                         return;
                     }
                 }

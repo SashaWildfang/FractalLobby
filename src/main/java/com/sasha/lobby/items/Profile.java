@@ -37,18 +37,17 @@ import java.time.Instant;
 public final class Profile implements Listener {
 
     /*
-     * Four rows: the player's head at the top with their status under it, an empty row, then the buttons: cosmetics (chat colour, trail, glow) bottom left, friends
-     * in the middle (with the ignored list inside) and everything else (parkour, settings, realms) bottom right.
+     * Four rows: the player's head at the top with their status under it, an empty row, then five buttons in the middle
+     * of the bottom row: cosmetics (chat colour, glow) on the left, friends in the middle (with the ignored list inside),
+     * parkour and settings on the right. Trails live in the Collectibles menu, realms in the realm selector.
      */
     private static final int HEAD = 4;
     private static final int STATUS = 13;
-    private static final int CHAT_COLOR = 28;
-    private static final int TRAIL = 29;
+    private static final int CHAT_COLOR = 29;
     private static final int GLOW = 30;
     private static final int FRIENDS = 31;
     private static final int PARKOUR = 32;
     private static final int SETTINGS = 33;
-    private static final int REALMS = 34;
 
     private final Lobby plugin;
 
@@ -100,13 +99,11 @@ public final class Profile implements Listener {
             menu.inventory.setItem(STATUS, button);
         }
         menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
-        menu.inventory.setItem(TRAIL, style.icon(button(messages, Material.BLAZE_POWDER, "profile.trail", info), "trail"));
         menu.inventory.setItem(GLOW, GlowListener.allowed(player)
                 ? style.icon(button(messages, Material.GLOWSTONE_DUST, "profile.glow", info), "glow")
                 : style.locked(button(messages, Material.GLOWSTONE_DUST, "profile.glow-locked", info)));
         menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
         menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
-        menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
         // Friends (and who they ignore, inside) are kept by Core on the proxy; without it there's nothing to show.
         var network = plugin.coreLink().state(player);
         if (network != null) menu.inventory.setItem(FRIENDS, plugin.friendsMenu().button(network));
@@ -187,10 +184,6 @@ public final class Profile implements Listener {
                 click(player);
                 plugin.statuses().open(player);
             }
-            case TRAIL -> {
-                click(player);
-                plugin.trails().open(player);
-            }
             case GLOW -> {
                 if (!GlowListener.allowed(player)) {
                     locked(player);
@@ -210,10 +203,6 @@ public final class Profile implements Listener {
                 plugin.settings().open(player, true);
             }
             case PARKOUR -> plugin.parkour().openLeaderboard(player);
-            case REALMS -> {
-                click(player);
-                plugin.realmSelector().open(player);
-            }
             default -> {
             }
         }

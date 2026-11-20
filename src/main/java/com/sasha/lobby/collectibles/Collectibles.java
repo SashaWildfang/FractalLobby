@@ -63,7 +63,11 @@ public final class Collectibles implements Listener {
     private static final Map<Category, Character> PAGE_MENU = Map.of(Category.HAT, '', Category.SUIT, '',
             Category.GADGET, '', Category.CLOAK, '', Category.EMOTE, '', Category.GESTURE, '');
     /** Main menu: the stash; the categories; the extras. */
-    private static final int STASH = 4, TRAILS = 25, CHAT_COLOURS = 38, VAULT = 40, TAKE_OFF_ALL = 42;
+    private static final int STASH = 4, TRAILS = 25, CHAT_COLOURS = 38, SEARCH = 40, TAKE_OFF_ALL = 42;
+    /** The search results page's background (resource pack). */
+    private static final char SEARCH_MENU = '\uF17F';
+    /** Players asked to type a search in chat. */
+    private final java.util.Set<UUID> searching = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private static final int[] CATEGORY_SLOTS = {19, 20, 21, 22, 23, 24};
     /** Category page: season tabs on top, items in the middle, the bottom row. */
     private static final int[] TAB_SLOTS = {2, 3, 4, 5, 6};
@@ -557,8 +561,67 @@ public final class Collectibles implements Listener {
         };
     }
 
+    /** The search typed in chat: shown as a page of every collectible whose name has it. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onSearchChat(io.papermc.paper.event.player.AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        if (!searching.remove(player.getUniqueId())) return;
+        event.setCancelled(true);
+        String query = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(event.message()).trim();
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
+            if (query.isEmpty() || query.equalsIgnoreCase("cancel")) {
+                plugin.messages().send(player, "collectibles.search-cancelled");
+                return;
+            }
+            openSearch(player, query.length() > 32 ? query.substring(0, 32) : query, 0);
+        });
+    }
+
+    /** Every collectible (all categories and seasons) whose name has the search in it; 36 a page. */
+    private void openSearch(Player player, String query, int page) {
+        Messages messages = plugin.messages();
+        MenuStyle style = plugin.menuStyle();
+        Menu menu = new Menu(null, Season.NORMAL);
+        menu.search = query;
+        menu.page = page;
+        menu.inventory = Bukkit.createInventory(menu, 54, style.title(SEARCH_MENU,
+                messages.component("collectibles.search-title", Messages.arg("query", query))));
+        fill(menu);
+        String q = query.toLowerCase(java.util.Locale.ROOT);
+        List<Item> found = Catalog.ITEMS.stream()
+                .filter(item -> item.name().toLowerCase(java.util.Locale.ROOT).contains(q)
+                        || item.key().replace('_', ' ').contains(q))
+                .toList();
+        int slot = FIRST_ITEM;
+        for (int i = page * PER_PAGE; i < found.size() && slot <= LAST_ITEM; i++, slot++) {
+            Item item = found.get(i);
+            Item on = item.category().action() ? null
+                    : item.category() == Category.SUIT ? piece(player, item.piece()) : equipped(player, item.category());
+            menu.inventory.setItem(slot, entry(player, item, on != null && on.id().equals(item.id())));
+            menu.items.put(slot, item);
+        }
+        int pages = Math.max(1, (found.size() + PER_PAGE - 1) / PER_PAGE);
+        menu.more = page < pages - 1;
+        menu.inventory.setItem(PREVIOUS, page > 0
+                ? style.icon(button(Material.ARROW, null, "collectibles.previous", Messages.arg("page", page)), "back")
+                : style.icon(button(Material.GRAY_DYE, null, "collectibles.no-previous", TagResolver.empty()), "back-off"));
+        menu.inventory.setItem(NEXT, menu.more
+                ? style.icon(button(Material.ARROW, null, "collectibles.next", Messages.arg("page", page + 2)), "next")
+                : style.icon(button(Material.GRAY_DYE, null, "collectibles.no-next", TagResolver.empty()), "next-off"));
+        if (found.isEmpty()) {
+            menu.inventory.setItem(22, style.icon(button(Material.BARRIER, null, "collectibles.search-none",
+                    Messages.arg("query", query)), "none"));
+        }
+        menu.inventory.setItem(BACK, style.icon(button(Material.ARROW, null, "collectibles.back", TagResolver.empty()), "back"));
+        player.openInventory(menu.inventory);
+        sound(player, "ui.button.click", 1.2f);
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        searching.remove(event.getPlayer().getUniqueId());
         String prefix = event.getPlayer().getUniqueId() + ":";
         cooldowns.keySet().removeIf(key -> key.startsWith(prefix));
         sorts.remove(event.getPlayer().getUniqueId());
@@ -578,6 +641,8 @@ public final class Collectibles implements Listener {
         private int page;
         /** Set when this is one suit's own page. */
         private Catalog.SuitSet suit;
+        /** Set when this is a page of search results. */
+        private String search;
         private boolean more;
 
         Menu(Category category, Season season) {
@@ -623,10 +688,9 @@ public final class Collectibles implements Listener {
             menu.inventory.setItem(CATEGORY_SLOTS[i], icon);
         }
         menu.inventory.setItem(TRAILS, button(Material.BLAZE_POWDER, "category/trails", "collectibles.trails", TagResolver.empty()));
-        menu.inventory.setItem(CHAT_COLOURS, button(Material.NAME_TAG, "color/rainbow", "collectibles.chat-colours", TagResolver.empty()));
-        menu.inventory.setItem(VAULT, button(Material.ENDER_CHEST, "mystery/gift_5", "collectibles.vault",
-                TagResolver.resolver(Messages.arg("boxes", com.sasha.lobby.mystery.MysteryBoxes.compact(stash.totalBoxes())))));
-        menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "menu/take_off", "collectibles.take-off-all", TagResolver.empty()));
+        menu.inventory.setItem(CHAT_COLOURS, button(Material.NAME_TAG, "category/chat_colours", "collectibles.chat-colours", TagResolver.empty()));
+        menu.inventory.setItem(SEARCH, button(Material.SPYGLASS, "radio/search", "collectibles.search", TagResolver.empty()));
+        menu.inventory.setItem(TAKE_OFF_ALL, button(Material.BARRIER, "category/take_off", "collectibles.take-off-all", TagResolver.empty()));
         player.openInventory(menu.inventory);
     }
 
@@ -689,7 +753,7 @@ public final class Collectibles implements Listener {
             // What's on now sits here (Left-click to take it off); with nothing on, the hanger.
             Item on = wearing(player, category);
             if (on == null) {
-                menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "menu/take_off", "collectibles.take-off",
+                menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "category/take_off", "collectibles.take-off",
                         Placeholder.parsed("category", messages.raw("collectibles.category." + category.key + ".name"))));
             } else {
                 ItemStack worn = icon(on);
@@ -730,7 +794,8 @@ public final class Collectibles implements Listener {
     /** Opens the page the player is on again (after something changed). */
     private void reopen(Player player, Menu menu) {
         Season season = menu.season == null ? Season.NORMAL : menu.season;
-        if (menu.suit != null) openSuit(player, menu.suit, season, menu.page);
+        if (menu.search != null) openSearch(player, menu.search, menu.page);
+        else if (menu.suit != null) openSuit(player, menu.suit, season, menu.page);
         else openPage(player, menu.category, season, menu.page);
     }
 
@@ -809,7 +874,20 @@ public final class Collectibles implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         int slot = event.getRawSlot();
         if (!accepts(menu, slot, event.getClick(), player)) return;
-        if (menu.category == null) {
+        if (menu.search != null) {
+            if (slot == BACK) {
+                sound(player, "ui.button.click", 0.9f);
+                open(player);
+                return;
+            }
+            if (slot == PREVIOUS && menu.page > 0 || slot == NEXT && menu.more) {
+                sound(player, "ui.button.click", 1.1f);
+                openSearch(player, menu.search, menu.page + (slot == NEXT ? 1 : -1));
+                return;
+            }
+            if (!menu.items.containsKey(slot)) return;
+            // a collectible: bought, worn or used just like on its own page (below)
+        } else if (menu.category == null) {
             for (int i = 0; i < CATEGORY_SLOTS.length; i++) {
                 if (slot == CATEGORY_SLOTS[i]) {
                     sound(player, "ui.button.click", 1.1f);
@@ -823,8 +901,13 @@ public final class Collectibles implements Listener {
                     if (com.sasha.lobby.items.ChatColors.canUse(player)) plugin.chatColors().open(player);
                     else plugin.messages().send(player, "collectibles.no-chat-colours");
                 }
-                case VAULT -> plugin.mystery().openMenu(player);
-                case TAKE_OFF_ALL -> confirm(player, button(Material.BARRIER, "menu/take_off", "collectibles.confirm.take-off-all",
+                case SEARCH -> {
+                    searching.add(player.getUniqueId());
+                    player.closeInventory();
+                    plugin.messages().send(player, "collectibles.search-prompt");
+                    sound(player, "ui.button.click", 1.2f);
+                }
+                case TAKE_OFF_ALL -> confirm(player, button(Material.BARRIER, "category/take_off", "collectibles.confirm.take-off-all",
                         TagResolver.empty()), () -> {
                     takeOffAll(player);
                     open(player);

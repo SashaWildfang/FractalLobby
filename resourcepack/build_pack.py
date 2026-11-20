@@ -1176,6 +1176,7 @@ for stars, hexcol in BOX_COLOURS.items():
 
 GOLD, GOLD_DARK = hexc('#FFD27F'), hexc('#C9963A')
 # the vault: a slate chest with purple trim and a gold lock; open, the lid tips back and the inside glows
+# (replaced afterwards by art/vault_models.py, the chosen flat-lid banded chest: run it after this script)
 SLATE, SLATE_DARK, TRIM = hexc('#3a3d56'), hexc('#26283a'), hexc('#B266FF')
 vside = Image.new('RGBA', (16, 16), (0, 0, 0, 255)); vtop = Image.new('RGBA', (16, 16), (0, 0, 0, 255))
 vinside = Image.new('RGBA', (16, 16), (0, 0, 0, 255))

@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 49
+messages-version: 52
 
 theme:
   primary: "#B266FF"
@@ -57,8 +57,8 @@ scoreboard:
     - "<center><gray><date>"
     - ""
     - "<secondary>You"
-    - " <primary>▪</primary> <white>Mystery Dust: <#FFD27F>%lobby_dust%"
-    - " <primary>▪</primary> <white>Mystery Boxes: <primary>%lobby_boxes%"
+    - " <primary>▪</primary> <white>Dust <white><font:fractal:lobby>\uF024</font></white><white>: <#FFD27F>%lobby_dust%"
+    - " <primary>▪</primary> <white>Boxes <white><font:fractal:lobby>\uF025</font></white><white>: <primary>%lobby_boxes%"
     - ""
     - "<secondary>Realms <muted>(<online:all>)"
     - " <primary>▪</primary> <white>Lobby: <primary><online:lobby>"
@@ -752,7 +752,7 @@ mystery:
   disabled: "<prefix><bad>Mystery Boxes aren't open right now."
   glow-name: "<#FFE680>Glow"
   dust-name: "<#FFD27F><amount> Mystery Dust"
-  dust: "<prefix><secondary>You have <#FFD27F><dust> Mystery Dust</#FFD27F> <secondary>and <primary><boxes></primary> <secondary>Mystery Box(es). <dark_gray>▸ <white>/mysterybox"
+  dust: "<prefix><secondary>Dust <white><font:fractal:lobby>\uF024</font></white><secondary>: <#FFD27F><dust> <dark_gray>· <secondary>Boxes <white><font:fractal:lobby>\uF025</font></white><secondary>: <primary><boxes> <dark_gray>▸ <white>/mysterybox"
   received: "<prefix><secondary>You got <white><amount></white> <stars> <secondary>Mystery Box(es)! <dark_gray>▸ <white>/mysterybox"
   craft-short: "<prefix><bad>You need <white><need></white> more Mystery Dust for a <stars> <bad>box."
   crafted: "<prefix><secondary>Crafted a <stars> <secondary>Mystery Box for <#FFD27F><cost> Mystery Dust</#FFD27F><secondary>."
@@ -795,9 +795,9 @@ mystery:
     # Over the vault. %lobby_boxes% and %lobby_dust% are each viewer's own.
     hologram:
       - "<#ANIM:shimmer:#B266FF,#FFD27F>&lᴍʏꜱᴛᴇʀʏ ᴠᴀᴜʟᴛ</#ANIM>"
-      - "&#E8DDFFʏᴏᴜ ʜᴀᴠᴇ &f&l%lobby_boxes% &#E8DDFFᴍʏꜱᴛᴇʀʏ ʙᴏxᴇꜱ"
-      - "&#FFD27F%lobby_dust% &#C9A86Aᴍʏꜱᴛᴇʀʏ ᴅᴜꜱᴛ"
-      - "<white><font:fractal:lobby>\uF011</font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ᴏᴘᴇɴ</#ANIM>"
+      - "&#E8DDFFʙᴏxᴇꜱ <white><font:fractal:lobby>\uF025</font></white>&#E8DDFF: &f&l%lobby_boxes%"
+      - "&#C9A86Aᴅᴜꜱᴛ <white><font:fractal:lobby>\uF024</font></white>&#C9A86A: &#FFD27F%lobby_dust%"
+      - "<white><font:fractal:lobby>\uF011</font></white> <#ANIM:wave:&#C9B8EE,&#FFFFFF>ᴛᴏ ᴠɪᴇᴡ</#ANIM>"
     added: "<prefix><good>Added a Mystery Vault here. <muted>Players stand on the side you're facing. (<white><count></white> now)"
     removed: "<prefix><secondary>Removed that Mystery Vault. <muted>(<white><count></white> left)"
     none-near: "<prefix><bad>There's no Mystery Vault within 6 blocks."
@@ -873,8 +873,13 @@ mystery:
       lore:
         - "<muted>Open every box at once."
         - "<bad>Donor perk"
-  # What the "Are you sure?" menu shows before opening boxes. <stars> <count> <boxes>
+  # What the "Are you sure?" menu shows before opening or crafting boxes. <stars> <count> <boxes> <cost> <dust>
   confirm:
+    craft:
+      name: "<white>Craft a <stars> <white>Mystery Box?"
+      lore:
+        - "<muted>Costs <#FFD27F><cost> Mystery Dust"
+        - "<muted>You have <#FFD27F><dust>"
     open:
       name: "<white>Open a <stars> <white>Mystery Box?"
       lore: []
@@ -928,8 +933,14 @@ collectibles:
       - "<muted>Mystery Dust: <#FFD27F><dust>"
       - "<muted>Mystery Boxes: <white><boxes>"
       - ""
-      - "<muted>Find more in Mystery Boxes,"
-      - "<muted>or buy them with Mystery Dust."
+      - "<white>How to get Mystery Dust:"
+      - "<dark_gray> ▪ <muted>Prizes from Mystery Boxes"
+      - "<dark_gray> ▪ <muted>Prizes you already have turn"
+      - "<muted>   into dust"
+      - ""
+      - "<white>What it's for:"
+      - "<dark_gray> ▪ <muted>Buying collectibles here"
+      - "<dark_gray> ▪ <muted>Crafting boxes at a Mystery Vault"
   category:
     hats:
       name: "<primary>Hats"
@@ -1000,13 +1011,21 @@ collectibles:
       - "<muted>The colour of your chat messages."
       - ""
       - "<accent><left-click></accent> <muted>to pick one"
-  vault:
-    name: "<primary>Mystery Vault"
+  # Searching every collectible by name, typed in chat. <query>
+  search:
+    name: "<primary>Search"
     lore:
-      - "<muted>Your boxes, crafting with dust."
-      - "<muted>Boxes: <white><boxes>"
+      - "<muted>Find a collectible by name."
       - ""
-      - "<accent><left-click></accent> <muted>to open"
+      - "<accent><left-click></accent> <muted>to type it in chat"
+  search-prompt: "<prefix><secondary>Type what you're looking for in chat. <muted>(or <white>cancel</white>)"
+  search-cancelled: "<prefix><muted>Search cancelled."
+  search-title: "<brand><bold>Search</bold></brand> <dark_gray>\"<query>\""
+  search-none:
+    name: "<bad>Nothing found"
+    lore:
+      - "<muted>No collectible is called"
+      - "<muted>anything like <white><query><muted>."
   take-off-all:
     name: "<bad>Take Everything Off"
     lore:

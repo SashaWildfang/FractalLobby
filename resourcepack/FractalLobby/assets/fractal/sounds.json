@@ -31,5 +31,12 @@
     "name": "fractal:gadget/trampoline_boing_3"
    }
   ]
+ },
+ "mystery.vault_open": {
+  "sounds": [
+   {
+    "name": "fractal:mystery/vault_open"
+   }
+  ]
  }
 }

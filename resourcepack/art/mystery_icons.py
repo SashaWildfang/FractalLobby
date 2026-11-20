@@ -22,6 +22,7 @@ from kit import Canvas, dark, light, sheet
 
 BOX_COLOURS = {1: '#9C8DB8', 2: '#5BE37C', 3: '#7FA8FF', 4: '#C77DFF', 5: '#FFB347'}
 GOLD, PURPLE, DUST, WHITE = '#FFD27F', '#B266FF', '#FFE6A8', '#F4F4FA'
+PLUS = '#5BE37C'   # the green + on Craft Boxes
 INK = (26, 27, 38)   # the pack's outline colour: a sharp, near-black line
 
 
@@ -139,9 +140,9 @@ def _craft(c):
     for (x, y, r) in ((4, 5, 1.6), (7.5, 2.5, 1.1), (3, 10, 1.0), (10.5, 5.5, 0.9)):
         c.ball(x, y, r, '#FFD27F', shine=False)
     c.star(13, 3, 2.4, WHITE)
-    # the plus
-    c.shape('rect', (25, 2, 28, 11), ('lin', light(GOLD, 0.3), dark(GOLD, 0.2), 90))
-    c.shape('rect', (22, 5, 31, 8), ('lin', light(GOLD, 0.3), dark(GOLD, 0.2), 0))
+    # the plus, in green
+    c.shape('rect', (25, 2, 28, 11), ('lin', light(PLUS, 0.3), dark(PLUS, 0.2), 90))
+    c.shape('rect', (22, 5, 31, 8), ('lin', light(PLUS, 0.3), dark(PLUS, 0.2), 0))
 
 
 def open_all_icon():

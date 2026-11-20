@@ -1348,6 +1348,33 @@
    "chars": [
     "\uf17e"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/collect_search.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17f"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/hud_dust.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf024"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/hud_boxes.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf025"
+   ]
   }
  ]
 }

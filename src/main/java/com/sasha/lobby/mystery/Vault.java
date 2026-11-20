@@ -102,7 +102,7 @@ public final class Vault implements Listener {
             lid = world.spawn(centre, ItemDisplay.class, display -> setup(display, model(LID)));
             clickBox = world.spawn(location.clone(), Interaction.class, box -> {
                 box.setInteractionWidth(1.1f);
-                box.setInteractionHeight(1.25f);
+                box.setInteractionHeight(1.0f);
                 box.setResponsive(true);
                 box.setPersistent(false);
                 box.addScoreboardTag(TAG);
@@ -119,13 +119,16 @@ public final class Vault implements Listener {
             clickBox = null;
         }
 
-        /** Invisible walls (barriers) where the vault stands, so nobody walks through it. */
+        /**
+         * An invisible block (a barrier) where the vault stands, so nobody walks through it but anyone can hop on
+         * top. The barrier above it, from older versions, is taken away.
+         */
         void solid(boolean on) {
-            for (int dy = 0; dy <= 1; dy++) {
-                org.bukkit.block.Block block = location.getBlock().getRelative(0, dy, 0);
-                if (on && block.getType().isAir()) block.setType(Material.BARRIER, false);
-                else if (!on && block.getType() == Material.BARRIER) block.setType(Material.AIR, false);
-            }
+            org.bukkit.block.Block block = location.getBlock();
+            if (on && block.getType().isAir()) block.setType(Material.BARRIER, false);
+            else if (!on && block.getType() == Material.BARRIER) block.setType(Material.AIR, false);
+            org.bukkit.block.Block above = block.getRelative(0, 1, 0);
+            if (above.getType() == Material.BARRIER) above.setType(Material.AIR, false);
         }
 
         /** The lid swings open on its hinge at the back (and the inside glows), or shuts again. */
@@ -359,7 +362,7 @@ public final class Vault implements Listener {
                 }
                 return;
             }
-            MysteryBoxes.sound(event.getPlayer(), "block.ender_chest.open", 1.3f);
+            MysteryBoxes.sound(event.getPlayer(), "fractal:mystery.vault_open", 1f); // the pack's own vault sound
             boxes.openMenu(event.getPlayer(), spot, 0);
             return;
         }

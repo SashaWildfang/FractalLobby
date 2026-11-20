@@ -151,7 +151,7 @@ final class GestureShow implements Listener {
         AttributeInstance size = stand.getAttribute(Attribute.SCALE);
         show.task = fx.every(length, t -> {
             if (!stand.isValid()) return;
-            watch(player, stand);
+            if (t == 0) watch(player, stand); // turn them to the show once; after that they can look around
             Location place = centre.clone();
             float turn = yaw;
             Pose pose = STAND;
@@ -402,7 +402,7 @@ final class GestureShow implements Listener {
         return shows.containsKey(player.getUniqueId());
     }
 
-    /** Held in place while watching: turning is allowed (the camera is pulled back to the stand every tick). */
+    /** Held in place while watching; they're turned to face the show when it starts and can look around freely. */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         Show show = shows.get(event.getPlayer().getUniqueId());
