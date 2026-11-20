@@ -258,6 +258,8 @@ public final class Settings implements Listener {
         /** Opened from the profile (then Back returns there); from the hotbar item there's no Back. */
         private final boolean fromProfile;
         private final Map<Integer, Action> actions = new java.util.HashMap<>();
+        /** The clicks a slot's hint offers; slots not listed only take a plain Left-click. */
+        private final Map<Integer, java.util.Set<ClickType>> clicks = new java.util.HashMap<>();
         private Inventory inventory;
 
         Menu(Page page, boolean fromProfile) {
@@ -338,6 +340,7 @@ public final class Settings implements Listener {
             menu.actions.put(BACK, (who, click) -> plugin.profile().open(who));
         }
         menu.inventory.setItem(RESET, styled(Profile.button(messages, Material.TNT_MINECART, "settings.reset"), "reset"));
+        menu.clicks.put(RESET, java.util.EnumSet.of(ClickType.SHIFT_LEFT)); // "Shift + Left-click to reset"
         menu.actions.put(RESET, (who, click) -> {
             if (!click.isShiftClick()) return;
             reset(who);
@@ -378,6 +381,8 @@ public final class Settings implements Listener {
         });
         menu.inventory.setItem(slot + 9, styled(pane, paneModel(current)));
         menu.actions.put(slot + 9, action); // only the switch; the icon above just says what it is
+        // More than two options: Left-click for the next, Right-click to go back. A plain on/off: Left-click.
+        if (options.size() > 2) menu.clicks.put(slot + 9, java.util.EnumSet.of(ClickType.LEFT, ClickType.RIGHT));
     }
 
     /** The Ignored Players button (shown in the profile): how many, who, and a click opens the list. */
@@ -516,6 +521,7 @@ public final class Settings implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         Action action = menu.actions.get(event.getRawSlot());
         if (action == null) return;
+        if (!menu.clicks.getOrDefault(event.getRawSlot(), java.util.EnumSet.of(ClickType.LEFT)).contains(event.getClick())) return;
         action.click(player, event.getClick());
         if (menu.page == Page.SETTINGS && player.getOpenInventory().getTopInventory() == menu.inventory) draw(player, menu);
     }

@@ -81,6 +81,11 @@ public final class MenuStyle {
         return model(item, "menu/" + name);
     }
 
+    /** The padlock from the pack, for a cosmetic the player hasn't unlocked yet (with the pack on). */
+    public ItemStack locked(ItemStack item) {
+        return model(item, "menu/locked");
+    }
+
     /** A chat colour's paint drop from the pack, if it has one for this colour. */
     public ItemStack colorIcon(ItemStack item, String id) {
         return COLOR_ICONS.contains(id) ? model(item, "color/" + id) : item;

@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -717,6 +718,22 @@ public final class Collectibles implements Listener {
         else openPage(player, menu.category, season, menu.page);
     }
 
+    /**
+     * Whether a click is one the item's hint offers: Left-click everywhere; on a suit's set in a category
+     * page also Right-click (to see its pieces); on a collectible not unlocked yet also Shift + Left-click
+     * (to buy it; a plain Left-click says how).
+     */
+    private boolean accepts(Menu menu, int slot, ClickType click, Player player) {
+        if (click == ClickType.LEFT) return true;
+        if (menu.category == null) return false;
+        if (click == ClickType.RIGHT) return menu.suit == null && menu.sets.containsKey(slot);
+        if (click == ClickType.SHIFT_LEFT) {
+            Item item = menu.items.get(slot);
+            return item != null && !owns(player, item);
+        }
+        return false;
+    }
+
     /** One collectible in a category page: found or locked, worn, and what a click does. */
     private ItemStack entry(Player player, Item item, boolean worn) {
         Messages messages = plugin.messages();
@@ -728,7 +745,7 @@ public final class Collectibles implements Listener {
                 Placeholder.parsed("description", item.description()), Placeholder.parsed("season", messages.raw("collectibles.season." + item.season().key())),
                 Messages.arg("price", String.format(java.util.Locale.ROOT, "%,d", price)), Messages.arg("need", Math.max(0, price - dust)),
                 Placeholder.parsed("ability", item.suit() == null ? "" : messages.raw("collectibles.ability." + item.suit().ability() + ".name")));
-        ItemStack icon = icon(item);
+        ItemStack icon = owned ? icon(item) : plugin.menuStyle().locked(icon(item)); // a padlock until it's unlocked
         icon.editMeta(meta -> {
             meta.displayName(messages.item(owned ? "collectibles.entry.name" : "collectibles.entry.locked-name", tags));
             List<Component> lore = new ArrayList<>(messages.lore("collectibles.entry.lore", tags));
@@ -756,7 +773,8 @@ public final class Collectibles implements Listener {
         Messages messages = plugin.messages();
         int found = (int) set.pieces().stream().filter(p -> owns(player, p)).count();
         int on = worn(player, set.key());
-        ItemStack icon = modelled(Material.ARMOR_STAND, "suit/" + set.key() + "/set");
+        ItemStack icon = found == 0 ? modelled(Material.ARMOR_STAND, "menu/locked") // no piece unlocked yet
+                : modelled(Material.ARMOR_STAND, "suit/" + set.key() + "/set");
         TagResolver tags = TagResolver.resolver(setTags(set, on), Messages.arg("found", found),
                 Placeholder.parsed("rarity", plugin.mystery().rarityLabel(set.rarity())));
         icon.editMeta(meta -> {
@@ -778,6 +796,7 @@ public final class Collectibles implements Listener {
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         int slot = event.getRawSlot();
+        if (!accepts(menu, slot, event.getClick(), player)) return;
         if (menu.category == null) {
             for (int i = 0; i < CATEGORY_SLOTS.length; i++) {
                 if (slot == CATEGORY_SLOTS[i]) {
@@ -832,7 +851,7 @@ public final class Collectibles implements Listener {
         Catalog.SuitSet set = menu.sets.get(slot);
         if (set != null) {
             boolean any = set.pieces().stream().anyMatch(p -> owns(player, p));
-            if (menu.suit == null && (event.isRightClick() || !any)) {
+            if (menu.suit == null && event.getClick() == ClickType.RIGHT) { // "Right-click to see its pieces"
                 sound(player, "ui.button.click", 1.1f);
                 openSuit(player, set, season, menu.page);
                 return;
@@ -849,7 +868,7 @@ public final class Collectibles implements Listener {
         Item item = menu.items.get(slot);
         if (item == null) return;
         if (!owns(player, item)) {
-            buy(player, item, event.isShiftClick());
+            buy(player, item, event.getClick() == ClickType.SHIFT_LEFT);
             if (player.getOpenInventory().getTopInventory() == menu.inventory) reopen(player, menu);
             return;
         }

@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Locale;
 
 /**
- * Something a Mystery Box can give: a cosmetic (trail:ID, chatcolor:ID, glow) or a pile of Mystery Dust (dust:AMOUNT),
+ * Something a Mystery Box can give: a cosmetic (trail:ID, chatcolor:ID) or a pile of Mystery Dust (dust:AMOUNT),
  * with its rarity. Written in config.yml as "trail:hearts rare".
  */
 public record Reward(String id, String type, String value, Rarity rarity) {

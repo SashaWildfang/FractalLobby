@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -52,14 +53,14 @@ public final class MysteryBoxes implements Listener {
     public static final int MAX_STARS = 5;
     public static final String MULTI = "lobby.mystery.multi", CRAFT_HIGH = "lobby.mystery.craft.high";
     /** Background glyphs for the menus (resource pack). */
-    private static final char VAULT_MENU = '\uF173', COLLECTION_MENU = '\uF174', CRAFT_MENU = '\uF17C';
-    /** The vault menu: stash on top, a grid of boxes (4 rows of 7), then previous, craft, collection, open all, next. */
+    private static final char VAULT_MENU = '\uF173', CRAFT_MENU = '\uF17C';
+    /** The vault menu: stash on top, a grid of boxes (4 rows of 7), then previous, craft, open all, next. */
     private static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43};
-    private static final int STASH = 4, PREVIOUS = 45, CRAFT = 47, COLLECTION = 49, OPEN_ALL = 51, NEXT = 53;
-    /** The craft menu: 1 to 5 stars and back; the collection's back button. */
+    private static final int STASH = 4, PREVIOUS = 45, CRAFT = 47, OPEN_ALL = 51, NEXT = 53;
+    /** The craft menu: 1 to 5 stars and back. */
     private static final int[] CRAFT_SLOTS = {11, 12, 13, 14, 15};
-    private static final int CRAFT_BACK = 22, BACK = 49;
+    private static final int CRAFT_BACK = 22;
 
     private final Lobby plugin;
     private final MysteryData data;
@@ -91,6 +92,8 @@ public final class MysteryBoxes implements Listener {
             Reward reward = Reward.parse(line);
             if (reward == null) {
                 plugin.getLogger().warning("config.yml mystery-boxes.rewards: '" + line + "' isn't \"type:value rarity\"");
+            } else if (reward.type().equals("glow")) {
+                plugin.getLogger().info("mystery-boxes.rewards: glow is a rank perk (lobby.cmd.glow), so it's left out of boxes");
             } else if (!reward.exists(plugin)) {
                 plugin.getLogger().warning("config.yml mystery-boxes.rewards: there's no " + reward.id() + " (left out)");
             } else if (reward.free(plugin)) {
@@ -446,7 +449,7 @@ public final class MysteryBoxes implements Listener {
 
     // ---------------------------------------------------------------- menus
 
-    private enum Kind { MAIN, CRAFT, COLLECTION }
+    private enum Kind { MAIN, CRAFT }
 
     private static final class Menu implements InventoryHolder {
         private final Kind kind;
@@ -472,7 +475,7 @@ public final class MysteryBoxes implements Listener {
         openMenu(player, null, 0);
     }
 
-    /** The Mystery Vault menu: your stash, every box you have (with what it can give), crafting, the collection. */
+    /** The Mystery Vault menu: your stash, every box you have (with what it can give) and crafting. */
     public void openMenu(Player player, Vault.Spot spot, int page) {
         if (!enabled()) {
             plugin.messages().send(player, "mystery.disabled");
@@ -500,7 +503,7 @@ public final class MysteryBoxes implements Listener {
             menu.inventory.setItem(GRID[i], boxIcon(box, spot != null, multi, stash.boxes(box.stars())));
             menu.boxes.put(GRID[i], box);
         }
-        if (all.isEmpty()) menu.inventory.setItem(22, item(Material.GRAY_DYE, "mystery/locked", "mystery.menu.empty", TagResolver.empty()));
+        if (all.isEmpty()) menu.inventory.setItem(22, item(Material.GRAY_DYE, "mystery/empty", "mystery.menu.empty", TagResolver.empty()));
         menu.inventory.setItem(PREVIOUS, shown > 0
                 ? style.icon(item(Material.ARROW, null, "mystery.menu.previous", Messages.arg("page", shown)), "back")
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-previous", TagResolver.empty()), "back-off"));
@@ -509,10 +512,6 @@ public final class MysteryBoxes implements Listener {
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-next", TagResolver.empty()), "next-off"));
         menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
                 TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
-        int found = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible() && (owns(player, r.id()) || has(player, r))).count();
-        int total = (int) rewards.stream().filter(r -> !r.dust() && !r.collectible()).count();
-        menu.inventory.setItem(COLLECTION, item(Material.BOOK, "mystery/collection", "mystery.menu.collection",
-                TagResolver.resolver(Messages.arg("found", found), Messages.arg("total", total))));
         menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/box_5" : "mystery/locked",
                 multi ? "mystery.menu.open-all" : "mystery.menu.open-all-locked", TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
         player.openInventory(menu.inventory);
@@ -562,35 +561,7 @@ public final class MysteryBoxes implements Listener {
             ItemStack icon = item(Material.CHEST, canCraft(player, stars) ? "mystery/box_" + stars : "mystery/locked", key, tags);
             menu.inventory.setItem(CRAFT_SLOTS[stars - 1], icon);
         }
-        menu.inventory.setItem(CRAFT_BACK, style.icon(item(Material.ARROW, null, "mystery.collection.back", TagResolver.empty()), "back"));
-        player.openInventory(menu.inventory);
-    }
-
-    /** Every cosmetic a box can give: found ones in colour, the rest locked. */
-    private void openCollection(Player player, Vault.Spot spot) {
-        Messages messages = plugin.messages();
-        MenuStyle style = plugin.menuStyle();
-        Menu menu = new Menu(Kind.COLLECTION, spot, 0);
-        menu.inventory = Bukkit.createInventory(menu, 54, style.title(COLLECTION_MENU, messages.component("mystery.collection.title")));
-        ItemStack filler = style.filler();
-        for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
-        int slot = 0;
-        for (Reward.Rarity rarity : Reward.Rarity.values()) {
-            for (Reward reward : rewards) {
-                if (reward.rarity() != rarity || reward.dust() || reward.collectible() || slot >= 45) continue;
-                boolean found = owns(player, reward.id()) || has(player, reward);
-                TagResolver tags = TagResolver.resolver(Placeholder.parsed("reward", reward.name(plugin)),
-                        Placeholder.parsed("rarity", rarityName(rarity)));
-                ItemStack icon = found ? reward.icon(plugin) : style.icon(ItemStack.of(Material.GRAY_DYE), "mystery/locked");
-                icon.editMeta(meta -> {
-                    meta.displayName(messages.item(found ? "mystery.collection.found.name" : "mystery.collection.locked.name", tags));
-                    meta.lore(messages.lore(found ? "mystery.collection.found.lore" : "mystery.collection.locked.lore", tags));
-                    meta.addItemFlags(ItemFlag.values());
-                });
-                menu.inventory.setItem(slot++, icon);
-            }
-        }
-        menu.inventory.setItem(BACK, style.icon(item(Material.ARROW, null, "mystery.collection.back", TagResolver.empty()), "back"));
+        menu.inventory.setItem(CRAFT_BACK, style.icon(item(Material.ARROW, null, "mystery.craft-menu.back", TagResolver.empty()), "back"));
         player.openInventory(menu.inventory);
     }
 
@@ -615,13 +586,12 @@ public final class MysteryBoxes implements Listener {
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+        // Every button says Left-click; a box also says Shift + Left-click (open all of its kind) for donors.
+        boolean openMany = menu.kind == Kind.MAIN && menu.boxes.containsKey(slot) && click == ClickType.SHIFT_LEFT
+                && player.hasPermission(MULTI);
+        if (click != ClickType.LEFT && !openMany) return;
         switch (menu.kind) {
-            case COLLECTION -> {
-                if (slot == BACK) {
-                    sound(player, "ui.button.click", 1f);
-                    openMenu(player, menu.spot, 0);
-                }
-            }
             case CRAFT -> {
                 if (slot == CRAFT_BACK) {
                     sound(player, "ui.button.click", 1f);
@@ -639,7 +609,7 @@ public final class MysteryBoxes implements Listener {
             case MAIN -> {
                 MysteryData.Box box = menu.boxes.get(slot);
                 if (box != null) {
-                    if (event.isShiftClick() && player.hasPermission(MULTI)) {
+                    if (openMany) {
                         int stars = box.stars();
                         openMany(player, menu.spot, data.get(player.getUniqueId()).boxList().stream().filter(b -> b.stars() == stars).toList());
                     } else {
@@ -653,10 +623,6 @@ public final class MysteryBoxes implements Listener {
                     case CRAFT -> {
                         sound(player, "ui.button.click", 1f);
                         openCraft(player, menu.spot);
-                    }
-                    case COLLECTION -> {
-                        sound(player, "ui.button.click", 1f);
-                        openCollection(player, menu.spot);
                     }
                     case OPEN_ALL -> openMany(player, menu.spot, data.get(player.getUniqueId()).boxList());
                     default -> {

@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 44
+messages-version: 45
 
 theme:
   primary: "#B266FF"
@@ -210,7 +210,7 @@ settings:
     - "<accent><left-click></accent> <muted>for the next option"
     - "<accent><right-click></accent> <muted>to go back"
   toggle-hint:
-    - "<accent><click></accent> <muted>to switch"
+    - "<accent><left-click></accent> <muted>to switch"
   # Under each setting's options: the switch below it is what to click.
   switch-below:
     - "<muted>Use the switch below to change it."
@@ -233,7 +233,7 @@ settings:
       - "<muted>Puts every lobby setting"
       - "<muted>back to its default."
       - ""
-      - "<accent><shift><click></accent> <muted>to reset"
+      - "<accent><shift><left-click></accent> <muted>to reset"
     done: "<prefix><secondary>Your lobby settings are back to their defaults."
   join-messages:
     name: "<primary>Join Messages"
@@ -323,13 +323,13 @@ settings:
     none:
       - "<dark_gray>  Nobody yet. Use <gray>/ignore <name>"
     hint:
-      - "<accent><click></accent> <muted>to manage"
+      - "<accent><left-click></accent> <muted>to manage"
   ignored-menu:
     title: "<brand><bold>Ignored Players</bold></brand>"
     head:
       name: "<primary><player>"
       lore:
-        - "<accent><click></accent> <muted>to unignore"
+        - "<accent><left-click></accent> <muted>to unignore"
     empty:
       name: "<good>You're not ignoring anyone"
       lore:
@@ -418,7 +418,7 @@ friends:
         - "<muted>See requests waiting"
         - "<muted>for an answer."
         - ""
-        - "<accent><click></accent> <muted>to list them in chat"
+        - "<accent><left-click></accent> <muted>to list them in chat"
     removed: "<prefix><secondary>You removed <primary><player></primary> <secondary>from your friends."
     no-core: "<prefix><bad>Friends aren't available right now."
   # The Friends button in the profile. <online> <count>; <status> is one of the two below
@@ -432,7 +432,7 @@ friends:
       - ""
       - "<white>Online: <status>"
       - ""
-      - "<accent><click></accent> <muted>to open"
+      - "<accent><left-click></accent> <muted>to open"
 
 # The profile menu (the player's head in the hotbar).
 # The head shows: <player> <rank> <joined> <playtime> <parkour-best> <parkour-rank> <chat-color> <trail> <glow>
@@ -456,34 +456,35 @@ profile:
       - "<muted>Shown under your name."
       - "<muted>Now: <status>"
       - ""
-      - "<accent><click></accent> <muted>to change"
+      - "<accent><left-click></accent> <muted>to change"
   chat-color:
     name: "<primary>Chat Colour"
     lore:
       - "<muted>The colour your messages are in."
       - "<muted>Now: <chat-color>"
       - ""
-      - "<accent><click></accent> <muted>to change"
+      - "<accent><left-click></accent> <muted>to change"
   trail:
     name: "<primary>Particle Trail"
     lore:
       - "<muted>Particles that follow you around."
       - "<muted>Now: <trail>"
       - ""
-      - "<accent><click></accent> <muted>to change"
+      - "<accent><left-click></accent> <muted>to change"
   glow:
     name: "<primary>Glow"
     lore:
       - "<muted>Glow in your rank colour."
       - "<muted>Now: <glow>"
       - ""
-      - "<accent><click></accent> <muted>to switch"
+      - "<accent><left-click></accent> <muted>to switch"
   glow-locked:
     name: "<dark_gray>Glow"
     lore:
       - "<muted>Glow in your rank colour."
       - ""
       - "<bad>✖ Locked"
+      - "<muted>A rank perk."
   settings:
     name: "<primary>Settings"
     lore:
@@ -491,19 +492,19 @@ profile:
       - "<muted>player visibility, mention sounds,"
       - "<muted>double jump and the scoreboard."
       - ""
-      - "<accent><click></accent> <muted>to open"
+      - "<accent><left-click></accent> <muted>to open"
   parkour:
     name: "<primary>Parkour"
     lore:
       - "<muted>Your best: <white><parkour-best> <muted>(<parkour-rank>)"
       - ""
-      - "<accent><click></accent> <muted>for the leaderboard"
+      - "<accent><left-click></accent> <muted>for the leaderboard"
   realms:
     name: "<primary>Realms"
     lore:
       - "<muted>Pick a realm to play on."
       - ""
-      - "<accent><click></accent> <muted>to open"
+      - "<accent><left-click></accent> <muted>to open"
   back:
     name: "<secondary>← Back"
     lore:
@@ -551,7 +552,7 @@ trails:
   removed: "<prefix><secondary>Trail removed."
   locked: "<prefix><bad>You haven't unlocked that trail."
   item:
-    - "<accent><click></accent> <muted>to use"
+    - "<accent><left-click></accent> <muted>to use"
   item-selected:
     - "<good>✔ In use"
   item-locked:
@@ -662,7 +663,7 @@ parkour:
       - "<muted>Best: <white><score> jumps"
       - "<muted>Rank: <white><rank>"
       - ""
-      - "<dark_gray>Step on the plate to try again!"
+      - "<dark_gray>Click the Parkour NPC to try again!"
 
 # /holo: the lobby's holograms (holograms/*.yml, DecentHolograms' format)
 holo:
@@ -807,10 +808,10 @@ mystery:
       rarity: " <rarity> <dark_gray>(<chance>%)"
       prize: "   <dark_gray>▪ <reward>"
       open-hint:
-        - "<accent><click></accent> <muted>to open it"
+        - "<accent><left-click></accent> <muted>to open it"
       open-hint-multi:
-        - "<accent><click></accent> <muted>to open it"
-        - "<accent>Shift-click</accent> <muted>to open all <white><count></white> <stars>"
+        - "<accent><left-click></accent> <muted>to open it"
+        - "<accent><shift><left-click></accent> <muted>to open all <white><count></white> <stars>"
       go-to-vault:
         - "<muted>Open it at a Mystery Vault."
     empty:
@@ -836,7 +837,7 @@ mystery:
         - "<muted>Make boxes from Mystery Dust."
         - "<muted>You have <#FFD27F><dust></#FFD27F><muted>."
         - ""
-        - "<accent><click></accent> <muted>to craft"
+        - "<accent><left-click></accent> <muted>to craft"
     open-all:
       name: "<#FFD27F>Open Everything"
       lore:
@@ -844,19 +845,12 @@ mystery:
         - "<muted>no show, just a list of what"
         - "<muted>you got."
         - ""
-        - "<accent><click></accent> <muted>to open them all"
+        - "<accent><left-click></accent> <muted>to open them all"
     open-all-locked:
       name: "<dark_gray>Open Everything"
       lore:
         - "<muted>Open every box at once."
         - "<bad>Donor perk"
-    collection:
-      name: "<primary>Collection"
-      lore:
-        - "<muted>Trails, chat colours and more."
-        - "<muted>Found: <white><found></white><dark_gray>/<total>"
-        - ""
-        - "<accent><click></accent> <muted>to look"
   craft-menu:
     title: "<brand><bold>Craft Boxes</bold></brand>"
     craft:
@@ -864,7 +858,7 @@ mystery:
       lore:
         - "<muted>Costs <#FFD27F><cost> Mystery Dust"
         - ""
-        - "<accent><click></accent> <muted>to craft"
+        - "<accent><left-click></accent> <muted>to craft"
     short:
       name: "<dark_gray>Craft a <stars> <dark_gray>Box"
       lore:
@@ -875,18 +869,6 @@ mystery:
       lore:
         - "<muted>Costs <#FFD27F><cost> Mystery Dust"
         - "<bad>Donor perk"
-  collection:
-    title: "<brand><bold>Collection</bold></brand>"
-    found:
-      name: "<reward>"
-      lore:
-        - "<rarity>"
-        - "<#9BFFC4>Found"
-    locked:
-      name: "<dark_gray>???"
-      lore:
-        - "<rarity>"
-        - "<muted>Not found yet"
     back:
       name: "<secondary>← Back"
       lore:
@@ -907,7 +889,7 @@ collectibles:
   stash:
     name: "<#FFD27F>Your Collection"
     lore:
-      - "<muted>Found: <white><found></white><dark_gray>/<total>"
+      - "<muted>Unlocked: <white><found></white><dark_gray>/<total>"
       - "<muted>Mystery Dust: <#FFD27F><dust>"
       - "<muted>Mystery Boxes: <white><boxes>"
       - ""
@@ -925,7 +907,7 @@ collectibles:
       single: "Suit"
       title: "<brand><bold>Suits</bold></brand>"
       lore:
-        - "<muted>Found piece by piece. Wear the"
+        - "<muted>Unlocked piece by piece. Wear the"
         - "<muted>whole set for a special bonus!"
     gadgets:
       name: "<primary>Gadgets"
@@ -957,15 +939,15 @@ collectibles:
   # Under each category button. <found> <total> <wearing>
   category-footer:
     - ""
-    - "<muted>Found: <white><found></white><dark_gray>/<total>"
+    - "<muted>Unlocked: <white><found></white><dark_gray>/<total>"
     - "<wearing>"
     - ""
-    - "<accent><click></accent> <muted>to look"
+    - "<accent><left-click></accent> <muted>to look"
   category-footer-action:
     - ""
-    - "<muted>Found: <white><found></white><dark_gray>/<total>"
+    - "<muted>Unlocked: <white><found></white><dark_gray>/<total>"
     - ""
-    - "<accent><click></accent> <muted>to look"
+    - "<accent><left-click></accent> <muted>to look"
   wearing: "<muted>Wearing: <name>"
   wearing-nothing: "<muted>Wearing: <dark_gray>nothing"
   wearing-suit: "<muted>Wearing: <set> <dark_gray>(<white><count></white>/4)<more>"
@@ -976,20 +958,20 @@ collectibles:
     lore:
       - "<muted>Particles behind you as you walk."
       - ""
-      - "<accent><click></accent> <muted>to pick one"
+      - "<accent><left-click></accent> <muted>to pick one"
   chat-colours:
     name: "<primary>Chat Colours"
     lore:
       - "<muted>The colour of your chat messages."
       - ""
-      - "<accent><click></accent> <muted>to pick one"
+      - "<accent><left-click></accent> <muted>to pick one"
   vault:
     name: "<primary>Mystery Vault"
     lore:
       - "<muted>Your boxes, crafting with dust."
       - "<muted>Boxes: <white><boxes>"
       - ""
-      - "<accent><click></accent> <muted>to open"
+      - "<accent><left-click></accent> <muted>to open"
   take-off-all:
     name: "<bad>Take Everything Off"
     lore:
@@ -1035,11 +1017,11 @@ collectibles:
     - "<#9BFFC4>Showing now"
   tab-in-season:
     - "<muted>In season!"
-    - "<accent><click></accent> <muted>to look"
+    - "<accent><left-click></accent> <muted>to look"
   tab-out-of-season:
     - "<muted>Out of season: found and"
     - "<muted>sold during its season."
-    - "<accent><click></accent> <muted>to look"
+    - "<accent><left-click></accent> <muted>to look"
   entry:
     name: "<name>"
     locked-name: "<dark_gray><name>"
@@ -1053,19 +1035,19 @@ collectibles:
       - "<#FFD27F>Full set: <white><ability>"
     worn:
       - "<#9BFFC4>✔ Wearing"
-      - "<accent><click></accent> <muted>to take off"
+      - "<accent><left-click></accent> <muted>to take off"
     equip:
-      - "<accent><click></accent> <muted>to wear"
+      - "<accent><left-click></accent> <muted>to wear"
     equipped:
       - "<#9BFFC4>✔ Equipped"
-      - "<accent><click></accent> <muted>to unequip"
+      - "<accent><left-click></accent> <muted>to unequip"
     equip-gadget:
-      - "<accent><click></accent> <muted>to equip"
+      - "<accent><left-click></accent> <muted>to equip"
     use:
-      - "<accent><click></accent> <muted>to do it"
+      - "<accent><left-click></accent> <muted>to do it"
     buy:
       - "<muted>Find it in Mystery Boxes, or"
-      - "<accent><shift> <click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
+      - "<accent><shift><left-click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
     cant-afford:
       - "<muted>Find it in Mystery Boxes, or"
       - "<muted>buy for <#FFD27F><price> Mystery Dust"
@@ -1081,21 +1063,21 @@ collectibles:
     name: "<set>"
     lore:
       - "<rarity>"
-      - "<muted>Pieces found: <white><found></white><dark_gray>/4"
+      - "<muted>Pieces unlocked: <white><found></white><dark_gray>/4"
       - "<muted>Wearing: <white><count></white><dark_gray>/4"
       - ""
       - "<#FFD27F>Full set bonus: <white><ability>"
       - "<muted><bonus>"
       - "<dark_gray><how>"
     wear:
-      - "<accent><click></accent> <muted>to wear every piece you have"
+      - "<accent><left-click></accent> <muted>to wear every piece you have"
     worn:
       - "<#9BFFC4>✔ Wearing"
-      - "<accent><click></accent> <muted>to take it off"
+      - "<accent><left-click></accent> <muted>to take it off"
     none:
       - "<muted>Find its pieces in Mystery Boxes."
     pieces-hint:
-      - "<accent>Right-click</accent> <muted>to see its pieces"
+      - "<accent><right-click></accent> <muted>to see its pieces"
   # What you see when you hover over something you're wearing.
   worn:
     name: "<name>"
@@ -1265,7 +1247,7 @@ collectibles:
   full-set: "<prefix><#FFD27F>Full <set><#FFD27F>! <white><ability></white> <muted>(<how>)"
   boxes-only: "<prefix><bad><name> <bad>is seasonal: it only comes from Mystery Boxes."
   bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price> Mystery Dust</#FFD27F><secondary>!"
-  shift-to-buy: "<prefix><muted>Shift-click to buy <name> <muted>for <#FFD27F><price> Mystery Dust<muted>."
+  shift-to-buy: "<prefix><muted>Shift + Left-click to buy <name> <muted>for <#FFD27F><price> Mystery Dust<muted>."
   cant-afford: "<prefix><bad>You need <white><need></white> more Mystery Dust for <name><bad>."
   out-of-season: "<prefix><bad><name> <bad>is only found during <season><bad>."
   not-owned: "<prefix><bad>You haven't found <name> <bad>yet."

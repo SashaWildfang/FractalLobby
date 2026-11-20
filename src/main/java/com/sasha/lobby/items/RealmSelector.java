@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -227,6 +228,7 @@ public final class RealmSelector implements Listener {
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (event.getClick() != ClickType.LEFT) return; // "Left-click to join"
         LobbyConfig.SelectorServer realm = menu.realms.get(event.getRawSlot());
         if (realm == null) return;
         join(player, realm);

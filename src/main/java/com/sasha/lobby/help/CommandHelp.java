@@ -52,7 +52,7 @@ public final class CommandHelp {
         e.add(new Entry("player", "/afk", "Show that you're AFK (or that you're back).", "lobby.cmd.afk",
                 List.of("Moving, chatting or clicking also brings you back.", "You go AFK by yourself after 5 minutes idle.")));
         e.add(new Entry("player", "/parkour", "Start a parkour run, or stop the one you're on.", "lobby.cmd.parkour",
-                List.of("Stepping on the start plate does the same.", "Jump to the sparkling block; falling ends the run.")));
+                List.of("Clicking the Parkour NPC does the same.", "Jump to the sparkling block; falling ends the run.")));
         e.add(new Entry("player", "/chatcolor [colour|reset]", "Pick the colour of your chat messages.", "lobby.cmd.chatcolor",
                 List.of("Without a colour it opens the menu.", "Also /chatcolour.")));
         e.add(new Entry("player", "/glow", "Glow in your rank colour (or stop).", "lobby.cmd.glow", List.of()));
@@ -61,7 +61,7 @@ public final class CommandHelp {
         e.add(new Entry("player", "/lobbyhelp [topic|command]", "This help.", null,
                 List.of("Example: /lobbyhelp npcs", "Example: /lobbyhelp npc skin")));
         // ---- parkour
-        e.add(new Entry("mystery", "/mysterybox", "Open the Mystery Vault menu: your boxes, crafting with dust, your collection.", null,
+        e.add(new Entry("mystery", "/mysterybox", "Open the Mystery Vault menu: your boxes and crafting with dust.", null,
                 List.of("Aliases: /mb, /boxes. Boxes are opened at the Mystery Vault.")));
         e.add(new Entry("player", "/collectibles", "Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.", null,
                 List.of("Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar.")));

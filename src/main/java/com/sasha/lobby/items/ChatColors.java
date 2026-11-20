@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -197,7 +198,7 @@ public final class ChatColors implements Listener {
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
                 if (selected) meta.setEnchantmentGlintOverride(true);
             });
-            menu.inventory.setItem(slot, style.colorIcon(item, colour.id()));
+            menu.inventory.setItem(slot, allowed(player, colour) ? style.colorIcon(item, colour.id()) : style.locked(item));
             menu.slots.put(slot, colour.id());
         }
 
@@ -221,6 +222,7 @@ public final class ChatColors implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         int slot = event.getRawSlot();
+        if (event.getClick() != ClickType.LEFT) return; // every button here says Left-click
         if (slot == menu.backSlot) {
             plugin.profile().open(player);
             return;

@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -175,7 +176,7 @@ public final class Statuses implements Listener {
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
                 if (selected) meta.setEnchantmentGlintOverride(true);
             });
-            menu.inventory.setItem(slots.get(i), style.statusIcon(item, status.icon()));
+            menu.inventory.setItem(slots.get(i), allowed(player, status) ? style.statusIcon(item, status.icon()) : style.locked(item));
             menu.slots.put(slots.get(i), status.id());
         }
 
@@ -199,6 +200,7 @@ public final class Statuses implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         int slot = event.getRawSlot();
+        if (event.getClick() != ClickType.LEFT) return; // every button here says Left-click
         if (slot == menu.backSlot) {
             click(player);
             plugin.profile().open(player);

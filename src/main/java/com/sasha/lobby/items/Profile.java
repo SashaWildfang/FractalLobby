@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -100,8 +101,9 @@ public final class Profile implements Listener {
         }
         menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
         menu.inventory.setItem(TRAIL, style.icon(button(messages, Material.BLAZE_POWDER, "profile.trail", info), "trail"));
-        menu.inventory.setItem(GLOW, style.icon(button(messages, Material.GLOWSTONE_DUST,
-                GlowListener.allowed(player) ? "profile.glow" : "profile.glow-locked", info), "glow"));
+        menu.inventory.setItem(GLOW, GlowListener.allowed(player)
+                ? style.icon(button(messages, Material.GLOWSTONE_DUST, "profile.glow", info), "glow")
+                : style.locked(button(messages, Material.GLOWSTONE_DUST, "profile.glow-locked", info)));
         menu.inventory.setItem(SETTINGS, style.icon(button(messages, Material.COMPARATOR, "profile.settings", info), "header"));
         menu.inventory.setItem(PARKOUR, style.icon(button(messages, Material.GOLDEN_BOOTS, "profile.parkour", info), "parkour"));
         menu.inventory.setItem(REALMS, style.icon(button(messages, Material.COMPASS, "profile.realms", info), "realms"));
@@ -169,6 +171,7 @@ public final class Profile implements Listener {
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (event.getClick() != ClickType.LEFT) return; // every button here says Left-click
 
         switch (event.getRawSlot()) {
             case CHAT_COLOR -> {

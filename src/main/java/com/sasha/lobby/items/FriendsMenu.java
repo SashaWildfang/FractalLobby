@@ -143,6 +143,9 @@ public final class FriendsMenu implements Listener {
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+        // Friends: Left-click joins an online one, Shift + Right-click removes. Every other button: Left-click.
+        if (click != ClickType.LEFT && !(click == ClickType.SHIFT_RIGHT && menu.friends.containsKey(slot))) return;
         switch (slot) {
             case BACK -> {
                 click(player, 0);
@@ -166,13 +169,13 @@ public final class FriendsMenu implements Listener {
                 if (friend == null || state == null) return;
                 CoreLink.Friend data = state.friends().get(friend);
                 if (data == null) return;
-                if (event.getClick() == ClickType.SHIFT_RIGHT) {
+                if (click == ClickType.SHIFT_RIGHT) {
                     plugin.coreLink().unfriend(player, friend);
                     plugin.messages().send(player, "friends.menu.removed", Messages.name("player", data.name()));
                     click(player, 0);
                     CoreLink.State now = plugin.coreLink().state(player);
                     if (now != null) draw(player, menu, now);
-                } else if (event.getClick().isLeftClick() && data.online()) {
+                } else if (data.online()) {
                     player.closeInventory();
                     click(player, 1);
                     plugin.coreLink().joinFriend(player, friend);

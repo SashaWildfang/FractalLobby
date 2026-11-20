@@ -770,7 +770,7 @@ realm-selector:
 
 # ── Mystery Boxes ───────────────────────────────────────────────
 # Boxes of 1 to 5 stars that give a random cosmetic (a trail, a chat colour,
-# glowing) or a pile of Mystery Dust. A cosmetic the player already has turns
+# a collectible) or a pile of Mystery Dust. A cosmetic the player already has turns
 # into Mystery Dust, and dust crafts new boxes. Boxes are opened at the
 # Mystery Vaults (stand on a spot and type /mysterybox vault add); without a
 # vault they open in front of the player.
@@ -830,7 +830,8 @@ mystery-boxes:
   # are: they come from Seasonal Boxes.
   include-collectibles: true
   # What else boxes can give: "type:value rarity". Types: trail:ID and
-  # chatcolor:ID (from trails and chat-color above), glow, dust:AMOUNT.
+  # chatcolor:ID (from trails and chat-color above), dust:AMOUNT. Glow is a
+  # rank perk (lobby.cmd.glow) and is never in boxes.
   # Cosmetics that are free for everyone are left out automatically.
   rewards:
     - "dust:20 common"
@@ -849,7 +850,6 @@ mystery-boxes:
     - "trail:stars epic"
     - "chatcolor:sunset epic"
     - "chatcolor:fractal epic"
-    - "glow epic"
     - "dust:350 legendary"
     - "trail:enchanted legendary"
     - "trail:totem legendary"

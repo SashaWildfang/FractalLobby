@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -135,7 +136,7 @@ public final class Trails implements Listener {
                 meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
                 if (selected) meta.setEnchantmentGlintOverride(true);
             });
-            menu.inventory.setItem(slot, style.trailIcon(item, trail.id()));
+            menu.inventory.setItem(slot, allowed(player, trail) ? style.trailIcon(item, trail.id()) : style.locked(item));
             menu.slots.put(slot, trail.id());
         }
 
@@ -155,6 +156,7 @@ public final class Trails implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         Messages messages = plugin.messages();
         int slot = event.getRawSlot();
+        if (event.getClick() != ClickType.LEFT) return; // every button here says Left-click
 
         if (slot == menu.backSlot) {
             plugin.profile().open(player);

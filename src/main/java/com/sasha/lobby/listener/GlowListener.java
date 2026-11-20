@@ -20,9 +20,9 @@ public final class GlowListener implements Listener {
 
     public static final String PERMISSION = "lobby.cmd.glow";
 
-    /** The glow rank, or glowing found in a Mystery Box. */
+    /** Glow is a rank perk only (lobby.cmd.glow): it can't be found in Mystery Boxes. */
     public static boolean allowed(Player player) {
-        return player.hasPermission(PERMISSION) || com.sasha.lobby.mystery.MysteryBoxes.unlocked(player, "glow");
+        return player.hasPermission(PERMISSION);
     }
 
     private final Lobby plugin;
