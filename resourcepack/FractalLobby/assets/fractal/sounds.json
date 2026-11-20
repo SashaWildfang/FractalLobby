@@ -38,5 +38,32 @@
     "name": "fractal:mystery/vault_open"
    }
   ]
+ },
+ "gadget.pinata_whack": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/pinata_whack_1"
+   },
+   {
+    "name": "fractal:gadget/pinata_whack_2"
+   },
+   {
+    "name": "fractal:gadget/pinata_whack_3"
+   }
+  ]
+ },
+ "gadget.pinata_burst": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/pinata_burst"
+   }
+  ]
+ },
+ "gadget.bat_swing": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/bat_swing"
+   }
+  ]
  }
 }

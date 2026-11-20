@@ -543,7 +543,8 @@ public final class Collectibles implements Listener {
     private double gadgetCooldown(String key) {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
-            case "tetherball", "pinata", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe", "dj_booth",
+            case "pinata" -> 1;                                        // (while it's up, right-click just swings the bat)
+            case "tetherball", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe", "dj_booth",
                  "beach_ball" -> 20;
             case "pong" -> 10;
             case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "duckling", "ghost", "rainbow", "pumpkin_rain",

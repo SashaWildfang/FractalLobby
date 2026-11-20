@@ -1999,3 +1999,6 @@ GADGETS['pong'] = _pong_icon                       # the arcade screen (Sasha pi
 
 from tetherball_icon import tb2 as _tetherball_icon
 GADGETS['tetherball'] = _tetherball_icon           # wound round the pole (Sasha picked #2, no sparkle)
+
+from pinata_icon import opt3 as _pinata_icon
+GADGETS['pinata'] = _pinata_icon                   # the donkey getting whacked by the bat (Sasha picked #3)

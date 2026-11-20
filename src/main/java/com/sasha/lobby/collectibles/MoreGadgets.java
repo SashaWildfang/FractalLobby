@@ -56,8 +56,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -183,7 +185,14 @@ final class MoreGadgets implements Listener {
             case "creeper_astronaut" -> creeperAstronaut(player);
             case "exploding_sheep" -> explodingSheep(player);
             case "duckling" -> ducklings(player);
-            case "pinata" -> pinata(player);
+            case "pinata" -> {
+                if (pinataUp.contains(player.getUniqueId())) {          // it's up: right-click just swings the bat
+                    fx.sound(player.getLocation(), "fractal:gadget.bat_swing", 0.8f, 1f);
+                    player.swingMainHand();
+                } else {
+                    pinata(player);
+                }
+            }
             case "jetpack" -> jetpack(player);
             case "mob_gun" -> mobGun(player);
             case "railgun" -> railgun(player);
@@ -1743,41 +1752,191 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    private final Set<UUID> pinataUp = new HashSet<>();
+
+    /**
+     * The piñata: a wooden stand goes up in front of the player with a striped donkey piñata hanging from it on a rope,
+     * and their gadget turns into a baseball bat. Whack it (anyone can join in): it swings away on its rope with a
+     * hollow papery THOCK, shedding confetti and the odd sweet, until enough hits burst it open in a shower of candy.
+     */
     private void pinata(Player player) {
+        float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
+        Vector fwd = new Location(player.getWorld(), 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        fwd = new Vector(Math.round(fwd.getX()), 0, Math.round(fwd.getZ()));
+        Vector side = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location feet = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
+        Location ground = feet.clone().add(fwd.clone().multiply(2));
+        for (int u = -1; u <= 1; u++) {                                // room for the stand: 3 wide, 4 high, on a floor
+            for (int y = 0; y < 4; y++) {
+                Block cell = ground.clone().add(side.clone().multiply(u)).add(0, y, 0).getBlock();
+                boolean ok = cell.isPassable() && (y > 0 || cell.getRelative(0, -1, 0).getType().isSolid());
+                if (!ok) {
+                    plugin.messages().send(player, "collectibles.gadget.pinata-room");
+                    fx.sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+                    return;
+                }
+            }
+        }
         Placed p = place(player);
-        Location base = fx.ground(player).add(0, 1.4, 0);
-        ItemDisplay pinata = keep(p, model(base.clone(), "gadget/pinata_3d", Material.PINK_WOOL, 1.2f, 0));
+        World world = ground.getWorld();
+        pinataUp.add(player.getUniqueId());
+        ground.setYaw(yaw);
+        ground.setPitch(0);
+        ItemDisplay stand = keep(p, world.spawn(ground, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.OAK_FENCE, "gadget/pinata_stand"));
+            d.setPersistent(false);
+            d.setRotation(yaw, 0);
+            d.setTransformation(new Transformation(new Vector3f(0, 1f, 0), new AxisAngle4f(), new Vector3f(2f), new AxisAngle4f()));
+        }));
+        Location hook = ground.clone().add(0, 3.0, 0);
+        hook.setYaw(0);
+        final float S = 1.6f;                                          // the piñata's size
+        final double ROPE = 0.85, GRAVITY = 0.04;
+        // the knot on its back, from the model's middle (the model is turned half round inside the display)
+        final Vector3f knot = new Vector3f(0.5f / 16 * S, 6f / 16 * S, 0);
+        final float turn = (float) Math.atan2(-side.getZ(), side.getX()); // its long side faces the player
+        ItemDisplay pinata = keep(p, world.spawn(hook.clone().add(0, -ROPE, 0), ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.PINK_WOOL, "gadget/pinata_3d"));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+        }));
+        BlockDisplay rope = keep(p, world.spawn(hook, BlockDisplay.class, d -> {
+            d.setBlock(Material.WHITE_CONCRETE.createBlockData());
+            d.setBrightness(new Display.Brightness(14, 14));
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+        }));
+        boolean[] ropeShown = {false};
+        Interaction box = box(p, hook.clone().add(0, -ROPE - 0.9, 0), 1.3f, 1.0f, null);
+        Vector[] b = {new Vector(0, -ROPE, 0), new Vector(0, -ROPE, 0)}; // the knot: where it is, where it was
         int[] hits = {0};
-        int needed = 8;
-        Interaction box = box(p, base.clone().add(0, -0.6, 0), 1.0f, 1.0f, null);
+        int needed = 8 + ThreadLocalRandom.current().nextInt(5);
+        boolean[] burst = {false};
+        Map<UUID, Integer> lastHit = new HashMap<>();
+        int[] tick = {0};
+
+        // the gadget becomes a bat while the piñata's up
+        ItemStack[] lent = {null};
+        org.bukkit.NamespacedKey[] oldModel = {null};
+        Component[] oldName = {null};
+        for (ItemStack it : player.getInventory().getContents()) {
+            if (it == null || !it.hasItemMeta()) continue;
+            String what = it.getItemMeta().getPersistentDataContainer().get(fx.itemKey(), org.bukkit.persistence.PersistentDataType.STRING);
+            if (!"gadget:pinata".equals(what)) continue;
+            lent[0] = it;
+            oldModel[0] = it.getItemMeta().getItemModel();
+            oldName[0] = it.getItemMeta().displayName();
+            it.editMeta(meta -> {
+                meta.setItemModel(new org.bukkit.NamespacedKey("fractal", "gadget/pinata_bat"));
+                meta.displayName(text("Piñata Bat", 0xFFD27F).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            });
+            break;
+        }
+        p.end = () -> {
+            pinataUp.remove(player.getUniqueId());
+            for (ItemStack it : player.getInventory().getContents()) {  // and back to the piñata when it's done
+                if (it == null || !it.hasItemMeta()) continue;
+                String what = it.getItemMeta().getPersistentDataContainer().get(fx.itemKey(), org.bukkit.persistence.PersistentDataType.STRING);
+                if (!"gadget:pinata".equals(what)) continue;
+                it.editMeta(meta -> {
+                    meta.setItemModel(oldModel[0]);
+                    meta.displayName(oldName[0]);
+                });
+            }
+        };
+
+        Runnable pop = () -> {                                         // BURST!
+            burst[0] = true;
+            Location at = hook.clone().add(b[0]).add(0, -0.4, 0);
+            pinata.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            box.remove();
+            fx.sound(at, "fractal:gadget.pinata_burst", 1f, 1f);
+            fx.sound(at, "entity.player.levelup", 0.6f, 1.6f);
+            world.spawnParticle(Particle.FIREWORK, at, 40, 0.3, 0.3, 0.3, 0.2);
+            fx.confetti(at, 110, 1.2);
+            for (Material candy : new Material[]{Material.COOKIE, Material.SWEET_BERRIES, Material.GLOW_BERRIES, Material.CAKE,
+                    Material.GOLDEN_CARROT, Material.HONEY_BOTTLE, Material.PUMPKIN_PIE}) {
+                fx.burstItems(at, new ItemStack(candy), 3, 0.35, 60);
+            }
+            // the piñata in bits: bright scraps of papier-mache tumbling down
+            Material[] scraps = {Material.PINK_CONCRETE, Material.YELLOW_CONCRETE, Material.LIME_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.ORANGE_CONCRETE};
+            for (int i = 0; i < 12; i++) {
+                Material m = scraps[i % scraps.length];
+                ThreadLocalRandom r = ThreadLocalRandom.current();
+                Vector vel = new Vector(r.nextDouble(-0.18, 0.18), r.nextDouble(0.08, 0.3), r.nextDouble(-0.18, 0.18));
+                float size = (float) r.nextDouble(0.12, 0.22);
+                BlockDisplay scrap = keep(p, world.spawn(at, BlockDisplay.class, d -> {
+                    d.setBlock(m.createBlockData());
+                    d.setPersistent(false);
+                    d.setTeleportDuration(1);
+                    d.setTransformation(new Transformation(new Vector3f(-size / 2), new AxisAngle4f(), new Vector3f(size, size * 0.4f, size), new AxisAngle4f()));
+                }));
+                Location[] where = {at.clone()};
+                fx.every(40, t -> {
+                    if (!scrap.isValid()) return;
+                    vel.setY(vel.getY() - 0.04);
+                    Location next = where[0].clone().add(vel);
+                    if (!next.getBlock().isPassable()) {
+                        vel.multiply(0);
+                        return;
+                    }
+                    where[0] = next;
+                    next.setYaw(t * 25f);
+                    scrap.teleport(next);
+                }, scrap::remove);
+            }
+            plugin.messages().send(player, "collectibles.gadget.pinata-burst");
+            fx.later(70, () -> clear(player.getUniqueId()));
+        };
+
         clicks.put(box.getUniqueId(), hitter -> {
-            hits[0]++;
-            pinata.setInterpolationDelay(0);
-            pinata.setInterpolationDuration(3);
-            pinata.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f((float) Math.toRadians(hits[0] % 2 == 0 ? 20 : -20), 0, 0, 1),
-                    new Vector3f(1.2f), new AxisAngle4f()));
-            fx.sound(base, "entity.player.attack.knockback", 0.8f, 1.2f);
-            base.getWorld().spawnParticle(Particle.DUST, base, 10, 0.3, 0.3, 0.3, 0, new Particle.DustOptions(fx.party(), 1f));
-            if (hits[0] >= needed) {
-                fx.burstItems(base, new ItemStack(Material.COOKIE), 6, 0.3, 50);
-                fx.burstItems(base, new ItemStack(Material.SWEET_BERRIES), 6, 0.3, 50);
-                fx.burstItems(base, new ItemStack(Material.HONEY_BOTTLE), 3, 0.3, 50);
-                fx.confetti(base, 80, 1);
-                base.getWorld().spawnParticle(Particle.FIREWORK, base, 40, 0.3, 0.3, 0.3, 0.2);
-                fx.sound(base, "entity.firework_rocket.blast", 1f, 1f);
-                fx.sound(base, "entity.player.levelup", 0.8f, 1.6f);
-                plugin.messages().send(hitter, "collectibles.gadget.pinata-burst");
-                clear(player.getUniqueId());
+            if (burst[0]) return;
+            Integer last = lastHit.get(hitter.getUniqueId());
+            if (last != null && tick[0] - last < 5) return;
+            lastHit.put(hitter.getUniqueId(), tick[0]);
+            boolean bat = hitter.equals(player);                       // the bat hits harder than a fist
+            Vector push = hitter.getLocation().getDirection().setY(0).normalize().multiply(bat ? 0.22 : 0.14).add(new Vector(0, 0.05, 0));
+            b[1] = b[0].clone().subtract(b[0].clone().subtract(b[1]).add(push));
+            hits[0] += bat ? 1 : 0;
+            if (!bat && ThreadLocalRandom.current().nextBoolean()) hits[0]++;
+            Location at = hook.clone().add(b[0]).add(0, -0.4, 0);
+            fx.sound(at, "fractal:gadget.pinata_whack", 1f, (float) ThreadLocalRandom.current().nextDouble(0.9, 1.12));
+            world.spawnParticle(Particle.CRIT, at, 8, 0.25, 0.2, 0.25, 0.15);
+            fx.confetti(at, 8, 0.3);
+            if (ThreadLocalRandom.current().nextInt(3) == 0) {
+                fx.burstItems(at, new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.COOKIE : Material.SWEET_BERRIES), 1, 0.2, 40);
             }
+            if (hits[0] >= needed) pop.run();
         });
-        p.task = fx.every(600, t -> {
-            if (t % 2 != 0) return;
-            float sway = (float) Math.sin(t * 0.08) * 0.15f;
-            if (hits[0] == 0 || t % 6 == 0) {
-                pinata.setInterpolationDelay(0);
-                pinata.setInterpolationDuration(4);
-                pinata.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(sway, 0, 0, 1), new Vector3f(1.2f), new AxisAngle4f()));
+        fx.sound(ground, "block.wood.place", 1f, 0.9f);
+        fx.sound(ground, "block.note_block.bell", 0.6f, 1.5f);
+
+        p.task = fx.every(1200, t -> {
+            tick[0] = t;
+            if (!player.isOnline() || player.getWorld() != world || player.getLocation().distanceSquared(ground) > 20 * 20) {
+                clear(player.getUniqueId());
+                return;
             }
+            if (burst[0]) {
+                ropeShown[0] = drawCord(rope, new Vector(0, 0, 0), new Vector(0, -0.3, 0), ropeShown[0]);   // a frayed end left
+                return;
+            }
+            // swinging on its rope: gravity, a little air, and the rope keeping it at length
+            Vector v = b[0].clone().subtract(b[1]).multiply(0.985);
+            b[1] = b[0].clone();
+            b[0].add(v).add(new Vector(0, -GRAVITY, 0));
+            if (b[0].length() > ROPE) b[0].multiply(ROPE / b[0].length());
+            Vector down = b[0].clone().normalize();
+            Location knotAt = hook.clone().add(b[0]);
+            pinata.teleport(knotAt);
+            pinata.setInterpolationDelay(0);
+            pinata.setInterpolationDuration(1);
+            // tip it along the rope, turn it side-on, then hang it from its knot
+            pinata.setTransformationMatrix(new Matrix4f()
+                    .rotate(new org.joml.Quaternionf().rotationTo(0, -1, 0, (float) down.getX(), (float) down.getY(), (float) down.getZ()))
+                    .rotateY(turn).translate(-knot.x, -knot.y, -knot.z).scale(S));
+            box.teleport(knotAt.clone().add(0, -0.9, 0));
+            ropeShown[0] = drawCord(rope, new Vector(0, 0, 0), b[0], ropeShown[0]);
         }, () -> clear(player.getUniqueId()));
     }
 

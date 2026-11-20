@@ -303,6 +303,10 @@ final class Effects implements Listener {
     private final Map<UUID, List<Running>> running = new HashMap<>();
 
     /** Ends everything the player's gadgets are still doing: placed things go, flying things land, balloons pop. */
+    org.bukkit.NamespacedKey itemKey() {
+        return collectibles.itemKey();
+    }
+
     void refund(Player player, String what) {
         collectibles.refund(player, what);
     }

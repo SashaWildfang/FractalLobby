@@ -387,6 +387,13 @@ def build(out):
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'trampoline_boing_{i}.ogg'),
                     f'{out}/assets/fractal/sounds/gadget/trampoline_boing_{i}.ogg')
     sounds['gadget.trampoline_boing'] = {"sounds": [{"name": f"fractal:gadget/trampoline_boing_{i}"} for i in (1, 2, 3)]}
+    # the piñata (made by make_pinata_sounds.py): whacks, the burst and the bat's swish
+    for name in ('pinata_whack_1', 'pinata_whack_2', 'pinata_whack_3', 'pinata_burst', 'bat_swing'):
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'{name}.ogg'),
+                    f'{out}/assets/fractal/sounds/gadget/{name}.ogg')
+    sounds['gadget.pinata_whack'] = {"sounds": [{"name": f"fractal:gadget/pinata_whack_{i}"} for i in (1, 2, 3)]}
+    sounds['gadget.pinata_burst'] = {"sounds": [{"name": "fractal:gadget/pinata_burst"}]}
+    sounds['gadget.bat_swing'] = {"sounds": [{"name": "fractal:gadget/bat_swing"}]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
@@ -506,8 +513,23 @@ def build(out):
         pinata.append(Box((x, 3, z), (x + 1.4, 7, z + 1.2), P_[int(x) % 5], 'solid'))
     for k in range(3):
         pinata.append(Box((1, 9 + k * 1.6, 7.5), (3, 9.6 + k * 1.6, 8.5), P_[k + 1], 'flat'))
-    pinata.append(Box((7.6, 14, 7.6), (8.4, 32, 8.4), '#e8e8f0', 'flat'))
+    pinata.append(Box((7.1, 14, 7.6), (7.9, 14.6, 8.4), '#e8e0cc', 'flat'))    # the knot on its back (the rope is drawn)
     write(out, G + 'pinata_3d', pinata, scale=H)
+    # the piñata's stand: two wooden posts on feet and a crossbar it hangs from, with a bit of fiesta paint
+    PW, PWD, PWL = '#b5803f', '#7d5530', '#d9a85f'
+    stand = []
+    for x0 in (-3, 17):
+        stand += [Box((x0, 1, 7), (x0 + 2, 24, 9), PW, 'flat'),                       # the post
+                  Box((x0 - 1, 0, 3), (x0 + 3, 1.2, 13), PWD, 'flat'),                # its foot
+                  Box((x0 - 0.1, 18, 6.9), (x0 + 2.1, 19.2, 9.1), '#ff5ab4', 'flat'),  # painted bands
+                  Box((x0 - 0.1, 20, 6.9), (x0 + 2.1, 21.2, 9.1), '#ffcf3a', 'flat'),
+                  Box((x0 - 0.1, 22, 6.9), (x0 + 2.1, 23.2, 9.1), '#3fb8ff', 'flat')]
+    stand += [Box((-4, 24, 6.8), (20, 26, 9.2), PWL, 'flat'),                         # the crossbar
+              Box((7.4, 23.2, 7.4), (8.6, 24, 8.6), '#6a7086', 'flat')]                # the hook it hangs from
+    write(out, G + 'pinata_stand', stand, scale=1)
+    # the bat you whack it with (held like a sword)
+    import pinata_icon as _pin
+    held_item(out, G + 'pinata_bat', _pin.bat(), parent="minecraft:item/handheld")
     board, stand = '#f4f4fa', '#c9ccd8'
     write(out, G + 'diving_board_3d', [Box((0, 0, 5), (3, 6, 11), stand, 'metal'), Box((0, 6, 6), (16, 7, 10), board, 'solid'),
                                          Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
