@@ -1411,172 +1411,206 @@ final class MoreGadgets implements Listener {
     // ---------------------------------------------------------------- placed things
 
     /**
-     * Tetherball: a pole with a round ball on a slack rope. Hit it (left or right click, or run into it) and it swings
-     * out and round in the direction it was hit; the rope winds round the outside of the pole as it goes, and hitting it
-     * back the other way unwinds it. Wound all the way up, it dings and unwinds itself back down to hang ready again.
+     * Tetherball, with real physics: the ball is a weight on a rope tied to the top of the pole. It hangs, swings and
+     * circles under gravity; a hit (left or right click, or running into it) knocks it round the way it was hit. As it
+     * goes round, the rope winds onto the pole (shorter rope, so it spins faster and higher, like the real thing), and
+     * going back the other way unwinds it. Wound all the way up, it dings and unwinds itself back down. The rope is a
+     * chain of weighted points, so it hangs straight when pulled and droops naturally when slack.
      */
     private void tetherball(Player player) {
         Placed p = place(player);
         Location base = fx.ground(player);
         World world = base.getWorld();
         keep(p, model(base.clone(), "gadget/tetherball_pole", Material.IRON_BARS, 1.4f, 0.7f));
-        final double TOP = 2.7, ROPE = 1.9, POLE = 0.1, WRAP = POLE + 0.03, PITCH = 0.19, BALL = 0.3;
-        final double SHORTEST = 0.35;                                  // rope left when it's wound all the way up
-        final double PER_RADIAN = 0.07;                                // rope taken up per radian wound (about 3.5 turns in all)
-        final double MAX_ANGLE = (ROPE - SHORTEST) / PER_RADIAN;       // how far round it can wind, in radians
-        final int SAG = 14;                                            // the free rope: points pulled about by gravity
-        Vector[] now = new Vector[SAG], was = new Vector[SAG];
+        final double TOP = 2.7, ROPE = 1.95, POLE = 0.1, WRAP = POLE + 0.03, PITCH = 0.19, BALL = 0.3;
+        final double SHORTEST = 0.35, PER_RADIAN = 0.07;               // rope wound up per radian: about 3.5 turns in all
+        final double MAX_ANGLE = (ROPE - SHORTEST) / PER_RADIAN;
+        final double GRAVITY = 0.035;
+        final int NODES = 16;                                          // the free rope's weighted points
+        final int COILS = (int) Math.ceil(MAX_ANGLE / (Math.PI / 4)) + 1;   // pieces kept just for the coils
         Location top = base.clone().add(0, TOP, 0);
-        top.setYaw(0);                                                 // the rope's pieces are placed in plain world directions
+        top.setYaw(0);                                                 // everything below is in plain world directions from here
         top.setPitch(0);
-        ItemDisplay ball = keep(p, model(top.clone().add(0, -ROPE, 0), "gadget/tetherball_3d", Material.YELLOW_WOOL, 0.75f, 0));
+        ItemDisplay ball = keep(p, model(top.clone().add(0, -ROPE - BALL, 0), "gadget/tetherball_3d", Material.YELLOW_WOOL, 0.75f, 0));
         ball.setTeleportDuration(1);
-        int pieces = 44;                                               // the rope, in short pieces, so it can bend and wind
-        BlockDisplay[] rope = new BlockDisplay[pieces];
-        for (int i = 0; i < pieces; i++) {
-            rope[i] = keep(p, world.spawn(top, BlockDisplay.class, d -> {
-                d.setBlock(Material.WHITE_CONCRETE.createBlockData());
-                d.setBrightness(new Display.Brightness(14, 14));
-                d.setPersistent(false);
-                d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
-            }));
+        java.util.function.Supplier<BlockDisplay> cord = () -> keep(p, world.spawn(top, BlockDisplay.class, d -> {
+            d.setBlock(Material.WHITE_CONCRETE.createBlockData());
+            d.setBrightness(new Display.Brightness(14, 14));
+            d.setPersistent(false);
+            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+        }));
+        // two separate sets of pieces, so a piece never jumps between the coils and the hanging rope
+        BlockDisplay[] coil = new BlockDisplay[COILS], hang = new BlockDisplay[NODES + 1];
+        for (int i = 0; i < COILS; i++) coil[i] = cord.get();
+        for (int i = 0; i <= NODES; i++) hang[i] = cord.get();
+        boolean[] coilShown = new boolean[COILS], hangShown = new boolean[NODES + 1];
+
+        // the ball (where it is and where it was: its speed is the difference) and the rope's points, from the top
+        double start = Math.toRadians(player.getLocation().getYaw() + 90);
+        Vector[] b = {new Vector(Math.cos(start) * 0.5, -ROPE - 0.05, Math.sin(start) * 0.5), null};
+        b[1] = b[0].clone();
+        Vector[] node = new Vector[NODES], prev = new Vector[NODES];
+        for (int k = 0; k < NODES; k++) {
+            node[k] = b[0].clone().multiply((k + 1) / (double) (NODES + 1));
+            prev[k] = node[k].clone();
         }
-        // angle round the pole, speed, how far wound (radians, + one way, - the other), and the reset countdown
-        double[] st = {Math.toRadians(player.getLocation().getYaw() + 90), 0, 0};
+        double[] wind = {0, Math.atan2(b[0].getZ(), b[0].getX())};    // how far wound (radians, signed), and the last angle
         int[] reset = {0};
         Map<UUID, Integer> lastHit = new HashMap<>();
         int[] tick = {0};
+
         java.util.function.BiConsumer<Player, Double> hitBall = (hitter, power) -> {
             if (reset[0] > 0) return;
             Integer last = lastHit.get(hitter.getUniqueId());
             if (last != null && tick[0] - last < 6) return;
             lastHit.put(hitter.getUniqueId(), tick[0]);
-            Location at = ball.getLocation();
-            Vector toBall = at.toVector().subtract(base.toVector()).setY(0);
+            Vector radial = b[0].clone().setY(0);
+            if (radial.lengthSquared() < 1e-4) radial = new Vector(1, 0, 0);
+            radial.normalize();
             Vector push = hitter.getLocation().getDirection().setY(0);
-            double cross = toBall.getX() * push.getZ() - toBall.getZ() * push.getX();
-            int way = cross >= 0 ? 1 : -1;
-            // the same way adds to its speed; the other way knocks it back round (and so starts unwinding it)
-            st[1] = Math.signum(st[1]) == way ? Math.min(0.3, Math.abs(st[1]) + power) * way : way * (power + 0.04);
+            double cross = radial.getX() * push.getZ() - radial.getZ() * push.getX();
+            Vector tangent = new Vector(-radial.getZ(), 0, radial.getX()).multiply(cross >= 0 ? 1 : -1);
+            Vector v = b[0].clone().subtract(b[1]).add(tangent.multiply(power)).add(new Vector(0, 0.06, 0));
+            if (v.length() > 0.5) v.multiply(0.5 / v.length());
+            b[1] = b[0].clone().subtract(v);                           // (a verlet point's speed is now minus before)
+            Location at = top.clone().add(b[0]);
             fx.sound(at, "entity.player.attack.strong", 0.9f, 1.3f);
             fx.sound(at, "block.note_block.basedrum", 0.6f, 1.4f);
             world.spawnParticle(Particle.CRIT, at, 6, 0.15, 0.15, 0.15, 0.1);
         };
-        Interaction hit = box(p, top.clone().add(0, -ROPE - 0.4, 0), 0.8f, 0.8f, null);
-        clicks.put(hit.getUniqueId(), hitter -> hitBall.accept(hitter, hitter.isSprinting() ? 0.15 : 0.11));
+        Interaction hit = box(p, top.clone().add(b[0]).add(0, -0.4, 0), 0.8f, 0.8f, null);
+        clicks.put(hit.getUniqueId(), hitter -> hitBall.accept(hitter, hitter.isSprinting() ? 0.3 : 0.22));
         fx.sound(base, "block.chain.place", 1f, 1f);
+
         p.task = fx.every(1200, t -> {
             tick[0] = t;
-            if (reset[0] > 0) {                                        // wound right up: it unwinds itself, then settles
+            // ---- the ball: a weight on a rope, with gravity
+            Vector v = b[0].clone().subtract(b[1]).multiply(0.995);
+            b[1] = b[0].clone();
+            b[0].add(v).add(new Vector(0, -GRAVITY, 0));
+            if (reset[0] > 0) {                                        // unwinding itself: turn it back round the pole
                 reset[0]--;
-                double back = -Math.signum(st[2]) * Math.min(0.22, Math.abs(st[2]) * 0.12 + 0.02);
-                st[1] = Math.abs(st[2]) > 0.05 ? back : st[1] * 0.85;
-                if (reset[0] == 0) st[1] = 0;                          // and hangs still, ready to go again
+                double back = -Math.signum(wind[0]) * Math.min(0.3, Math.abs(wind[0]));
+                double c = Math.cos(back), sn = Math.sin(back);
+                Vector r = new Vector(b[0].getX() * c - b[0].getZ() * sn, b[0].getY(), b[0].getX() * sn + b[0].getZ() * c);
+                b[0] = r;
+                b[1] = r.clone().add(new Vector(0, 0.0, 0));
+                if (reset[0] == 0) b[1] = b[0].clone();
             }
-            st[0] += st[1];
-            st[2] = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, st[2] + st[1]));
-            if (reset[0] == 0) st[1] *= 0.99;
-            if (reset[0] == 0 && Math.abs(st[2]) >= MAX_ANGLE - 1e-6 && Math.abs(st[1]) > 0.01) {
-                Location at = ball.getLocation();                    // all the way up: ding!
+            // how far round the pole it's gone this tick winds (or unwinds) the rope
+            double angle = Math.atan2(b[0].getZ(), b[0].getX());
+            double turn = Math.atan2(Math.sin(angle - wind[1]), Math.cos(angle - wind[1]));
+            wind[1] = angle;
+            wind[0] = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, wind[0] + turn));
+            double length = ROPE - Math.abs(wind[0]) * PER_RADIAN;
+            double drop = Math.abs(wind[0]) / (Math.PI * 2) * PITCH;
+            Vector anchor = new Vector(Math.cos(angle) * WRAP, -drop, Math.sin(angle) * WRAP);
+            // the rope can't stretch: the ball's centre stays within rope + its radius of where the rope leaves the pole
+            Vector off = b[0].clone().subtract(anchor);
+            double reach = length + BALL;
+            if (off.length() > reach) b[0] = anchor.clone().add(off.multiply(reach / off.length()));
+            // and it can't go through the pole or the ground
+            double h = Math.hypot(b[0].getX(), b[0].getZ());
+            if (h < POLE + BALL) {
+                double k = (POLE + BALL) / Math.max(h, 1e-6);
+                b[0].setX(h < 1e-6 ? POLE + BALL : b[0].getX() * k);
+                b[0].setZ(h < 1e-6 ? 0 : b[0].getZ() * k);
+            }
+            if (b[0].getY() < -TOP + BALL) b[0].setY(-TOP + BALL);
+            if (reset[0] == 0 && Math.abs(wind[0]) >= MAX_ANGLE - 1e-6) {   // all the way up: ding!
+                Location at = top.clone().add(b[0]);
                 fx.sound(at, "block.note_block.bell", 1f, 1.4f);
                 fx.sound(at, "block.anvil.land", 0.3f, 2f);
                 world.spawnParticle(Particle.FIREWORK, at, 18, 0.2, 0.2, 0.2, 0.08);
                 fx.confetti(at, 20, 0.4);
-                reset[0] = 70;
+                reset[0] = 60;
             }
-            double wound = Math.abs(st[2]) * PER_RADIAN;               // rope used up round the pole
-            double free = ROPE - wound;
-            double turns = Math.abs(st[2]) / (Math.PI * 2);
-            double drop = turns * PITCH;                               // the coils step down the pole as they wind
-            double taut = Math.min(1, Math.abs(st[1]) / 0.16);
-            double fly = taut * Math.toRadians(72);                    // swings out the faster it goes
-            // the rope leaves the pole at the end of the coils and runs `free` to the top of the ball
-            Vector end = new Vector(Math.cos(st[0]) * WRAP, -drop, Math.sin(st[0]) * WRAP);
-            double reach = free + BALL;
-            double out = Math.max(BALL + 0.08, WRAP + reach * Math.sin(fly));
-            double y = -drop - reach * Math.cos(fly);
-            Vector centre = new Vector(Math.cos(st[0]) * out, y, Math.sin(st[0]) * out);
-            Location at = top.clone().add(centre);
+            Location at = top.clone().add(b[0]);
             ball.teleport(at);
             hit.teleport(at.clone().add(0, -0.4, 0));
 
-            List<Vector> pts = new ArrayList<>();
-            int helix = (int) Math.min(pieces - SAG - 2, Math.ceil(Math.abs(st[2]) / (Math.PI / 4)));
-            for (int k = 0; k <= helix; k++) {                         // the coils, just outside the pole
-                double f = helix == 0 ? 1 : k / (double) helix;
-                double ang = st[0] - st[2] * (1 - f);
-                pts.add(new Vector(Math.cos(ang) * WRAP, -drop * f, Math.sin(ang) * WRAP));
+            // ---- the hanging rope: weighted points, links that go slack but don't stretch, outside the pole
+            Vector attach = b[0].clone().add(anchor.clone().subtract(b[0]).normalize().multiply(BALL * 0.9));
+            double link = length / (NODES + 1);
+            for (int k = 0; k < NODES; k++) {
+                Vector nv = node[k].clone().subtract(prev[k]).multiply(0.9);
+                prev[k] = node[k].clone();
+                node[k].add(nv).add(new Vector(0, -GRAVITY, 0));
             }
-            Vector attach = centre.clone().add(end.clone().subtract(centre).normalize().multiply(BALL * 0.9));
-            // the free rope is a real (simple) rope: points with weight, joined by links that can go slack but not
-            // stretch, fixed at the coils and at the ball, kept outside the pole. It sags, trails and whips as it swings.
-            if (now[0] == null) {
-                for (int k = 0; k < SAG; k++) {
-                    double f = (k + 1) / (double) (SAG + 1);
-                    now[k] = end.clone().multiply(1 - f).add(attach.clone().multiply(f));
-                    was[k] = now[k].clone();
-                }
-            }
-            double link = end.distance(attach) * (1.04 + 0.14 * (1 - taut)) / (SAG + 1);   // slacker when it's slow
-            for (int k = 0; k < SAG; k++) {
-                Vector v = now[k].clone().subtract(was[k]).multiply(0.94);
-                was[k] = now[k].clone();
-                now[k].add(v).add(new Vector(0, -0.035, 0));
-            }
-            for (int pass = 0; pass < 14; pass++) {
-                for (int k = -1; k < SAG; k++) {
-                    Vector p0 = k < 0 ? end : now[k], p1 = k + 1 < SAG ? now[k + 1] : attach;
+            for (int pass = 0; pass < 20; pass++) {
+                for (int k = -1; k < NODES; k++) {
+                    Vector p0 = k < 0 ? anchor : node[k], p1 = k + 1 < NODES ? node[k + 1] : attach;
                     Vector gap = p1.clone().subtract(p0);
                     double dist = gap.length();
-                    if (dist <= link || dist < 1e-6) continue;          // slack links are left alone
+                    if (dist <= link || dist < 1e-6) continue;
                     Vector fix = gap.multiply((dist - link) / dist);
-                    boolean fixed0 = k < 0, fixed1 = k + 1 >= SAG;
-                    if (!fixed0 && !fixed1) {
+                    if (k >= 0 && k + 1 < NODES) {
                         p0.add(fix.clone().multiply(0.5));
-                        p1.subtract(fix.clone().multiply(0.5));
-                    } else if (!fixed0) {
+                        p1.subtract(fix.multiply(0.5));
+                    } else if (k >= 0) {
                         p0.add(fix);
-                    } else if (!fixed1) {
+                    } else if (k + 1 < NODES) {
                         p1.subtract(fix);
                     }
                 }
-                for (Vector q : now) {                                 // never through the pole, never through the ground
-                    double h = Math.hypot(q.getX(), q.getZ());
-                    if (h < WRAP && q.getY() > -TOP) {
-                        if (h < 1e-6) q.setX(WRAP);
-                        else { q.setX(q.getX() * WRAP / h); q.setZ(q.getZ() * WRAP / h); }
+                for (Vector q : node) {
+                    double qh = Math.hypot(q.getX(), q.getZ());
+                    if (qh < WRAP && q.getY() < 0.05) {
+                        double k = WRAP / Math.max(qh, 1e-6);
+                        q.setX(qh < 1e-6 ? WRAP : q.getX() * k);
+                        q.setZ(qh < 1e-6 ? 0 : q.getZ() * k);
                     }
                     if (q.getY() < -TOP + 0.03) q.setY(-TOP + 0.03);
                 }
             }
-            for (Vector q : now) pts.add(q.clone());
-            pts.add(attach);
-            for (int i = 0; i < pieces; i++) {
-                BlockDisplay piece = rope[i];
-                piece.setInterpolationDelay(0);
-                piece.setInterpolationDuration(1);
-                if (i + 1 >= pts.size()) {
-                    piece.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            List<Vector> line = new ArrayList<>();
+            line.add(anchor);
+            for (Vector q : node) line.add(q);
+            line.add(attach);
+            for (int i = 0; i <= NODES; i++) hangShown[i] = drawCord(hang[i], line.get(i), line.get(i + 1), hangShown[i]);
+
+            // ---- the coils on the pole, from the top down to where the rope leaves it
+            int pieces = Math.min(COILS, (int) Math.ceil(Math.abs(wind[0]) / (Math.PI / 4)));
+            for (int i = 0; i < COILS; i++) {
+                if (i >= pieces) {
+                    coilShown[i] = drawCord(coil[i], null, null, coilShown[i]);
                     continue;
                 }
-                Vector a0 = pts.get(i), d = pts.get(i + 1).clone().subtract(a0);
-                float len = (float) d.length();
-                if (len < 1e-4) {
-                    piece.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
-                    continue;
-                }
-                Vector n = d.clone().multiply(1 / len);
-                // each piece runs a hair past its end so the joins never show a gap
-                piece.setTransformationMatrix(new Matrix4f().translate((float) a0.getX(), (float) a0.getY(), (float) a0.getZ())
-                        .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) n.getX(), (float) n.getY(), (float) n.getZ()))
-                        .translate(-0.022f, -0.01f, -0.022f).scale(0.044f, len + 0.02f, 0.044f));
+                double f0 = i / (double) pieces, f1 = (i + 1) / (double) pieces;
+                double a0 = angle - wind[0] * (1 - f0), a1 = angle - wind[0] * (1 - f1);
+                Vector q0 = new Vector(Math.cos(a0) * WRAP, -drop * f0, Math.sin(a0) * WRAP);
+                Vector q1 = new Vector(Math.cos(a1) * WRAP, -drop * f1, Math.sin(a1) * WRAP);
+                coilShown[i] = drawCord(coil[i], q0, q1, coilShown[i]);
             }
-            // running into it counts as a hit too
+            // running into it knocks it along too
             for (Player who : world.getPlayers()) {
                 if (fx.parkour(who) || who.getLocation().add(0, 1, 0).distanceSquared(at) > 0.6) continue;
-                hitBall.accept(who, 0.1);
+                hitBall.accept(who, 0.18);
             }
         }, () -> clear(player.getUniqueId()));
+    }
+
+    /**
+     * Lays one piece of cord from a to b (positions from the display's own spot), or hides it when a is null. A piece
+     * that's just appearing (or disappearing) snaps straight there instead of sliding in from where it last was.
+     */
+    private static boolean drawCord(BlockDisplay piece, Vector a, Vector b, boolean shown) {
+        if (a == null || b == null || a.distanceSquared(b) < 1e-8) {
+            if (shown) {
+                piece.setInterpolationDuration(0);
+                piece.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0), new AxisAngle4f()));
+            }
+            return false;
+        }
+        Vector d = b.clone().subtract(a);
+        float len = (float) d.length();
+        Vector n = d.multiply(1 / len);
+        piece.setInterpolationDelay(0);
+        piece.setInterpolationDuration(shown ? 1 : 0);
+        piece.setTransformationMatrix(new Matrix4f().translate((float) a.getX(), (float) a.getY(), (float) a.getZ())
+                .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) n.getX(), (float) n.getY(), (float) n.getZ()))
+                .translate(-0.022f, -0.01f, -0.022f).scale(0.044f, len + 0.02f, 0.044f));
+        return true;
     }
 
     /**
