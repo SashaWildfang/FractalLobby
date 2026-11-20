@@ -230,6 +230,8 @@ def build(out):
         cloud += ball(cx, cy, cz, r, W2, 'flat', glow=None)
     cloud.append(Box((1.5, 4.6, 5), (14.5, 5.4, 11), G2, 'flat'))
     write(out, P + 'cloud', cloud, scale=H)
+    import cloak_parts                                                 # the redone cloaks' pieces
+    cloak_parts.write_all(out, Box, write)
     for name, col in (('orb_blue', '#5b9dff'), ('orb_pink', '#ff6fd8'), ('orb_gold', '#ffcf5a')):
         write(out, P + name, [Box((5, 5, 5), (11, 11, 11), col, 'glow', glow=15),
                               Box((6, 4, 6), (10, 12, 10), col, 'glow', glow=15), Box((4, 6, 6), (12, 10, 10), col, 'glow', glow=15),

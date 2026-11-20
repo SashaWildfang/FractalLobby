@@ -2041,3 +2041,6 @@ GADGETS['let_it_snow'] = _snow_icon               # one big crystal snowflake (S
 
 from winter_icons import pb as _launcher_icon
 GADGETS['pumpkin_launcher'] = _launcher_icon      # the mortar mid-shot, muzzle flash and seeds (Sasha picked #2)
+
+from winter_icons import spooky_aura_icon as _spooky_aura_icon
+CLOAKS['spooky_aura'] = _spooky_aura_icon         # little ghosts over purple mist (it's ghosts now, not bats)

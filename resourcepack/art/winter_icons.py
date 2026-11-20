@@ -238,3 +238,29 @@ def pc():
 
 
 LAUNCHER = [pa, pb, pc]
+
+
+def spooky_aura_icon():
+    """Spooky Aura: two little round ghosts floating over a swirl of purple mist, with soul-fire flickers."""
+    p = P()
+    MIST, MIST_D, SOUL = '#7a4fc0', '#4a3478', '#6fe8ff'
+    for x in range(3, 29):                                              # a soft band of mist along the bottom
+        y = 26 + round(1.2 * math.sin(x * 0.45))
+        p.rect(x, y, x, y, '#a888e0')
+        p.rect(x, y + 1, x, 29, MIST)
+        p.rect(x, 29, x, 29, MIST_D)
+    def ghost(gx, gy, s):
+        disc(p, gx, gy, 4.2 * s, '#f6f8ff')
+        p.rect(int(gx - 4 * s), int(gy), int(gx + 4 * s), int(gy + 5 * s), '#f6f8ff')
+        for k in range(4):                                              # wavy hem
+            x = int(gx - 4 * s) + k * int(2 * s + 0.5) * 1
+            p.rect(x, int(gy + 5 * s) + 1, x + max(0, int(s)), int(gy + 5 * s) + 1, '#d8e0f4')
+        p.rect(int(gx - 2 * s), int(gy - 1), int(gx - 2 * s) + 1, int(gy + 0.5), '#1a1b26')
+        p.rect(int(gx + 1 * s), int(gy - 1), int(gx + 1 * s) + 1, int(gy + 0.5), '#1a1b26')
+        p.rect(int(gx - 0.5), int(gy + 2 * s), int(gx), int(gy + 2 * s) + 1, '#1a1b26')
+    ghost(10, 9, 1.3)
+    ghost(23.5, 15, 0.9)
+    for (x, y) in ((4, 21), (27, 6), (17, 23)):                          # soul-fire flickers
+        p.rect(x, y, x, y + 1, SOUL)
+        p.dot(x, y - 1, '#ffffff')
+    return p.done()

@@ -2421,16 +2421,17 @@ final class Effects implements Listener {
     /** The textured pieces of each cloak (models under fractal:cloak/part/). */
     private static List<String> parts(String key) {
         return switch (key) {
-            case "sparkle_aura" -> List.of("sparkle", "sparkle", "sparkle", "sparkle", "sparkle");
-            case "halo" -> List.of("halo");
-            case "rain_cloud" -> List.of("cloud");
-            case "orbit" -> List.of("orb_blue", "orb_pink", "orb_gold");
-            case "flame_ring" -> List.of("flame", "flame", "flame", "flame", "flame", "flame");
+            case "sparkle_aura" -> List.of("star_white", "star_pink", "star_gold", "star_lilac", "star_white", "star_pink", "star_gold");
+            case "halo" -> List.of("halo_ring");
+            case "rain_cloud" -> List.of("rain_cloud2", "raindrop", "raindrop", "raindrop", "raindrop", "raindrop", "bolt");
+            case "orbit" -> List.of("planet_ringed", "planet_blue", "planet_pink");
+            case "flame_ring" -> List.of("fire_ring", "flame_tongue", "flame_tongue", "flame_tongue", "flame_tongue", "flame_tongue",
+                    "flame_tongue", "flame_tongue");
             case "angel_wings" -> List.of("wing_left", "wing_right");
-            case "sun_rays" -> List.of("sun3d", "sun_ring");
+            case "sun_rays" -> List.of("sun_glow", "sun_rays2", "sun_ball");
             case "snow_globe" -> List.of("snowflake", "snowflake", "snowflake", "snowflake", "snowflake", "snowflake");
             case "blossom_aura" -> List.of("petal", "petal", "petal", "petal", "petal", "petal");
-            case "spooky_aura" -> List.of("bat", "bat", "bat");
+            case "spooky_aura" -> List.of("spook_ghost", "spook_ghost", "spook_ghost");
             default -> List.of();
         };
     }
@@ -2440,7 +2441,9 @@ final class Effects implements Listener {
         for (String part : parts(key)) {
             ItemDisplay display = rider(player, "cloak/part/" + part);
             display.setBrightness(new Display.Brightness(15, 15));
-            if (part.equals("sun_ring")) display.setBillboard(Display.Billboard.CENTER);   // the rays always face you
+            if (part.startsWith("star_") || part.equals("sun_rays2") || part.equals("sun_glow") || part.equals("bolt"))
+                display.setBillboard(Display.Billboard.CENTER);            // sprites always face you
+            if (part.equals("raindrop")) display.setBillboard(Display.Billboard.VERTICAL);
             rig.parts.add(display);
         }
         rigs.put(player.getUniqueId(), rig);
@@ -2478,22 +2481,43 @@ final class Effects implements Listener {
             double phase = Math.PI * 2 * i / n;
             switch (rig.key) {
                 case "sparkle_aura" -> {
-                    double a = t * 0.05 + phase;
-                    float y = -1.2f + (float) ((i * 0.37 + t * 0.02) % 1.4) + sneak;
-                    float s = 0.18f + 0.1f * (float) Math.abs(Math.sin(t * 0.15 + i));
-                    m.translate((float) Math.cos(a) * 0.7f, y, (float) Math.sin(a) * 0.7f).rotateY((float) (t * 0.1)).scale(s);
+                    // twinkling stars: each pops up somewhere round you, drifts up a little, grows, turns and fades
+                    double life = 40, tt = t + i * life / n;
+                    long cycle = (long) Math.floor(tt / life);
+                    double u = (tt - cycle * life) / life;
+                    double r1 = hash(cycle, i, 1), r2 = hash(cycle, i, 2), r3 = hash(cycle, i, 3), r4 = hash(cycle, i, 4);
+                    float x = (float) ((r1 < 0.5 ? -1 : 1) * (0.38 + 0.42 * r2)), z = (float) ((r3 - 0.5) * 0.5);
+                    float y = (float) (-1.7 + 2.0 * r4 + 0.3 * u) + sneak;
+                    float s = 0.3f * (float) Math.sin(Math.PI * u) * (0.75f + 0.5f * (float) r2);
+                    m.translate(x, y, z).rotateZ((float) (t * 0.04 + i)).scale(s);
                 }
-                case "halo" -> m.translate(0, 0.28f + (float) Math.sin(t * 0.08) * 0.04f, 0).rotateY((float) (t * 0.03)).scale(0.62f);
-                case "rain_cloud" -> m.translate(0, 0.85f + (float) Math.sin(t * 0.06) * 0.06f, 0).rotateY(-yaw).scale(1.15f);
+                case "halo" -> m.translate(0, 0.3f + (float) Math.sin(t * 0.08) * 0.035f, 0).rotateY((float) (t * 0.02))
+                        .rotateX((float) Math.sin(t * 0.05) * 0.06f).scale(0.95f);
+                case "rain_cloud" -> {
+                    if (i == 0) m.translate(0, 0.72f + (float) Math.sin(t * 0.06) * 0.05f, 0).rotateY(-yaw).scale(1.25f);
+                    else if (i < n - 1) {                          // raindrops falling from the cloud to the ground
+                        double life = 12, tt = t + (i - 1) * life / (n - 2);
+                        long cycle = (long) Math.floor(tt / life);
+                        double u = (tt - cycle * life) / life, a = hash(cycle, i, 1) * Math.PI * 2, r = 0.25 + 0.3 * hash(cycle, i, 2);
+                        float y = 0.45f - (float) u * 2.2f;
+                        m.translate((float) (Math.cos(a) * r), y, (float) (Math.sin(a) * r)).scale(y < -1.75f + sneak ? 0 : 0.45f);
+                    } else {                                        // now and then a little flicker of lightning
+                        boolean flash = t % 200 < 4 || (t % 200 >= 8 && t % 200 < 10);
+                        m.translate(0.12f, 0.15f, 0).scale(flash ? 0.6f : 0);
+                    }
+                }
                 case "orbit" -> {
-                    double a = t * 0.11 + phase;
-                    float tilt = (float) Math.sin(a + i) * 0.35f;
-                    m.translate((float) Math.cos(a) * 0.95f, -0.85f + tilt + sneak, (float) Math.sin(a) * 0.95f).rotateY((float) (t * 0.2)).scale(0.45f);
+                    Vector3f at = planet(i, t);
+                    m.translate(at.x, at.y + sneak, at.z).rotateZ(i == 0 ? 0.35f : 0).rotateY((float) (t * 0.05)).scale(PLANET_SIZE[i]);
                 }
                 case "flame_ring" -> {
-                    double a = t * 0.07 + phase;
-                    float flicker = 0.38f + 0.06f * (float) Math.sin(t * 0.5 + i * 2);
-                    m.translate((float) Math.cos(a) * 0.85f, -1.6f + flicker / 2 + sneak, (float) Math.sin(a) * 0.85f).rotateY((float) -a).scale(flicker);
+                    if (i == 0) m.translate(0, -1.78f + sneak, 0).rotateY((float) (t * 0.02)).scale(1.9f);   // the ring of fire
+                    else {
+                        double a = t * 0.03 + Math.PI * 2 * (i - 1) / (n - 1);
+                        float sc = 0.5f + 0.12f * (float) Math.sin(t * 0.4 + i * 1.7);
+                        m.translate((float) Math.cos(a) * 0.72f, -1.8f + sneak + 0.5f * sc, (float) Math.sin(a) * 0.72f)
+                                .rotateY((float) -a).scale(sc * 0.9f, sc, sc * 0.9f);
+                    }
                 }
                 case "angel_wings" -> {
                     float side = i == 0 ? 1 : -1; // left, right
@@ -2510,11 +2534,12 @@ final class Effects implements Listener {
                             .rotateY(-side * flap).scale(0.8f);   // an item display shows its model turned half round
                 }
                 case "sun_rays" -> {
-                    // a little sun floating over the head, pulsing, its rays turning around it
-                    float pulse = (float) Math.sin(t * 0.25) * 0.05f;
-                    float y = 0.95f + (float) Math.sin(t * 0.07) * 0.06f;
-                    if (i == 0) m.translate(0, y, 0).rotateY((float) (t * 0.04)).scale(0.6f + pulse);
-                    else m.translate(0, y, 0).rotateZ((float) (t * 0.03)).scale(0.95f + pulse * 2);
+                    // a little round sun floating over the head: a soft glow behind, its rays slowly turning, pulsing
+                    float pulse = (float) Math.sin(t * 0.12) * 0.05f;
+                    float y = 0.95f + (float) Math.sin(t * 0.07) * 0.05f;
+                    if (i == 0) m.translate(0, y, 0).scale(1.45f + pulse * 2);
+                    else if (i == 1) m.translate(0, y, 0).rotateZ((float) (t * 0.02)).scale(1.3f + pulse);
+                    else m.translate(0, y, 0).rotateY((float) (t * 0.03)).scale(1.0f + pulse);
                 }
                 case "snow_globe" -> {
                     double a = t * 0.03 + phase;
@@ -2529,12 +2554,13 @@ final class Effects implements Listener {
                             .rotateY((float) (t * 0.12 + i)).rotateX((float) Math.sin(t * 0.1 + i) * 0.6f).scale(0.2f);
                 }
                 case "spooky_aura" -> {
-                    // bats circling, flapping, at different heights
-                    double a = t * 0.09 + phase;
-                    float r = 0.8f + 0.12f * (float) Math.sin(t * 0.05 + i);
-                    float y = -0.35f - i * 0.35f + (float) Math.sin(t * 0.2 + i * 2) * 0.12f + sneak;
-                    float wings = 0.5f * (0.45f + 0.55f * (float) Math.abs(Math.sin(t * 0.7 + i)));
-                    m.translate((float) Math.cos(a) * r, y, (float) Math.sin(a) * r).rotateY((float) (Math.PI - a)).scale(wings, 0.5f, 0.5f);
+                    // little ghosts drifting round you at different heights, bobbing and swaying, looking out at people
+                    double a = t * 0.05 + phase;
+                    float r = 0.85f + 0.1f * (float) Math.sin(t * 0.04 + i);
+                    float y = -0.5f - i * 0.38f + (float) Math.sin(t * 0.12 + i * 2) * 0.12f + sneak;
+                    double dx = -Math.sin(a) + Math.cos(a) * 0.8, dz = Math.cos(a) + Math.sin(a) * 0.8;
+                    m.translate((float) Math.cos(a) * r, y, (float) Math.sin(a) * r).rotateY((float) Math.atan2(dx, dz))
+                            .rotateZ((float) Math.sin(t * 0.1 + i) * 0.12f).scale(0.5f);
                 }
                 default -> m.scale(0);
             }
@@ -2545,6 +2571,23 @@ final class Effects implements Listener {
         }
         rig.lastX = player.getX();
         rig.lastZ = player.getZ();
+    }
+
+    /** A steady pseudo-random number in [0, 1) for a cloak piece's cycle (so every viewer sees the same). */
+    private static double hash(long cycle, int part, int salt) {
+        double v = Math.sin(cycle * 12.9898 + part * 78.233 + salt * 37.719) * 43758.5453;
+        return v - Math.floor(v);
+    }
+
+    private static final float[] PLANET_SIZE = {0.7f, 0.55f, 0.5f};
+
+    /** Where Orbit's planet i is (from the top of the head): each on its own tilted orbit, at its own speed. */
+    private static Vector3f planet(int i, double t) {
+        double[] radius = {0.95, 1.15, 0.8}, speed = {0.05, 0.035, 0.07}, tiltX = {0.35, -0.25, 0.15}, tiltZ = {0.1, 0.3, -0.35};
+        double a = t * speed[i] + i * 2.1;
+        Vector3f p = new Vector3f((float) (Math.cos(a) * radius[i]), 0, (float) (Math.sin(a) * radius[i]));
+        new org.joml.Matrix3f().rotateX((float) tiltX[i]).rotateZ((float) tiltZ[i]).transform(p);
+        return p.add(0, -0.85f, 0);
     }
 
     private static float wrap(float degrees) {
@@ -2580,12 +2623,14 @@ final class Effects implements Listener {
             case "sparkle_aura" -> {
                 if (tick % 4 != 0) return;
                 Location at = base.clone().add(rand(0.7), ThreadLocalRandom.current().nextDouble(0.1, 2), rand(0.7));
-                show(player, Particle.DUST, at, 1, 0, 0, 0, 0, dust(ThreadLocalRandom.current().nextBoolean() ? Color.WHITE : Color.fromRGB(0xFF7BE5), 0.8f));
+                Color[] tints = {Color.WHITE, Color.fromRGB(0xFF9BEA), Color.fromRGB(0xFFD86A), Color.fromRGB(0xC9A6FF)};
+                show(player, Particle.DUST, at, 1, 0, 0, 0, 0, dust(tints[ThreadLocalRandom.current().nextInt(tints.length)], 0.55f));
                 if (!pieces) show(player, Particle.END_ROD, at, 0, 0, 0, 0, 0, null);
             }
             case "halo" -> {
                 if (pieces) {
-                    if (tick % 10 == 0) show(player, Particle.END_ROD, base.clone().add(rand(0.3), 2.2, rand(0.3)), 0, 0, -0.02, 0, 1, null);
+                    if (tick % 16 == 0) show(player, Particle.DUST, base.clone().add(rand(0.3), 2.1, rand(0.3)), 1, 0, 0, 0, 0,
+                            dust(Color.fromRGB(0xFFE680), 0.5f));
                     return;
                 }
                 Location centre = base.clone().add(0, 2.25, 0);
@@ -2596,19 +2641,29 @@ final class Effects implements Listener {
                 }
             }
             case "rain_cloud" -> {
-                Location cloud = base.clone().add(0, 2.55, 0);
+                Location cloud = base.clone().add(0, 2.4, 0);
                 if (!pieces) show(player, Particle.CLOUD, cloud, 3, 0.35, 0.05, 0.35, 0, null);
-                if (tick % 4 == 0) show(player, Particle.FALLING_WATER, cloud, 1, 0.25, 0, 0.25, 0, null);   // a light drizzle
+                if (tick % 2 == 0) show(player, Particle.FALLING_WATER, cloud, 1, 0.3, 0, 0.3, 0, null);
+                if (tick % 4 == 0) show(player, Particle.SPLASH, base.clone().add(rand(0.45), 0.05, rand(0.45)), 2, 0.05, 0, 0.05, 0, null);
             }
             case "orbit" -> {
-                if (pieces && tick % 4 != 0) return;
-                Location centre = base.clone().add(0, 1, 0);
-                double a = t * 0.11;
-                show(player, Particle.END_ROD, centre.clone().add(Math.cos(a) * 0.95, 0, Math.sin(a) * 0.95), 0, 0, 0, 0, 0, null);
+                Location head = base.clone().add(0, player.isSneaking() ? 1.5 : 1.8, 0);
+                Color[] trail = {Color.fromRGB(0xF2CF8A), Color.fromRGB(0x6FA8FF), Color.fromRGB(0xFF8ADF)};
+                for (int i = 0; i < 3; i++) {                             // a short sparkly trail behind each planet
+                    Vector3f p = planet(i, t);
+                    show(player, Particle.DUST, head.clone().add(p.x, p.y, p.z), 1, 0, 0, 0, 0, dust(trail[i], 0.5f));
+                }
+                if (!pieces && tick % 4 == 0) show(player, Particle.END_ROD, head, 0, 0, 0, 0, 0, null);
             }
             case "flame_ring" -> {
-                if (tick % 4 == 0) show(player, Particle.FLAME, base.clone().add(rand(0.8), 0.15, rand(0.8)), 1, 0, 0.02, 0, 0.01, null);
-                if (tick % 8 == 0) show(player, Particle.SMOKE, base.clone().add(0, 0.2, 0), 2, 0.5, 0, 0.5, 0, null);
+                if (tick % 4 == 0) {                                     // embers rising off the ring
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+                    show(player, Particle.FLAME, base.clone().add(Math.cos(a) * 0.72, 0.15, Math.sin(a) * 0.72), 0, 0, 0.06, 0, 1, null);
+                }
+                if (tick % 6 == 0) show(player, Particle.DUST, base.clone().add(rand(0.8), ThreadLocalRandom.current().nextDouble(0.3, 1.0), rand(0.8)),
+                        1, 0, 0, 0, 0, dust(Color.fromRGB(0xFF9A2A), 0.5f));
+                if (tick % 12 == 0) show(player, Particle.SMOKE, base.clone().add(rand(0.6), 0.5, rand(0.6)), 1, 0, 0.02, 0, 1, null);
+                if (tick % 60 == 0) show(player, Particle.LAVA, base.clone().add(rand(0.6), 0.1, rand(0.6)), 1, 0, 0, 0, 0, null);
             }
             case "angel_wings" -> {
                 if (pieces) {
@@ -2618,14 +2673,18 @@ final class Effects implements Listener {
                 if (tick % 4 == 0) wings(player);
             }
             case "sun_rays" -> {
-                if (tick % 4 == 0) {
+                if (tick % 4 == 0) {                                     // warm motes drifting down from it
+                    Location sun = base.clone().add(rand(0.9), 2.2 + ThreadLocalRandom.current().nextDouble(0.6), rand(0.9));
+                    show(player, Particle.DUST, sun, 1, 0, 0, 0, 0, dust(ThreadLocalRandom.current().nextBoolean() ? Color.fromRGB(0xFFF2A0)
+                            : Color.fromRGB(0xFFC83D), 0.6f));
+                }
+                if (tick % 10 == 0) show(player, Particle.WAX_ON, base.clone().add(rand(0.6), 1.2 + rand(0.6), rand(0.6)), 1, 0, 0, 0, 0, null);
+                if (!pieces && tick % 4 == 0) {
                     double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
                     Location sun = base.clone().add(0, 2.75, 0);
                     for (int k = 1; k <= 5; k++) show(player, Particle.DUST, sun.clone().add(Math.cos(a) * k * 0.28, -k * 0.12, Math.sin(a) * k * 0.28),
                             1, 0, 0, 0, 0, dust(Color.fromRGB(k < 3 ? 0xFFF2A0 : 0xFFC83D), 0.7f));
                 }
-                if (tick % 6 == 0) show(player, Particle.DUST, base.clone().add(rand(0.6), 1.9 + rand(0.3), rand(0.6)), 1, 0, 0, 0, 0,
-                        dust(Color.fromRGB(0xFFC83D), 0.8f));
             }
             case "snow_globe" -> {
                 if (tick % 2 != 0) return;
@@ -2637,9 +2696,15 @@ final class Effects implements Listener {
                 show(player, Particle.CHERRY_LEAVES, base.clone().add(0, 2, 0), 1, 0.6, 0.2, 0.6, 0, null);
             }
             case "spooky_aura" -> {
-                if (tick % 4 == 0) show(player, Particle.DUST, base.clone().add(rand(0.7), ThreadLocalRandom.current().nextDouble(0.1, 1.9), rand(0.7)),
-                        1, 0, 0, 0, 0, dust(ThreadLocalRandom.current().nextBoolean() ? Color.fromRGB(0xFF8A1F) : Color.fromRGB(0xFFB347), 0.9f));
-                if (tick % 10 == 0) show(player, Particle.SMALL_FLAME, base.clone().add(rand(0.6), 0.1, rand(0.6)), 0, 0, 0.02, 0, 1, null);
+                // a slow swirl of purple mist round the feet, soul-fire flickers, and wisps rising
+                for (int k = 0; k < 2; k++) {
+                    double a = t * 0.06 + k * Math.PI + ThreadLocalRandom.current().nextDouble(-0.3, 0.3);
+                    double r = 0.6 + ThreadLocalRandom.current().nextDouble(0.3);
+                    show(player, Particle.DUST, base.clone().add(Math.cos(a) * r, 0.08, Math.sin(a) * r), 1, 0, 0, 0, 0,
+                            dust(k == 0 ? Color.fromRGB(0x6A3FA0) : Color.fromRGB(0x3A2A5A), 1.3f));
+                }
+                if (tick % 8 == 0) show(player, Particle.SOUL_FIRE_FLAME, base.clone().add(rand(0.7), 0.1, rand(0.7)), 0, 0, 0.03, 0, 1, null);
+                if (tick % 14 == 0) show(player, Particle.SOUL, base.clone().add(rand(0.8), 0.6 + rand(0.4), rand(0.8)), 0, 0, 0.03, 0, 1, null);
             }
             default -> {
             }
