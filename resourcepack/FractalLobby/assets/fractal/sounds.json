@@ -99,5 +99,18 @@
     "name": "fractal:gadget/pumpkin_sting"
    }
   ]
+ },
+ "gadget.crow_caw": {
+  "sounds": [
+   {
+    "name": "fractal:gadget/crow_caw_1"
+   },
+   {
+    "name": "fractal:gadget/crow_caw_2"
+   },
+   {
+    "name": "fractal:gadget/crow_caw_3"
+   }
+  ]
  }
 }

@@ -187,7 +187,7 @@ public final class Collectibles implements Listener {
     /** Astronauts float instead of double jumping. */
     public boolean blocksDoubleJump(Player player) {
         Catalog.SuitSet set = enabled() ? fullSet(player) : null;
-        return set != null && set.key().equals("astronaut");
+        return set != null && set.key().equals("astronaut") || effects.blocksDoubleJump(player);   // (or at a diving board)
     }
 
     /** 1.36 kept a whole suit under "suit": it becomes its four pieces. */
@@ -589,13 +589,14 @@ public final class Collectibles implements Listener {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
             case "pinata" -> 1;                                        // (while it's up, right-click just swings the bat)
-            case "tetherball", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe" -> 20;
+            case "scarecrow" -> 26;                                    // (it stands 24 seconds)
+            case "tetherball", "swing", "diving_board", "witch_cauldron", "sand_castle", "tic_tac_toe" -> 20;
             case "dj_booth" -> 26;                                     // (it lasts 24 seconds: ready just after it's gone)
             case "pong", "beach_ball" -> 10;                           // (Pong, and the Volleyball, which kept the old key)
             case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "rainbow",
                  "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
             case "duckling" -> 17;                                     // (they stay 15 seconds)
-            case "ghost" -> 17;                                        // (you're a ghost for 15 seconds)
+            case "ghost" -> 22;                                        // (the ghosts haunt for 20 seconds)
             case "pumpkin_rain" -> 16;                                 // (the storm and the big one take 14)
             case "rock_paper_shears" -> 15;
             case "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;

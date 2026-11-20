@@ -396,13 +396,15 @@ def build(out):
     sounds['gadget.pinata_burst'] = {"sounds": [{"name": "fractal:gadget/pinata_burst"}]}
     sounds['gadget.bat_swing'] = {"sounds": [{"name": "fractal:gadget/bat_swing"}]}
     # the ghost and the pumpkin rain (made by make_spooky_sounds.py)
-    for name in ('ghost_woo', 'ghost_boo', 'pumpkin_thud_1', 'pumpkin_thud_2', 'pumpkin_thud_3', 'pumpkin_sting'):
+    for name in ('ghost_woo', 'ghost_boo', 'pumpkin_thud_1', 'pumpkin_thud_2', 'pumpkin_thud_3', 'pumpkin_sting',
+                 'crow_caw_1', 'crow_caw_2', 'crow_caw_3'):
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds', f'{name}.ogg'),
                     f'{out}/assets/fractal/sounds/gadget/{name}.ogg')
     sounds['gadget.ghost_woo'] = {"sounds": [{"name": "fractal:gadget/ghost_woo"}]}
     sounds['gadget.ghost_boo'] = {"sounds": [{"name": "fractal:gadget/ghost_boo"}]}
     sounds['gadget.pumpkin_thud'] = {"sounds": [{"name": f"fractal:gadget/pumpkin_thud_{i}"} for i in (1, 2, 3)]}
     sounds['gadget.pumpkin_sting'] = {"sounds": [{"name": "fractal:gadget/pumpkin_sting"}]}
+    sounds['gadget.crow_caw'] = {"sounds": [{"name": f"fractal:gadget/crow_caw_{i}"} for i in (1, 2, 3)]}
     json.dump(sounds, open(sounds_path, 'w'), indent=1)
 
     # ------------------------------------------------ Mystery Boxes: bigger presents with a real bow (1-5 stars)
@@ -564,32 +566,55 @@ def build(out):
                                          Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
     write(out, G + 'swing_frame', [Box((0, 0, 7), (1.5, 30, 9), '#a8743a', 'wood'), Box((14.5, 0, 7), (16, 30, 9), '#a8743a', 'wood'),
                                      Box((0, 30, 6.5), (16, 32, 9.5), '#8b5a2b', 'wood')], scale=H)
-    # the ghost you turn into: a white sheet with a round dome head, sleeves, a wavy hem and big dark eyes (the eyes
-    # and mouth are front faces only, so from inside it, in first person, nothing gets in the way)
-    W_, W2, W3 = '#f4f6ff', '#dfe4f6', '#c8d0ec'
-    gh = []
-    # stacked layers, wide at the hem and narrowing up into a round dome: (bottom, top, half-width, half-depth)
-    for (y0, y1, hw, hd) in [(2, 7, 6.6, 4.6), (7, 12, 6.1, 4.3), (12, 18, 5.6, 4.0), (18, 22, 5.2, 3.8),
-                             (22, 25, 4.8, 3.6), (25, 27, 4.0, 3.1), (27, 28.5, 3.0, 2.4), (28.5, 29.3, 1.8, 1.4)]:
-        gh.append(Box((8 - hw, y0, 8 - hd), (8 + hw, y1, 8 + hd), W_, 'flat'))
-    gh += [Box((0.6, 11, 6.4), (1.6, 16, 9.6), W2, 'flat'), Box((14.4, 11, 6.4), (15.4, 16, 9.6), W2, 'flat'),   # little arms
-           Box((1.6, 12, 6.2), (2.4, 17, 9.8), W_, 'flat'), Box((13.6, 12, 6.2), (14.4, 17, 9.8), W_, 'flat')]
-    for i, x in enumerate([1.4, 3.6, 5.8, 8.0, 10.2, 12.4]):          # the wavy hem: tabs hanging lower and higher
-        gh.append(Box((x, 0 if i % 2 == 0 else 1.2, 3.4), (x + 2.2, 2, 12.6), W3, 'flat'))
-    face = {'north'}
-    gh += [Box((4.6, 20, 4.1), (6.8, 24.2, 4.2), '#1a1b26', 'flat', faces=face), Box((9.2, 20, 4.1), (11.4, 24.2, 4.2), '#1a1b26', 'flat', faces=face),
-           Box((7, 15.5, 3.9), (9, 18.5, 4.0), '#1a1b26', 'flat', faces=face)]   # big eyes and an "oooo" mouth
-    write(out, G + 'ghost_sheet', gh, scale=1)
     write(out, G + 'swing_seat', [Box((4, 0, 6.5), (12, 1, 9.5), '#e03a3a', 'solid')], scale=H)   # the ropes are drawn live
-    scare = [Box((7.3, 0, 7.3), (8.7, 26, 8.7), '#8b5a2b', 'wood'), Box((0, 17, 7.3), (16, 18.4, 8.7), '#8b5a2b', 'wood'),
-             Box((4, 12, 6), (12, 20, 10), '#5b8fd0', 'solid'), Box((1, 16.6, 6.6), (4, 19, 9.4), '#5b8fd0', 'solid'),
-             Box((12, 16.6, 6.6), (15, 19, 9.4), '#5b8fd0', 'solid'), Box((4, 9, 6.4), (12, 12, 9.6), '#7a5a3a', 'solid')]
-    scare += ball(8, 24, 8, 3.6, '#ec7a1c', 'solid', glow=None)
-    scare += [Box((6.4, 24.4, 4.3), (7.4, 25.6, 4.5), '#ffd84a', 'flat', glow=12), Box((8.6, 24.4, 4.3), (9.6, 25.6, 4.5), '#ffd84a', 'flat', glow=12),
-              Box((6.4, 22.4, 4.3), (9.6, 23.2, 4.5), '#ffd84a', 'flat', glow=12),
-              Box((2.5, 27.2, 2.5), (13.5, 27.8, 13.5), '#c9a24a', 'wood'), Box((5, 27.8, 5), (11, 30.5, 11), '#c9a24a', 'wood'),
-              Box((4.9, 27.8, 4.9), (11.1, 28.6, 11.1), '#c8322e', 'flat')]
-    write(out, G + 'scarecrow_3d', scare, scale=H)
+    # the scarecrow (Sasha's icon #1): a body on its post, and a sack head that turns on its own. The face is on the
+    # north side. Flat colours throughout so it's crisp, not dotted.
+    WOOD_, WOOD_D_, SHIRT_, PLAID_, STRAW_, STRAW_D_ = '#8b5a2b', '#6a4220', '#c8463a', '#8e2a24', '#f2d35e', '#c9a23a'
+    SACK_, SACK_D_, INK_, HAT_, HAT_D_, BAND_ = '#dcc092', '#b8966a', '#2a1a10', '#e2b04e', '#b07f2e', '#b8322e'
+    body = [Box((7.2, 0, 7.2), (8.8, 20, 8.8), WOOD_, 'flat'),
+            Box((4.6, 9.5, 5.6), (11.4, 19.5, 10.4), SHIRT_, 'flat'),
+            Box((0.4, 16.3, 6.6), (4.6, 19, 9.4), SHIRT_, 'flat'), Box((11.4, 16.3, 6.6), (15.6, 19, 9.4), SHIRT_, 'flat')]
+    for x in (5.9, 9.5):                                               # plaid
+        body.append(Box((x, 9.5, 5.5), (x + 0.6, 19.5, 10.5), PLAID_, 'flat'))
+    body += [Box((4.5, 13.6, 5.5), (11.5, 14.2, 10.5), PLAID_, 'flat'), Box((4.5, 17.4, 5.5), (11.5, 18.0, 10.5), PLAID_, 'flat'),
+             Box((2.2, 16.2, 6.5), (2.8, 19.1, 9.5), PLAID_, 'flat'), Box((13.2, 16.2, 6.5), (13.8, 19.1, 9.5), PLAID_, 'flat'),
+             Box((0.3, 16.2, 6.5), (4.7, 16.8, 9.5), PLAID_, 'flat'), Box((11.3, 16.2, 6.5), (15.7, 16.8, 9.5), PLAID_, 'flat'),
+             Box((7.6, 9.5, 5.4), (8.4, 19.5, 5.6), '#a9382e', 'flat'),                             # buttoned front
+             Box((7.75, 15.2, 5.3), (8.25, 15.7, 5.4), INK_, 'flat'), Box((7.75, 11.8, 5.3), (8.25, 12.3, 5.4), INK_, 'flat'),
+             Box((4.5, 10.6, 5.5), (11.5, 11.3, 10.5), STRAW_D_, 'flat')]                          # rope belt
+    for side_ in (0, 1):                                               # straw hands
+        for i, (y, ln) in enumerate([(16.6, 2.2), (17.3, 1.6), (18.0, 2.4), (18.6, 1.4)]):
+            x0 = -ln + 0.4 if side_ == 0 else 15.6
+            body.append(Box((x0, y, 7.2 + (i % 2) * 0.8), (x0 + ln, y + 0.45, 7.7 + (i % 2) * 0.8), STRAW_ if i % 2 else STRAW_D_, 'flat'))
+    for i, x in enumerate((5.0, 6.4, 8.9, 10.3)):                       # straw poking out of the hem
+        body.append(Box((x, 8.0 + (i % 2) * 0.6, 7.0 - (i % 2)), (x + 0.5, 9.6, 7.5 - (i % 2)), STRAW_ if i % 2 else STRAW_D_, 'flat'))
+    write(out, G + 'scarecrow_body', body, scale=H)
+    face = {'north'}
+    head = [Box((4.8, 20.4, 5), (11.2, 26.6, 11), SACK_, 'flat'), Box((5.5, 26.6, 5.7), (10.5, 27.2, 10.3), SACK_, 'flat'),
+            Box((10.6, 20.4, 5.6), (11.25, 26.6, 10.4), SACK_D_, 'flat'),
+            Box((5.6, 19.6, 5.8), (10.4, 20.6, 10.2), STRAW_D_, 'flat'),                         # tied off with twine
+            Box((6.0, 18.8, 6.4), (6.5, 19.7, 6.9), STRAW_, 'flat'), Box((9.4, 18.9, 9.0), (9.9, 19.7, 9.5), STRAW_, 'flat'),
+            Box((5.8, 23.0, 4.85), (7.2, 24.4, 5), INK_, 'flat', faces=face), Box((8.8, 23.0, 4.85), (10.2, 24.4, 5), INK_, 'flat', faces=face),
+            Box((5.8, 23.9, 4.8), (6.3, 24.4, 4.85), '#6a5a48', 'flat', faces=face), Box((8.8, 23.9, 4.8), (9.3, 24.4, 4.85), '#6a5a48', 'flat', faces=face)]
+    for x in (6.2, 7.4, 8.6, 9.8):                                     # stitched smile
+        head.append(Box((x - 0.3, 21.5, 4.85), (x + 0.3, 22.0, 5), INK_, 'flat', faces=face))
+    head += [Box((5.4, 22.1, 4.85), (5.9, 22.6, 5), INK_, 'flat', faces=face), Box((10.1, 22.1, 4.85), (10.6, 22.6, 5), INK_, 'flat', faces=face),
+             Box((2.4, 26.8, 2.6), (13.6, 27.5, 13.4), HAT_, 'flat'), Box((2.4, 26.75, 2.6), (13.6, 26.8, 13.4), HAT_D_, 'flat'),
+             Box((5, 27.5, 5.2), (11, 30.2, 10.8), HAT_, 'flat'), Box((4.9, 27.5, 5.1), (11.1, 28.4, 10.9), BAND_, 'flat'),
+             Box((9.6, 28.4, 5.2), (11, 30.2, 10.8), HAT_D_, 'flat')]
+    write(out, G + 'scarecrow_head', head, scale=H)
+    # crows (beaks to the north, like the scarecrow's face): sitting, and flying with wings up and down
+    CROW_, CROW_L_, BEAK_ = '#24242e', '#454558', '#e8b23a'
+    crow_body = [Box((5.5, 4, 5), (10.5, 8.5, 11.5), CROW_, 'flat'), Box((6, 7.5, 2.5), (10, 11, 6), CROW_, 'flat'),
+                 Box((7.2, 8.4, 0.6), (8.8, 9.4, 2.5), BEAK_, 'flat'), Box((6.5, 5, 11.5), (9.5, 6.5, 15), CROW_, 'flat'),
+                 Box((5.95, 9.3, 3.3), (6, 10.1, 4.1), '#ffffff', 'flat', faces={'west'}), Box((10, 9.3, 3.3), (10.05, 10.1, 4.1), '#ffffff', 'flat', faces={'east'})]
+    write(out, G + 'crow', crow_body + [Box((5.3, 5, 6), (5.5, 8, 11), CROW_L_, 'flat'), Box((10.5, 5, 6), (10.7, 8, 11), CROW_L_, 'flat'),
+                                        Box((6.8, 2, 7.5), (7.4, 4, 8.1), BEAK_, 'flat'), Box((8.6, 2, 7.5), (9.2, 4, 8.1), BEAK_, 'flat')], scale=H)
+    for name, ang in (('crow_up', 45), ('crow_down', -22.5)):
+        wings = [Box((-2.5, 7.4, 6), (5.5, 8, 11), CROW_L_, 'flat', rotation={"angle": -ang, "axis": "z", "origin": [5.5, 7.7, 8]}),
+                 Box((10.5, 7.4, 6), (18.5, 8, 11), CROW_L_, 'flat', rotation={"angle": ang, "axis": "z", "origin": [10.5, 7.7, 8]})]
+        write(out, G + name, crow_body + wings, scale=H)
+
     sand, sand2 = '#ecd08a', '#d6b46a'
     castle = [Box((0, 0, 0), (16, 1, 16), sand2, 'solid'), Box((2, 1, 2), (14, 7, 14), sand, 'solid'),
               Box((5, 7, 5), (11, 13, 11), sand, 'solid'), Box((7.6, 13, 7.6), (8.4, 17, 8.4), '#8b5a2b', 'flat'),

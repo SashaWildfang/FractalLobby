@@ -49,7 +49,21 @@ def sting():
     return finish(out * 0.5, 1.2) * 0.8
 
 
+def caw(seed, base, length):
+    """A crow's harsh "CAAW": a buzzy, slightly falling voice with rough jitter, pushed through two nasal formants."""
+    rng = np.random.default_rng(seed)
+    n = int(sr * length); t = np.arange(n) / sr
+    f = base * (1.08 - 0.18 * t / length) * (1 + 0.03 * np.sin(2 * np.pi * 31 * t)) * (1 + 0.02 * rng.normal(0, 1, n).cumsum() / np.sqrt(n))
+    ph = np.cumsum(f) / sr
+    saw = 2 * (ph % 1) - 1                                          # buzzy source
+    voice = band(saw, 900, 1500) * 1.2 + band(saw, 2000, 3000) * 0.6 + band(rng.normal(0, 1, n), 1000, 3200) * 0.35
+    shape = np.minimum(1, t / 0.02) * np.exp(-np.maximum(0, t - length * 0.5) / (length * 0.25))
+    return finish(voice * shape, 2.2) * 0.85
+
+
 if __name__ == '__main__':
+    for i, (seed, base, length) in enumerate([(3, 420, 0.32), (8, 380, 0.38), (14, 460, 0.28)], start=1):
+        save(f'crow_caw_{i}', caw(seed, base, length))
     save('ghost_woo', woo())
     save('ghost_boo', boo())
     for i, (seed, body) in enumerate([(2, 95), (6, 110), (11, 82)], start=1):

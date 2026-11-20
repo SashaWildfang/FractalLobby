@@ -154,6 +154,11 @@ final class Effects implements Listener {
     /** The gadgets added in 1.41. */
     private final MoreGadgets more;
 
+    /** Whether a gadget switches double jump off for the player right now (at a diving board). */
+    boolean blocksDoubleJump(Player player) {
+        return more != null && more.atDivingBoard(player);
+    }
+
     void start() {
         stop();
         for (World world : plugin.getServer().getWorlds()) {

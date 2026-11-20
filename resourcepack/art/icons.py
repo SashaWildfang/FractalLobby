@@ -2029,3 +2029,6 @@ GADGETS['diving_board'] = _diving_icon             # ladder tower, board over th
 
 from spooky_icons import pr1 as _pumpkin_rain_icon
 GADGETS['pumpkin_rain'] = _pumpkin_rain_icon       # storm cloud raining jack-o'-lanterns (Sasha picked #1)
+
+from scarecrow_icon import sc1 as _scarecrow_icon
+GADGETS['scarecrow'] = _scarecrow_icon           # sack head, straw hat, plaid, a crow on the arm (Sasha picked #1)
