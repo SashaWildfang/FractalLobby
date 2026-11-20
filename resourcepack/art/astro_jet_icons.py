@@ -169,3 +169,90 @@ def write_flame(out):
     os.makedirs(f'{out}/assets/fractal/items/gadget', exist_ok=True)
     json.dump({"model": {"type": "minecraft:model", "model": "fractal:item/gadget/jet_flame"}},
               open(f'{out}/assets/fractal/items/gadget/jet_flame.json', 'w'))
+
+
+# ---- sharper Creeper Astronaut options: hard pixel edges, the real creeper face on whole pixels
+FACE = ["........",
+        "........",
+        ".EE..EE.",
+        ".EE..EE.",
+        "...MM...",
+        "..MMMM..",
+        "..MMMM..",
+        "..M..M.."]
+
+
+def pixel_face(img, x0, y0, p, greens=('#5cc04a', '#4fae40', '#6fd25a', '#3f9a34')):
+    """The creeper's face as true pixels: an 8x8 grid, p screen pixels per face pixel, mottled greens, dark face."""
+    import random
+    rnd = random.Random(3)
+    px = img.load()
+    for fy, row in enumerate(FACE):
+        for fx, ch in enumerate(row):
+            col = '#1a1b26' if ch != '.' else greens[rnd.randrange(len(greens))]
+            rgb = tuple(int(col[i:i + 2], 16) for i in (1, 3, 5)) + (255,)
+            for yy in range(p):
+                for xx in range(p):
+                    px[x0 + fx * p + xx, y0 + fy * p + yy] = rgb
+
+
+def crisp_ring(img, cx, cy, r, col, width=1.0, fill=None, fill_alpha=0):
+    """A hard-edged circle outline (and optional see-through fill) on whole pixels."""
+    px = img.load()
+    rgb = tuple(int(col[i:i + 2], 16) for i in (1, 3, 5))
+    for y in range(32):
+        for x in range(32):
+            d = ((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2) ** 0.5
+            if r - width <= d <= r:
+                px[x, y] = rgb + (255,)
+            elif fill and d < r - width and px[x, y][3] == 0:
+                f = tuple(int(fill[i:i + 2], 16) for i in (1, 3, 5))
+                px[x, y] = f + (fill_alpha,)
+
+
+def sharp_astro1():
+    """Your current one, sharpened: the creeper's face (on whole pixels, the right face) in a crisp glass bubble with
+    a shine, on white suit shoulders with an orange patch."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    d = __import__('PIL.ImageDraw', fromlist=['ImageDraw']).Draw(img)
+    d.rectangle((6, 25, 25, 31), fill='#e8ecf6'); d.rectangle((6, 25, 7, 31), fill='#c9cfe0'); d.rectangle((24, 25, 25, 31), fill='#c9cfe0')
+    d.rectangle((14, 27, 17, 29), fill='#ff8a1f')
+    pixel_face(img, 8, 6, 2)
+    crisp_ring(img, 16, 14.5, 12, '#e8f6ff', 1.2, fill='#bfe6ff', fill_alpha=90)
+    d.rectangle((8, 24, 23, 25), fill='#9aa2b8')                           # the collar ring
+    for (x, y) in ((9, 7), (8, 8), (8, 9), (10, 6)):                       # the shine, top left
+        img.putpixel((x, y), (255, 255, 255, 255))
+    return centre(img)
+
+
+def sharp_astro2():
+    """Space-suited: the face in a gold-rimmed helmet with a little antenna and a blinking red tip."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    d = __import__('PIL.ImageDraw', fromlist=['ImageDraw']).Draw(img)
+    d.rectangle((15, 0, 16, 4), fill='#9aa2b8'); d.rectangle((14, 0, 17, 1), fill='#ff4a4a')
+    d.rectangle((5, 26, 26, 31), fill='#e8ecf6'); d.rectangle((5, 26, 6, 31), fill='#c9cfe0'); d.rectangle((25, 26, 26, 31), fill='#c9cfe0')
+    pixel_face(img, 8, 8, 2)
+    crisp_ring(img, 16, 16, 12, '#ffd27f', 1.6, fill='#bfe6ff', fill_alpha=80)
+    d.rectangle((9, 25, 22, 26), fill='#c99a3a')
+    for (x, y) in ((9, 9), (8, 10), (8, 11)):
+        img.putpixel((x, y), (255, 255, 255, 255))
+    return centre(img)
+
+
+def sharp_astro3():
+    """The whole little creeper in its suit: bubble-helmeted head, white suit body with an orange patch, and its four
+    stubby legs with dark boots."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    d = __import__('PIL.ImageDraw', fromlist=['ImageDraw']).Draw(img)
+    d.rectangle((11, 16, 20, 25), fill='#e8ecf6'); d.rectangle((11, 16, 12, 25), fill='#c9cfe0'); d.rectangle((19, 16, 20, 25), fill='#d8dceb')
+    d.rectangle((14, 18, 17, 20), fill='#ff8a1f')
+    for x0 in (9, 13, 17, 21):                                             # legs and boots
+        d.rectangle((x0 - 1, 25, x0, 29), fill='#d8dceb'); d.rectangle((x0 - 1, 28, x0, 29), fill='#5a6078')
+    pixel_face(img, 12, 4, 1)
+    crisp_ring(img, 16, 8, 7, '#e8f6ff', 1.1, fill='#bfe6ff', fill_alpha=90)
+    d.rectangle((11, 14, 20, 15), fill='#9aa2b8')                          # collar
+    img.putpixel((12, 4), (255, 255, 255, 255)); img.putpixel((11, 5), (255, 255, 255, 255))
+    return centre(img)
+
+
+SHARP_ASTRO = [sharp_astro1, sharp_astro2, sharp_astro3]

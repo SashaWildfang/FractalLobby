@@ -669,13 +669,15 @@ final class MoreGadgets implements Listener {
         fx.tagged(creeper, "creeper");
         // the helmet: a glass block round its head (the head is the top half-block, centred 1.45 up), kept on it by
         // moving it with the creeper every tick rather than riding (riding put it too low)
-        ItemDisplay helmet = world.spawn(pad.clone().add(0, 1.45, 0), ItemDisplay.class, d -> {
+        ItemDisplay helmet = world.spawn(pad.clone().add(0, 1.7, 0), ItemDisplay.class, d -> {
             d.setItemStack(new ItemStack(Material.GLASS));
             d.setPersistent(false);
-            d.setTeleportDuration(1);
-            d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.6f), new AxisAngle4f()));
+            // riding the creeper, the display sits at the top of its head (1.7 up): the glass is moved down by a
+            // quarter block so its middle is the head's middle (1.45 up)
+            d.setTransformation(new Transformation(new Vector3f(0, -0.25f, 0), new AxisAngle4f(), new Vector3f(0.6f), new AxisAngle4f()));
         });
         fx.tagged(helmet, "helmet");
+        creeper.addPassenger(helmet);                                  // riding: it moves exactly with the creeper
         BlockDisplay base = world.spawn(pad.clone().add(0, 0.01, 0), BlockDisplay.class, d -> {   // the launch pad
             d.setBlock(Material.IRON_TRAPDOOR.createBlockData());
             d.setPersistent(false);
@@ -698,7 +700,6 @@ final class MoreGadgets implements Listener {
                 }
                 if (t % 4 == 0) world.spawnParticle(Particle.CLOUD, pad.clone().add(0, 0.1, 0), 2, 0.4, 0.02, 0.4, 0.02);
                 if (t > COUNT - 20 && t % 2 == 0) world.spawnParticle(Particle.SMALL_FLAME, pad.clone().add(0, 0.15, 0), 3, 0.15, 0, 0.15, 0.01);
-                helmet.teleport(at.clone().add(0, 1.45, 0));
                 return;
             }
             if (t == COUNT) {                                          // LIFTOFF!
@@ -726,8 +727,9 @@ final class MoreGadgets implements Listener {
             creeper.teleport(up);
             creeper.setRotation(spin[0], 0);
             Location head = up.clone().add(0, 1.45, 0);
-            head.setYaw(spin[0]);
-            helmet.teleport(head);
+            helmet.setInterpolationDelay(0);                           // turn the glass with the creeper as it spins
+            helmet.setInterpolationDuration(1);
+            helmet.setTransformationMatrix(new Matrix4f().translate(0, -0.25f, 0).rotateY((float) Math.toRadians(-spin[0])).scale(0.6f));
             // the engine: a roaring flame column and smoke pouring out below
             world.spawnParticle(Particle.FLAME, up, 0, 0, -1, 0, 0.35);
             world.spawnParticle(Particle.FLAME, up, 6, 0.12, 0.05, 0.12, 0.04);
@@ -856,34 +858,118 @@ final class MoreGadgets implements Listener {
         });
     }
 
+    /**
+     * Ducklings: a mother duck and four little ducklings waddle along behind the player in a proper line, each one
+     * walking exactly where the one in front walked (they follow the player's real path, so round corners too, not a
+     * straight line dragged behind). They waddle side to side as they go, quack down the line one after another,
+     * hop in turn when the player jumps, and when the player stops for a moment they gather round in a little ring
+     * and look up at them. After fifteen seconds they waddle off with a final quack.
+     */
     private void ducklings(Player player) {
+        World world = player.getWorld();
         Location at = player.getLocation();
         List<Chicken> line = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
-            Chicken duck = player.getWorld().spawn(at, Chicken.class, c -> {
+        for (int i = 0; i < 5; i++) {
+            int idx = i;
+            Chicken duck = world.spawn(at, Chicken.class, c -> {
                 c.setInvulnerable(true);
                 c.setAware(false);
+                c.setPersistent(false);
+                c.setSilent(true);
+                if (idx > 0) {
+                    c.setBaby();
+                    c.setAgeLock(true);
+                }
             });
-            if (i > 0) duck.setBaby();
             fx.tagged(duck, "duck");
             line.add(duck);
         }
+        world.spawnParticle(Particle.HEART, at.clone().add(0, 0.6, 0), 4, 0.4, 0.2, 0.4, 0);
+        fx.sound(at, "entity.chicken.egg", 1f, 1.4f);
+        java.util.ArrayDeque<Location> path = new java.util.ArrayDeque<>();   // where the player has walked, newest first
+        path.addFirst(at.clone());
+        int[] still = {0}, hop = {-1};
+        double[] wasY = {at.getY()};
         fx.every(300, t -> {
-            if (!player.isOnline()) return;
+            if (!player.isOnline() || player.getWorld() != world) return;
             Location lead = player.getLocation();
-            Vector back = lead.getDirection().setY(0);
-            if (back.lengthSquared() > 0) back.normalize().multiply(-1);
+            if (lead.distanceSquared(path.peekFirst()) > 0.04) {        // a new breadcrumb every few centimetres walked
+                path.addFirst(lead.clone());
+                while (path.size() > 200) path.removeLast();
+                still[0] = 0;
+            } else {
+                still[0]++;
+            }
+            if (player.isOnGround() == false && lead.getY() - wasY[0] > 0.3 && hop[0] < 0) hop[0] = t;   // the player jumped
+            if (player.isOnGround()) wasY[0] = lead.getY();
+            boolean gather = still[0] > 40;
             for (int i = 0; i < line.size(); i++) {
                 Chicken duck = line.get(i);
                 if (!duck.isValid()) continue;
-                Location want = lead.clone().add(back.clone().multiply(1.2 + i * 0.9));
-                Vector move = want.toVector().subtract(duck.getLocation().toVector());
-                if (move.lengthSquared() > 64) duck.teleport(want);
-                else duck.setVelocity(move.multiply(0.25).setY(duck.isOnGround() && move.getY() > 0.3 ? 0.4 : duck.getVelocity().getY()));
-                duck.setRotation((float) Math.toDegrees(Math.atan2(-move.getX(), move.getZ())), 0);
+                Location want;
+                if (gather) {                                          // stopped: gather round in a little ring
+                    double a = i * Math.PI * 2 / line.size() + t * 0.01;
+                    want = lead.clone().add(Math.cos(a) * 1.3, 0, Math.sin(a) * 1.3);
+                } else {                                               // walk exactly where the one in front walked
+                    want = alongPath(path, 1.1 + i * 0.75);
+                }
+                Location from = duck.getLocation();
+                Vector move = want.toVector().subtract(from.toVector()).setY(0);
+                double dist = move.length();
+                if (dist > 8) {
+                    duck.teleport(want);
+                    continue;
+                }
+                double speed = Math.min(0.32, dist * 0.35);
+                Vector vel = dist > 0.05 ? move.normalize().multiply(speed) : new Vector();
+                double vy = duck.getVelocity().getY();
+                if (duck.isOnGround() && want.getY() - from.getY() > 0.4) vy = 0.42;   // up a step
+                if (hop[0] >= 0 && t - hop[0] == 2 + i * 3 && duck.isOnGround()) {    // hopping in turn after the player
+                    vy = 0.38;
+                    fx.sound(from, "entity.chicken.step", 0.6f, 1.8f);
+                }
+                duck.setVelocity(vel.setY(vy));
+                // facing: where it's going (or up at the player when gathered), waddling side to side as it walks
+                Vector look = gather ? lead.toVector().subtract(from.toVector()) : move;
+                float face = (float) Math.toDegrees(Math.atan2(-look.getX(), look.getZ()));
+                float waddle = speed > 0.04 ? (float) Math.sin(t * 0.9 + i) * 14 : 0;
+                duck.setRotation(face + waddle, 0);
+                duck.setBodyYaw(face + waddle);
             }
-            if (t % 40 == 0) fx.sound(lead, "entity.chicken.ambient", 0.6f, 1.8f);
-        }, () -> line.forEach(d -> pop(d, "entity.chicken.ambient")));
+            if (hop[0] >= 0 && t - hop[0] > 2 + line.size() * 3) hop[0] = -1;
+            if (t % 50 == 0) {                                         // quacks running down the line
+                for (int i = 0; i < line.size(); i++) {
+                    Chicken duck = line.get(i);
+                    fx.later(i * 3, () -> {
+                        if (duck.isValid()) fx.sound(duck.getLocation(), "entity.chicken.ambient", 0.5f, duck.isAdult() ? 1.3f : 1.9f);
+                    });
+                }
+            }
+            if (gather && still[0] == 41) world.spawnParticle(Particle.HEART, lead.clone().add(0, 0.5, 0), 3, 0.6, 0.2, 0.6, 0);
+        }, () -> {
+            for (int i = 0; i < line.size(); i++) {
+                Chicken duck = line.get(i);
+                fx.later(i * 3, () -> pop(duck, "entity.chicken.ambient"));
+            }
+        });
+    }
+
+    /** The point `back` blocks back along a walked path (newest point first), or its oldest point if it's shorter. */
+    private static Location alongPath(java.util.ArrayDeque<Location> path, double back) {
+        Location prev = null;
+        double gone = 0;
+        for (Location here : path) {
+            if (prev != null) {
+                double step = prev.distance(here);
+                if (gone + step >= back) {
+                    double f = (back - gone) / step;
+                    return prev.clone().add(here.toVector().subtract(prev.toVector()).multiply(f));
+                }
+                gone += step;
+            }
+            prev = here;
+        }
+        return prev.clone();
     }
 
     /**
@@ -2387,6 +2473,14 @@ final class MoreGadgets implements Listener {
             b[1] = b[0].clone();
             b[0].add(v).add(new Vector(0, -GRAVITY, 0));
             if (b[0].length() > ROPE) b[0].multiply(ROPE / b[0].length());
+            // it can swing out a long way, but never up level with (or through) the crossbar it hangs from
+            double lowest = -Math.cos(Math.toRadians(65)) * ROPE;
+            if (b[0].getY() > lowest) {
+                Vector flat = b[0].clone().setY(0);
+                double reach = Math.sin(Math.toRadians(65)) * ROPE;
+                b[0] = (flat.lengthSquared() < 1e-6 ? new Vector(0, 0, 0) : flat.normalize().multiply(reach)).setY(lowest);
+                b[1] = b[0].clone().subtract(b[0].clone().subtract(b[1]).multiply(0.3));   // and it loses its swing
+            }
             Vector down = b[0].clone().normalize();
             Location knotAt = hook.clone().add(b[0]);
             pinata.teleport(knotAt);
@@ -2742,15 +2836,46 @@ final class MoreGadgets implements Listener {
         return free.get(r.nextInt(free.size()));
     }
 
+    /**
+     * The DJ booth: a booth with decks a few blocks in front, and a light-up dance floor (5 by 5) laid out under the
+     * player in front of it. A bouncy beat plays (bass on the beat, snare, hats, a melody), the floor's tiles flash
+     * new colours on every beat in moving patterns, notes float off the decks and light beams sweep round.
+     */
     private void djBooth(Player player) {
         Placed p = place(player);
-        Location base = fx.ground(player);
-        float yaw = player.getLocation().getYaw() + 180;
-        keep(p, base.getWorld().spawn(base.clone().add(0, 0.5, 0), ItemDisplay.class, d -> {
+        World world = player.getWorld();
+        float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
+        Vector fwd = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        Vector right = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location feet = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
+        Location base = feet.clone().add(fwd.clone().multiply(3.5));
+        base.setYaw(0);
+        base.setPitch(0);
+        keep(p, world.spawn(base.clone().add(0, 0.5, 0), ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.JUKEBOX, "gadget/dj_booth_3d"));
-            d.setRotation(yaw, 0);
+            d.setRotation(yaw + 180, 0);
             d.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(1.6f), new AxisAngle4f()));
         }));
+        // the dance floor: 5 by 5 tiles centred just in front of the player, over whatever's on the ground
+        Material[] lights = {Material.MAGENTA_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE,
+                Material.ORANGE_CONCRETE, Material.PURPLE_CONCRETE, Material.PINK_CONCRETE, Material.CYAN_CONCRETE};
+        Location floorMid = feet.clone().add(fwd.clone().multiply(0.5));
+        BlockDisplay[][] tiles = new BlockDisplay[5][5];
+        for (int u = 0; u < 5; u++) {
+            for (int v = 0; v < 5; v++) {
+                Location at = floorMid.clone().add(right.clone().multiply(u - 2)).add(fwd.clone().multiply(v - 2));
+                at.setYaw(0);
+                at.setPitch(0);
+                int uu = u, vv = v;
+                tiles[u][v] = keep(p, world.spawn(at, BlockDisplay.class, d -> {
+                    d.setBlock(lights[(uu + vv) % lights.length].createBlockData());
+                    d.setBrightness(new Display.Brightness(15, 15));
+                    d.setPersistent(false);
+                    d.setTransformation(new Transformation(new Vector3f(-0.47f, 0.01f, -0.47f), new AxisAngle4f(), new Vector3f(0.94f, 0.03f, 0.94f), new AxisAngle4f()));
+                }));
+            }
+        }
+        fx.sound(base, "block.note_block.chime", 1f, 1.5f);
         // a bouncy beat: bass on the beat, hats between, a melody over the top
         int[] melody = {0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, 3};
         p.task = fx.every(480, t -> {
@@ -2761,13 +2886,25 @@ final class MoreGadgets implements Listener {
             if (t % 4 == 0) {
                 int note = melody[(t / 4) % melody.length];
                 fx.sound(top, "block.note_block.bit", 0.7f, (float) Math.pow(2, (note - 6) / 12.0));
-                top.getWorld().spawnParticle(Particle.NOTE, top.clone().add(fx.rand(0.6), 0.4, fx.rand(0.6)), 0, note / 24.0, 0, 0, 1);
+                world.spawnParticle(Particle.NOTE, top.clone().add(fx.rand(0.6), 0.4, fx.rand(0.6)), 0, note / 24.0, 0, 0, 1);
             }
-            if (t % 8 == 0) {    // disco lights sweeping around
-                for (int k = 0; k < 6; k++) {
+            if (t % 8 == 0) {                                          // the floor: a new pattern on every beat
+                int beat = t / 8, mode = (beat / 8) % 4;
+                for (int u = 0; u < 5; u++) {
+                    for (int v = 0; v < 5; v++) {
+                        int pick = switch (mode) {
+                            case 0 -> (u + v + beat) % lights.length;                                // diagonal stripes, moving
+                            case 1 -> (Math.max(Math.abs(u - 2), Math.abs(v - 2)) + beat) % lights.length;   // rings from the middle
+                            case 2 -> ((u + v) % 2 == beat % 2) ? beat % lights.length : (beat + 4) % lights.length;   // checkerboard
+                            default -> ThreadLocalRandom.current().nextInt(lights.length);          // sparkle
+                        };
+                        tiles[u][v].setBlock(lights[pick].createBlockData());
+                    }
+                }
+                for (int k = 0; k < 6; k++) {                          // light beams sweeping round
                     double a = t * 0.1 + k * Math.PI / 3;
-                    Location beam = base.clone().add(Math.cos(a) * 2.5, 0.2, Math.sin(a) * 2.5);
-                    beam.getWorld().spawnParticle(Particle.DUST, beam, 4, 0.2, 0.6, 0.2, 0, new Particle.DustOptions(fx.party(), 1.4f));
+                    Location beam = floorMid.clone().add(Math.cos(a) * 2.2, 0.3, Math.sin(a) * 2.2);
+                    world.spawnParticle(Particle.DUST, beam, 4, 0.1, 0.6, 0.1, 0, new Particle.DustOptions(fx.party(), 1.3f));
                 }
             }
         }, () -> clear(player.getUniqueId()));

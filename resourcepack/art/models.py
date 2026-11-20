@@ -572,7 +572,9 @@ def build(out):
           Box((4, 0, 5), (12, 8, 11), '#3a2a52', 'solid'), Box((4, 7.4, 4.8), (12, 8.2, 5.2), '#b266ff', 'flat', glow=15),
           Box((4.6, 8, 6), (7.6, 8.6, 10), '#1a1b26', 'flat'), Box((8.4, 8, 6), (11.4, 8.6, 10), '#1a1b26', 'flat'),
           Box((5.6, 8.6, 7.5), (6.6, 8.8, 8.5), '#e03a3a', 'flat', glow=12), Box((9.4, 8.6, 7.5), (10.4, 8.8, 8.5), '#5b9dff', 'flat', glow=12)]
-    write(out, G + 'dj_booth_3d', dj, scale=H)
+    for b in dj:
+        b.pattern = 'flat'
+    write(out, G + 'dj_booth_3d', dj, scale=1)    # flat colours, one texel a unit: sharp, no speckles
     write(out, G + 'jetpack_3d', [Box((3, 3, 6), (7, 13, 10), '#c9ccd8', 'solid'), Box((9, 3, 6), (13, 13, 10), '#c9ccd8', 'solid'),
                                     Box((7, 6, 7), (9, 11, 9), '#5a6078', 'metal'), Box((3.5, 1.5, 6.5), (6.5, 3, 9.5), '#5a6078', 'metal'),
                                     Box((9.5, 1.5, 6.5), (12.5, 3, 9.5), '#5a6078', 'metal'), Box((2.6, 9, 5.6), (13.4, 10.2, 10.4), '#3a3d56', 'flat'),
