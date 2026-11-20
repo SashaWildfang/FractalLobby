@@ -1,8 +1,10 @@
 """
 Lobby resource pack - built by Sasha Wildfang for Fractal Network.
 
-Draws the 16x16 padlock menu icon in the pack's flat pixel style (dark outline, a few shades):
-  fractal:menu/locked   shown in place of a cosmetic that isn't unlocked yet, and for box crafting you can't do
+Draws 16x16 menu icons in the pack's flat pixel style (dark outline, a few shades):
+  fractal:menu/locked   a padlock, shown in place of a cosmetic that isn't unlocked yet, and for box crafting you can't do
+  fractal:menu/locked_buy the padlock in gold: not unlocked yet, but there's enough Mystery Dust to buy it now
+  fractal:menu/confirm  a green tick, the Confirm button (Cancel uses fractal:menu/none, the red cross)
 (The Mystery Vault's icons, "No boxes yet" included, are in mystery_icons.py.)
 
     python status_icons.py <FractalLobby folder>
@@ -41,6 +43,31 @@ LOCK_COLOURS = {
 }
 
 
+LOCK_BUY_COLOURS = dict(LOCK_COLOURS, **{
+    "H": (255, 232, 160, 255), "B": (255, 205, 92, 255), "b": (214, 154, 44, 255), "d": (160, 104, 26, 255),
+})
+
+CHECK = [
+    "................",
+    "................",
+    "................",
+    "............OO..",
+    "...........OGGO.",
+    "..........OGGgO.",
+    ".........OGGgO..",
+    "..OO....OGGgO...",
+    ".OGGO..OGGgO....",
+    ".OgGGOOGGgO.....",
+    "..OgGGGGgO......",
+    "...OgGGgO.......",
+    "....OggO........",
+    ".....OO.........",
+    "................",
+    "................",
+]
+CHECK_COLOURS = {"O": OUTLINE, "G": (127, 227, 154, 255), "g": (66, 168, 98, 255)}
+
+
 def draw(rows, colours):
     assert len(rows) == 16 and all(len(r) == 16 for r in rows), "icons are 16x16"
     image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
@@ -65,7 +92,9 @@ def save(pack: Path, name: str, image: Image.Image):
 def main():
     pack = Path(sys.argv[1])
     save(pack, "menu/locked", draw(LOCK, LOCK_COLOURS))
-    print("Drew fractal:menu/locked")
+    save(pack, "menu/locked_buy", draw(LOCK, LOCK_BUY_COLOURS))
+    save(pack, "menu/confirm", draw(CHECK, CHECK_COLOURS))
+    print("Drew fractal:menu/locked and fractal:menu/confirm")
 
 
 if __name__ == "__main__":

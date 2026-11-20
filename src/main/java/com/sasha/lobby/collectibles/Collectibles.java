@@ -67,7 +67,23 @@ public final class Collectibles implements Listener {
     private static final int[] CATEGORY_SLOTS = {19, 20, 21, 22, 23, 24};
     /** Category page: season tabs on top, items in the middle, the bottom row. */
     private static final int[] TAB_SLOTS = {2, 3, 4, 5, 6};
-    private static final int FIRST_ITEM = 9, LAST_ITEM = 44, BACK = 45, PREVIOUS = 48, TAKE_OFF = 49, NEXT = 50;
+    private static final int FIRST_ITEM = 9, LAST_ITEM = 44, BACK = 45, PREVIOUS = 48, TAKE_OFF = 49, NEXT = 50, SORT = 53;
+
+    /** What a category page shows, and in what order (the Sort button). Remembered per player while online. */
+    enum Sort {
+        ALL, UNLOCKED, LOCKED, PURCHASABLE, RARITY, SEASONAL;
+
+        Sort step(int by) {
+            Sort[] all = values();
+            return all[Math.floorMod(ordinal() + by, all.length)];
+        }
+
+        String key() {
+            return name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    private final Map<UUID, Sort> sorts = new HashMap<>();
     private static final int PER_PAGE = LAST_ITEM - FIRST_ITEM + 1;
     /** One suit's own page: its four pieces, the whole set, and back. */
     private static final char SUIT_MENU = '\uF17D';
@@ -545,6 +561,7 @@ public final class Collectibles implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         String prefix = event.getPlayer().getUniqueId() + ":";
         cooldowns.keySet().removeIf(key -> key.startsWith(prefix));
+        sorts.remove(event.getPlayer().getUniqueId());
         effects.quit(event.getPlayer());
     }
 
@@ -617,36 +634,22 @@ public final class Collectibles implements Listener {
         openPage(player, category, season, 0);
     }
 
-    /** A category page (for hats and suits, one season at a time); 36 things a page, with arrows when there are more. */
+    /** A category page: everything in it (all seasons), as the Sort button says; 36 things a page, with arrows. */
     private void openPage(Player player, Category category, Season season, int page) {
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
-        Menu menu = new Menu(category, category.seasonal() ? season : null);
+        Menu menu = new Menu(category, Season.NORMAL);
         menu.page = page;
         menu.inventory = Bukkit.createInventory(menu, 54, style.title(PAGE_MENU.get(category),
                 messages.component("collectibles.category." + category.key + ".title")));
         fill(menu);
-        if (category.seasonal()) {
-            Season[] seasons = Season.values();
-            for (int i = 0; i < seasons.length; i++) {
-                Season tab = seasons[i];
-                boolean chosen = tab == season;
-                boolean now = tab == Season.NORMAL || inSeason(new Item("", category, "", tab, Reward.Rarity.COMMON, "", "", null, null, null, null));
-                ItemStack icon = button(Material.PAPER, "season/" + tab.key(), null, TagResolver.empty());
-                icon.editMeta(meta -> {
-                    meta.displayName(messages.item("collectibles.season." + tab.key()));
-                    meta.lore(messages.lore(chosen ? "collectibles.tab-chosen" : now ? "collectibles.tab-in-season" : "collectibles.tab-out-of-season"));
-                    if (chosen) meta.setEnchantmentGlintOverride(true);
-                });
-                menu.inventory.setItem(TAB_SLOTS[i], icon);
-                menu.tabs.put(TAB_SLOTS[i], tab);
-            }
-        }
-        List<Item> items = category.seasonal() ? Catalog.of(category, season) : Catalog.of(category);
+        Sort sort = sorts.getOrDefault(player.getUniqueId(), Sort.ALL);
+        menu.inventory.setItem(SORT, sortButton(sort));
+        List<Item> items = sorted(player, Catalog.of(category), sort);
         int count;
         if (category == Category.SUIT) {
             // Every suit as one picture of the whole set: click to wear it, right-click to see its pieces.
-            List<Catalog.SuitSet> sets = Catalog.sets(season);
+            List<Catalog.SuitSet> sets = sortedSets(player, sort);
             count = sets.size();
             int slot = FIRST_ITEM;
             for (int i = page * PER_PAGE; i < sets.size() && slot <= LAST_ITEM; i++, slot++) {
@@ -683,8 +686,21 @@ public final class Collectibles implements Listener {
         }
         menu.inventory.setItem(BACK, style.icon(button(Material.ARROW, null, "collectibles.back", TagResolver.empty()), "back"));
         if (!category.action()) {
-            menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "menu/take_off", "collectibles.take-off",
-                    Placeholder.parsed("category", messages.raw("collectibles.category." + category.key + ".name"))));
+            // What's on now sits here (Left-click to take it off); with nothing on, the hanger.
+            Item on = wearing(player, category);
+            if (on == null) {
+                menu.inventory.setItem(TAKE_OFF, button(Material.BARRIER, "menu/take_off", "collectibles.take-off",
+                        Placeholder.parsed("category", messages.raw("collectibles.category." + category.key + ".name"))));
+            } else {
+                ItemStack worn = icon(on);
+                worn.editMeta(meta -> {
+                    meta.displayName(messages.item("collectibles.take-off-worn.name", name(on)));
+                    meta.lore(messages.lore("collectibles.take-off-worn.lore", name(on)));
+                    meta.setEnchantmentGlintOverride(true);
+                    meta.addItemFlags(ItemFlag.values());
+                });
+                menu.inventory.setItem(TAKE_OFF, worn);
+            }
         }
         player.openInventory(menu.inventory);
     }
@@ -719,19 +735,13 @@ public final class Collectibles implements Listener {
     }
 
     /**
-     * Whether a click is one the item's hint offers: Left-click everywhere; on a suit's set in a category
-     * page also Right-click (to see its pieces); on a collectible not unlocked yet also Shift + Left-click
-     * (to buy it; a plain Left-click says how).
+     * Whether a click is one the item's hint offers: Left-click everywhere, and in a category page also
+     * Right-click on a suit's set (to see its pieces) and on the Sort button (to go back one).
      */
     private boolean accepts(Menu menu, int slot, ClickType click, Player player) {
         if (click == ClickType.LEFT) return true;
         if (menu.category == null) return false;
-        if (click == ClickType.RIGHT) return menu.suit == null && menu.sets.containsKey(slot);
-        if (click == ClickType.SHIFT_LEFT) {
-            Item item = menu.items.get(slot);
-            return item != null && !owns(player, item);
-        }
-        return false;
+        return click == ClickType.RIGHT && menu.suit == null && (menu.sets.containsKey(slot) || slot == SORT);
     }
 
     /** One collectible in a category page: found or locked, worn, and what a click does. */
@@ -745,7 +755,9 @@ public final class Collectibles implements Listener {
                 Placeholder.parsed("description", item.description()), Placeholder.parsed("season", messages.raw("collectibles.season." + item.season().key())),
                 Messages.arg("price", String.format(java.util.Locale.ROOT, "%,d", price)), Messages.arg("need", Math.max(0, price - dust)),
                 Placeholder.parsed("ability", item.suit() == null ? "" : messages.raw("collectibles.ability." + item.suit().ability() + ".name")));
-        ItemStack icon = owned ? icon(item) : plugin.menuStyle().locked(icon(item)); // a padlock until it's unlocked
+        // a padlock until it's unlocked: gold when they have the dust to buy it now
+        ItemStack icon = owned ? icon(item) : affordable(player, item) ? plugin.menuStyle().lockedAffordable(icon(item))
+                : plugin.menuStyle().locked(icon(item));
         icon.editMeta(meta -> {
             meta.displayName(messages.item(owned ? "collectibles.entry.name" : "collectibles.entry.locked-name", tags));
             List<Component> lore = new ArrayList<>(messages.lore("collectibles.entry.lore", tags));
@@ -812,10 +824,11 @@ public final class Collectibles implements Listener {
                     else plugin.messages().send(player, "collectibles.no-chat-colours");
                 }
                 case VAULT -> plugin.mystery().openMenu(player);
-                case TAKE_OFF_ALL -> {
+                case TAKE_OFF_ALL -> confirm(player, button(Material.BARRIER, "menu/take_off", "collectibles.confirm.take-off-all",
+                        TagResolver.empty()), () -> {
                     takeOffAll(player);
                     open(player);
-                }
+                }, () -> open(player));
                 default -> {
                 }
             }
@@ -836,9 +849,26 @@ public final class Collectibles implements Listener {
             openPage(player, menu.category, menu.season == null ? Season.NORMAL : menu.season, menu.page + (slot == NEXT ? 1 : -1));
             return;
         }
+        if (menu.suit == null && slot == SORT) {
+            Sort now = sorts.getOrDefault(player.getUniqueId(), Sort.ALL);
+            sorts.put(player.getUniqueId(), now.step(event.getClick() == ClickType.RIGHT ? -1 : 1));
+            sound(player, "ui.button.click", 1.2f);
+            openPage(player, menu.category, Season.NORMAL, 0);
+            return;
+        }
         if (menu.suit == null && slot == TAKE_OFF && !menu.category.action()) {
-            takeOff(player, menu.category);
-            reopen(player, menu);
+            Item on = wearing(player, menu.category);
+            if (on == null) return; // nothing on: the hanger just says so
+            ItemStack shown = icon(on);
+            shown.editMeta(meta -> {
+                meta.displayName(plugin.messages().item("collectibles.confirm.take-off.name", name(on)));
+                meta.lore(plugin.messages().lore("collectibles.confirm.take-off.lore", name(on)));
+                meta.addItemFlags(ItemFlag.values());
+            });
+            confirm(player, shown, () -> {
+                takeOff(player, menu.category);
+                reopen(player, menu);
+            }, () -> reopen(player, menu));
             return;
         }
         Season tab = menu.tabs.get(slot);
@@ -860,16 +890,19 @@ public final class Collectibles implements Listener {
                 sound(player, "entity.villager.no", 1f);
                 return;
             }
-            if (worn(player, set.key()) == set.pieces().stream().filter(p -> owns(player, p)).count()) takeOff(player, Category.SUIT);
-            else equipSet(player, set);
-            reopen(player, menu);
+            if (worn(player, set.key()) == set.pieces().stream().filter(p -> owns(player, p)).count()) {
+                takeOff(player, Category.SUIT);
+                reopen(player, menu);
+            } else {
+                equipSet(player, set);
+                player.closeInventory();
+            }
             return;
         }
         Item item = menu.items.get(slot);
         if (item == null) return;
         if (!owns(player, item)) {
-            buy(player, item, event.getClick() == ClickType.SHIFT_LEFT);
-            if (player.getOpenInventory().getTopInventory() == menu.inventory) reopen(player, menu);
+            buy(player, item, menu);
             return;
         }
         switch (item.category()) {
@@ -879,15 +912,23 @@ public final class Collectibles implements Listener {
             }
             case SUIT -> {
                 Item on = piece(player, item.piece());
-                if (on != null && on.id().equals(item.id())) takeOffPiece(player, item);
-                else equip(player, item);
-                reopen(player, menu);
+                if (on != null && on.id().equals(item.id())) {
+                    takeOffPiece(player, item);
+                    reopen(player, menu);
+                } else {
+                    equip(player, item);
+                    player.closeInventory(); // put on: back to the lobby to show it off
+                }
             }
             default -> {
                 Item worn = equipped(player, item.category());
-                if (worn != null && worn.id().equals(item.id())) takeOff(player, item.category());
-                else equip(player, item);
-                reopen(player, menu);
+                if (worn != null && worn.id().equals(item.id())) {
+                    takeOff(player, item.category());
+                    reopen(player, menu);
+                } else {
+                    equip(player, item);
+                    player.closeInventory(); // put on: back to the lobby to show it off
+                }
             }
         }
     }
@@ -918,8 +959,8 @@ public final class Collectibles implements Listener {
         return Catalog.of(category).stream().filter(item -> owns(player, item)).map(Item::key).toList();
     }
 
-    /** Buying with Mystery Dust: a shift-click, in season, with enough dust. */
-    private void buy(Player player, Item item, boolean shift) {
+    /** Buying with Mystery Dust: in season, with enough dust, after an "Are you sure?". */
+    private void buy(Player player, Item item, Menu from) {
         if (!craftable(item)) {
             plugin.messages().send(player, inSeason(item) ? "collectibles.boxes-only" : "collectibles.out-of-season", name(item),
                     Placeholder.parsed("season", plugin.messages().raw("collectibles.season." + item.season().key())));
@@ -934,16 +975,99 @@ public final class Collectibles implements Listener {
             sound(player, "entity.villager.no", 1f);
             return;
         }
-        if (!shift) {
-            plugin.messages().send(player, "collectibles.shift-to-buy", name(item), Messages.arg("price", price));
-            sound(player, "ui.button.click", 0.7f);
-            return;
+        TagResolver tags = TagResolver.resolver(name(item), Messages.arg("price", String.format(java.util.Locale.ROOT, "%,d", price)),
+                Messages.arg("dust", String.format(java.util.Locale.ROOT, "%,d", stash.dust())));
+        ItemStack shown = icon(item);
+        shown.editMeta(meta -> {
+            meta.displayName(plugin.messages().item("collectibles.confirm.buy.name", tags));
+            meta.lore(plugin.messages().lore("collectibles.confirm.buy.lore", tags));
+            meta.addItemFlags(ItemFlag.values());
+        });
+        confirm(player, shown, () -> {
+            if (owns(player, item) || data().get(player.getUniqueId()).dust() < price) { // changed while it was open
+                reopen(player, from);
+                return;
+            }
+            data().spendDust(player.getUniqueId(), price);
+            data().grant(player.getUniqueId(), item.id());
+            plugin.messages().send(player, "collectibles.bought", name(item), Messages.arg("price", price));
+            sound(player, "entity.player.levelup", 1.4f);
+            plugin.display().refreshSidebar(player);
+            reopen(player, from);
+        }, () -> reopen(player, from));
+    }
+
+    /** The Sort button: the order now, every choice listed, and how to change it. */
+    private ItemStack sortButton(Sort sort) {
+        Messages messages = plugin.messages();
+        ItemStack icon = button(Material.HOPPER, "radio/sort", null, TagResolver.empty());
+        icon.editMeta(meta -> {
+            meta.displayName(messages.item("collectibles.sort.name",
+                    Placeholder.component("mode", messages.component("collectibles.sort.modes." + sort.key()))));
+            List<Component> lore = new ArrayList<>(messages.lore("collectibles.sort.lore"));
+            for (Sort option : Sort.values()) {
+                lore.add(messages.item(option == sort ? "collectibles.sort.option-selected" : "collectibles.sort.option",
+                        Placeholder.component("mode", messages.component("collectibles.sort.modes." + option.key()))));
+            }
+            lore.addAll(messages.lore("collectibles.sort.hint"));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.values());
+        });
+        return icon;
+    }
+
+    /** A category's collectibles as the Sort button says. */
+    private List<Item> sorted(Player player, List<Item> all, Sort sort) {
+        java.util.stream.Stream<Item> items = all.stream();
+        return switch (sort) {
+            case ALL -> all;
+            case UNLOCKED -> items.filter(item -> owns(player, item)).toList();
+            case LOCKED -> items.filter(item -> !owns(player, item)).toList();
+            case PURCHASABLE -> items.filter(item -> affordable(player, item)).toList();
+            case RARITY -> items.sorted(java.util.Comparator.comparing((Item item) -> item.rarity()).reversed()
+                    .thenComparing(Item::name)).toList();
+            case SEASONAL -> items.filter(item -> item.season() != Season.NORMAL)
+                    .sorted(java.util.Comparator.comparing(Item::season)).toList();
+        };
+    }
+
+    /** Every suit (all seasons) as the Sort button says; a suit counts as unlocked once any piece is. */
+    private List<Catalog.SuitSet> sortedSets(Player player, Sort sort) {
+        List<Catalog.SuitSet> all = Catalog.SETS;
+        java.util.function.Predicate<Catalog.SuitSet> unlocked = set -> set.pieces().stream().anyMatch(p -> owns(player, p));
+        return switch (sort) {
+            case ALL -> all;
+            case UNLOCKED -> all.stream().filter(unlocked).toList();
+            case LOCKED -> all.stream().filter(unlocked.negate()).toList();
+            case PURCHASABLE -> all.stream().filter(set -> set.pieces().stream().anyMatch(p -> affordable(player, p))).toList();
+            case RARITY -> all.stream().sorted(java.util.Comparator.comparing((Catalog.SuitSet set) -> set.rarity()).reversed()
+                    .thenComparing(Catalog.SuitSet::name)).toList();
+            case SEASONAL -> all.stream().filter(set -> set.season() != Season.NORMAL)
+                    .sorted(java.util.Comparator.comparing(Catalog.SuitSet::season)).toList();
+        };
+    }
+
+    /** Not unlocked yet, for sale with dust (all-year and in season), and the player has enough dust for it now. */
+    private boolean affordable(Player player, Item item) {
+        return !owns(player, item) && craftable(item) && data().get(player.getUniqueId()).dust() >= price(item);
+    }
+
+    /** What's on in a category now (for suits, any piece), or null. */
+    private Item wearing(Player player, Category category) {
+        if (category == Category.SUIT) {
+            for (Catalog.Piece piece : Catalog.Piece.values()) {
+                Item on = piece(player, piece);
+                if (on != null) return on;
+            }
+            return null;
         }
-        data().spendDust(player.getUniqueId(), price);
-        data().grant(player.getUniqueId(), item.id());
-        plugin.messages().send(player, "collectibles.bought", name(item), Messages.arg("price", price));
-        sound(player, "entity.player.levelup", 1.4f);
-        plugin.display().refreshSidebar(player);
+        Item on = equipped(player, category);
+        return on != null && owns(player, on) ? on : null;
+    }
+
+    /** "Are you sure?" (the shared confirm menu). */
+    private void confirm(Player player, ItemStack shown, Runnable yes, Runnable no) {
+        plugin.confirm().open(player, shown, yes, no);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -995,12 +1119,12 @@ public final class Collectibles implements Listener {
 
     private ItemStack categoryIcon(Category category) {
         return switch (category) {
-            case HAT -> modelled(Material.LEATHER_HELMET, "hat/top_hat");
+            case HAT -> modelled(Material.LEATHER_HELMET, "category/hats");
             case SUIT -> modelled(Material.LEATHER_CHESTPLATE, "category/suits");
-            case GADGET -> modelled(Material.FIREWORK_STAR, "gadget/party_popper");
-            case CLOAK -> modelled(Material.PHANTOM_MEMBRANE, "cloak/halo");
-            case EMOTE -> modelled(Material.PLAYER_HEAD, "status/love");
-            case GESTURE -> modelled(Material.FEATHER, "gesture/wave");
+            case GADGET -> modelled(Material.FIREWORK_STAR, "category/gadgets");
+            case CLOAK -> modelled(Material.PHANTOM_MEMBRANE, "category/cloaks");
+            case EMOTE -> modelled(Material.PLAYER_HEAD, "category/emotes");
+            case GESTURE -> modelled(Material.FEATHER, "category/gestures");
         };
     }
 

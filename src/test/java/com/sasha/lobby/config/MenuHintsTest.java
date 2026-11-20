@@ -64,6 +64,20 @@ class MenuHintsTest {
         assertEquals("<dark_gray>Click the Parkour NPC to try again!", yaml.getStringList("parkour.menu.you-lore").getLast());
     }
 
+    /** YAML reads keys like yes, no, on and off as true/false, so their text is never found (unless quoted). */
+    @Test
+    void noKeysReadAsTrueOrFalse() throws Exception {
+        YamlConfiguration yaml = messages();
+        List<String> bad = yaml.getKeys(true).stream()
+                .filter(key -> java.util.Arrays.stream(key.split(java.util.regex.Pattern.quote("."))).anyMatch(part -> part.equals("true") || part.equals("false")))
+                .toList();
+        assertEquals(List.of(), bad);
+        for (String key : List.of("confirm.title", "confirm.accept.name", "confirm.cancel.name", "collectibles.confirm.buy.name",
+                "mystery.confirm.open.name", "mystery.menu.open-all-none.name", "collectibles.sort.name")) {
+            assertFalse(yaml.getString(key, "").isEmpty(), key + " is missing");
+        }
+    }
+
     @Test
     void noCollectionPageAndNoGlowInBoxes() throws Exception {
         YamlConfiguration yaml = messages();

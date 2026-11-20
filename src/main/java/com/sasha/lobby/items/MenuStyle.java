@@ -86,6 +86,11 @@ public final class MenuStyle {
         return model(item, "menu/locked");
     }
 
+    /** The gold padlock: not unlocked yet, but the player has the Mystery Dust to buy it now. */
+    public ItemStack lockedAffordable(ItemStack item) {
+        return model(item, "menu/locked_buy");
+    }
+
     /** A chat colour's paint drop from the pack, if it has one for this colour. */
     public ItemStack colorIcon(ItemStack item, String id) {
         return COLOR_ICONS.contains(id) ? model(item, "color/" + id) : item;

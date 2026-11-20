@@ -503,7 +503,7 @@ public final class MysteryBoxes implements Listener {
             menu.inventory.setItem(GRID[i], boxIcon(box, spot != null, multi, stash.boxes(box.stars())));
             menu.boxes.put(GRID[i], box);
         }
-        if (all.isEmpty()) menu.inventory.setItem(22, item(Material.GRAY_DYE, "mystery/empty", "mystery.menu.empty", TagResolver.empty()));
+        if (all.isEmpty()) menu.inventory.setItem(22, style.icon(item(Material.BARRIER, null, "mystery.menu.empty", TagResolver.empty()), "none"));
         menu.inventory.setItem(PREVIOUS, shown > 0
                 ? style.icon(item(Material.ARROW, null, "mystery.menu.previous", Messages.arg("page", shown)), "back")
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-previous", TagResolver.empty()), "back-off"));
@@ -512,8 +512,9 @@ public final class MysteryBoxes implements Listener {
                 : style.icon(item(Material.GRAY_DYE, null, "mystery.menu.no-next", TagResolver.empty()), "next-off"));
         menu.inventory.setItem(CRAFT, item(Material.CRAFTING_TABLE, "mystery/craft", "mystery.menu.craft-button",
                 TagResolver.resolver(Messages.arg("dust", compact(stash.dust())))));
+        String openAll = !multi ? "mystery.menu.open-all-locked" : all.isEmpty() ? "mystery.menu.open-all-none" : "mystery.menu.open-all";
         menu.inventory.setItem(OPEN_ALL, item(multi ? Material.CHEST : Material.GRAY_DYE, multi ? "mystery/open_all" : "menu/locked",
-                multi ? "mystery.menu.open-all" : "mystery.menu.open-all-locked", TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
+                openAll, TagResolver.resolver(Messages.arg("boxes", compact(all.size())))));
         player.openInventory(menu.inventory);
     }
 
@@ -609,11 +610,19 @@ public final class MysteryBoxes implements Listener {
             case MAIN -> {
                 MysteryData.Box box = menu.boxes.get(slot);
                 if (box != null) {
+                    if (menu.spot == null) {
+                        open(player, null, box); // says boxes open at a Mystery Vault
+                        return;
+                    }
+                    Runnable back = () -> openMenu(player, menu.spot, menu.page);
+                    TagResolver tags = TagResolver.resolver(starsTag(box.stars()), Messages.arg("count", data.get(player.getUniqueId()).boxes(box.stars())));
+                    ItemStack shown = item(Material.CHEST, "mystery/gift_" + box.stars(), openMany ? "mystery.confirm.open-kind" : "mystery.confirm.open", tags);
                     if (openMany) {
                         int stars = box.stars();
-                        openMany(player, menu.spot, data.get(player.getUniqueId()).boxList().stream().filter(b -> b.stars() == stars).toList());
+                        plugin.confirm().open(player, shown, () -> openMany(player, menu.spot,
+                                data.get(player.getUniqueId()).boxList().stream().filter(b -> b.stars() == stars).toList()), back);
                     } else {
-                        open(player, menu.spot, box);
+                        plugin.confirm().open(player, shown, () -> open(player, menu.spot, box), back);
                     }
                     return;
                 }
@@ -624,7 +633,17 @@ public final class MysteryBoxes implements Listener {
                         sound(player, "ui.button.click", 1f);
                         openCraft(player, menu.spot);
                     }
-                    case OPEN_ALL -> openMany(player, menu.spot, data.get(player.getUniqueId()).boxList());
+                    case OPEN_ALL -> {
+                        List<MysteryData.Box> every = data.get(player.getUniqueId()).boxList();
+                        if (every.isEmpty() || !player.hasPermission(MULTI)) {
+                            if (!player.hasPermission(MULTI)) openMany(player, menu.spot, every); // says it's a donor perk
+                            return;
+                        }
+                        ItemStack shown = item(Material.CHEST, "mystery/open_all", "mystery.confirm.open-all",
+                                TagResolver.resolver(Messages.arg("boxes", compact(every.size()))));
+                        plugin.confirm().open(player, shown, () -> openMany(player, menu.spot, data.get(player.getUniqueId()).boxList()),
+                                () -> openMenu(player, menu.spot, menu.page));
+                    }
                     default -> {
                     }
                 }

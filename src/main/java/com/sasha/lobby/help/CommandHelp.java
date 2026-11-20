@@ -66,7 +66,7 @@ public final class CommandHelp {
         e.add(new Entry("player", "/collectibles", "Open your Collectibles: hats, suits, gadgets, cloaks, emotes and gestures.", null,
                 List.of("Aliases: /cosmetics, /wardrobe. Also the Collectibles item in your hotbar.")));
         e.add(new Entry("player", "/emote <name>", "Do an emote you've found (a big emoji over your head).", null, List.of()));
-        e.add(new Entry("player", "/gesture <name>", "A copy of you does a gesture you've found (wave, clap, spin...).", null, List.of()));
+        e.add(new Entry("player", "/gesture <name>", "An armor stand of you acts out a gesture you've unlocked (wave, dab, floss...) while you watch.", null, List.of()));
         e.add(new Entry("mystery", "/dust", "See how much Mystery Dust you have.", null, List.of()));
         e.add(new Entry("mystery", "/mysterybox give <player> <stars> [amount]", "Give Mystery Boxes (works from the console, for the store and votes).", admin, List.of()));
         e.add(new Entry("mystery", "/mysterybox dust <player> <amount>", "Give Mystery Dust (a negative amount takes it away).", admin, List.of()));

@@ -1339,6 +1339,15 @@
    "chars": [
     "\uf310"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/confirm.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf17e"
+   ]
   }
  ]
 }

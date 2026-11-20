@@ -1147,11 +1147,11 @@ for stars, hexcol in BOX_COLOURS.items():
         for x in range(16):
             edge = x in (0, 15) or y in (0, 15)
             c = shade(base, 1.12 - y * 0.02)
-            if edge: c = shade(base, 0.6)
+            if edge: c = INK                                            # a sharp black frame round each face
             elif x in (7, 8): c = GOLD if x == 7 else GOLD_DARK      # the ribbon down each side
             side.putpixel((x, y), c + (255,))
             t = shade(base, 1.15)
-            if x in (0, 15) or y in (0, 15): t = shade(base, 0.6)
+            if x in (0, 15) or y in (0, 15): t = INK
             elif x in (7, 8) or y in (7, 8): t = GOLD if (x == 7 or y == 7) else GOLD_DARK  # the ribbon cross
             top.putpixel((x, y), t + (255,))
     # a "?" on each side, either side of the ribbon... one on the left half, bright

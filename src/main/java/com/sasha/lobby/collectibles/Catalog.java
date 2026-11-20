@@ -37,9 +37,9 @@ public final class Catalog {
             this.key = key;
         }
 
-        /** Hats and suits are split into seasons in the menu. */
+        /** Hats, suits and gadgets are split into seasons in the menu (tabs along the top). */
         public boolean seasonal() {
-            return this == HAT || this == SUIT;
+            return this == HAT || this == SUIT || this == GADGET;
         }
 
         /** Gestures are done, not worn (emotes are equipped like a gadget and right-clicked). */
@@ -293,14 +293,14 @@ public final class Catalog {
         add(Category.GESTURE, "floss", N, COMMON, "Floss", "Swing those arms.", null, null);
         add(Category.GESTURE, "moonwalk", N, RARE, "Moonwalk", "Glide backwards, smooth as anything.", null, null);
         add(Category.GESTURE, "zombie_walk", N, RARE, "Zombie Walk", "Braaains...", null, null);
-        add(Category.GESTURE, "sleep", N, RARE, "Nap Time", "Your copy takes a quick nap.", null, null);
+        add(Category.GESTURE, "sleep", N, RARE, "Nap Time", "Your double takes a quick nap.", null, null);
         add(Category.GESTURE, "swim", N, RARE, "Air Swim", "Swim through thin air.", null, null);
         add(Category.GESTURE, "twirl_jump", N, EPIC, "Twirl Jump", "A big spinning jump.", null, null);
         add(Category.GESTURE, "levitate", N, EPIC, "Levitate", "Float up on magic.", null, null);
         add(Category.GESTURE, "tiny", N, EPIC, "Shrink", "Tiny you!", null, null);
         add(Category.GESTURE, "magic_trick", N, EPIC, "Magic Trick", "Now you see it...", null, null);
         add(Category.GESTURE, "giant", N, LEGENDARY, "Giant", "Grow huge and stomp around.", null, null);
-        add(Category.GESTURE, "explode", N, LEGENDARY, "Kaboom", "Your copy swells up and... boom.", null, null);
+        add(Category.GESTURE, "explode", N, LEGENDARY, "Kaboom", "Your double swells up and... boom.", null, null);
 
         ITEMS = List.copyOf(build);
         SETS = List.copyOf(setsBuild);

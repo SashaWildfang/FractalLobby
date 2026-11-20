@@ -80,6 +80,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private final com.sasha.lobby.help.CommandHelp help = new com.sasha.lobby.help.CommandHelp();
     private Profile profile;
     private com.sasha.lobby.mystery.MysteryBoxes mystery;
+    private com.sasha.lobby.items.ConfirmMenu confirm;
     private com.sasha.lobby.collectibles.Collectibles collectibles;
     private com.sasha.lobby.items.FriendsMenu friendsMenu;
     private ParkourLobby parkour;
@@ -128,12 +129,13 @@ public final class Lobby extends JavaPlugin implements Listener {
         npcs = new com.sasha.lobby.npc.Npcs(this);
         profile = new Profile(this);
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
+        confirm = new com.sasha.lobby.items.ConfirmMenu(this);
         mystery = new com.sasha.lobby.mystery.MysteryBoxes(this);
         collectibles = new com.sasha.lobby.collectibles.Collectibles(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, mystery, collectibles, collectibles.effectsListener(), new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, confirm, mystery, collectibles, collectibles.effectsListener(), new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -230,6 +232,11 @@ public final class Lobby extends JavaPlugin implements Listener {
     }
 
     /** Mystery Boxes and Mystery Dust (null until the plugin has started). */
+    /** "Are you sure?" before buying, taking things off and opening boxes. */
+    public com.sasha.lobby.items.ConfirmMenu confirm() {
+        return confirm;
+    }
+
     public com.sasha.lobby.mystery.MysteryBoxes mystery() {
         return mystery;
     }

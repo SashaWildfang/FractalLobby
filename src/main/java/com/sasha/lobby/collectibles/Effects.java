@@ -70,8 +70,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * What collectibles do: gadgets, suit bonuses (right-click or passive), cloaks (textured pieces riding the wearer, with
- * a few particles), the spinning propeller, emotes (a big emoji over the head) and gestures (a copy of the player that
- * does the gesture in front of them). Nothing here can hurt anyone or change the world: thrown things are cancelled on
+ * a few particles), the spinning propeller, emotes (a big emoji over the head) and gestures (an armor stand of
+ * the player acts them out while they watch, in GestureShow). Nothing here can hurt anyone or change the world: thrown things are cancelled on
  * hit, paint is only shown to players for a few seconds, the TNT is fake.
  */
 final class Effects implements Listener {
@@ -88,7 +88,8 @@ final class Effects implements Listener {
     /** The pieces of each player's cloak. */
     private final Map<UUID, Rig> rigs = new HashMap<>();
     private final Map<UUID, ItemDisplay> propellers = new HashMap<>();
-    private final Map<UUID, Mannequin> clones = new HashMap<>();
+    /** Gestures, acted out by a mini armor stand while the player watches. */
+    private final GestureShow gestures;
     /** Each player's balloons (up to three, each on its own lead). */
     private final Map<UUID, List<Balloon>> balloons = new HashMap<>();
 
@@ -146,6 +147,8 @@ final class Effects implements Listener {
         this.bonusKey = new NamespacedKey(plugin, "suit_bonus");
         this.more = new MoreGadgets(plugin, this);
         plugin.getServer().getPluginManager().registerEvents(more, plugin);
+        this.gestures = new GestureShow(plugin, this);
+        plugin.getServer().getPluginManager().registerEvents(gestures, plugin);
     }
 
     /** The gadgets added in 1.41. */
@@ -189,8 +192,7 @@ final class Effects implements Listener {
         blinkMarkers.clear();
         propellers.values().forEach(Entity::remove);
         propellers.clear();
-        clones.values().forEach(Entity::remove);
-        clones.clear();
+        gestures.stopAll();
         for (List<Balloon> list : balloons.values()) {
             for (Balloon b : list) {
                 b.display.remove();
@@ -212,8 +214,7 @@ final class Effects implements Listener {
         unrig(id);
         ItemDisplay propeller = propellers.remove(id);
         if (propeller != null) propeller.remove();
-        Mannequin clone = clones.remove(id);
-        if (clone != null) clone.remove();
+        gestures.stop(id, false);
         popBalloons(id);
         dropGrapple(id, false);
         BlockDisplay marker = blinkMarkers.remove(id);
@@ -2720,258 +2721,13 @@ final class Effects implements Listener {
         }
     }
 
-    /**
-     * A gesture: a copy of the player (their skin and outfit) appears in front of them, facing them, does the gesture
-     * and vanishes in a puff. The player themselves can keep moving.
-     */
+    /** A gesture: a mini armor stand of the player acts it out while they watch (see GestureShow). */
     void gesture(Player player, String key) {
-        Mannequin old = clones.remove(player.getUniqueId());
-        if (old != null) old.remove();
-        Location from = player.getLocation();
-        Vector ahead = from.getDirection().setY(0);
-        if (ahead.lengthSquared() < 0.01) ahead = new Vector(0, 0, 1);
-        ahead.normalize();
-        Location at = from.clone().add(ahead.clone().multiply(2.2));
-        // stand it on the ground in front (or level with the player)
-        for (int down = 0; down < 3 && at.getBlock().getRelative(0, -1, 0).isPassable(); down++) at.add(0, -1, 0);
-        while (!at.getBlock().isPassable() && at.getY() < from.getY() + 2) at.add(0, 1, 0);
-        float yaw = from.getYaw() + 180;
-        at.setYaw(yaw);
-        at.setPitch(0);
-        World world = player.getWorld();
-        Mannequin clone = world.spawn(at, Mannequin.class, m -> {
-            m.setProfile(ResolvableProfile.resolvableProfile(player.getPlayerProfile()));
-            m.setDescription(null);
-            m.setImmovable(true);
-            m.setInvulnerable(true);
-            m.setGravity(false);
-            m.setSilent(true);
-            m.setCollidable(false);
-            m.setCustomNameVisible(false);
-            var mine = player.getEquipment();
-            var its = m.getEquipment();
-            its.setHelmet(mine.getHelmet());
-            its.setChestplate(mine.getChestplate());
-            its.setLeggings(mine.getLeggings());
-            its.setBoots(mine.getBoots());
-        });
-        tagged(clone, "clone");
-        clones.put(player.getUniqueId(), clone);
-        int length = switch (key) {
-            case "moonwalk", "levitate", "giant", "sleep", "magic_trick", "zombie_walk", "swim" -> 62;
-            default -> 46;
-        };
-        say(clone, key, length);
-        world.spawnParticle(Particle.POOF, at.clone().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.02);
-        world.spawnParticle(Particle.DUST, at.clone().add(0, 1, 0), 20, 0.4, 0.8, 0.4, 0, dust(Color.fromRGB(0xB266FF), 1f));
-        sound(at, "entity.illusioner.mirror_move", 0.7f, 1.4f);
-        Location centre = at.clone();
-        Vector away = ahead.clone();                     // from the player towards the copy
-        AttributeInstance size = clone.getAttribute(Attribute.SCALE);
-        every(length, t -> {
-            if (!clone.isValid()) return;
-            switch (key) {
-                case "wave" -> {
-                    if (t % 5 == 0) clone.swingMainHand();
-                    look(clone, yaw + (float) Math.sin(t * 0.3) * 12, -8);
-                    if (t == 2) sound(centre, "entity.villager.ambient", 0.6f, 1.6f);
-                }
-                case "clap" -> {
-                    if (t % 5 == 0) {
-                        if ((t / 5) % 2 == 0) clone.swingMainHand();
-                        else clone.swingOffHand();
-                        sound(centre, "block.note_block.snare", 0.7f, 1.4f);
-                    }
-                }
-                case "bow" -> {
-                    float p = t < 10 ? t * 7f : t < 30 ? 70f : Math.max(0, 70f - (t - 30) * 7f);
-                    look(clone, yaw, p);
-                    if (t == 6) clone.setPose(Pose.SNEAKING, true);
-                    if (t == 32) clone.setPose(Pose.STANDING, true);
-                    if (t == 6) sound(centre, "block.note_block.harp", 0.6f, 0.8f);
-                }
-                case "spin" -> {
-                    look(clone, yaw + (t + 1) * 16f, 0);
-                    if (t % 11 == 0) sound(centre, "entity.player.attack.sweep", 0.5f, 1.4f);
-                }
-                case "facepalm" -> {
-                    if (t == 2) {
-                        clone.swingMainHand();
-                        sound(centre, "entity.villager.no", 0.8f, 0.9f);
-                    }
-                    look(clone, yaw + (float) Math.sin(t * 0.25) * 18, t < 4 ? t * 14f : 55f);
-                }
-                case "headbang" -> {
-                    look(clone, yaw, (t / 4) % 2 == 0 ? 50 : -15);
-                    if (t % 8 == 0) sound(centre, "block.note_block.basedrum", 0.8f, 1f);
-                    if (t % 8 == 4) sound(centre, "block.note_block.snare", 0.6f, 1f);
-                }
-                case "celebrate" -> {
-                    if (t % 5 == 0) {
-                        clone.swingMainHand();
-                        clone.swingOffHand();
-                    }
-                    double hop = Math.abs(Math.sin(t * Math.PI / 12)) * 0.6;
-                    Location up = centre.clone().add(0, hop, 0);
-                    up.setYaw(yaw);
-                    clone.teleport(up);
-                    if (t == 6 || t == 18 || t == 30) {
-                        Location top = up.clone().add(0, 2.2, 0);
-                        world.spawnParticle(Particle.FIREWORK, top, 20, 0.3, 0.3, 0.3, 0.12);
-                        confetti(top, 30, 0.7);
-                        sound(top, "entity.firework_rocket.twinkle", 0.6f, 1f + t * 0.01f);
-                    }
-                }
-                case "dab" -> {
-                    if (t == 6) {
-                        clone.swingMainHand();
-                        clone.swingOffHand();
-                        sound(centre, "entity.player.attack.sweep", 0.7f, 1.6f);
-                        world.spawnParticle(Particle.CRIT, centre.clone().add(0, 1.6, 0), 25, 0.4, 0.3, 0.4, 0.3);
-                    }
-                    if (t >= 6 && t < 34) look(clone, yaw - 35, 50);
-                    else look(clone, yaw, 0);
-                    if (t == 8) confetti(centre.clone().add(0, 2, 0), 25, 0.6);
-                }
-                case "floss" -> {
-                    if (t % 3 == 0) {
-                        if ((t / 3) % 2 == 0) clone.swingMainHand();
-                        else clone.swingOffHand();
-                    }
-                    look(clone, yaw + ((t / 3) % 2 == 0 ? 18 : -18), 0);
-                    if (t % 6 == 0) sound(centre, "block.note_block.hat", 0.6f, 1.2f + (t % 12) / 24f);
-                }
-                case "moonwalk" -> {
-                    // glides backwards (away from the player) while facing them
-                    double back = Math.min(t, 50) * 0.05;
-                    Location step = centre.clone().add(away.clone().multiply(back));
-                    step.setYaw(yaw);
-                    clone.teleport(step);
-                    look(clone, yaw, 0);
-                    if (t % 8 == 0) {
-                        sound(step, "block.note_block.bass", 0.8f, 0.8f + (t % 24) / 24f);
-                        world.spawnParticle(Particle.NOTE, step.clone().add(0, 2.3, 0), 0, (t % 24) / 24.0, 0, 0, 1);
-                    }
-                }
-                case "twirl_jump" -> {
-                    double h = t < 30 ? Math.sin(t / 30.0 * Math.PI) * 2.2 : 0;
-                    Location up = centre.clone().add(0, h, 0);
-                    up.setYaw(yaw + t * 24f);
-                    clone.teleport(up);
-                    look(clone, yaw + t * 24f, 0);
-                    if (t == 0) sound(centre, "entity.player.attack.sweep", 0.8f, 0.8f);
-                    if (t == 30) {
-                        world.spawnParticle(Particle.CLOUD, centre.clone().add(0, 0.1, 0), 20, 0.5, 0.05, 0.5, 0.05);
-                        sound(centre, "entity.generic.big_fall", 0.8f, 1f);
-                    }
-                }
-                case "levitate" -> {
-                    double h = t < 50 ? Math.min(1.6, t * 0.05) + Math.sin(t * 0.2) * 0.08 : Math.max(0, 1.6 - (t - 50) * 0.3);
-                    Location up = centre.clone().add(0, h, 0);
-                    up.setYaw(yaw);
-                    clone.teleport(up);
-                    look(clone, yaw, -20);
-                    if (t % 3 == 0) world.spawnParticle(Particle.DUST, centre.clone().add(rand(0.5), 0.1, rand(0.5)), 2, 0.1, 0, 0.1, 0,
-                            dust(Color.fromRGB(0x9B5CFF), 1.1f));
-                    if (t % 5 == 0) world.spawnParticle(Particle.ENCHANT, up.clone().add(0, 1, 0), 8, 0.4, 0.6, 0.4, 0.5);
-                    if (t == 2) sound(centre, "block.beacon.activate", 0.6f, 1.6f);
-                }
-                case "zombie_walk" -> {
-                    double fwd = Math.min(t, 55) * 0.025;
-                    Location step = centre.clone().add(away.clone().multiply(-fwd));
-                    step.setYaw(yaw);
-                    clone.teleport(step);
-                    look(clone, yaw + (float) Math.sin(t * 0.2) * 8, 15);
-                    if (t % 14 == 0) sound(step, "entity.zombie.ambient", 0.7f, 1.1f);
-                    if (t % 7 == 0) clone.swingMainHand();
-                }
-                case "explode" -> {
-                    if (size != null && t < 30) size.setBaseValue(1 + t * 0.025);
-                    if (t < 30 && t % 6 == 0) sound(centre, "entity.creeper.primed", 0.8f, 1f + t * 0.02f);
-                    if (t % 4 < 2 && t < 30) clone.setGlowing(true);
-                    else clone.setGlowing(false);
-                    if (t == 30) {
-                        world.spawnParticle(Particle.EXPLOSION_EMITTER, centre.clone().add(0, 1, 0), 1);
-                        world.spawnParticle(Particle.FIREWORK, centre.clone().add(0, 1, 0), 40, 0.3, 0.3, 0.3, 0.3);
-                        confetti(centre.clone().add(0, 1, 0), 60, 1.2);
-                        sound(centre, "entity.generic.explode", 1f, 1.2f);
-                        clone.remove();
-                    }
-                }
-                case "sleep" -> {
-                    if (t == 2) clone.setPose(Pose.SLEEPING, true);
-                    if (t % 14 == 0) {
-                        sound(centre, "entity.player.breath", 0.5f, 0.8f);
-                        TextDisplay z = world.spawn(centre.clone().add(0.3, 1.0, 0), TextDisplay.class, d -> {
-                            d.text(Component.text("Z", net.kyori.adventure.text.format.NamedTextColor.AQUA));
-                            d.setBillboard(Display.Billboard.CENTER);
-                            d.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-                            d.setTeleportDuration(20);
-                        });
-                        tagged(z, "z");
-                        later(1, () -> z.teleport(z.getLocation().add(0.5, 1.2, 0)));
-                        later(20, z::remove);
-                    }
-                }
-                case "swim" -> {
-                    if (t == 2) clone.setPose(Pose.SWIMMING, true);
-                    Location up = centre.clone().add(0, 0.6 + Math.sin(t * 0.25) * 0.15, 0);
-                    up.setYaw(yaw);
-                    clone.teleport(up);
-                    if (t % 3 == 0) world.spawnParticle(Particle.BUBBLE_POP, up.clone().add(0, 0.5, 0), 3, 0.4, 0.2, 0.4, 0.02);
-                    if (t % 10 == 0) sound(up, "entity.player.swim", 0.5f, 1.2f);
-                }
-                case "giant" -> {
-                    if (size != null) size.setBaseValue(t < 20 ? 1 + t * 0.075 : t < 48 ? 2.5 : Math.max(1, 2.5 - (t - 48) * 0.12));
-                    if (t >= 20 && t < 48 && t % 9 == 0) {
-                        world.spawnParticle(Particle.BLOCK, centre.clone().add(0, 0.1, 0), 30, 0.8, 0.05, 0.8, 0,
-                                centre.clone().add(0, -1, 0).getBlock().getBlockData());
-                        sound(centre, "entity.ravager.step", 1f, 0.7f);
-                        clone.swingMainHand();
-                    }
-                }
-                case "tiny" -> {
-                    if (size != null) size.setBaseValue(t < 10 ? 1 - t * 0.07 : t < 36 ? 0.3 : Math.min(1, 0.3 + (t - 36) * 0.07));
-                    if (t == 10) sound(centre, "entity.bat.ambient", 0.8f, 2f);
-                    if (t > 10 && t < 36) {
-                        Location hop = centre.clone().add(0, Math.abs(Math.sin(t * 0.5)) * 0.25, 0);
-                        hop.setYaw(yaw + (float) Math.sin(t * 0.4) * 30);
-                        clone.teleport(hop);
-                    }
-                }
-                case "magic_trick" -> {
-                    if (t < 20) look(clone, yaw + t * 18f, 0);
-                    if (t == 20) {
-                        world.spawnParticle(Particle.CLOUD, centre.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4, 0.03);
-                        world.spawnParticle(Particle.WITCH, centre.clone().add(0, 1, 0), 30, 0.4, 0.6, 0.4, 0.1);
-                        sound(centre, "entity.illusioner.prepare_mirror", 1f, 1.4f);
-                        clone.setInvisible(true);
-                    }
-                    if (t == 44) {
-                        Location pop = centre.clone().add(away.clone().multiply(-1.2));
-                        pop.setYaw(yaw);
-                        clone.teleport(pop);
-                        clone.setInvisible(false);
-                        world.spawnParticle(Particle.FIREWORK, pop.clone().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0.1);
-                        sound(pop, "entity.player.levelup", 0.6f, 1.8f);
-                    }
-                }
-                default -> {
-                }
-            }
-        }, () -> {
-            if (!clone.isValid()) return;
-            Location end = clone.getLocation().add(0, 1, 0);
-            world.spawnParticle(Particle.POOF, end, 20, 0.3, 0.5, 0.3, 0.03);
-            world.spawnParticle(Particle.DUST, end, 20, 0.4, 0.8, 0.4, 0, dust(Color.fromRGB(0xB266FF), 1f));
-            sound(end, "entity.illusioner.mirror_move", 0.6f, 1.8f);
-            clone.remove();
-            clones.remove(player.getUniqueId(), clone);
-        });
+        gestures.play(player, key);
     }
 
     /** A speech bubble over the copy (a random line from messages.yml collectibles.gesture-say.KEY). */
-    private void say(Mannequin clone, String key, int length) {
+    void say(org.bukkit.entity.LivingEntity clone, String key, int length) {
         List<Component> lines = plugin.messages().lore("collectibles.gesture-say." + key);
         if (lines.isEmpty()) return;
         Component line = lines.get(ThreadLocalRandom.current().nextInt(lines.size()));
@@ -2998,8 +2754,4 @@ final class Effects implements Listener {
         later(length - 2, bubble::remove);
     }
 
-    private static void look(Mannequin clone, float yaw, float pitch) {
-        clone.setRotation(yaw, Math.max(-90, Math.min(90, pitch)));
-        clone.setBodyYaw(yaw);
-    }
 }

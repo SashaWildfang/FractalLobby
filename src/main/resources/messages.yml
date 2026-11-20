@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 46
+messages-version: 49
 
 theme:
   primary: "#B266FF"
@@ -731,6 +731,20 @@ realm-action:
   coming-soon: "<#8C7BB0>ᴄʟɪᴄᴋ ꜰᴏʀ ɴᴇᴡꜱ <dark_gray>• <#C77DFF>/ᴅɪꜱᴄᴏʀᴅ"
 
 
+# ── "Are you sure?" ─────────────────────────────────────────────
+# Asked before buying with Mystery Dust, taking cosmetics off and opening boxes.
+confirm:
+  title: "<brand><bold>Are you sure?</bold></brand>"
+  accept:
+    name: "<good>Confirm"
+    lore:
+      - "<accent><left-click></accent> <muted>to confirm"
+  cancel:
+    name: "<bad>Cancel"
+    lore:
+      - "<accent><left-click></accent> <muted>to go back"
+
+
 # ── Mystery Boxes ───────────────────────────────────────────────
 # <stars> the box's stars (★★★ in gold, the rest dim), <star-count> as a number.
 # <reward> what was found, <rarity> its rarity, <dust> Mystery Dust.
@@ -845,12 +859,33 @@ mystery:
         - "<muted>no show, just a list of what"
         - "<muted>you got."
         - ""
-        - "<accent><left-click></accent> <muted>to open them all"
+        - "<accent><left-click></accent> <muted>to open all"
+    open-all-none:
+      name: "<#FFD27F>Open Everything"
+      lore:
+        - "<muted>Open all your boxes at once:"
+        - "<muted>no show, just a list of what"
+        - "<muted>you got."
+        - ""
+        - "<bad>No boxes to open"
     open-all-locked:
       name: "<dark_gray>Open Everything"
       lore:
         - "<muted>Open every box at once."
         - "<bad>Donor perk"
+  # What the "Are you sure?" menu shows before opening boxes. <stars> <count> <boxes>
+  confirm:
+    open:
+      name: "<white>Open a <stars> <white>Mystery Box?"
+      lore: []
+    open-kind:
+      name: "<white>Open all <count> <stars> <white>boxes?"
+      lore:
+        - "<muted>No show, just a list of what you got."
+    open-all:
+      name: "<white>Open all <boxes> boxes?"
+      lore:
+        - "<muted>No show, just a list of what you got."
   craft-menu:
     title: "<brand><bold>Craft Boxes</bold></brand>"
     craft:
@@ -934,7 +969,7 @@ collectibles:
       single: "Gesture"
       title: "<brand><bold>Gestures</bold></brand>"
       lore:
-        - "<muted>A copy of you waves, claps,"
+        - "<muted>Your double waves, claps,"
         - "<muted>spins and more."
   # Under each category button. <found> <total> <wearing>
   category-footer:
@@ -976,10 +1011,52 @@ collectibles:
     name: "<bad>Take Everything Off"
     lore:
       - "<muted>Hat, suit pieces, gadget and cloak."
-  take-off:
-    name: "<bad>Take Off"
+      - ""
+      - "<accent><left-click></accent> <muted>to take it all off"
+  # The Sort button at the bottom right of a category page. <mode>
+  sort:
+    name: "<primary>Sort: <white><mode>"
     lore:
-      - "<muted>Stop using your <category>."
+      - "<muted>What this page shows."
+      - ""
+    option: "<dark_gray>  <muted><mode>"
+    option-selected: "<accent>» <white><mode>"
+    hint:
+      - ""
+      - "<accent><left-click></accent> <muted>for the next"
+      - "<accent><right-click></accent> <muted>to go back"
+    modes:
+      all: "Everything"
+      unlocked: "Unlocked"
+      locked: "Locked"
+      purchasable: "Can buy now"
+      rarity: "Rarest first"
+      seasonal: "Seasonal"
+  # The bottom slot of a category page: what's on now, or (with nothing on) the hanger.
+  take-off:
+    name: "<dark_gray>Take Off"
+    lore:
+      - "<muted>No <category> on right now."
+  take-off-worn:
+    name: "<name>"
+    lore:
+      - "<muted>On right now."
+      - ""
+      - "<accent><left-click></accent> <muted>to take it off"
+  # What the "Are you sure?" menu shows before buying with dust or taking things off. <name> <price> <dust>
+  confirm:
+    buy:
+      name: "<white>Buy <name><white>?"
+      lore:
+        - "<muted>Costs <#FFD27F><price> Mystery Dust"
+        - "<muted>You have <#FFD27F><dust>"
+    take-off:
+      name: "<white>Take off <name><white>?"
+      lore: []
+    take-off-all:
+      name: "<white>Take everything off?"
+      lore:
+        - "<muted>Hat, suit pieces, gadget and cloak."
   back:
     name: "<secondary>← Back"
     lore:
@@ -1047,7 +1124,7 @@ collectibles:
       - "<accent><left-click></accent> <muted>to do it"
     buy:
       - "<muted>Find it in Mystery Boxes, or"
-      - "<accent><shift><left-click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
+      - "<accent><left-click></accent> <muted>to buy for <#FFD27F><price> Mystery Dust"
     cant-afford:
       - "<muted>Find it in Mystery Boxes, or"
       - "<muted>buy for <#FFD27F><price> Mystery Dust"
@@ -1247,7 +1324,6 @@ collectibles:
   full-set: "<prefix><#FFD27F>Full <set><#FFD27F>! <white><ability></white> <muted>(<how>)"
   boxes-only: "<prefix><bad><name> <bad>is seasonal: it only comes from Mystery Boxes."
   bought: "<prefix><secondary>You bought <name> <secondary>for <#FFD27F><price> Mystery Dust</#FFD27F><secondary>!"
-  shift-to-buy: "<prefix><muted>Shift + Left-click to buy <name> <muted>for <#FFD27F><price> Mystery Dust<muted>."
   cant-afford: "<prefix><bad>You need <white><need></white> more Mystery Dust for <name><bad>."
   out-of-season: "<prefix><bad><name> <bad>is only found during <season><bad>."
   not-owned: "<prefix><bad>You haven't found <name> <bad>yet."
