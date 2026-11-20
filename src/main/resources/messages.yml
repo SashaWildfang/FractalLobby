@@ -963,7 +963,7 @@ collectibles:
       - "<muted>emotes and gestures: wear them,"
       - "<muted>play with them, show them off."
       - ""
-      - "<muted>Found: <white><found></white><dark_gray>/<total>"
+      - "<muted>Unlocked: <white><found></white><dark_gray>/<total>"
       - "<muted>Dust <white><font:fractal:lobby>\uF024</font></white>: <#FFD27F><dust>"
       - "<muted>Mystery Boxes: <white><boxes>"
       - ""

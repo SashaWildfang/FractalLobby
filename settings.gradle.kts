@@ -1,1 +1,1 @@
-rootProject.name = "Lobby"
+rootProject.name = "FractalLobby"

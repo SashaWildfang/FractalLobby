@@ -1,4 +1,4 @@
-# Lobby
+# FractalLobby
 
 The lobby core for **Fractal Network**: a purple sidebar with live player counts from the proxy, a clean tab list, chat and nametag formats with LuckPerms ranks, lobby protection, void rescue, launch pads, spawn, and locked join items.
 
@@ -74,7 +74,7 @@ With PlaceholderAPI installed, the same counts as the scoreboard are available e
 
 ## Setup
 
-1. Put `Lobby-<version>.jar` in the lobby server's `plugins/` folder and restart.
+1. Put `FractalLobby-<version>.jar` in the lobby server's `plugins/` folder and restart.
 2. In `config.yml`, list your proxy server names under `proxy.servers` and `realm-selector.realms`.
 3. Stand where players should appear and run `/setspawn`.
 4. Velocity: keep `bungee-plugin-message-channel = true` in `velocity.toml` (the default) so player counts and the realm selector work.

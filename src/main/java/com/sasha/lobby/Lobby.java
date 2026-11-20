@@ -91,8 +91,29 @@ public final class Lobby extends JavaPlugin implements Listener {
     /** Kept as Object so this class never loads PlaceholderAPI types when it isn't installed. */
     private Object placeholderExpansion;
 
+    /**
+     * FractalLobby keeps its files in plugins/FractalLobby. The first time it starts where Lobby ran before, it copies
+     * plugins/Lobby there (config, messages, holograms, NPCs, parkour, boxes...), leaving the old folder as a backup.
+     */
+    private void copyOldFolder() {
+        java.nio.file.Path folder = getDataFolder().toPath();
+        java.nio.file.Path old = folder.resolveSibling("Lobby");
+        if (java.nio.file.Files.exists(folder) || !java.nio.file.Files.isDirectory(old)) return;
+        try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.walk(old)) {
+            for (java.nio.file.Path source : (Iterable<java.nio.file.Path>) files::iterator) {
+                java.nio.file.Path target = folder.resolve(old.relativize(source).toString());
+                if (java.nio.file.Files.isDirectory(source)) java.nio.file.Files.createDirectories(target);
+                else java.nio.file.Files.copy(source, target, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
+            }
+            getLogger().info("Copied your old plugins/Lobby folder to plugins/FractalLobby (the old one is kept as a backup).");
+        } catch (java.io.IOException e) {
+            getLogger().severe("Could not copy plugins/Lobby to plugins/FractalLobby: " + e.getMessage());
+        }
+    }
+
     @Override
     public void onEnable() {
+        copyOldFolder();
         saveDefaultConfig();
         loadSettings();
         placeholderApi = getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");

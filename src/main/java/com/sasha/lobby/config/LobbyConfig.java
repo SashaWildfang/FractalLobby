@@ -257,7 +257,7 @@ public record LobbyConfig(
                         slot(c.getInt("join-items.radio.slot", 3)),
                         item(c.getString("join-items.radio.item"), Material.JUKEBOX, "join-items.radio.item", log),
                         c.getString("join-items.radio.command", "radio").trim().replaceFirst("^/", ""),
-                        c.getString("join-items.radio.requires-plugin", "Radio").trim(),
+                        c.getString("join-items.radio.requires-plugin", "FractalRadio").trim(),
                         c.getBoolean("join-items.player-visibility.enabled", true),
                         slot(c.getInt("join-items.player-visibility.slot", 9)),
                         item(c.getString("join-items.player-visibility.item-visible"), Material.LIME_DYE, "join-items.player-visibility.item-visible", log),

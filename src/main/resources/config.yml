@@ -653,7 +653,7 @@ join-items:
     # Command run when it's right-clicked, without the /.
     command: radio
     # Only give the item when this plugin is installed ("" = always).
-    requires-plugin: Radio
+    requires-plugin: FractalRadio
 
   # The player's own head: opens their profile (stats, chat colour,
   # trail, glow, settings).
