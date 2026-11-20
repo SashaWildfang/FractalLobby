@@ -2010,5 +2010,5 @@ GADGETS['rush_pearl'] = _rush_pearl_icon           # a deep teal pearl with a sw
 from boomerang_icon import crisp as _boomerang_icon
 GADGETS['explosive_bow'] = _boomerang_icon         # the Boomerang (it replaced the Explosive Bow but kept its key)
 
-from pigs_fly_icon import opt1 as _pigs_fly_icon
+from pigs_fly_icon import crisp as _pigs_fly_icon
 GADGETS['pigs_fly'] = _pigs_fly_icon               # side-on pig with a feathered wing (Sasha picked #1)

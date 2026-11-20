@@ -77,3 +77,40 @@ def opt3():
 
 
 OPTIONS = [opt1, opt2, opt3]
+
+
+def big_pig(c, ox, oy, s):
+    """side_pig, scaled by s (the same chubby side-on pig), and with no eye: the eye goes on after, one sharp pixel."""
+    R = lambda x0, y0, x1, y1: (ox + x0 * s, oy + y0 * s, ox + x1 * s, oy + y1 * s)
+    c.shape('rrect', R(0, 2, 15, 10) + (3 * s,), PINK)
+    c.shape('rect', R(2, 2.5, 13, 4), PINK_L)
+    c.shape('rrect', R(11, 0, 18, 7) + (2 * s,), PINK)
+    c.shape('rrect', R(16.5, 3, 19.5, 6) + (1 * s,), SNOUT)
+    c.shape('rect', R(17.4, 4, 18.2, 4.8), dark(SNOUT, 0.4))
+    c.shape('poly', [(ox + 12 * s, oy), (ox + 13 * s, oy - 2 * s), (ox + 14.5 * s, oy)], PINK_D)
+    for x in (1.5, 5, 9.5, 12.5):
+        c.shape('rect', R(x, 9.5, x + 2, 12), PINK_D)
+    c.shape('arc', (R(-3, 2, 1, 6), 120, 330), PINK_D, width=0.9 * s)
+
+
+def crisp():
+    """Sasha's pick (#1), clearer: drawn bigger to fill the slot with hard pixel edges (no soft blur), and a small
+    one-pixel eye."""
+    import kit
+    was = kit.PIXEL
+    kit.PIXEL = True                                                   # hard edges
+    try:
+        c = Canvas()
+        s = 1.22
+        big_pig(c, 5.5, 12, s)
+        wing(c, 5.5 + 8 * s, 12 + 2 * s, flip=-1, s=1.2 * s)
+        img = centre(c.done())
+    finally:
+        kit.PIXEL = was
+    o = img.load()
+    pinks = [(x, y) for y in range(32) for x in range(32) if o[x, y][3] and o[x, y][0] > 200 and 120 < o[x, y][1] < 200 and o[x, y][2] > 150]
+    hx = max(p[0] for p in pinks)                                      # the snout's tip
+    head = [p for p in pinks if hx - 7 <= p[0] <= hx - 4]
+    top = min(p[1] for p in head)
+    o[hx - 5, top + 2] = (26, 27, 38, 255)                             # one sharp pixel of eye
+    return img
