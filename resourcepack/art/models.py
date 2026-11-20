@@ -497,6 +497,8 @@ def build(out):
         return GORES[int(a // 60) % 6]
     bb = sphere_columns(8, 8, 8, 6.5, beach_colour)
     write(out, G + 'beach_ball_3d', bb, scale=H)
+    import volleyball_icon as _vb
+    write(out, G + 'volleyball_3d', sphere_columns(8, 8, 8, 6.5, _vb.colour_at), scale=H)   # the Volleyball's ball
     def tether_colour(mx, mz):                            # a yellow tetherball with a white seam round its middle
         return '#ffffff' if abs(mx) < 0.55 else ('#ffd23a' if mx < 0 else '#ffc21a')
     write(out, G + 'tetherball_3d', sphere_columns(8, 8, 8, 6.5, tether_colour) + [Box((7.3, 14.4, 7.3), (8.7, 15.2, 8.7), '#c9ccd8', 'flat')], scale=H)

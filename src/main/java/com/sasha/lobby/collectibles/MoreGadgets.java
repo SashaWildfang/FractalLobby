@@ -179,7 +179,14 @@ final class MoreGadgets implements Listener {
             case "magic_8_ball" -> magic8(player);
             case "fortune_cookie" -> fortuneCookie(player);
             case "tetherball" -> tetherball(player);
-            case "rock_paper_shears" -> rockPaperShears(player);
+            case "rock_paper_shears" -> {
+                if (rpsBusy.contains(player.getUniqueId())) {           // already in a game (or inviting): not another
+                    fx.refund(player, "gadget:rock_paper_shears");
+                    fx.sound(player.getLocation(), "entity.villager.no", 0.6f, 1.3f);
+                } else {
+                    rockPaperShears(player);
+                }
+            }
             case "catapult" -> catapult(player);
             case "pigs_fly" -> pigsFly(player);
             case "creeper_astronaut" -> creeperAstronaut(player);
@@ -198,7 +205,7 @@ final class MoreGadgets implements Listener {
             case "railgun" -> railgun(player);
             case "explosive_bow" -> boomerang(player);                 // (the Boomerang: it kept the old key, so owners keep it)
             case "pong" -> pong(player);
-            case "beach_ball" -> bouncyBall(player, "gadget/beach_ball_3d", Material.SNOWBALL, 1.1f, 0.45, 0.62, "entity.slime.jump_small");
+            case "beach_ball" -> volleyball(player);                  // (the Volleyball: it kept the old key, so owners keep it)
             case "rush_pearl" -> {
                 if (fx.parkour(player)) return true;
                 EnderPearl pearl = player.launchProjectile(EnderPearl.class, look.clone().multiply(1.7));
@@ -726,10 +733,7 @@ final class MoreGadgets implements Listener {
             up.setYaw(spin[0]);
             creeper.teleport(up);
             creeper.setRotation(spin[0], 0);
-            Location head = up.clone().add(0, 1.45, 0);
-            helmet.setInterpolationDelay(0);                           // turn the glass with the creeper as it spins
-            helmet.setInterpolationDuration(1);
-            helmet.setTransformationMatrix(new Matrix4f().translate(0, -0.25f, 0).rotateY((float) Math.toRadians(-spin[0])).scale(0.6f));
+            Location head = up.clone().add(0, 1.45, 0);                // (the helmet just rides along, it doesn't spin)
             // the engine: a roaring flame column and smoke pouring out below
             world.spawnParticle(Particle.FLAME, up, 0, 0, -1, 0, 0.35);
             world.spawnParticle(Particle.FLAME, up, 6, 0.12, 0.05, 0.12, 0.04);
@@ -1263,6 +1267,271 @@ final class MoreGadgets implements Listener {
      * A ball anyone can play with: hit it (left- or right-click) to send it where you look, harder when sprinting, or
      * just run into it. It starts in the air, falls, bounces off the ground and walls, rolls to a stop, and spins as it goes.
      */
+    /**
+     * Volleyball, like Pong: a sandy court with white lines and a net goes down in front of the player (after checking
+     * there's a flat, open space for it), with the player at the near end. The far side is played by the Lobby, a
+     * little pink-kitted armour stand that runs about under the ball and bumps it back (it misses now and then), until
+     * someone else walks onto that side and takes over. Get under the ball to bump it (or click it) and it arcs over
+     * the net to somewhere on the other side. A ball landing in a side's half (or hit out, or into the net) is a point
+     * to the other side; the side that wins a point serves. First to 5; walking off your end ends it.
+     */
+    private void volleyball(Player player) {
+        final double L = 12, W = 6, NET = 2.3, R = 0.27, G = 0.035;
+        World world = player.getWorld();
+        float yaw = Math.round(player.getLocation().getYaw() / 90f) * 90f;
+        Vector f = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
+        final Vector fwd = new Vector(Math.round(f.getX()), 0, Math.round(f.getZ()));
+        final Vector side = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location feet = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
+        Location c = feet.clone().add(fwd.clone().multiply(L / 2 + 0.5));
+        c.setYaw(0);
+        c.setPitch(0);
+        List<Block> hidden = new ArrayList<>();
+        for (int v = (int) -(L / 2); v <= L / 2; v++) {                // a flat court with room above (snow is fine)
+            for (int u = (int) -(W / 2); u <= W / 2; u++) {
+                Block cell = c.clone().add(side.clone().multiply(u)).add(fwd.clone().multiply(v)).getBlock();
+                for (int y = 0; y < 4; y++) {
+                    Block b = cell.getRelative(0, y, 0);
+                    boolean open = b.isPassable() || b.getType() == Material.SNOW;
+                    if (!open || (y == 0 && !cell.getRelative(0, -1, 0).getType().isSolid())) {
+                        plugin.messages().send(player, "collectibles.gadget.volleyball-room");
+                        fx.sound(player.getLocation(), "entity.villager.no", 0.8f, 1.2f);
+                        fx.refund(player, "gadget:beach_ball");
+                        return;
+                    }
+                    if (y < 2 && !b.getType().isAir()) hidden.add(b);
+                }
+            }
+        }
+        Placed p = place(player);
+        BlockData air = Material.AIR.createBlockData();
+        Runnable hide = () -> {
+            for (Player viewer : world.getPlayers()) for (Block b : hidden) viewer.sendBlockChange(b.getLocation(), air);
+        };
+        hide.run();
+        p.end = () -> {
+            for (Player viewer : world.getPlayers()) for (Block b : hidden) viewer.sendBlockChange(b.getLocation(), b.getBlockData());
+        };
+        java.util.function.BiFunction<Double, Double, Location> at = (u, v) -> c.clone().add(side.clone().multiply(u)).add(fwd.clone().multiply(v));
+        interface Slab { BlockDisplay make(double u, double v, double along, double across, double height, double lift, Material m); }
+        Slab slab = (u, v, along, across, height, lift, m) -> {
+            double sx = Math.abs(fwd.getX()) * along + Math.abs(side.getX()) * across;
+            double sz = Math.abs(fwd.getZ()) * along + Math.abs(side.getZ()) * across;
+            return keep(p, world.spawn(at.apply(u, v), BlockDisplay.class, d -> {
+                d.setBlock(m.createBlockData());
+                d.setBrightness(new Display.Brightness(15, 15));
+                d.setPersistent(false);
+                d.setTransformation(new Transformation(new Vector3f((float) (-sx / 2), (float) lift, (float) (-sz / 2)), new AxisAngle4f(),
+                        new Vector3f((float) sx, (float) height, (float) sz), new AxisAngle4f()));
+            }));
+        };
+        slab.make(0, 0, L, W, 0.03, 0.005, Material.SAND);                                           // the sandy court
+        for (int s2 : new int[]{-1, 1}) slab.make(s2 * (W / 2 - 0.06), 0, L, 0.12, 0.04, 0.01, Material.WHITE_CONCRETE);   // lines
+        for (int s2 : new int[]{-1, 1}) slab.make(0, s2 * (L / 2 - 0.06), 0.12, W - 0.24, 0.04, 0.01, Material.WHITE_CONCRETE);
+        slab.make(0, 0, 0.12, W - 0.24, 0.04, 0.01, Material.WHITE_CONCRETE);
+        for (int s2 : new int[]{-1, 1}) slab.make(s2 * (W / 2 + 0.25), 0, 0.14, 0.14, 2.5, 0, Material.STRIPPED_SPRUCE_LOG);   // net posts
+        slab.make(0, 0, 0.03, W + 0.5, NET - 1.4, 1.4, Material.WHITE_STAINED_GLASS);                // the net
+        slab.make(0, 0, 0.05, W + 0.5, 0.1, NET - 0.1, Material.WHITE_WOOL);                         // its top band
+        TextDisplay score = keep(p, label(at.apply(0d, 0d).add(0, 3.4, 0), Component.empty(), 0));
+        ItemDisplay ball = keep(p, world.spawn(at.apply(0d, -2d).add(0, 2, 0), ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.SNOWBALL, "gadget/volleyball_3d"));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+        }));
+        // the Lobby: a little armour stand in pink kit
+        org.bukkit.entity.ArmorStand lobby = keep(p, world.spawn(at.apply(0d, L / 4), org.bukkit.entity.ArmorStand.class, a -> {
+            a.setArms(true);
+            a.setBasePlate(false);
+            a.setInvulnerable(true);
+            a.setGravity(false);
+            a.setPersistent(false);
+            a.setCustomNameVisible(true);
+            a.customName(text("Lobby", 0xFF5AB4));
+            Color pink = Color.fromRGB(0xFF5AB4);
+            for (Material m : new Material[]{Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE, Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS}) {
+                ItemStack kit = new ItemStack(m);
+                kit.editMeta(org.bukkit.inventory.meta.LeatherArmorMeta.class, meta -> meta.setColor(pink));
+                a.getEquipment().setItem(switch (m) {
+                    case LEATHER_HELMET -> org.bukkit.inventory.EquipmentSlot.HEAD;
+                    case LEATHER_CHESTPLATE -> org.bukkit.inventory.EquipmentSlot.CHEST;
+                    case LEATHER_LEGGINGS -> org.bukkit.inventory.EquipmentSlot.LEGS;
+                    default -> org.bukkit.inventory.EquipmentSlot.FEET;
+                }, kit);
+            }
+        }));
+        lobby.setRotation(yaw + 180, 0);
+        // the ball, in court terms: across (u), along (v, the player's side is negative), height; and its speed
+        double[] b = {0, -2, 2, 0, 0, 0};
+        int[] pts = {0, 0}, wait = {50}, lastSide = {0}, hitCool = {0, 0}, swing = {0};
+        int[] serveSide = {1};                                         // the Lobby serves first, to the player
+        double[] lobbyAt = {0, L / 4};
+        Player[] far = {null};
+        boolean[] over = {false}, live = {false};
+        Runnable show = () -> score.text(text(player.getName() + "  ", 0x3FD8FF).append(text(pts[0] + " : " + pts[1], 0xFFFFFF))
+                .append(text("  " + (far[0] == null ? "Lobby" : far[0].getName()), 0xFF5AB4))
+                .append(Component.newline()).append(text(far[0] == null ? "Walk onto the far side to play!" : "First to 5", 0xA9A3C2))
+                .append(Component.newline()).append(text("Get under the ball to bump it", 0x7A7F96)));
+        show.run();
+        // sends the ball from where it is over to somewhere on the other side, in a nice arc
+        java.util.function.IntConsumer send = (toSide) -> {
+            double ut = ThreadLocalRandom.current().nextDouble(-(W / 2 - 0.8), W / 2 - 0.8);
+            double vt = toSide * ThreadLocalRandom.current().nextDouble(1.5, L / 2 - 1);
+            int T = ThreadLocalRandom.current().nextInt(24, 32);
+            b[3] = (ut - b[0]) / T;
+            b[4] = (vt - b[1]) / T;
+            b[5] = (R - b[2]) / T + 0.5 * G * T;
+            lastSide[0] = -toSide;
+            live[0] = true;
+        };
+        java.util.function.BiConsumer<Integer, Location> bump = (bySide, where) -> {
+            send.accept(-bySide);
+            hitCool[bySide < 0 ? 0 : 1] = 8;
+            fx.sound(where, "block.wool.hit", 1f, 0.8f);
+            fx.sound(where, "entity.slime.jump", 0.6f, 1.4f);
+            world.spawnParticle(Particle.CLOUD, where, 4, 0.1, 0.1, 0.1, 0.02);
+        };
+        Interaction box = box(p, at.apply(0d, -2d).add(0, 1.6, 0), 0.8f, 0.8f, null);
+        clicks.put(box.getUniqueId(), clicker -> {                    // clicking the ball counts as a bump too, if close
+            if (!live[0] || over[0]) return;
+            int sideOf = b[1] < 0 ? -1 : 1;
+            boolean mine = sideOf < 0 ? clicker.equals(player) : clicker.equals(far[0]);
+            if (!mine || hitCool[sideOf < 0 ? 0 : 1] > 0) return;
+            if (clicker.getLocation().distanceSquared(ball.getLocation()) > 4.5 * 4.5) return;
+            clicker.swingMainHand();
+            bump.accept(sideOf, ball.getLocation());
+        });
+        fx.sound(c, "block.note_block.flute", 1f, 2f);
+        float[] spin = {0};
+        p.task = fx.every(3600, t -> {
+            if (t % 40 == 0) hide.run();
+            if (over[0]) return;
+            java.util.function.Function<Player, double[]> local = who -> {
+                Vector d = who.getLocation().toVector().subtract(c.toVector());
+                return new double[]{d.dot(side), d.dot(fwd)};
+            };
+            double[] me = player.isOnline() && player.getWorld() == world ? local.apply(player) : null;
+            if (me == null || me[1] > 0.5 || me[1] < -L / 2 - 4 || Math.abs(me[0]) > W / 2 + 2.5) {   // walked off: it ends
+                if (player.isOnline()) fx.sound(player.getLocation(), "block.note_block.bass", 0.8f, 0.6f);
+                clear(player.getUniqueId());
+                return;
+            }
+            // someone on the far side takes over from the Lobby; walking off hands it back
+            if (far[0] != null) {
+                double[] q = far[0].isOnline() && far[0].getWorld() == world ? local.apply(far[0]) : null;
+                if (q == null || q[1] < -0.5 || q[1] > L / 2 + 4 || Math.abs(q[0]) > W / 2 + 2.5) {
+                    far[0] = null;
+                    show.run();
+                }
+            } else {
+                for (Player other : world.getPlayers()) {
+                    if (other.equals(player) || fx.parkour(other)) continue;
+                    double[] q = local.apply(other);
+                    if (q[1] > 0.5 && q[1] < L / 2 + 1 && Math.abs(q[0]) < W / 2 + 0.5) {
+                        far[0] = other;
+                        fx.sound(other.getLocation(), "block.note_block.bit", 1f, 2f);
+                        show.run();
+                        break;
+                    }
+                }
+            }
+            for (int i = 0; i < 2; i++) if (hitCool[i] > 0) hitCool[i]--;
+            // the Lobby: runs to where the ball's coming down on its side (or back to the middle), or stands aside
+            double[] goal = far[0] != null ? new double[]{W / 2 + 1.6, 1.5} : new double[]{0, L / 4};
+            if (far[0] == null && live[0] && b[4] > 0) {
+                double tt = (b[5] + Math.sqrt(Math.max(0, b[5] * b[5] + 2 * G * (b[2] - 1.0)))) / G;   // ticks till it's at bump height
+                goal = new double[]{b[0] + b[3] * tt, Math.max(0.8, b[1] + b[4] * tt)};
+            }
+            double gu = goal[0] - lobbyAt[0], gv = goal[1] - lobbyAt[1], gd = Math.hypot(gu, gv);
+            double step = Math.min(gd, 0.17);
+            if (gd > 1e-3) {
+                lobbyAt[0] += gu / gd * step;
+                lobbyAt[1] += gv / gd * step;
+            }
+            Location stand = at.apply(lobbyAt[0], lobbyAt[1]);
+            Vector toBall = at.apply(b[0], b[1]).toVector().subtract(stand.toVector());
+            stand.setDirection(toBall.lengthSquared() < 1e-4 ? fwd.clone().multiply(-1) : toBall.setY(0));
+            lobby.teleport(stand);
+            double walk = step > 0.03 ? Math.sin(t * 0.7) * 0.7 : 0;  // legs going as it runs, arms up as it bumps
+            lobby.setLeftLegPose(new org.bukkit.util.EulerAngle(walk, 0, 0));
+            lobby.setRightLegPose(new org.bukkit.util.EulerAngle(-walk, 0, 0));
+            double arms = swing[0] > 0 ? -1.2 : -0.2 - walk * 0.3;
+            lobby.setLeftArmPose(new org.bukkit.util.EulerAngle(arms, 0, -0.15));
+            lobby.setRightArmPose(new org.bukkit.util.EulerAngle(swing[0] > 0 ? -1.2 : -0.2 + walk * 0.3, 0, 0.15));
+            if (swing[0] > 0) swing[0]--;
+
+            if (!live[0]) {                                            // between points: ready to serve
+                if (--wait[0] > 0) {
+                    double sv = serveSide[0] * (L / 2 - 1.2);
+                    b[0] = 0; b[1] = sv; b[2] = 1.8;
+                    ball.teleport(at.apply(b[0], b[1]).add(0, b[2], 0));
+                    if (wait[0] == 10) fx.sound(c, "block.note_block.flute", 1f, 2f);   // the whistle
+                    return;
+                }
+                send.accept(-serveSide[0]);                            // serve!
+                fx.sound(at.apply(b[0], b[1]), "block.wool.hit", 1f, 0.7f);
+                if (serveSide[0] > 0) swing[0] = 6;
+            }
+            // the ball flies
+            double ov = b[1];
+            b[0] += b[3]; b[1] += b[4]; b[2] += b[5];
+            b[5] -= G;
+            if (Math.signum(ov) != Math.signum(b[1]) && b[2] < NET) {  // into the net: it drops back
+                b[1] = ov;
+                b[4] = -b[4] * 0.25;
+                b[3] *= 0.4;
+                fx.sound(at.apply(b[0], 0d).add(0, b[2], 0), "block.wool.step", 1f, 0.6f);
+            }
+            spin[0] += 0.3f;
+            Location ballAt = at.apply(b[0], b[1]).add(0, b[2], 0);
+            ball.teleport(ballAt);
+            ball.setInterpolationDelay(0);
+            ball.setInterpolationDuration(1);
+            ball.setTransformationMatrix(new Matrix4f().rotateY(spin[0]).rotateX(spin[0] * 0.6f).scale(0.6f));
+            box.teleport(ballAt.clone().add(0, -0.4, 0));
+            int sideOf = b[1] < 0 ? -1 : 1;
+            // bumps: a player (or the Lobby) under the ball on their side knocks it back over
+            if (b[5] < 0.1 && b[2] < 2.8 && b[2] > 0.3) {
+                Player who = sideOf < 0 ? player : far[0];
+                if (who != null && hitCool[sideOf < 0 ? 0 : 1] == 0) {
+                    double[] q = local.apply(who);
+                    if (Math.hypot(q[0] - b[0], q[1] - b[1]) < 1.25) {
+                        who.swingMainHand();
+                        bump.accept(sideOf, ballAt);
+                    }
+                } else if (who == null && sideOf > 0 && hitCool[1] == 0 && Math.hypot(lobbyAt[0] - b[0], lobbyAt[1] - b[1]) < 1.3
+                        && b[2] < 2.2) {
+                    if (ThreadLocalRandom.current().nextDouble() < 0.85) {   // the Lobby gets most of them
+                        swing[0] = 6;
+                        bump.accept(1, ballAt);
+                    } else {
+                        hitCool[1] = 40;                               // ...and fluffs one now and then
+                    }
+                }
+            }
+            if (b[2] <= R) {                                           // it's landed: a point
+                boolean in = Math.abs(b[0]) <= W / 2 && Math.abs(b[1]) <= L / 2;
+                int winner = in ? (sideOf < 0 ? 1 : 0) : (lastSide[0] < 0 ? 1 : 0);   // out: the hitter's side loses
+                pts[winner]++;
+                live[0] = false;
+                world.spawnParticle(Particle.BLOCK, ballAt, 20, 0.3, 0.05, 0.3, 0.1, Material.SAND.createBlockData());
+                fx.sound(ballAt, "block.sand.fall", 1f, 0.8f);
+                fx.sound(c, winner == 0 ? "entity.player.levelup" : "block.note_block.bass", 0.8f, winner == 0 ? 1.6f : 0.8f);
+                serveSide[0] = winner == 0 ? -1 : 1;
+                wait[0] = 50;
+                show.run();
+                if (pts[winner] >= 5) {
+                    over[0] = true;
+                    String name = winner == 0 ? player.getName() : far[0] == null ? "The Lobby" : far[0].getName();
+                    score.text(text(name + " wins!", winner == 0 ? 0x3FD8FF : 0xFF5AB4).append(Component.newline())
+                            .append(text(pts[0] + " : " + pts[1], 0xFFFFFF)));
+                    fx.confetti(at.apply(0d, winner == 0 ? -L / 4 : L / 4).add(0, 1.5, 0), 70, 1.2);
+                    fx.sound(c, "ui.toast.challenge_complete", 0.8f, 1.2f);
+                    fx.later(80, () -> clear(player.getUniqueId()));
+                }
+            }
+        }, () -> clear(player.getUniqueId()));
+    }
+
     /**
      * Pong, for real: a dark court with glowing lines appears on the ground in front of the player, with a paddle at
      * each end and a square ball. The player's paddle follows them as they walk side to side along their end; the far
@@ -2174,6 +2443,8 @@ final class MoreGadgets implements Listener {
      * who wants to play clicks it and the two play; the player can click it themselves to play the Lobby straight
      * away, and if nobody joins in a few seconds they play the Lobby anyway.
      */
+    private final Set<UUID> rpsBusy = new HashSet<>();
+
     private void rockPaperShears(Player player) {
         Location eye = player.getEyeLocation();
         Vector look = eye.getDirection().setY(0);
@@ -2191,6 +2462,7 @@ final class MoreGadgets implements Listener {
             i.setPersistent(false);
         });
         fx.tagged(box, "rps");
+        rpsBusy.add(player.getUniqueId());
         boolean[] started = {false};
         Runnable tidy = () -> {
             clicks.remove(box.getUniqueId());
@@ -2200,6 +2472,7 @@ final class MoreGadgets implements Listener {
         };
         clicks.put(box.getUniqueId(), clicker -> {
             if (started[0] || !player.isOnline()) return;
+            if (!clicker.equals(player) && rpsBusy.contains(clicker.getUniqueId())) return;   // they're in a game already
             started[0] = true;
             tidy.run();
             if (clicker.equals(player)) {
@@ -2229,6 +2502,7 @@ final class MoreGadgets implements Listener {
             if (!started[0]) {
                 started[0] = true;
                 tidy.run();
+                rpsBusy.remove(player.getUniqueId());
             }
         });
     }
@@ -2242,6 +2516,8 @@ final class MoreGadgets implements Listener {
     }
 
     private void playRps(Player player, Player rival) {
+        rpsBusy.add(player.getUniqueId());
+        if (rival != null) rpsBusy.add(rival.getUniqueId());
         String[] picks = {"Rock", "Paper", "Shears"};
         String[] models = {"gadget/rps_rock", "gadget/rps_paper", "gadget/rps_shears"};
         int mine = ThreadLocalRandom.current().nextInt(3), theirs = ThreadLocalRandom.current().nextInt(3);
@@ -2292,6 +2568,8 @@ final class MoreGadgets implements Listener {
         }, () -> {
             hands.forEach(Entity::remove);
             for (TextDisplay word : words) if (word != null) word.remove();
+            rpsBusy.remove(player.getUniqueId());
+            if (rival != null) rpsBusy.remove(rival.getUniqueId());
         });
     }
 
@@ -2837,8 +3115,8 @@ final class MoreGadgets implements Listener {
     }
 
     /**
-     * The DJ booth: a booth with decks a few blocks in front, and a light-up dance floor (5 by 5) laid out under the
-     * player in front of it. A bouncy beat plays (bass on the beat, snare, hats, a melody), the floor's tiles flash
+     * The DJ booth: the player is the DJ, standing behind a booth with decks, with a light-up dance floor (5 by 5)
+     * laid out in front of it for everyone else. A bouncy beat plays (bass on the beat, snare, hats, a melody), the floor's tiles flash
      * new colours on every beat in moving patterns, notes float off the decks and light beams sweep round.
      */
     private void djBooth(Player player) {
@@ -2848,18 +3126,23 @@ final class MoreGadgets implements Listener {
         Vector fwd = new Location(world, 0, 0, 0, yaw, 0).getDirection().setY(0).normalize();
         Vector right = new Vector(-fwd.getZ(), 0, fwd.getX());
         Location feet = player.getLocation().getBlock().getLocation().add(0.5, 0, 0.5);
-        Location base = feet.clone().add(fwd.clone().multiply(3.5));
+        // the player is the DJ: they stand behind the booth (facing out over the decks), the dance floor beyond it
+        Location base = feet.clone().add(fwd.clone().multiply(1.2));
         base.setYaw(0);
         base.setPitch(0);
+        Location dj = feet.clone();
+        dj.setYaw(yaw);
+        dj.setPitch(10);
+        player.teleport(dj);
         keep(p, world.spawn(base.clone().add(0, 0.5, 0), ItemDisplay.class, d -> {
             d.setItemStack(fx.modelled(Material.JUKEBOX, "gadget/dj_booth_3d"));
-            d.setRotation(yaw + 180, 0);
+            d.setRotation(yaw, 0);                                     // speakers facing the crowd
             d.setTransformation(new Transformation(new Vector3f(0, 0.25f, 0), new AxisAngle4f(), new Vector3f(1.6f), new AxisAngle4f()));
         }));
         // the dance floor: 5 by 5 tiles centred just in front of the player, over whatever's on the ground
         Material[] lights = {Material.MAGENTA_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE,
                 Material.ORANGE_CONCRETE, Material.PURPLE_CONCRETE, Material.PINK_CONCRETE, Material.CYAN_CONCRETE};
-        Location floorMid = feet.clone().add(fwd.clone().multiply(0.5));
+        Location floorMid = feet.clone().add(fwd.clone().multiply(4.5));
         BlockDisplay[][] tiles = new BlockDisplay[5][5];
         for (int u = 0; u < 5; u++) {
             for (int v = 0; v < 5; v++) {

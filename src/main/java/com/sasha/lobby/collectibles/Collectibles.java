@@ -567,12 +567,14 @@ public final class Collectibles implements Listener {
         return switch (key) {
             case "disco_ball", "cookie_fountain", "trampoline" -> 25;
             case "pinata" -> 1;                                        // (while it's up, right-click just swings the bat)
-            case "tetherball", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe", "dj_booth",
-                 "beach_ball" -> 20;
-            case "pong" -> 10;
-            case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "duckling", "ghost", "rainbow", "pumpkin_rain",
+            case "tetherball", "swing", "diving_board", "scarecrow", "witch_cauldron", "sand_castle", "tic_tac_toe" -> 20;
+            case "dj_booth" -> 26;                                     // (it lasts 24 seconds: ready just after it's gone)
+            case "pong", "beach_ball" -> 10;                           // (Pong, and the Volleyball, which kept the old key)
+            case "hot_potato", "pigs_fly", "creeper_astronaut", "exploding_sheep", "ghost", "rainbow", "pumpkin_rain",
                  "let_it_snow", "ice_skate", "jetpack", "diamond_shower" -> 12;
-            case "rock_paper_shears", "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;
+            case "duckling" -> 17;                                     // (they stay 15 seconds)
+            case "rock_paper_shears" -> 15;
+            case "magic_8_ball", "fortune_cookie", "catapult", "frisbee", "rush_pearl" -> 4;
             case "mob_gun", "railgun", "explosive_bow" -> 2;
             case "balloon" -> 1;
             case "bat_blaster" -> 8;

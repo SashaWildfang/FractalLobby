@@ -2019,3 +2019,6 @@ GADGETS['jetpack'] = _jet_icon                     # silver twin tanks with flam
 
 from astro_jet_icons import sharp_astro1 as _astro_sharp
 GADGETS['creeper_astronaut'] = _astro_sharp        # sharpened, with the right creeper face (Sasha picked #1)
+
+from volleyball_icon import crisp_ball as _volleyball_icon
+GADGETS['beach_ball'] = _volleyball_icon           # the Volleyball (it replaced the Beach Ball but kept its key)

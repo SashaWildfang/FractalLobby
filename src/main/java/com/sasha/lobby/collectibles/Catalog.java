@@ -246,7 +246,7 @@ public final class Catalog {
         add(Category.GADGET, "jetpack", N, EPIC, "Jetpack", "Fly up for a few seconds. Sneak to fall.", null, null);
         add(Category.GADGET, "dj_booth", N, LEGENDARY, "DJ Booth", "Drop the beat for the whole lobby.", null, null);
         add(Category.GADGET, "duckling", E, UNCOMMON, "Ducklings", "A line of ducklings follows you.", null, null);
-        add(Category.GADGET, "beach_ball", S, UNCOMMON, "Beach Ball", "A big bouncy ball anyone can hit.", null, null);
+        add(Category.GADGET, "beach_ball", N, UNCOMMON, "Volleyball", "A sandy court and a net: play the Lobby, or a friend.", null, null);
         add(Category.GADGET, "frisbee", S, UNCOMMON, "Frisbee", "Throw it; someone might catch it.", null, null);
         add(Category.GADGET, "sand_castle", S, RARE, "Sand Castle", "Build a sand castle in seconds.", null, null);
         add(Category.GADGET, "diving_board", S, RARE, "Diving Board", "Place a board that launches you.", null, null);
