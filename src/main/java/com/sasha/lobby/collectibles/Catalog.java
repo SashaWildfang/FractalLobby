@@ -237,7 +237,7 @@ public final class Catalog {
         add(Category.GADGET, "pinata", N, RARE, "Piñata", "Hang a piñata; hit it till it bursts.", null, null);
         add(Category.GADGET, "exploding_sheep", N, RARE, "Exploding Sheep", "A very colourful sheep. Stand back.", null, null);
         add(Category.GADGET, "railgun", N, RARE, "Railgun", "A beam of pure light.", null, null);
-        add(Category.GADGET, "explosive_bow", N, RARE, "Explosive Bow", "Arrows that go boom.", null, null);
+        add(Category.GADGET, "explosive_bow", N, RARE, "Boomerang", "Throw it out... and it comes back. Mind your heads!", null, null);
         add(Category.GADGET, "rush_pearl", N, RARE, "Rush Pearl", "Ride an ender pearl.", null, null);
         add(Category.GADGET, "swing", N, RARE, "Swing", "Place a swing anyone can ride.", null, null);
         add(Category.GADGET, "tic_tac_toe", N, RARE, "Tic Tac Toe", "Place a board and play someone.", null, null);

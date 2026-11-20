@@ -2006,3 +2006,6 @@ GADGETS['railgun'] = _railgun_icon                 # mid-shot with the cyan beam
 
 from rush_pearl_icon import opt1 as _rush_pearl_icon
 GADGETS['rush_pearl'] = _rush_pearl_icon           # a deep teal pearl with a swirl (Sasha picked #1, polished)
+
+from boomerang_icon import crisp as _boomerang_icon
+GADGETS['explosive_bow'] = _boomerang_icon         # the Boomerang (it replaced the Explosive Bow but kept its key)

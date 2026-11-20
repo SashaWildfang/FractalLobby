@@ -196,13 +196,7 @@ final class MoreGadgets implements Listener {
             case "jetpack" -> jetpack(player);
             case "mob_gun" -> mobGun(player);
             case "railgun" -> railgun(player);
-            case "explosive_bow" -> {
-                Arrow arrow = player.launchProjectile(Arrow.class, look.clone().multiply(2.6));
-                arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
-                arrow.setCritical(true);
-                fx.tagged(arrow, "boom");
-                fx.sound(eye, "entity.arrow.shoot", 1f, 0.8f);
-            }
+            case "explosive_bow" -> boomerang(player);                 // (the Boomerang: it kept the old key, so owners keep it)
             case "pong" -> pong(player);
             case "beach_ball" -> bouncyBall(player, "gadget/beach_ball_3d", Material.SNOWBALL, 1.1f, 0.45, 0.62, "entity.slime.jump_small");
             case "rush_pearl" -> {
@@ -762,6 +756,104 @@ final class MoreGadgets implements Listener {
         }, () -> {
             pack.remove();
             player.setFallDistance(0);
+        });
+    }
+
+    private final Set<UUID> boomerangs = new HashSet<>();
+
+    /**
+     * The Boomerang: thrown, it spins out flat in a wide curving loop, whooshing as it goes, and comes back round to
+     * the thrower's hand. Anyone in its path gets a cartoon BONK (a little hop, a boing and some stars); hitting a wall
+     * sends it straight back. One in the air at a time.
+     */
+    private void boomerang(Player player) {
+        if (!boomerangs.add(player.getUniqueId())) return;            // it's still out there
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        Vector flat = eye.getDirection().setY(0);
+        final Vector fwd = flat.lengthSquared() < 1e-4 ? new Vector(0, 0, 1) : flat.normalize();
+        Vector right = new Vector(-fwd.getZ(), 0, fwd.getX());
+        Location origin = eye.clone().add(0, -0.4, 0);
+        double rise = Math.max(-0.6, Math.min(0.6, eye.getDirection().getY())) * 3;   // throwing up or down tilts the loop
+        final double REACH = 9, WIDE = 3.4;
+        final int OUT = 44;                                           // ticks for the loop
+        Location start = origin.clone().add(fwd.clone().multiply(0.8));
+        start.setYaw(0);
+        start.setPitch(0);
+        ItemDisplay rang = world.spawn(start, ItemDisplay.class, d -> {
+            d.setItemStack(fx.modelled(Material.STICK, "gadget/boomerang_fly"));
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+        });
+        fx.tagged(rang, "boomerang");
+        fx.sound(origin, "entity.player.attack.sweep", 0.8f, 1.4f);
+        Set<UUID> bonked = new HashSet<>();
+        boolean[] homing = {false};
+        Location[] at = {start.clone()};
+        float[] spin = {0};
+        fx.every(140, t -> {
+            if (!rang.isValid()) return;
+            if (!player.isOnline() || player.getWorld() != world) {
+                rang.remove();
+                return;
+            }
+            Location hand = player.getEyeLocation().add(0, -0.4, 0);
+            Location next;
+            if (!homing[0] && t < OUT) {                               // the loop: out, round, and back
+                double phi = Math.PI * 2 * t / OUT;
+                Vector off = fwd.clone().multiply(REACH / 2 * (1 - Math.cos(phi))).add(right.clone().multiply(WIDE / 2 * Math.sin(phi)))
+                        .add(new Vector(0, Math.sin(phi / 2) * (0.6 + rise) , 0));
+                next = origin.clone().add(off);
+                double pull = Math.pow(t / (double) OUT, 4);           // drawn back to the hand as it finishes
+                next = next.clone().add(hand.toVector().subtract(next.toVector()).multiply(pull));
+            } else {                                                   // straight back to the hand
+                homing[0] = true;
+                Vector to = hand.toVector().subtract(at[0].toVector());
+                double dist = to.length();
+                next = dist < 0.7 ? hand : at[0].clone().add(to.multiply(Math.min(0.75, dist) / dist));
+            }
+            if (!homing[0] && !next.getBlock().isPassable()) {         // hit a wall: thunk, and back it comes
+                homing[0] = true;
+                fx.sound(at[0], "block.wood.hit", 1f, 1.2f);
+                world.spawnParticle(Particle.CRIT, at[0], 6, 0.1, 0.1, 0.1, 0.1);
+                return;
+            }
+            if (next.distanceSquared(hand) < 0.6 * 0.6 && t > 8) {      // caught!
+                fx.sound(hand, "item.armor.equip_leather", 1f, 1.4f);
+                fx.sound(hand, "block.note_block.hat", 0.6f, 1.8f);
+                rang.remove();
+                return;
+            }
+            next.setYaw(0);
+            next.setPitch(0);
+            at[0] = next;
+            rang.teleport(next);
+            spin[0] += 0.95f;                                          // spinning flat, fast
+            rang.setInterpolationDelay(0);
+            rang.setInterpolationDuration(1);
+            rang.setTransformationMatrix(new Matrix4f().rotateY(spin[0]).rotateX((float) (-Math.PI / 2)).scale(0.9f));
+            if (t % 4 == 0) fx.sound(next, "entity.player.attack.sweep", 0.35f, (float) (1.3 + 0.3 * Math.sin(t)));
+            world.spawnParticle(Particle.DUST, next, 1, 0.05, 0.05, 0.05, 0, new Particle.DustOptions(Color.fromRGB(0xE2AD6A), 0.7f));
+            for (Player who : world.getPlayers()) {                    // BONK
+                if (who.equals(player) || fx.parkour(who) || bonked.contains(who.getUniqueId())) continue;
+                Location body = who.getLocation().add(0, 1, 0);
+                if (body.distanceSquared(next) > 1.3 * 1.3) continue;
+                bonked.add(who.getUniqueId());
+                Vector push = who.getLocation().toVector().subtract(next.toVector()).setY(0);
+                if (push.lengthSquared() < 1e-4) push = fwd.clone();
+                who.setVelocity(who.getVelocity().add(push.normalize().multiply(0.35).setY(0.32)));
+                fx.sound(body, "fractal:gadget.trampoline_boing", 0.9f, 1.6f);
+                fx.sound(body, "block.wood.hit", 1f, 1.4f);
+                world.spawnParticle(Particle.CRIT, body.clone().add(0, 0.8, 0), 10, 0.2, 0.1, 0.2, 0.1);
+                for (int k = 0; k < 3; k++) {
+                    double a2 = k * Math.PI * 2 / 3;
+                    fx.driftFx(who.getEyeLocation().add(Math.cos(a2) * 0.35, 0.45, Math.sin(a2) * 0.35), "gadget/fx_star", 0.18f,
+                            new Vector(-Math.sin(a2) * 0.03, 0.01, Math.cos(a2) * 0.03), 16);
+                }
+            }
+        }, () -> {
+            rang.remove();
+            boomerangs.remove(player.getUniqueId());
         });
     }
 
@@ -1777,9 +1869,16 @@ final class MoreGadgets implements Listener {
         Vector d = b.clone().subtract(a);
         float len = (float) d.length();
         Vector n = d.multiply(1 / len);
+        // pointing (nearly) straight down, "turn up to this" has no one answer and can flip about from tick to tick: so
+        // a piece is laid upward from its lower end instead, which is the same cord and always well defined
+        Vector from = a;
+        if (n.getY() < 0) {
+            from = b;
+            n.multiply(-1);
+        }
         piece.setInterpolationDelay(0);
         piece.setInterpolationDuration(shown ? 1 : 0);
-        piece.setTransformationMatrix(new Matrix4f().translate((float) a.getX(), (float) a.getY(), (float) a.getZ())
+        piece.setTransformationMatrix(new Matrix4f().translate((float) from.getX(), (float) from.getY(), (float) from.getZ())
                 .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) n.getX(), (float) n.getY(), (float) n.getZ()))
                 .translate(-0.022f, -0.01f, -0.022f).scale(0.044f, len + 0.02f, 0.044f));
         return true;
@@ -2081,7 +2180,11 @@ final class MoreGadgets implements Listener {
                 return;
             }
             if (burst[0]) {
-                ropeShown[0] = drawCord(rope, new Vector(0, 0, 0), new Vector(0, -0.3, 0), ropeShown[0]);   // a frayed end left
+                if (ropeShown[0]) {                                    // just a short frayed end left on the hook
+                    rope.setInterpolationDuration(0);
+                    drawCord(rope, new Vector(0, 0, 0), new Vector(0.001, -0.3, 0), false);
+                    ropeShown[0] = false;
+                }
                 return;
             }
             // swinging on its rope: gravity, a little air, and the rope keeping it at length
@@ -2278,61 +2381,146 @@ final class MoreGadgets implements Listener {
     }
 
     /** Tic-tac-toe on the ground: the owner plays X, the next person to click a square plays O. */
+    /**
+     * Tic tac toe, like Pong: the player is X against the Lobby (O), until someone else walks up to the board; then
+     * they play O instead, and the Lobby takes back over if they walk off. Click a square to play it. The score floats
+     * over the board and it's first to 3 (a draw just replays); the starting side swaps each round. The Lobby plays
+     * sensibly (it takes a win, usually blocks yours) but can be beaten.
+     */
     private void ticTacToe(Player player) {
         Placed p = place(player);
         Location base = fx.ground(player);
+        World world = base.getWorld();
         keep(p, model(base.clone().add(0, 0.5, 0), "gadget/ttt_board", Material.OAK_PRESSURE_PLATE, 3f, -0.48f));
         char[] cells = new char[9];
-        UUID[] players = {player.getUniqueId(), null};
-        int[] turn = {0};
-        boolean[] over = {false};
+        List<Entity> marks = new ArrayList<>();
+        int[] turn = {0}, starter = {0}, pts = {0, 0}, think = {0};
+        boolean[] over = {false}, roundOver = {false};
+        Player[] rival = {null};
+        TextDisplay score = keep(p, label(base.clone().add(0, 2.0, 0), Component.empty(), 0));
+        int[][] lines = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, {0, 4, 8}, {2, 4, 6}};
+        java.util.function.IntFunction<Location> cellAt = i -> base.clone().add(((i % 3) - 1) * 1.0, 0, ((i / 3) - 1) * 1.0);
+        Runnable show = () -> {
+            String o = rival[0] == null ? "Lobby" : rival[0].getName();
+            String whose = roundOver[0] ? "" : turn[0] == 0 ? player.getName() + "'s turn" : (rival[0] == null ? "The Lobby is thinking..." : o + "'s turn");
+            score.text(text(player.getName() + " (X)  ", 0xE03A3A).append(text(pts[0] + " : " + pts[1], 0xFFFFFF))
+                    .append(text("  " + o + " (O)", 0x3C6AE0)).append(Component.newline()).append(text(whose, 0xA9A3C2))
+                    .append(Component.newline()).append(text(rival[0] == null ? "Walk up to the board to play O!" : "First to 3", 0x7A7F96)));
+        };
+        Runnable newRound = () -> {
+            for (Entity e : marks) e.remove();
+            marks.clear();
+            java.util.Arrays.fill(cells, (char) 0);
+            roundOver[0] = false;
+            starter[0] = 1 - starter[0];
+            turn[0] = starter[0];                                      // X starts the first round, then it swaps
+            think[0] = 0;
+            show.run();
+        };
+        starter[0] = 1;
+        java.util.function.IntConsumer play = cell -> {               // put the mover's mark down and see what happens
+            char mark = turn[0] == 0 ? 'X' : 'O';
+            cells[cell] = mark;
+            Location at = cellAt.apply(cell);
+            marks.add(keep(p, model(at.clone().add(0, 0.5, 0), mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o",
+                    mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET, 0.9f, -0.44f)));
+            fx.sound(at, "block.wood.place", 1f, mark == 'X' ? 1.2f : 0.9f);
+            for (int[] line : lines) {
+                if (cells[line[0]] == mark && cells[line[1]] == mark && cells[line[2]] == mark) {
+                    int winner = turn[0];
+                    pts[winner]++;
+                    roundOver[0] = true;
+                    for (int k : line) world.spawnParticle(Particle.FIREWORK, cellAt.apply(k).add(0, 0.6, 0), 8, 0.2, 0.2, 0.2, 0.05);
+                    fx.sound(base, winner == 0 ? "entity.player.levelup" : "block.note_block.bass", 0.8f, winner == 0 ? 1.6f : 0.8f);
+                    show.run();
+                    if (pts[winner] >= 3) {
+                        over[0] = true;
+                        String name = winner == 0 ? player.getName() : rival[0] == null ? "The Lobby" : rival[0].getName();
+                        score.text(text(name + " wins!", winner == 0 ? 0xE03A3A : 0x3C6AE0).append(Component.newline())
+                                .append(text(pts[0] + " : " + pts[1], 0xFFFFFF)));
+                        fx.confetti(base.clone().add(0, 1, 0), 60, 1);
+                        fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
+                        fx.later(80, () -> clear(player.getUniqueId()));
+                    } else {
+                        fx.later(40, newRound);
+                    }
+                    return;
+                }
+            }
+            boolean full = true;
+            for (char c : cells) if (c == 0) full = false;
+            if (full) {                                                // a draw: play it again
+                roundOver[0] = true;
+                fx.sound(base, "entity.villager.no", 0.8f, 1f);
+                show.run();
+                fx.later(30, newRound);
+                return;
+            }
+            turn[0] = 1 - turn[0];
+            think[0] = 0;
+            show.run();
+        };
         for (int i = 0; i < 9; i++) {
             int cell = i;
-            double cx = ((i % 3) - 1) * 1.0, cz = ((i / 3) - 1) * 1.0;
-            Location at = base.clone().add(cx, 0, cz);
-            box(p, at, 0.95f, 0.2f, clicker -> {
-                if (over[0] || cells[cell] != 0) return;
-                if (players[1] == null && !clicker.getUniqueId().equals(players[0])) players[1] = clicker.getUniqueId();
-                UUID mover = players[turn[0]];
-                if (mover == null || !mover.equals(clicker.getUniqueId())) {
-                    plugin.messages().send(clicker, "collectibles.gadget.ttt-wait");
-                    return;
-                }
-                char mark = turn[0] == 0 ? 'X' : 'O';
-                cells[cell] = mark;
-                keep(p, model(at.clone().add(0, 0.5, 0), mark == 'X' ? "gadget/ttt_x" : "gadget/ttt_o", mark == 'X' ? Material.RED_CARPET : Material.BLUE_CARPET,
-                        0.9f, -0.44f));
-                fx.sound(at, "block.wood.place", 1f, mark == 'X' ? 1.2f : 0.9f);
-                int[][] lines = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {0, 3, 6}, {1, 4, 7}, {2, 5, 8}, {0, 4, 8}, {2, 4, 6}};
-                for (int[] line : lines) {
-                    if (cells[line[0]] == mark && cells[line[1]] == mark && cells[line[2]] == mark) {
-                        over[0] = true;
-                        fx.confetti(base.clone().add(0, 1, 0), 50, 1);
-                        fx.sound(base, "ui.toast.challenge_complete", 0.8f, 1.2f);
-                        for (UUID id : players) {
-                            Player who = id == null ? null : plugin.getServer().getPlayer(id);
-                            if (who != null) plugin.messages().send(who, "collectibles.gadget.ttt-win",
-                                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed("player", clicker.getName()));
-                        }
-                        fx.later(60, () -> clear(player.getUniqueId()));
-                        return;
-                    }
-                }
-                boolean full = true;
-                for (char c : cells) if (c == 0) full = false;
-                if (full) {
-                    over[0] = true;
-                    fx.sound(base, "entity.villager.no", 0.8f, 1f);
-                    fx.later(40, () -> clear(player.getUniqueId()));
-                    return;
-                }
-                turn[0] = 1 - turn[0];
+            box(p, cellAt.apply(i), 0.95f, 0.2f, clicker -> {
+                if (over[0] || roundOver[0] || cells[cell] != 0) return;
+                Player mover = turn[0] == 0 ? player : rival[0];
+                if (mover == null || !mover.equals(clicker)) return;   // not their turn (or the Lobby's): nothing happens
+                play.accept(cell);
             });
         }
         fx.sound(base, "block.wood.place", 1f, 0.8f);
-        plugin.messages().send(player, "collectibles.gadget.ttt-start");
-        p.task = fx.every(1200, t -> {
+        newRound.run();
+        p.task = fx.every(3600, t -> {
+            if (over[0]) return;
+            if (!player.isOnline() || player.getWorld() != world || player.getLocation().distanceSquared(base) > 9 * 9) {
+                clear(player.getUniqueId());
+                return;
+            }
+            // someone walking up to the board takes O; walking off hands it back to the Lobby
+            if (rival[0] != null && (!rival[0].isOnline() || rival[0].getWorld() != world || rival[0].getLocation().distanceSquared(base) > 7 * 7)) {
+                rival[0] = null;
+                show.run();
+            } else if (rival[0] == null) {
+                for (Player other : world.getPlayers()) {
+                    if (other.equals(player) || fx.parkour(other) || other.getLocation().distanceSquared(base) > 3.2 * 3.2) continue;
+                    rival[0] = other;
+                    fx.sound(other.getLocation(), "block.note_block.bit", 1f, 2f);
+                    think[0] = 0;
+                    show.run();
+                    break;
+                }
+            }
+            // the Lobby's move: after a little think
+            if (rival[0] == null && turn[0] == 1 && !roundOver[0] && ++think[0] >= 20) {
+                play.accept(lobbyMove(cells, lines));
+            }
         }, () -> clear(player.getUniqueId()));
+    }
+
+    /** The Lobby's tic tac toe move: win if it can, usually block, else the middle, a corner, or anywhere. */
+    private static int lobbyMove(char[] cells, int[][] lines) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        for (char want : new char[]{'O', 'X'}) {
+            if (want == 'X' && r.nextDouble() < 0.25) continue;      // sometimes it misses your threat
+            for (int[] line : lines) {
+                int count = 0, empty = -1;
+                for (int k : line) {
+                    if (cells[k] == want) count++;
+                    else if (cells[k] == 0) empty = k;
+                }
+                if (count == 2 && empty >= 0) return empty;
+            }
+        }
+        if (cells[4] == 0 && r.nextDouble() < 0.7) return 4;
+        List<Integer> free = new ArrayList<>(), corners = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
+            if (cells[i] != 0) continue;
+            free.add(i);
+            if (i == 0 || i == 2 || i == 6 || i == 8) corners.add(i);
+        }
+        if (!corners.isEmpty() && r.nextBoolean()) return corners.get(r.nextInt(corners.size()));
+        return free.get(r.nextInt(free.size()));
     }
 
     private void djBooth(Player player) {

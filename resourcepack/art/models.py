@@ -530,6 +530,8 @@ def build(out):
     # the bat you whack it with (held like a sword)
     import pinata_icon as _pin
     held_item(out, G + 'pinata_bat', _pin.bat(), parent="minecraft:item/handheld")
+    import boomerang_icon as _boom
+    flat_item(out, G + 'boomerang_fly', _boom.crisp())                # the boomerang in flight
     board, stand = '#f4f4fa', '#c9ccd8'
     write(out, G + 'diving_board_3d', [Box((0, 0, 5), (3, 6, 11), stand, 'metal'), Box((0, 6, 6), (16, 7, 10), board, 'solid'),
                                          Box((16, 6.2, 6), (30, 7, 10), board, 'solid'), Box((0, 6.9, 6.4), (30, 7.1, 9.6), '#5b9dff', 'flat')], scale=H)
