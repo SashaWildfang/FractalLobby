@@ -116,7 +116,7 @@ public final class JoinItems implements Listener {
         if (config.selector()) player.getInventory().setItem(selectorSlot, selectorItem());
         if (config.radio() && (config.radioRequiresPlugin().isEmpty()
                 || plugin.getServer().getPluginManager().isPluginEnabled(config.radioRequiresPlugin()))) {
-            int radioSlot = com.sasha.lobby.collectibles.Collectibles.oldHotbar(plugin) ? 2 : config.radioSlot();
+            int radioSlot = (com.sasha.lobby.Lobby.cosmeticsHook() != null && com.sasha.lobby.Lobby.cosmeticsHook().oldHotbar()) ? 2 : config.radioSlot();
             player.getInventory().setItem(radioSlot, plugin.menuStyle().icon(joinItem(config.radioItem(), "items.radio", RADIO), "radio"));
         }
         int visibilitySlot = config.visibilitySlot();
@@ -129,7 +129,7 @@ public final class JoinItems implements Listener {
             ItemStack base = joinItem(org.bukkit.Material.PLAYER_HEAD, "items.profile", PROFILE);
             player.getInventory().setItem(config.profileSlot(), plugin.profile().hotbarItem(player, base));
         }
-        if (plugin.collectibles() != null) plugin.collectibles().apply(player);
+        if (com.sasha.lobby.Lobby.cosmeticsHook() != null) com.sasha.lobby.Lobby.cosmeticsHook().applyJoinItems(player);
     }
 
     private void toggleVisibility(Player player) {
@@ -258,6 +258,6 @@ public final class JoinItems implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
         if (offHandBlocked() || locked(event.getPlayer())) event.setCancelled(true);
-        if (plugin.collectibles() != null) plugin.collectibles().swapKey(event.getPlayer());
+        if (com.sasha.lobby.Lobby.cosmeticsHook() != null) com.sasha.lobby.Lobby.cosmeticsHook().swapKey(event.getPlayer());
     }
 }

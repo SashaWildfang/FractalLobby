@@ -71,7 +71,8 @@ public final class Trails implements Listener {
 
     public static boolean allowed(Player player, LobbyConfig.Trail trail) {
         return trail.permission().isEmpty() || player.hasPermission(trail.permission())
-                || com.sasha.lobby.mystery.MysteryBoxes.unlocked(player, "trail:" + trail.id().toLowerCase(java.util.Locale.ROOT));
+                || (com.sasha.lobby.Lobby.cosmeticsHook() != null
+                    && com.sasha.lobby.Lobby.cosmeticsHook().unlocked(player, "trail:" + trail.id().toLowerCase(java.util.Locale.ROOT)));
     }
 
     private void tick() {

@@ -15,7 +15,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Menu hints name the exact click (the menus only react to the clicks their hints show): Left-click,
@@ -72,21 +71,9 @@ class MenuHintsTest {
                 .filter(key -> java.util.Arrays.stream(key.split(java.util.regex.Pattern.quote("."))).anyMatch(part -> part.equals("true") || part.equals("false")))
                 .toList();
         assertEquals(List.of(), bad);
-        for (String key : List.of("confirm.title", "confirm.accept.name", "confirm.cancel.name", "collectibles.confirm.buy.name",
-                "mystery.confirm.open.name", "mystery.menu.open-all-none.name", "collectibles.sort.name")) {
+        // The Collectibles and Mystery Box keys are checked in FractalCosmetics.
+        for (String key : List.of("confirm.title", "confirm.accept.name", "confirm.cancel.name")) {
             assertFalse(yaml.getString(key, "").isEmpty(), key + " is missing");
-        }
-    }
-
-    @Test
-    void noCollectionPageAndNoGlowInBoxes() throws Exception {
-        YamlConfiguration yaml = messages();
-        assertNull(yaml.get("mystery.collection"), "the Collection page is gone");
-        assertNull(yaml.get("mystery.menu.collection"), "the vault's Collection button is gone");
-        try (InputStream in = MenuHintsTest.class.getResourceAsStream("/config.yml")) {
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
-            assertFalse(config.getStringList("mystery-boxes.rewards").stream().anyMatch(r -> r.startsWith("glow")),
-                    "glow is a rank perk, not a box reward");
         }
     }
 }

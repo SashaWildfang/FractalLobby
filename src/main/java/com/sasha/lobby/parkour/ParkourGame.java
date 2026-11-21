@@ -442,7 +442,7 @@ public final class ParkourGame implements Listener {
         unplace(run.next);
         int seconds = run.seconds();
         boolean best = parkour.scores().finish(player.getUniqueId(), player.getName(), run.score, seconds);
-        if (best && player.isOnline() && plugin.mystery() != null) plugin.mystery().parkourBest(player, run.score);
+        if (best && player.isOnline() && com.sasha.lobby.Lobby.cosmeticsHook() != null) com.sasha.lobby.Lobby.cosmeticsHook().parkourBest(player, run.score);
         plugin.display().clearSidebarOverride(player);
         plugin.doubleJump().refresh(player);
         if (!player.isOnline()) return;

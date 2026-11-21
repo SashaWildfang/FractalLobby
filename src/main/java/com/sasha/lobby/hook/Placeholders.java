@@ -45,14 +45,12 @@ public final class Placeholders {
                 if (out.contains("%luckperms_suffix%")) out = out.replace("%luckperms_suffix%", LuckPermsHook.suffix(player));
             }
             if (out.contains("%lobby_dust%") || out.contains("%lobby_boxes")) {
-                var mystery = plugin.mystery();
-                var stash = mystery == null ? null : mystery.stash(player.getUniqueId());
-                int boxes = stash == null ? 0 : stash.totalBoxes();
-                String count = com.sasha.lobby.mystery.MysteryBoxes.compact(boxes);
+                var cosmetics = com.sasha.lobby.Lobby.cosmeticsHook(); // FractalCosmetics
+                String count = cosmetics == null ? "0" : cosmetics.boxes(player.getUniqueId());
                 // %lobby_boxes_flash% (the vault hologram): the count, flashing red and pink while there are boxes to open
-                String flash = boxes == 0 ? "<#B266FF>" + count
+                String flash = count.equals("0") ? "<#B266FF>" + count
                         : (System.currentTimeMillis() / 500) % 2 == 0 ? "<#FF4D4D>" + count : "<#FFB0B0>" + count;
-                out = out.replace("%lobby_dust%", stash == null ? "0" : com.sasha.lobby.mystery.MysteryBoxes.compact(stash.dust()))
+                out = out.replace("%lobby_dust%", cosmetics == null ? "0" : cosmetics.dust(player.getUniqueId()))
                         .replace("%lobby_boxes_flash%", flash)
                         .replace("%lobby_boxes%", count);
             }
