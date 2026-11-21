@@ -275,16 +275,47 @@ def main():
     import geo
     report["attachables"] = geo.build(pack, three_d, texture, slug)
 
-    # the lobby menus' drawn backgrounds (fractal:lobby font, U+F000-F3FF): blank on Bedrock instead of boxes
-    for page in (0xF0, 0xF1, 0xF2, 0xF3):   # the fractal:lobby font only; the Survival addon owns E0/E1
-        os.makedirs(os.path.join(pack, "font"), exist_ok=True)
-        Image.new("RGBA", (256, 256), (0, 0, 0, 0)).save(os.path.join(pack, "font", "glyph_%02X.png" % page))
+    # Text glyphs. Bedrock draws U+XXYY from font/glyph_XX.png (16x16 cells); like the Survival addon's
+    # pack, each Java glyph sits at its Java pixel size, left-aligned and centred in a 256 px cell.
+    # Pages F1/F2 are the menus' drawn backgrounds (too big for a glyph): blank, so titles show no boxes.
+    # E0/E1 (rank badges) are left to the Survival addon's pack, which already has them.
+    glyphs = {}
+    for font in ("minecraft:default", "fractal:lobby"):
+        fj = load_json("font", font) or {"providers": []}
+        for p in fj["providers"]:
+            if p.get("type") != "bitmap":
+                continue
+            f = find("textures", p["file"], "")
+            if not f:
+                continue
+            img = Image.open(f).convert("RGBA")
+            rows = p["chars"]
+            ch, cw = img.height // len(rows), img.width // max(len(r) for r in rows)
+            h = p.get("height", 8)
+            for ry, row in enumerate(rows):
+                for rx, c in enumerate(row):
+                    cp = ord(c)
+                    if cp and (cp >> 8) in (0xF0, 0xF3, 0xE2) and cp not in glyphs:
+                        g = img.crop((rx * cw, ry * ch, (rx + 1) * cw, (ry + 1) * ch))
+                        if g.height != h:
+                            g = g.resize((max(1, round(g.width * h / g.height)), h), Image.NEAREST)
+                        glyphs[cp] = g
+    os.makedirs(os.path.join(pack, "font"), exist_ok=True)
+    for page in (0xE2, 0xF0, 0xF1, 0xF2, 0xF3):
+        sheet = Image.new("RGBA", (4096, 4096))
+        for cp, g in glyphs.items():
+            if cp >> 8 == page:
+                i = cp & 0xFF
+                g = g if g.width <= 256 and g.height <= 256 else g.resize((min(256, g.width), min(256, g.height)), Image.NEAREST)
+                sheet.paste(g, ((i % 16) * 256, (i // 16) * 256 + (256 - g.height) // 2))
+        sheet.save(os.path.join(pack, "font", "glyph_%02X.png" % page), optimize=True)
+    report["glyphs"] = len(glyphs)
 
     manifest = {
         "format_version": 2,
         "header": {"name": "Fractal Lobby", "description": "Fractal Network lobby items for Bedrock",
-                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 1, 0], "min_engine_version": [1, 21, 0]},
-        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 1, 0]}],
+                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 0], "min_engine_version": [1, 21, 0]},
+        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 0]}],
     }
     json.dump(manifest, open(os.path.join(pack, "manifest.json"), "w"), indent=1)
     logo = find("textures", "fractal:gui/logo", ".png")

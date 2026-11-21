@@ -2,10 +2,11 @@
 Which Java base item carries each fractal:* item model, read from the Lobby and Radio sources and the
 live Lobby config (Geyser's mappings are keyed by base item). Writes pairs.json for convert.py.
 
-Usage: python3 pairs.py JAVA_PACK_DIR LOBBY_SRC RADIO_SRC LOBBY_CONFIG_YML OUT_JSON
+Usage: python3 pairs.py JAVA_PACK_DIR LOBBY_SRC RADIO_SRC LOBBY_CONFIG_YML OUT_JSON [MORE_SRC...]
 """
 import sys
 JAVA, LOBBY_SRC, RADIO_SRC, CONFIG, OUT = sys.argv[1:6]
+EXTRA_SRC = sys.argv[6:]          # more source folders, e.g. FractalCosmetics' collectibles and mystery code
 import re,glob,json,collections,yaml
 models=sorted(p[len(JAVA+'/assets/fractal/items/'):-5] for p in glob.glob(JAVA+'/assets/fractal/items/**/*.json',recursive=True))
 fam=lambda m: m.split('/')[0] if '/' in m else m
@@ -14,7 +15,8 @@ matre=re.compile(r'Material\.([A-Z0-9_]+)')
 refre=re.compile(r'"((?:%s)(?:/[a-z0-9_/\-]*)?)"'%'|'.join(map(re.escape,fams)))
 sig=re.compile(r'^    (?:public |private |protected |static |final |synchronized )*[\w<>\[\], .?]+ \w+\([^;]*$')
 exact=collections.defaultdict(set); scoped=collections.defaultdict(set)
-for src in [LOBBY_SRC,RADIO_SRC]:
+SOURCES=[LOBBY_SRC,RADIO_SRC]+EXTRA_SRC
+for src in SOURCES:
   for f in glob.glob(src+'/**/*.java',recursive=True):
     L=open(f).read().split('\n'); starts=[i for i,l in enumerate(L) if sig.match(l)]
     for i,l in enumerate(L):
@@ -34,6 +36,31 @@ cfg=yaml.safe_load(open(CONFIG))
 trail={k:v['item'] for k,v in cfg['trails']['trails'].items()}
 color={k:v['item'] for k,v in cfg['chat-color']['colors'].items()}
 join=[v for k,v in cfg['join-items'].items() if isinstance(v,dict) for kk,v in v.items() if kk.startswith('item')]
+
+# Menu icons (fractal:menu/NAME) go on whatever button the menu already had. The settings, friends and
+# profile code names each button and its item on one line ("join-messages", Material.OAK_DOOR), so those
+# are exact; the rest are listed by hand from the code that sets them.
+MENU_ITEMS={'ARROW','BARRIER','BELL','CAKE','EMERALD','ENDER_EYE','ENDER_PEARL','FEATHER','GRASS_BLOCK','IRON_DOOR',
+    'NOTE_BLOCK','OAK_DOOR','PAINTING','PAPER','PLAYER_HEAD','SKELETON_SKULL','TNT_MINECART','WRITABLE_BOOK','BOOK','LIME_DYE',
+    'GRAY_DYE','RED_DYE','COMPARATOR','COMPASS','JUKEBOX','GLOWSTONE_DUST','GOLDEN_BOOTS','NAME_TAG','SPYGLASS','HOPPER'}
+PANES={'LIME_STAINED_GLASS_PANE','YELLOW_STAINED_GLASS_PANE','ORANGE_STAINED_GLASS_PANE','RED_STAINED_GLASS_PANE'}
+MENU_BY_HAND={'on':PANES,'off':PANES,'audience-everyone':PANES,'audience-donors':PANES,'audience-staff':PANES,
+    'audience-nobody':PANES,'players-shown':{'LIME_DYE'},'players-hidden':{'GRAY_DYE'},'radio':{'JUKEBOX'},
+    'realms':{'COMPASS'},'header':{'COMPARATOR'},'friends':{'PLAYER_HEAD'},'ignored':{'SKELETON_SKULL'},
+    'more':{'PAPER'},'collectibles':{'ENDER_CHEST'},'take_off':{'BARRIER'}}
+_menu_exact={}
+for _src in SOURCES:
+    for _f in glob.glob(_src+'/**/*.java',recursive=True):
+        for _l in open(_f):
+            _mats=set(matre.findall(_l))
+            if _mats:
+                for _n in re.findall(r'"([a-z0-9_\-]+)"',_l): _menu_exact.setdefault(_n,set()).update(_mats)
+def menu_bases(m):
+    name=m.split('/',1)[1]
+    s=set(MENU_BY_HAND.get(name,set()))|_menu_exact.get(name,set())|exact.get(m,set())
+    if not s:                                  # not found: every item the menus use
+        s=set().union(*_menu_exact.values())&MENU_ITEMS
+    return s
 CAT={'hat':'LEATHER_HELMET','suit':'LEATHER_CHESTPLATE','gadget':'FIREWORK_STAR','cloak':'PHANTOM_MEMBRANE','status':'PLAYER_HEAD','gesture':'FEATHER'}
 lockbase=set(CAT.values())|set(trail.values())|set(color.values())|{'PLAYER_HEAD'}
 pairs={}
@@ -49,7 +76,7 @@ for m in models:
     elif f=='color': s|={color.get(m.split('/')[1],'PAPER'),'PAPER'}
     elif f=='trail': s|={trail.get(m.split('/')[1].replace('_','-'),trail.get(m.split('/')[1],'PAPER')),'PAPER'}
     elif m in ('menu/locked','menu/locked_buy'): s|=lockbase|refs_for(m)|{'ARMOR_STAND'}
-    elif f=='menu': s|=refs_for(m)|set(join)
+    elif f=='menu': s|=menu_bases(m)
     else: s|=refs_for(m)
     s.discard('AIR')
     if not s: s={'PAPER'}
