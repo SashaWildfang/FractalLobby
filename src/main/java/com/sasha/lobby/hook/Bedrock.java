@@ -51,6 +51,17 @@ public final class Bedrock {
     }
 
     /**
+     * Symbols the Survival addon's Bedrock glyph pages draw as something else (⚒ came out as a red mark), swapped
+     * for the Lobby Bedrock pack's own versions at U+E2F0 on (resourcepack/bedrock/glyphs).
+     */
+    public static String symbols(String text) {
+        if (text == null) return null;
+        return text.replace('\u2692', '\uE2F0')   // ⚒
+                .replace('\u2716', '\uE2F1')       // ✖
+                .replace('\u27F3', '\uE2F2');      // ⟳
+    }
+
+    /**
      * A player head as the viewer should see it. Bedrock can't draw a Java skin on a head in a menu (every
      * head shows as Steve), so for a Bedrock viewer the head gets the {@code fractal:menu/player} icon instead;
      * the Bedrock pack maps it on player heads. Java viewers get the head unchanged.

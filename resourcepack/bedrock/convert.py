@@ -300,6 +300,13 @@ def main():
                         if g.height != h:
                             g = g.resize((max(1, round(g.width * h / g.height)), h), Image.NEAREST)
                         glyphs[cp] = g
+    # Bedrock-only symbols (glyphs/XXXX.png next to this script): FractalLobby swaps symbols that the Survival
+    # addon's glyph pages draw wrongly on Bedrock (⚒ ✖ ⟳) for these.
+    extra = os.path.join(os.path.dirname(os.path.abspath(__file__)), "glyphs")
+    if os.path.isdir(extra):
+        for fn in sorted(os.listdir(extra)):
+            if fn.lower().endswith(".png"):
+                glyphs[int(fn[:-4], 16)] = Image.open(os.path.join(extra, fn)).convert("RGBA")
     os.makedirs(os.path.join(pack, "font"), exist_ok=True)
     for page in (0xE2, 0xF0, 0xF1, 0xF2, 0xF3):
         sheet = Image.new("RGBA", (4096, 4096))
@@ -350,8 +357,8 @@ def main():
     manifest = {
         "format_version": 2,
         "header": {"name": "Fractal Lobby", "description": "Fractal Network lobby items for Bedrock",
-                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 3], "min_engine_version": [1, 21, 0]},
-        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 3]}],
+                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 4], "min_engine_version": [1, 21, 0]},
+        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 4]}],
     }
     json.dump(manifest, open(os.path.join(pack, "manifest.json"), "w"), indent=1)
     logo = find("textures", "fractal:gui/logo", ".png")

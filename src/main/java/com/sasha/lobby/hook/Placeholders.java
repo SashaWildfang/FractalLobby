@@ -22,7 +22,13 @@ public final class Placeholders {
     private Placeholders() {
     }
 
+    /** Placeholders filled for this player; for a Bedrock player, symbols Bedrock draws wrongly are swapped too. */
     public static String apply(Lobby plugin, Player player, String text) {
+        String out = fill(plugin, player, text);
+        return player != null && Bedrock.is(player) ? Bedrock.symbols(out) : out;
+    }
+
+    private static String fill(Lobby plugin, Player player, String text) {
         if (text.indexOf('%') < 0) return text;
         String out = text;
         if (out.contains("%lobby_online_")) {
