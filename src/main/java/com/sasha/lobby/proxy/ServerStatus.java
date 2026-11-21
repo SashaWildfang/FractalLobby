@@ -73,9 +73,23 @@ public final class ServerStatus {
         if (task != null) task.cancel();
     }
 
+    /** Servers Core (on the proxy) has in maintenance (/maintenance on SERVER), lowercase. */
+    private volatile java.util.Set<String> coreMaintenance = java.util.Set.of();
+
+    /** From Core: which servers are in maintenance now. */
+    public void coreMaintenance(java.util.Set<String> servers) {
+        java.util.Set<String> lower = new java.util.HashSet<>();
+        for (String server : servers) lower.add(server.toLowerCase(java.util.Locale.ROOT));
+        coreMaintenance = java.util.Set.copyOf(lower);
+    }
+
+    private boolean inMaintenance(String server, LobbyConfig.SelectorServer realm) {
+        return realm != null && realm.maintenance() || coreMaintenance.contains(server.toLowerCase(java.util.Locale.ROOT));
+    }
+
     public Status status(String server) {
         LobbyConfig.SelectorServer realm = realm(server);
-        if (realm != null && realm.maintenance()) return new Status(State.MAINTENANCE, statuses.getOrDefault(key(server), Status.UNKNOWN).max());
+        if (inMaintenance(server, realm)) return new Status(State.MAINTENANCE, statuses.getOrDefault(key(server), Status.UNKNOWN).max());
         return statuses.getOrDefault(key(server), Status.UNKNOWN);
     }
 
@@ -112,7 +126,7 @@ public final class ServerStatus {
     public boolean known(String server) {
         if (!plugin.lobbyConfig().selector().statusEnabled()) return true;
         LobbyConfig.SelectorServer realm = realm(server);
-        return realm != null && realm.maintenance() || statuses.containsKey(key(server));
+        return inMaintenance(server, realm) || statuses.containsKey(key(server));
     }
 
     private LobbyConfig.SelectorServer realm(String server) {

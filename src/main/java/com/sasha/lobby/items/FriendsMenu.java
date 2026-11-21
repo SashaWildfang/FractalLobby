@@ -79,7 +79,7 @@ public final class FriendsMenu implements Listener {
         }
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
-        menu.inventory = Bukkit.createInventory(menu, 54, style.title(BACKGROUND, plugin.messages().component("friends.menu.title")));
+        menu.inventory = Bukkit.createInventory(menu, 54, style.title(player, BACKGROUND, plugin.messages().component("friends.menu.title")));
         draw(player, menu, state);
         player.openInventory(menu.inventory);
     }
@@ -87,7 +87,7 @@ public final class FriendsMenu implements Listener {
     private void draw(Player player, Menu menu, CoreLink.State state) {
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
-        ItemStack filler = style.filler();
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
         menu.friends.clear();
 

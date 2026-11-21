@@ -59,8 +59,8 @@ public final class ConfirmMenu implements Listener {
         Menu menu = new Menu();
         menu.yes = yes;
         menu.no = no;
-        menu.inventory = Bukkit.createInventory(menu, 27, style.title(BACKGROUND, messages.component("confirm.title")));
-        ItemStack filler = style.filler();
+        menu.inventory = Bukkit.createInventory(menu, 27, style.title(player, BACKGROUND, messages.component("confirm.title")));
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < 27; i++) menu.inventory.setItem(i, filler);
         menu.inventory.setItem(SHOWN, shown);
         menu.inventory.setItem(YES, style.icon(button(messages, Material.LIME_DYE, "confirm.accept"), "confirm"));

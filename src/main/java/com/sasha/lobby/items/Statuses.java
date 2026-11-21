@@ -157,8 +157,8 @@ public final class Statuses implements Listener {
         MenuStyle style = plugin.menuStyle();
         Menu menu = new Menu();
         menu.inventory = Bukkit.createInventory(menu, size,
-                style.title(MenuStyle.status(statusRows + 2, last), messages.component("status.title")));
-        ItemStack filler = style.filler();
+                style.title(player, MenuStyle.status(statusRows + 2, last), messages.component("status.title")));
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < size; i++) menu.inventory.setItem(i, filler);
 
         LobbyConfig.Status current = chosen(player);

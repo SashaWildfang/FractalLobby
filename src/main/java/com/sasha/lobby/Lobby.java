@@ -72,6 +72,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private ServerStatus serverStatus;
     private RealmSelector selector;
     private DoubleJump doubleJump;
+    private com.sasha.lobby.listener.FlyCommand fly;
     private Trails trails;
     private com.sasha.lobby.items.Statuses statuses;
     private com.sasha.lobby.listener.AfkListener afk;
@@ -144,6 +145,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         });
         parkour = new ParkourLobby(this);
         doubleJump = new DoubleJump(this);
+        fly = new com.sasha.lobby.listener.FlyCommand(this);
         trails = new Trails(this);
         statuses = new com.sasha.lobby.items.Statuses(this);
         afk = new com.sasha.lobby.listener.AfkListener(this);
@@ -155,7 +157,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         confirm = new com.sasha.lobby.items.ConfirmMenu(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
-                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump,
+                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump, fly,
                 trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
@@ -440,6 +442,11 @@ public final class Lobby extends JavaPlugin implements Listener {
                             && afk.enabled())
                     .executes(context -> asPlayer(context.getSource(), afk::toggle))
                     .build(), "Show or stop showing that you're AFK", List.of());
+
+            commands.register(Commands.literal("fly")
+                    .requires(source -> source.getSender().hasPermission(com.sasha.lobby.listener.FlyCommand.PERMISSION))
+                    .executes(context -> asPlayer(context.getSource(), fly::toggle))
+                    .build(), "Fly in the lobby (or stop)", List.of());
 
             commands.register(Commands.literal("glow")
                     .requires(source -> source.getSender() instanceof Player p ? GlowListener.allowed(p)

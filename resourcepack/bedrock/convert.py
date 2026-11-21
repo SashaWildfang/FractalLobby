@@ -350,8 +350,8 @@ def main():
     manifest = {
         "format_version": 2,
         "header": {"name": "Fractal Lobby", "description": "Fractal Network lobby items for Bedrock",
-                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 2], "min_engine_version": [1, 21, 0]},
-        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 2]}],
+                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 3], "min_engine_version": [1, 21, 0]},
+        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 3]}],
     }
     json.dump(manifest, open(os.path.join(pack, "manifest.json"), "w"), indent=1)
     logo = find("textures", "fractal:gui/logo", ".png")

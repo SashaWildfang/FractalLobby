@@ -77,9 +77,9 @@ public final class Profile implements Listener {
         Messages messages = plugin.messages();
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
-        menu.inventory = Bukkit.createInventory(menu, 36, style.title(MenuStyle.PROFILE,
+        menu.inventory = Bukkit.createInventory(menu, 36, style.title(player, MenuStyle.PROFILE,
                 messages.component("profile.title", Messages.name("player", player.getName()))));
-        ItemStack filler = style.filler();
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         TagResolver info = info(player);

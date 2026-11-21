@@ -198,6 +198,12 @@ public final class CoreLink implements PluginMessageListener, Listener {
     @Override
     public void onPluginMessageReceived(String channel, Player carrier, byte[] message) {
         if (!CHANNEL.equals(channel)) return;
+        java.util.Set<String> maintenance = decodeMaintenance(message);
+        if (maintenance != null) {
+            coreSeen = true;
+            plugin.serverStatus().coreMaintenance(maintenance);
+            return;
+        }
         List<TopPlaytime> top = decodeTop(message);
         if (top != null) {
             coreSeen = true;
@@ -228,6 +234,19 @@ public final class CoreLink implements PluginMessageListener, Listener {
     /** Asks Core for the longest playtimes; the answer arrives a moment later. Needs someone online. */
     public void requestTopPlaytime(int limit) {
         plugin.getServer().getOnlinePlayers().stream().findFirst().ifPresent(carrier -> send(carrier, "Top", out -> out.writeInt(limit)));
+    }
+
+    /** A "Maintenance" message from Core (boolean network, int count, count x server name), or null for anything else. */
+    static java.util.Set<String> decodeMaintenance(byte[] message) {
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!"Maintenance".equals(in.readUTF())) return null;
+            in.readBoolean(); // the whole network: nobody would be here to see it
+            java.util.Set<String> servers = new java.util.HashSet<>();
+            for (int i = in.readInt(); i > 0; i--) servers.add(in.readUTF());
+            return servers;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     /** A "Top" message from Core, or null for anything else. */

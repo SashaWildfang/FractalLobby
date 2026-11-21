@@ -203,8 +203,8 @@ public final class ChatColors implements Listener {
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
         menu.inventory = Bukkit.createInventory(menu, (colourRows + 2) * 9,
-                style.title(MenuStyle.chatColor(colourRows + 2), messages.component("chat-color.title")));
-        ItemStack filler = style.filler();
+                style.title(player, MenuStyle.chatColor(colourRows + 2), messages.component("chat-color.title")));
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         LobbyConfig.ChatColor current = chosen(player);

@@ -86,12 +86,12 @@ public final class RealmSelector implements Listener {
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
         Menu menu = new Menu(player);
         Component title = plugin.messages().component("realm-selector.title");
-        if (config.customGui()) {
+        if (config.customGui() && !com.sasha.lobby.hook.Bedrock.is(player)) {
             menu.background = layout(shown(player).size());
             title = customGuiTitle(config.rows(), menu.background);
         }
         menu.inventory = Bukkit.createInventory(menu, config.rows() * 9, title);
-        ItemStack filler = filler();
+        ItemStack filler = filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
         draw(menu);
         player.openInventory(menu.inventory);
@@ -142,21 +142,20 @@ public final class RealmSelector implements Listener {
     }
 
     /** Black panes in empty slots, or nothing with the custom background (it draws its own slots). */
-    private ItemStack filler() {
-        if (plugin.lobbyConfig().selector().customGui()) return null;
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setHideTooltip(true));
-        return filler;
+    private ItemStack filler(Player viewer) {
+        boolean bedrock = com.sasha.lobby.hook.Bedrock.is(viewer);
+        if (plugin.lobbyConfig().selector().customGui() && !bedrock) return null;
+        return MenuStyle.pane(bedrock);
     }
 
     private void draw(Menu menu) {
         Messages messages = plugin.messages();
         LobbyConfig.Selector config = plugin.lobbyConfig().selector();
-        ItemStack filler = filler();
+        ItemStack filler = filler(menu.viewer);
 
         // Which realms this player sees, in slot order.
         List<LobbyConfig.SelectorServer> shown = shown(menu.viewer);
-        if (config.customGui() && menu.background >= 0 && layout(shown.size()) != menu.background) {
+        if (config.customGui() && menu.background >= 0 && !com.sasha.lobby.hook.Bedrock.is(menu.viewer) && layout(shown.size()) != menu.background) {
             // A realm went down or came back: the background's squares are in the title, so open it afresh.
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (menu.viewer.getOpenInventory().getTopInventory() == menu.inventory) open(menu.viewer);

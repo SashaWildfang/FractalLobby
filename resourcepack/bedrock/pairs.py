@@ -94,5 +94,11 @@ GEN={'default':'NOTE_BLOCK','anime':'CHERRY_SAPLING','anthems':'WHITE_BANNER','c
 for g,mat in GEN.items():
     if f'radio/genre/{g}' in pairs: pairs[f'radio/genre/{g}']=[mat]
 pairs['mystery/vault_body']=['CHEST']; pairs['mystery/vault_lid']=['OAK_SLAB']
+# Realm selector icons (realm-selector.realms.NAME.item-model) sit on the realm's own item.
+for realm in (cfg.get('realm-selector',{}).get('realms') or {}).values():
+    model=str(realm.get('item-model') or '')
+    if model.startswith('fractal:') and realm.get('item'):
+        key=model.split(':',1)[1]
+        pairs[key]=sorted(set(pairs.get(key,[]))|{str(realm['item']).upper()})
 json.dump(pairs,open(OUT,'w'),indent=0)
 print('final definitions',sum(map(len,pairs.values())))

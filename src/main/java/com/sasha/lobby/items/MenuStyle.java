@@ -63,15 +63,40 @@ public final class MenuStyle {
         return config.getBoolean("menus.custom-gui", config.getBoolean("settings-menu.custom-gui", true));
     }
 
-    /** The menu title: the background, or the normal title without the custom look. */
+    /**
+     * Whether this player sees the pack's menu backgrounds. Bedrock players don't: Bedrock can't draw a
+     * picture in a menu title, so they get the normal titles and grey panes (the item icons still work).
+     */
+    public boolean backgrounds(org.bukkit.entity.Player viewer) {
+        return custom() && !com.sasha.lobby.hook.Bedrock.is(viewer);
+    }
+
+    /** The menu title: the background, or the normal title without the custom look (and on Bedrock). */
+    public Component title(org.bukkit.entity.Player viewer, char background, Component normal) {
+        return backgrounds(viewer) ? RealmSelector.backgroundTitle(background) : normal;
+    }
+
+    /** What fills empty slots: nothing on the custom background, grey panes on Bedrock, black panes otherwise. */
+    public ItemStack filler(org.bukkit.entity.Player viewer) {
+        if (backgrounds(viewer)) return null;
+        return pane(com.sasha.lobby.hook.Bedrock.is(viewer));
+    }
+
+    /** Older form (FractalCosmetics 1.0.x): the custom look for everyone. Use the forms with the viewer. */
+    @Deprecated
     public Component title(char background, Component normal) {
         return custom() ? RealmSelector.backgroundTitle(background) : normal;
     }
 
-    /** What fills empty slots: black panes, or nothing on the custom background. */
+    /** Older form (FractalCosmetics 1.0.x). Use {@link #filler(org.bukkit.entity.Player)}. */
+    @Deprecated
     public ItemStack filler() {
-        if (custom()) return null;
-        ItemStack filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
+        return custom() ? null : pane(false);
+    }
+
+    /** A pane with no tooltip: grey for Bedrock, black otherwise. */
+    public static ItemStack pane(boolean bedrock) {
+        ItemStack filler = ItemStack.of(bedrock ? Material.GRAY_STAINED_GLASS_PANE : Material.BLACK_STAINED_GLASS_PANE);
         filler.editMeta(meta -> meta.setHideTooltip(true));
         return filler;
     }

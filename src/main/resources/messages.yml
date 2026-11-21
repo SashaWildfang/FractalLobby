@@ -622,6 +622,11 @@ glow:
   "on": "<prefix><secondary>You're now <primary>glowing</primary> in your rank colour."
   "off": "<prefix><secondary>You stopped glowing."
 
+fly:
+  "on": "<prefix><secondary>You can now <primary>fly</primary>. <muted>/fly to stop."
+  "off": "<prefix><secondary>You stopped flying."
+  parkour: "<prefix><bad>No flying during a parkour run."
+
 spawn:
   teleported: "<prefix><secondary>Back to spawn."
   set: "<prefix><good>Spawn set to where you're standing."

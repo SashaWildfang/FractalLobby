@@ -120,8 +120,8 @@ public final class Trails implements Listener {
         Menu menu = new Menu();
         MenuStyle style = plugin.menuStyle();
         menu.inventory = Bukkit.createInventory(menu, (rows + 2) * 9,
-                style.title(MenuStyle.trails(rows + 2), messages.component("trails.title")));
-        ItemStack filler = style.filler();
+                style.title(player, MenuStyle.trails(rows + 2), messages.component("trails.title")));
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         LobbyConfig.Trail current = chosen(player);

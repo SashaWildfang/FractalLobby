@@ -76,6 +76,11 @@ public final class DoubleJump implements Listener {
         }
     }
 
+    /** Hands flight over to something else (like /fly) without switching it off. */
+    public void release(Player player) {
+        granted.remove(player.getUniqueId());
+    }
+
     private void revoke(Player player) {
         if (!granted.remove(player.getUniqueId())) return;
         player.setFlying(false);

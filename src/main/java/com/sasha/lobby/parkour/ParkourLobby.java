@@ -597,8 +597,8 @@ public final class ParkourLobby implements Listener {
         Menu menu = new Menu();
         var style = plugin.menuStyle();
         menu.inventory = Bukkit.createInventory(menu, 45,
-                style.title(com.sasha.lobby.items.MenuStyle.PARKOUR, messages.component("parkour.menu.title")));
-        ItemStack filler = style.filler();
+                style.title(player, com.sasha.lobby.items.MenuStyle.PARKOUR, messages.component("parkour.menu.title")));
+        ItemStack filler = style.filler(player);
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
 
         List<Leaderboard.Entry> top = leaderboard.entries(player);

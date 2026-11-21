@@ -55,6 +55,7 @@ public final class CommandHelp {
                 List.of("Clicking the Parkour NPC does the same.", "Jump to the sparkling block; falling ends the run.")));
         e.add(new Entry("player", "/chatcolor [colour|reset]", "Pick the colour of your chat messages.", "lobby.cmd.chatcolor",
                 List.of("Without a colour it opens the menu.", "Also /chatcolour.")));
+        e.add(new Entry("player", "/fly", "Fly in the lobby (or stop).", "lobby.cmd.fly", List.of("Warlord rank or higher.")));
         e.add(new Entry("player", "/glow", "Glow in your rank colour (or stop).", "lobby.cmd.glow", List.of("Guardian rank or higher.")));
         e.add(new Entry("player", "/flyingminecart", "Summon a flying minecart anyone can ride.", "lobby.cmd.flyingminecart",
                 List.of("W to fly, Space to climb, sneak to get out. Also /flycart.")));

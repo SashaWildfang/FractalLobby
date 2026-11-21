@@ -281,7 +281,7 @@ public final class Settings implements Listener {
     /** Opens settings; from the profile, a Back button returns there. */
     public void open(Player player, boolean fromProfile) {
         Menu menu = new Menu(Page.SETTINGS, fromProfile);
-        menu.inventory = Bukkit.createInventory(menu, 54, customGui()
+        menu.inventory = Bukkit.createInventory(menu, 54, plugin.menuStyle().backgrounds(player)
                 ? RealmSelector.backgroundTitle(MenuStyle.SETTINGS) : plugin.messages().component("settings.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
@@ -290,7 +290,7 @@ public final class Settings implements Listener {
     /** Opens the list of ignored players (from the profile; its Back button returns there). */
     public void openIgnored(Player player) {
         Menu menu = new Menu(Page.IGNORED, true);
-        menu.inventory = Bukkit.createInventory(menu, 54, customGui()
+        menu.inventory = Bukkit.createInventory(menu, 54, plugin.menuStyle().backgrounds(player)
                 ? RealmSelector.backgroundTitle(MenuStyle.IGNORED) : plugin.messages().component("settings.ignored-menu.title"));
         draw(player, menu);
         player.openInventory(menu.inventory);
@@ -304,11 +304,7 @@ public final class Settings implements Listener {
     /** Fills the menu in place (so the cursor stays where it is). */
     private void draw(Player player, Menu menu) {
         menu.actions.clear();
-        ItemStack filler = null; // the custom background draws the menu itself
-        if (!customGui()) {
-            filler = ItemStack.of(Material.BLACK_STAINED_GLASS_PANE);
-            filler.editMeta(meta -> meta.setHideTooltip(true));
-        }
+        ItemStack filler = plugin.menuStyle().filler(player); // none on the custom background
         for (int i = 0; i < menu.inventory.getSize(); i++) menu.inventory.setItem(i, filler);
         if (menu.page == Page.SETTINGS) drawSettings(player, menu);
         else drawIgnored(player, menu);

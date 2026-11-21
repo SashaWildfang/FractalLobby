@@ -26,6 +26,7 @@ permissions:
       lobby.build: true
       lobby.spawn: true
       lobby.cmd.glow: true
+      lobby.cmd.fly: true
       lobby.cmd.afk: true
       lobby.cmd.parkour: true
       lobby.cmd.chatcolor: true
@@ -73,6 +74,9 @@ permissions:
     default: true
   lobby.cmd.glow:
     description: Use /glow to glow in your rank colour
+    default: op
+  lobby.cmd.fly:
+    description: Use /fly to fly in the lobby
     default: op
   lobby.cmd.chatcolor:
     description: Use /chatcolor to pick a chat colour
