@@ -13,6 +13,10 @@ python3 convert.py java vanilla pairs.json out
 - `pairs.py`: Geyser maps by Java base item, so this reads which base item each model sits on
   (same-line pairs, the catalogue's icon items, config items, the method around each model).
 - `convert.py`: flat models use their texture; 3D models are drawn as the Java inventory shows them.
+- `geo.py`: 3D models also get Bedrock geometry, one texture sheet and an attachable per Bedrock item, so
+  they show in hands, on heads (hats) and on display entities (props, through the GeyserDisplayEntity
+  extension from the Survival addon). java2bedrock conventions; on a display entity the model is drawn at
+  full size like Java's "none" display transform.
   The lobby font's pages (U+F000-F3FF, the drawn menu backgrounds) are blank on Bedrock.
 
 Install: `FractalLobby.mcpack` in the proxy's `plugins/Geyser-Velocity/packs/`, the json in
