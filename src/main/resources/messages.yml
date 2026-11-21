@@ -52,6 +52,7 @@ scoreboard:
   # instead, e.g. "<brand><bold>FractalSMP</bold></brand>".
   title: "<white><!shadow><font:fractal:lobby>\uF021</font>"
   # The logo is taller than a line: the first line is left empty to make room for it.
+  # Bedrock players don't get lines with <date> (Bedrock shows them too big under the logo).
   lines:
     - " "
     - "<center><gray><date>"

@@ -229,7 +229,10 @@ public final class DisplayService {
             List<Component> lines = new ArrayList<>();
             List<Boolean> centered = new ArrayList<>();
             boolean hideDown = plugin.lobbyConfig().scoreboard().hideOfflineRealms();
+            boolean bedrock = com.sasha.lobby.hook.Bedrock.is(player);
             for (String template : messages.lines("scoreboard.lines")) {
+                // Bedrock draws the date line at full size right under the logo: it is left out there.
+                if (bedrock && template.contains("<date>")) continue;
                 if (hideDown && aboutDownServer(template, server -> plugin.serverStatus().status(server).state())) continue;
                 boolean center = template.startsWith(TextWidth.CENTER);
                 if (center) template = template.substring(TextWidth.CENTER.length());
