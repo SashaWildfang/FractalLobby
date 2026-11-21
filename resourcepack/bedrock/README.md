@@ -18,3 +18,7 @@ python3 convert.py java vanilla pairs.json out
 Install: `FractalLobby.mcpack` in the proxy's `plugins/Geyser-Velocity/packs/`, the json in
 `plugins/Geyser-Velocity/custom_mappings/`, `enable-custom-content: true` in Geyser's config.
 Rebuild after changing the Java pack or adding item models.
+
+Since 1.49.0 the collectibles and mystery box code lives in FractalCosmetics. `pairs.json` here was built
+from that code (checked against FractalCosmetics 1.0.2, same model names); pass FractalCosmetics' sources
+as an extra source folder (edit the list in `pairs.py`) when rebuilding it.
