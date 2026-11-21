@@ -354,6 +354,7 @@ visibility:
   cooldown: "<prefix><muted>Slow down a little."
 
 # Shown above the hotbar when a player is saved from the void.
+out-of-bounds: "<secondary>That's the edge of the lobby! <muted>Back to spawn."
 void-rescued: "<secondary>Whoosh! <muted>Flying you back to solid ground."
 
 # Punching staff (players with lobby.punch). <puncher> <target> <seconds>

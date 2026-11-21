@@ -177,7 +177,12 @@ public final class RealmSelector implements Listener {
             for (String line : realm.description()) lore.add(messages.render("<!italic>" + line, args));
             lore.addAll(messages.lore("realm-selector.button-lore", args));
 
-            ItemStack item = ItemStack.of(state == ServerStatus.State.OFFLINE ? Material.GRAY_DYE : realm.item());
+            // Bedrock can't show a pack icon on a block item (Geyser's custom items are flat items), so there the
+            // realm's icon sits on paper instead.
+            boolean flatBase = realm.itemModel() != null && state != ServerStatus.State.OFFLINE
+                    && realm.item().isBlock() && com.sasha.lobby.hook.Bedrock.is(menu.viewer);
+            ItemStack item = ItemStack.of(state == ServerStatus.State.OFFLINE ? Material.GRAY_DYE
+                    : flatBase ? Material.PAPER : realm.item());
             item.editMeta(meta -> {
                 meta.displayName(messages.render("<!italic>" + realm.name(), args));
                 meta.lore(lore);

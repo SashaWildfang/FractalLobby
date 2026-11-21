@@ -99,6 +99,6 @@ for realm in (cfg.get('realm-selector',{}).get('realms') or {}).values():
     model=str(realm.get('item-model') or '')
     if model.startswith('fractal:') and realm.get('item'):
         key=model.split(':',1)[1]
-        pairs[key]=sorted(set(pairs.get(key,[]))|{str(realm['item']).upper()})
+        pairs[key]=sorted(set(pairs.get(key,[]))|{str(realm['item']).upper(),'PAPER'})  # Bedrock shows block realms on paper
 json.dump(pairs,open(OUT,'w'),indent=0)
 print('final definitions',sum(map(len,pairs.values())))

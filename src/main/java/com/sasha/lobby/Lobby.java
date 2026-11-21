@@ -157,7 +157,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         confirm = new com.sasha.lobby.items.ConfirmMenu(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
-                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump, fly,
+                new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump, fly, new com.sasha.lobby.listener.BoundsListener(this, spawn),
                 trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }

@@ -125,6 +125,19 @@ border:
   warning-distance: 5
 
 
+# ── Bounds ──────────────────────────────────────────────────────
+# An invisible wall from the sky to the void: anyone who walks or flies
+# past it goes straight back to spawn. Two opposite corners (x1/z1 and
+# x2/z2); height doesn't matter. lobby.bypass.bounds lets staff past.
+bounds:
+  enabled: false
+  world: world
+  x1: -729.7
+  z1: -144.7
+  x2: 96.7
+  z2: 749.45
+
+
 # ── Flying minecarts ────────────────────────────────────────────
 # /flyingminecart summons a minecart anyone can ride.
 # Riding: W flies where you look, S brakes, Space climbs,

@@ -22,6 +22,7 @@ permissions:
       lobby.doublejump: true
       lobby.bypass.maintenance: true
       lobby.bypass.full: true
+      lobby.bypass.bounds: true
       lobby.admin: true
       lobby.build: true
       lobby.spawn: true
@@ -56,6 +57,9 @@ permissions:
     default: op
   lobby.bypass.full:
     description: Join full realms from the realm selector
+    default: op
+  lobby.bypass.bounds:
+    description: Go past the lobby's bounds without being sent back to spawn
     default: op
   lobby.admin:
     description: Administer Lobby, parkour and set the spawn
