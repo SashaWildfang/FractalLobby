@@ -42,11 +42,13 @@ for m in models:
     if '/' in m and f in CAT and m.count('/')==1 and not m.startswith('cloak/part'): s.add(CAT[f])
     if f=='hat': s.add('PAPER')                              # worn hats and hoods
     if f=='suit':
-        set_,piece=m.split('/')[1:3]; s|={'LEATHER_CHESTPLATE','LEATHER_'+piece.upper()}
+        set_,piece=m.split('/')[1:3]
+        # a piece: its menu icon (leather chestplate) and the worn piece; "set": the whole set's icon (armour stand)
+        s|={'ARMOR_STAND'} if piece=='set' else {'LEATHER_CHESTPLATE','LEATHER_'+piece.upper()}
     elif f=='status': s|={'PLAYER_HEAD','SUNFLOWER'}|refs_for(m)
     elif f=='color': s|={color.get(m.split('/')[1],'PAPER'),'PAPER'}
     elif f=='trail': s|={trail.get(m.split('/')[1].replace('_','-'),trail.get(m.split('/')[1],'PAPER')),'PAPER'}
-    elif m in ('menu/locked','menu/locked_buy'): s|=lockbase
+    elif m in ('menu/locked','menu/locked_buy'): s|=lockbase|refs_for(m)|{'ARMOR_STAND'}
     elif f=='menu': s|=refs_for(m)|set(join)
     else: s|=refs_for(m)
     s.discard('AIR')
