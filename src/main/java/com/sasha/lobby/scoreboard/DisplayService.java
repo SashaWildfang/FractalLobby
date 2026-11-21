@@ -233,6 +233,8 @@ public final class DisplayService {
             for (String template : messages.lines("scoreboard.lines")) {
                 // Bedrock draws the date line at full size right under the logo: it is left out there.
                 if (bedrock && template.contains("<date>")) continue;
+                // The empty lines above the first text make room for the Java logo; Bedrock's logo fits in the title.
+                if (bedrock && lines.isEmpty() && template.isBlank()) continue;
                 if (hideDown && aboutDownServer(template, server -> plugin.serverStatus().status(server).state())) continue;
                 boolean center = template.startsWith(TextWidth.CENTER);
                 if (center) template = template.substring(TextWidth.CENTER.length());

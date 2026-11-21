@@ -147,6 +147,8 @@ public final class FriendsMenu implements Listener {
         int slot = event.getRawSlot();
         ClickType click = event.getClick();
         // Friends: Left-click joins an online one, Shift + Right-click removes. Every other button: Left-click.
+        // Bedrock has no Shift + Right-click: Shift + click (SHIFT_LEFT there) removes a friend instead.
+        if (click == ClickType.SHIFT_LEFT && com.sasha.lobby.hook.Bedrock.is(player)) click = ClickType.SHIFT_RIGHT;
         if (click != ClickType.LEFT && !(click == ClickType.SHIFT_RIGHT && menu.friends.containsKey(slot))) return;
         switch (slot) {
             case BACK -> {
