@@ -5,6 +5,8 @@ package com.sasha.lobby.scoreboard;
 
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -42,7 +44,7 @@ final class Sidebar {
         }
         int count = Math.min(lines.size(), MAX_LINES);
         for (int i = 0; i < count; i++) {
-            Component line = lines.get(i);
+            Component line = unique(lines.get(i), i);
             boolean added = i >= shown.size();
             if (!added && Objects.equals(shown.get(i), line)) continue;
             var score = objective.getScore(entry(i));
@@ -57,6 +59,16 @@ final class Sidebar {
             shown.subList(count, shown.size()).clear();
             for (int i = 0; i < count; i++) objective.getScore(entry(i)).setScore(count - i);
         }
+    }
+
+    /**
+     * Bedrock (through Geyser) tells sidebar lines apart by their text, so empty lines with the same text get
+     * merged and moved around. Each empty line gets its own colour code (and a space), which looks the same.
+     */
+    private static Component unique(Component line, int index) {
+        if (!PlainTextComponentSerializer.plainText().serialize(line).isBlank()) return line;
+        NamedTextColor color = List.copyOf(NamedTextColor.NAMES.values()).get(index % NamedTextColor.NAMES.values().size());
+        return Component.text(" ".repeat(index + 1), color);
     }
 
     void remove() {
