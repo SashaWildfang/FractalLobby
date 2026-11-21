@@ -240,7 +240,8 @@ def main():
     os.makedirs(os.path.join(pack, "textures", "fractal"), exist_ok=True)
     item_texture = {"resource_pack_name": "fractal_lobby", "texture_name": "atlas.items", "texture_data": {}}
     mappings = {"format_version": 2, "items": {}}
-    report = {"flat": 0, "3d": 0, "missing": [], "items": 0}
+    report = {"flat": 0, "3d": 0, "missing": [], "items": 0, "attachables": 0}
+    three_d = []
     for path in sorted(pairs):
         item_def = load_json("items", "fractal:" + path)
         if not item_def:
@@ -253,6 +254,7 @@ def main():
             icon = flat_icon(model); report["flat"] += 1
         else:
             icon = render_3d(model); report["3d"] += 1
+            three_d.append((path, model, ["fractal:%s__%s" % (slug(path), b.lower()) for b in pairs[path]]))
         s = slug(path)
         rel = "textures/fractal/" + s
         icon.save(os.path.join(pack, rel + ".png"))
@@ -268,6 +270,11 @@ def main():
             report["items"] += 1
     json.dump(item_texture, open(os.path.join(pack, "textures", "item_texture.json"), "w"), indent=1)
 
+    # 3D models: geometry, texture sheet and attachables (held, on heads, on display entities)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import geo
+    report["attachables"] = geo.build(pack, three_d, texture, slug)
+
     # the lobby menus' drawn backgrounds (fractal:lobby font, U+F000-F3FF): blank on Bedrock instead of boxes
     for page in (0xF0, 0xF1, 0xF2, 0xF3):   # the fractal:lobby font only; the Survival addon owns E0/E1
         os.makedirs(os.path.join(pack, "font"), exist_ok=True)
@@ -276,8 +283,8 @@ def main():
     manifest = {
         "format_version": 2,
         "header": {"name": "Fractal Lobby", "description": "Fractal Network lobby items for Bedrock",
-                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 0, 0], "min_engine_version": [1, 21, 0]},
-        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 0, 0]}],
+                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 1, 0], "min_engine_version": [1, 21, 0]},
+        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 1, 0]}],
     }
     json.dump(manifest, open(os.path.join(pack, "manifest.json"), "w"), indent=1)
     logo = find("textures", "fractal:gui/logo", ".png")
