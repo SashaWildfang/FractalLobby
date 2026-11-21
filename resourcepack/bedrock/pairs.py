@@ -46,7 +46,7 @@ MENU_ITEMS={'ARROW','BARRIER','BELL','CAKE','EMERALD','ENDER_EYE','ENDER_PEARL',
 PANES={'LIME_STAINED_GLASS_PANE','YELLOW_STAINED_GLASS_PANE','ORANGE_STAINED_GLASS_PANE','RED_STAINED_GLASS_PANE'}
 MENU_BY_HAND={'on':PANES,'off':PANES,'audience-everyone':PANES,'audience-donors':PANES,'audience-staff':PANES,
     'audience-nobody':PANES,'players-shown':{'LIME_DYE'},'players-hidden':{'GRAY_DYE'},'radio':{'JUKEBOX'},
-    'realms':{'COMPASS'},'header':{'COMPARATOR'},'friends':{'PLAYER_HEAD'},'ignored':{'SKELETON_SKULL'},
+    'realms':{'COMPASS'},'header':{'COMPARATOR'},'friends':{'PLAYER_HEAD'},'player':{'PLAYER_HEAD'},'ignored':{'SKELETON_SKULL'},
     'more':{'PAPER'},'collectibles':{'ENDER_CHEST'},'take_off':{'BARRIER'}}
 _menu_exact={}
 for _src in SOURCES:

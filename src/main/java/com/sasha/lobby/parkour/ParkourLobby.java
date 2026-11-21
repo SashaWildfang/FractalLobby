@@ -609,8 +609,8 @@ public final class ParkourLobby implements Listener {
                 Leaderboard.Entry entry = top.get(i);
                 TagResolver args = TagResolver.resolver(row(entry), Messages.arg("time", entry.time()));
                 boolean isYou = entry.name().equalsIgnoreCase(player.getName());
-                item = head(entry.name(), messages.item("parkour.menu.entry-name", args),
-                        messages.lore(isYou ? "parkour.menu.entry-lore-you" : "parkour.menu.entry-lore", args));
+                item = com.sasha.lobby.hook.Bedrock.head(player, head(entry.name(), messages.item("parkour.menu.entry-name", args),
+                        messages.lore(isYou ? "parkour.menu.entry-lore-you" : "parkour.menu.entry-lore", args)));
             } else {
                 item = ItemStack.of(Material.SKELETON_SKULL);
                 TagResolver args = Messages.arg("position", i + 1);
@@ -618,8 +618,8 @@ public final class ParkourLobby implements Listener {
             }
             menu.inventory.setItem(slots[i], item);
         }
-        menu.inventory.setItem(40, head(player.getName(), messages.item("parkour.menu.you-name"),
-                messages.lore("parkour.menu.you-lore", you(player))));
+        menu.inventory.setItem(40, com.sasha.lobby.hook.Bedrock.head(player, head(player.getName(), messages.item("parkour.menu.you-name"),
+                messages.lore("parkour.menu.you-lore", you(player)))));
         player.openInventory(menu.inventory);
         player.playSound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 0.5f, 1.2f), Sound.Emitter.self());
     }

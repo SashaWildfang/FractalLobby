@@ -311,11 +311,47 @@ def main():
         sheet.save(os.path.join(pack, "font", "glyph_%02X.png" % page), optimize=True)
     report["glyphs"] = len(glyphs)
 
+    # Custom sounds (the radio's extra notes, the lobby's own sounds). Geyser sends a Java sound such as
+    # radio:note.harp_1 to Bedrock under the same name (only "minecraft:" is dropped), so each namespace's
+    # sounds.json events become Bedrock sound definitions with that full name, and the .ogg files are copied.
+    defs = {}
+    assets = os.path.join(JAVA, "assets")
+    for ns in sorted(os.listdir(assets)):
+        sj = os.path.join(assets, ns, "sounds.json")
+        if ns == "minecraft" or not os.path.isfile(sj):
+            continue
+        for event, entry in json.load(open(sj, encoding="utf-8")).items():
+            sounds = []
+            for snd in entry.get("sounds", []):
+                snd = {"name": snd} if isinstance(snd, str) else dict(snd)
+                if snd.get("type") == "event":
+                    continue
+                sns, _, path = snd["name"].rpartition(":")
+                sns = sns or "minecraft"
+                src = os.path.join(assets, sns, "sounds", path + ".ogg")
+                if not os.path.isfile(src):
+                    continue
+                dst = os.path.join("sounds", sns, path)
+                os.makedirs(os.path.dirname(os.path.join(pack, dst)), exist_ok=True)
+                shutil.copyfile(src, os.path.join(pack, dst + ".ogg"))
+                out = {"name": dst}
+                for k in ("volume", "pitch", "stream"):
+                    if k in snd:
+                        out[k] = snd[k]
+                sounds.append(out)
+            if sounds:
+                defs[ns + ":" + event] = {"category": "record" if ns == "radio" else "neutral", "sounds": sounds}
+    if defs:
+        os.makedirs(os.path.join(pack, "sounds"), exist_ok=True)
+        json.dump({"format_version": "1.14.0", "sound_definitions": defs},
+                  open(os.path.join(pack, "sounds", "sound_definitions.json"), "w"), indent=1)
+    report["sounds"] = len(defs)
+
     manifest = {
         "format_version": 2,
         "header": {"name": "Fractal Lobby", "description": "Fractal Network lobby items for Bedrock",
-                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 1], "min_engine_version": [1, 21, 0]},
-        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 1]}],
+                   "uuid": str(uuid.uuid5(NS_UUID, "header")), "version": [1, 2, 2], "min_engine_version": [1, 21, 0]},
+        "modules": [{"type": "resources", "uuid": str(uuid.uuid5(NS_UUID, "resources")), "version": [1, 2, 2]}],
     }
     json.dump(manifest, open(os.path.join(pack, "manifest.json"), "w"), indent=1)
     logo = find("textures", "fractal:gui/logo", ".png")

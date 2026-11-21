@@ -1255,6 +1255,9 @@
 "menu/party-invites": [
 "CAKE"
 ],
+"menu/player": [
+"PLAYER_HEAD"
+],
 "menu/player-visibility": [
 "ENDER_EYE"
 ],

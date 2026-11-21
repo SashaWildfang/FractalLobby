@@ -70,7 +70,7 @@ public final class Profile implements Listener {
         head.setItemMeta(base.getItemMeta() == null ? head.getItemMeta() : base.getItemMeta().clone());
         head.editMeta(SkullMeta.class, meta -> meta.setPlayerProfile(player.getPlayerProfile()));
         hideProfileLine(head);
-        return head;
+        return com.sasha.lobby.hook.Bedrock.head(player, head);
     }
 
     public void open(Player player) {
@@ -90,7 +90,7 @@ public final class Profile implements Listener {
             meta.lore(messages.lore("profile.head.lore", info));
         });
         hideProfileLine(head);
-        menu.inventory.setItem(HEAD, head);
+        menu.inventory.setItem(HEAD, com.sasha.lobby.hook.Bedrock.head(player, head));
 
         if (plugin.statuses().enabled()) {
             LobbyConfig.Status status = plugin.statuses().chosen(player);

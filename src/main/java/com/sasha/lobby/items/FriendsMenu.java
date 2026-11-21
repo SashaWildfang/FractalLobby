@@ -120,7 +120,7 @@ public final class FriendsMenu implements Listener {
                 meta.lore(messages.lore(key + ".lore", tags));
             });
             Profile.hideProfileLine(head);
-            menu.inventory.setItem(slot, head);
+            menu.inventory.setItem(slot, com.sasha.lobby.hook.Bedrock.head(player, head));
             menu.friends.put(slot, entry.getKey());
             slot++;
         }
@@ -177,6 +177,7 @@ public final class FriendsMenu implements Listener {
                     Player online = plugin.getServer().getPlayer(friend);
                     shown.editMeta(SkullMeta.class, meta -> meta.setPlayerProfile(online != null ? online.getPlayerProfile()
                             : plugin.skins().profile(friend, data.name(), () -> { })));
+                    com.sasha.lobby.hook.Bedrock.head(player, shown);
                     ConfirmMenu.describe(shown, plugin.messages(), "friends.menu.remove-confirm", Messages.name("player", data.name()));
                     plugin.confirm().open(player, shown, () -> {
                         plugin.coreLink().unfriend(player, friend);

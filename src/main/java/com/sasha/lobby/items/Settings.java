@@ -434,7 +434,7 @@ public final class Settings implements Listener {
                 meta.lore(messages.lore("settings.ignored-menu.head.lore", Messages.name("player", name)));
             });
             Profile.hideProfileLine(head);
-            menu.inventory.setItem(slot, head);
+            menu.inventory.setItem(slot, com.sasha.lobby.hook.Bedrock.head(player, head));
             menu.actions.put(slot, (who, click) -> {
                 plugin.coreLink().unignore(who, id);
                 messages.send(who, "settings.ignored-menu.removed", Messages.name("player", name));
