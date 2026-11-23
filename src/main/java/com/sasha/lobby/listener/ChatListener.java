@@ -146,9 +146,11 @@ public final class ChatListener implements Listener {
         // unless the player picked a chat colour.
         LobbyConfig.ChatColor chosen = plugin.lobbyConfig().chatColors().enabled() ? plugin.chatColors().chosen(player) : null;
         TextColor formatColour = LegacyCodes.lastColor(before);
-        Function<String, Component> paint = text -> chosen != null
+        Function<String, Component> plain = text -> chosen != null
                 ? ChatColors.paint(chosen.color(), Component.text(text))
                 : Component.text(text).colorIfAbsent(formatColour);
+        // During a GG wave (a store purchase, from FractalGG on the proxy) each "gg" comes out in a gradient.
+        Function<String, Component> paint = text -> plugin.ggWave().paint(text, plain);
 
         Component line = split < 0 ? head : Component.empty().append(head).append(paint.apply(typed)).append(tail);
         if (highlighted.isEmpty() || split < 0) {

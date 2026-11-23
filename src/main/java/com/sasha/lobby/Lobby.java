@@ -69,6 +69,7 @@ public final class Lobby extends JavaPlugin implements Listener {
     private Settings settings;
     private com.sasha.lobby.items.MenuStyle menuStyle;
     private CoreLink coreLink;
+    private final com.sasha.lobby.proxy.GgWave ggWave = new com.sasha.lobby.proxy.GgWave();
     private ServerStatus serverStatus;
     private RealmSelector selector;
     private DoubleJump doubleJump;
@@ -163,6 +164,7 @@ public final class Lobby extends JavaPlugin implements Listener {
         }
         registerCommands();
         coreLink.start();
+        ggWave.register(this);
         holograms.start();
         npcs.start();
         afk.start();
@@ -299,6 +301,11 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     public com.sasha.lobby.items.MenuStyle menuStyle() {
         return menuStyle;
+    }
+
+    /** GG waves from the proxy (FractalGG): "gg" in chat in a gradient while one is on. */
+    public com.sasha.lobby.proxy.GgWave ggWave() {
+        return ggWave;
     }
 
     public CoreLink coreLink() {
