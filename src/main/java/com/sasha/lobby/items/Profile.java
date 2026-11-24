@@ -42,7 +42,9 @@ public final class Profile implements Listener {
      * parkour and settings on the right. Trails live in the Collectibles menu, realms in the realm selector.
      */
     private static final int HEAD = 4;
+    private static final int LEVEL = 11;
     private static final int STATUS = 13;
+    private static final int BOOSTERS = 15;
     private static final int CHAT_COLOR = 29;
     private static final int GLOW = 30;
     private static final int FRIENDS = 31;
@@ -98,6 +100,14 @@ public final class Profile implements Listener {
                     status == null ? "happy" : status.icon());
             menu.inventory.setItem(STATUS, button);
         }
+        // Network level and boosters (both kept in the network database), either side of the status
+        if (plugin.levels() != null) menu.inventory.setItem(LEVEL, level(player));
+        if (plugin.boosters() != null) {
+            ItemStack boosters = button(messages, Material.PAPER, "profile.boosters",
+                    TagResolver.resolver(info, Messages.arg("count", plugin.boosters().owned(player))));
+            boosters.editMeta(meta -> meta.setItemModel(new org.bukkit.NamespacedKey("fractal", "ctf")));
+            menu.inventory.setItem(BOOSTERS, boosters);
+        }
         menu.inventory.setItem(CHAT_COLOR, style.icon(button(messages, Material.NAME_TAG, "profile.chat-color", info), "chat-color"));
         menu.inventory.setItem(GLOW, GlowListener.allowed(player)
                 ? style.icon(button(messages, Material.GLOWSTONE_DUST, "profile.glow", info), "glow")
@@ -108,6 +118,19 @@ public final class Profile implements Listener {
         var network = plugin.coreLink().state(player);
         if (network != null) menu.inventory.setItem(FRIENDS, plugin.friendsMenu().button(network));
         player.openInventory(menu.inventory);
+    }
+
+    /** The network level button: level, a progress bar to the next and XP. */
+    private ItemStack level(Player player) {
+        var progress = plugin.levels().progress(player);
+        int width = 20, filled = (int) Math.round(progress.fraction() * width);
+        String bar = "<#B266FF>" + "■".repeat(filled) + "<dark_gray>" + "■".repeat(width - filled);
+        java.util.Locale l = java.util.Locale.ROOT;
+        TagResolver tags = TagResolver.resolver(Messages.arg("level", progress.level()), Messages.arg("next", progress.level() + 1),
+                Placeholder.parsed("bar", bar), Messages.arg("percent", (int) (progress.fraction() * 100)),
+                Messages.arg("xp", String.format(l, "%,d", progress.into())), Messages.arg("needed", String.format(l, "%,d", progress.needed())),
+                Messages.arg("total", String.format(l, "%,d", progress.total())));
+        return button(plugin.messages(), Material.EXPERIENCE_BOTTLE, "profile.level", tags);
     }
 
     /** Everything the profile shows about a player, as tags. */
@@ -203,6 +226,11 @@ public final class Profile implements Listener {
                 plugin.settings().open(player, true);
             }
             case PARKOUR -> plugin.parkour().openLeaderboard(player);
+            case BOOSTERS -> {
+                if (plugin.boosters() == null) return;
+                click(player);
+                plugin.boostersMenu().open(player);
+            }
             default -> {
             }
         }

@@ -1375,6 +1375,15 @@
    "chars": [
     "\uf025"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/boosters.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1c5"
+   ]
   }
  ]
 }

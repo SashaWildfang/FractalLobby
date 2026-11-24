@@ -126,6 +126,12 @@ public final class Lobby extends JavaPlugin implements Listener {
             playerData = new com.sasha.lobby.data.PlayerDataMirror(this, database);
             getServer().getPluginManager().registerEvents(playerData, this);
             playerData.start();
+            boosters = new com.sasha.lobby.network.NetworkBoosters(this, database);
+            levels = new com.sasha.lobby.network.NetworkLevels(this, database);
+            getServer().getPluginManager().registerEvents(boosters, this);
+            getServer().getPluginManager().registerEvents(levels, this);
+            boosters.start();
+            levels.start();
         }
         playerFormat = new PlayerFormat(this);
         serverStatus = new ServerStatus(this);
@@ -162,10 +168,11 @@ public final class Lobby extends JavaPlugin implements Listener {
         skins = new com.sasha.lobby.items.Skins(this);
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
         confirm = new com.sasha.lobby.items.ConfirmMenu(this);
+        boostersMenu = new com.sasha.lobby.items.BoostersMenu(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump, fly, new com.sasha.lobby.listener.BoundsListener(this, spawn),
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, boostersMenu, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -205,11 +212,30 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (selector != null) selector.stop();
         if (doubleJump != null) doubleJump.stop();
         if (trails != null) trails.stop();
+        if (boosters != null) boosters.stop();
+        if (levels != null) levels.stop();
         if (database != null) database.close();
     }
 
     private com.sasha.lobby.data.NetworkDb database;
     private com.sasha.lobby.data.PlayerDataMirror playerData;
+    private com.sasha.lobby.network.NetworkBoosters boosters;
+    private com.sasha.lobby.network.NetworkLevels levels;
+    private com.sasha.lobby.items.BoostersMenu boostersMenu;
+
+    /** Network boosters (owned and running), or null without the network database. */
+    public com.sasha.lobby.network.NetworkBoosters boosters() {
+        return boosters;
+    }
+
+    /** Network levels, or null without the network database. */
+    public com.sasha.lobby.network.NetworkLevels levels() {
+        return levels;
+    }
+
+    public com.sasha.lobby.items.BoostersMenu boostersMenu() {
+        return boostersMenu;
+    }
 
     /** The network database, or null without one (config.yml database:). */
     public com.sasha.lobby.data.NetworkDb database() {
@@ -377,6 +403,33 @@ public final class Lobby extends JavaPlugin implements Listener {
         messages.buttonIcons(getConfig().getBoolean("menus.custom-gui", getConfig().getBoolean("settings-menu.custom-gui", true)));
     }
 
+    /** /booster give: into the player's booster inventory (they activate it from My Profile → Boosters). */
+    private void giveBooster(org.bukkit.command.CommandSender sender, String player, String game, int minutes, double multiplier) {
+        if (boosters == null) {
+            messages.send(sender, "boosters.unavailable");
+            return;
+        }
+        var tags = net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
+                com.sasha.lobby.config.Messages.name("player", player),
+                com.sasha.lobby.config.Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(multiplier)),
+                com.sasha.lobby.config.Messages.arg("minutes", minutes),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("game", boostersMenu.game(game.toLowerCase(java.util.Locale.ROOT))));
+        boosters.give(player, game, minutes, multiplier, sender instanceof Player ? "staff:" + sender.getName() : "store")
+                .whenComplete((ok, error) -> getServer().getScheduler().runTask(this, () -> {
+                    if (error != null) {
+                        messages.send(sender, "boosters.unavailable");
+                        return;
+                    }
+                    messages.send(sender, "boosters.given", tags);
+                    Player online = getServer().getPlayerExact(player);
+                    if (online != null) {
+                        messages.send(online, "boosters.received", tags);
+                        online.playSound(net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("entity.player.levelup"),
+                                net.kyori.adventure.sound.Sound.Source.MASTER, 0.7f, 1.4f), net.kyori.adventure.sound.Sound.Emitter.self());
+                    }
+                }));
+    }
+
     private void registerCommands() {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             Commands commands = event.registrar();
@@ -451,6 +504,25 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .then(Commands.literal("remove")
                             .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "playtime"))))
                     .build(), "Place, move or remove the playtime leaderboard hologram", List.of());
+
+            // /booster opens your boosters; /booster give is for the store (run from the console) and staff.
+            commands.register(Commands.literal("booster")
+                    .executes(context -> asPlayer(context.getSource(), player -> boostersMenu.open(player)))
+                    .then(Commands.literal("give")
+                            .requires(source -> source.getSender().hasPermission("lobby.admin"))
+                            .then(Commands.argument("player", StringArgumentType.word())
+                                    .then(Commands.argument("game", StringArgumentType.word())
+                                            .then(Commands.argument("minutes", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 10_080))
+                                                    .then(Commands.argument("multiplier", com.mojang.brigadier.arguments.IntegerArgumentType.integer(2, 10))
+                                                            .executes(context -> {
+                                                                giveBooster(context.getSource().getSender(),
+                                                                        StringArgumentType.getString(context, "player"),
+                                                                        StringArgumentType.getString(context, "game"),
+                                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "minutes"),
+                                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "multiplier"));
+                                                                return 1;
+                                                            }))))))
+                    .build(), "Your network boosters (and /booster give for the store)", List.of("boosters"));
 
             commands.register(Commands.literal("spawn")
                     .requires(source -> source.getSender().hasPermission("lobby.spawn"))

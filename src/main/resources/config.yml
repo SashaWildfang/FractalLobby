@@ -630,6 +630,15 @@ database:
   password: ""
 
 
+# ── Network levels ─────────────────────────────────────────
+# Shown in My Profile. XP is earned on CTF (each minute of active play) and kept
+# in the network database. Level L to L+1 takes first-level-xp + extra-xp-per-level
+# × (L - 1) XP. Keep these the same as network-xp: in CTF's config.yml.
+leveling:
+  first-level-xp: 500
+  extra-xp-per-level: 100
+
+
 # ── Scoreboard and tab list ─────────────────────────────────────
 # The text is in messages.yml (scoreboard and tablist).
 scoreboard:
@@ -795,6 +804,7 @@ realm-selector:
       coming-soon: true
       slot: 15
       item: RED_BANNER
+      item-model: "fractal:ctf"
       name: "<secondary><bold>Capture the Flag"
       description:
         - "<muted>Team up and steal the flag."

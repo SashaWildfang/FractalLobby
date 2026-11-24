@@ -1,2178 +1,2182 @@
 {
-"category/chat_colours": [
-"NAME_TAG"
-],
-"category/cloaks": [
-"PHANTOM_MEMBRANE"
-],
-"category/emotes": [
-"PLAYER_HEAD"
-],
-"category/gadgets": [
-"FIREWORK_STAR"
-],
-"category/gestures": [
-"FEATHER"
-],
-"category/hats": [
-"LEATHER_HELMET"
-],
-"category/suits": [
-"LEATHER_CHESTPLATE"
-],
-"category/take_off": [
-"BARRIER"
-],
-"category/trails": [
-"BLAZE_POWDER"
-],
-"cloak/angel_wings": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/blossom_aura": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/flame_ring": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/halo": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/orbit": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/bat": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/bolt": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/cloud": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/fire_ring": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/flame": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/flame_tongue": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/ghost": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/halo": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/halo_ring": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/orb_blue": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/orb_gold": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/orb_pink": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/petal": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/planet_blue": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/planet_pink": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/planet_ringed": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/pumpkin_light": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/rain_cloud2": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/raindrop": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/snowflake": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sparkle": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/spook_ghost": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/star_gold": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/star_lilac": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/star_pink": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/star_white": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun3d": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun_ball": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun_glow": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun_rays2": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/sun_ring": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/wing_left": [
-"FEATHER",
-"PHANTOM_MEMBRANE"
-],
-"cloak/part/wing_right": [
-"FEATHER",
-"PHANTOM_MEMBRANE"
-],
-"cloak/rain_cloud": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/snow_globe": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/sparkle_aura": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/spooky_aura": [
-"PHANTOM_MEMBRANE"
-],
-"cloak/sun_rays": [
-"PHANTOM_MEMBRANE"
-],
-"color/aqua": [
-"LIGHT_BLUE_DYE",
-"PAPER"
-],
-"color/blue": [
-"BLUE_DYE",
-"PAPER"
-],
-"color/fractal": [
-"AMETHYST_CLUSTER",
-"PAPER"
-],
-"color/gray": [
-"LIGHT_GRAY_DYE",
-"PAPER"
-],
-"color/green": [
-"LIME_DYE",
-"PAPER"
-],
-"color/lavender": [
-"AMETHYST_SHARD",
-"PAPER"
-],
-"color/ocean": [
-"PAPER",
-"PRISMARINE_CRYSTALS"
-],
-"color/orange": [
-"ORANGE_DYE",
-"PAPER"
-],
-"color/pink": [
-"PAPER",
-"PINK_DYE"
-],
-"color/purple": [
-"PAPER",
-"PURPLE_DYE"
-],
-"color/rainbow": [
-"NETHER_STAR",
-"PAPER"
-],
-"color/red": [
-"PAPER",
-"RED_DYE"
-],
-"color/sunset": [
-"HONEYCOMB",
-"PAPER"
-],
-"color/white": [
-"PAPER",
-"WHITE_DYE"
-],
-"color/yellow": [
-"PAPER",
-"YELLOW_DYE"
-],
-"gadget/ball_orange": [
-"FIREWORK_STAR"
-],
-"gadget/balloon": [
-"FIREWORK_STAR"
-],
-"gadget/balloon_3d": [
-"FIREWORK_STAR",
-"LEATHER_HORSE_ARMOR"
-],
-"gadget/bat_blaster": [
-"FIREWORK_STAR"
-],
-"gadget/beach_ball": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/beach_ball_3d": [
-"FIREWORK_STAR"
-],
-"gadget/blink_stick": [
-"FIREWORK_STAR"
-],
-"gadget/boomerang_fly": [
-"FIREWORK_STAR",
-"STICK"
-],
-"gadget/bubble": [
-"FIREWORK_STAR",
-"GLASS_PANE"
-],
-"gadget/bubble_wand": [
-"FIREWORK_STAR"
-],
-"gadget/catapult": [
-"FIREWORK_STAR"
-],
-"gadget/catapult_arm": [
-"FIREWORK_STAR",
-"OAK_PLANKS"
-],
-"gadget/catapult_base": [
-"FIREWORK_STAR",
-"OAK_PLANKS"
-],
-"gadget/chain_link": [
-"FIREWORK_STAR",
-"IRON_NUGGET"
-],
-"gadget/confetti_0": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/confetti_1": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/confetti_2": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/confetti_3": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/confetti_4": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/confetti_5": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/cookie": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/cookie_fountain": [
-"FIREWORK_STAR"
-],
-"gadget/cookie_fountain_3d": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/cookie_fountain_flow": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/creeper_astronaut": [
-"FIREWORK_STAR"
-],
-"gadget/crow": [
-"COAL",
-"FIREWORK_STAR"
-],
-"gadget/crow_down": [
-"COAL",
-"FIREWORK_STAR"
-],
-"gadget/crow_up": [
-"COAL",
-"FIREWORK_STAR"
-],
-"gadget/diamond_shower": [
-"FIREWORK_STAR"
-],
-"gadget/disco_ball": [
-"FIREWORK_STAR"
-],
-"gadget/disco_ball_3d": [
-"FIREWORK_STAR",
-"GLASS"
-],
-"gadget/diving_board": [
-"FIREWORK_STAR"
-],
-"gadget/diving_board_3d": [
-"FIREWORK_STAR"
-],
-"gadget/dj_booth": [
-"FIREWORK_STAR"
-],
-"gadget/dj_booth_3d": [
-"FIREWORK_STAR",
-"JUKEBOX"
-],
-"gadget/duckling": [
-"FIREWORK_STAR"
-],
-"gadget/exploding_sheep": [
-"FIREWORK_STAR"
-],
-"gadget/explosive_bow": [
-"FIREWORK_STAR"
-],
-"gadget/fake_tnt": [
-"FIREWORK_STAR"
-],
-"gadget/fc_left": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/fc_right": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/fc_slip": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/fc_whole": [
-"COOKIE",
-"FIREWORK_STAR"
-],
-"gadget/firework_launcher": [
-"FIREWORK_STAR"
-],
-"gadget/firework_launcher_gui": [
-"FIREWORK_STAR"
-],
-"gadget/fortune_cookie": [
-"FIREWORK_STAR"
-],
-"gadget/frisbee": [
-"FIREWORK_STAR"
-],
-"gadget/frisbee_3d": [
-"FIREWORK_STAR",
-"RED_CARPET"
-],
-"gadget/fx_circle": [
-"FIREWORK_STAR",
-"NETHER_STAR"
-],
-"gadget/fx_orb": [
-"FIREWORK_STAR"
-],
-"gadget/fx_sparkle": [
-"DIAMOND",
-"FIREWORK_STAR",
-"GLASS",
-"IRON_TRAPDOOR",
-"OAK_PLANKS"
-],
-"gadget/fx_star": [
-"FIREWORK_STAR",
-"STICK"
-],
-"gadget/fx_twinkle": [
-"DIAMOND",
-"FIREWORK_STAR",
-"PAPER",
-"WHITE_WOOL"
-],
-"gadget/ghost": [
-"FIREWORK_STAR"
-],
-"gadget/grappling_hook": [
-"FIREWORK_STAR"
-],
-"gadget/grappling_hook_head": [
-"FIREWORK_STAR",
-"TRIPWIRE_HOOK"
-],
-"gadget/hot_potato": [
-"FIREWORK_STAR"
-],
-"gadget/ice_skate": [
-"FIREWORK_STAR",
-"LEATHER_BOOTS",
-"PACKED_ICE",
-"SNOWBALL"
-],
-"gadget/jet_flame": [
-"FIREWORK_STAR"
-],
-"gadget/jetpack": [
-"FIREWORK_STAR"
-],
-"gadget/jetpack_3d": [
-"FIREWORK_STAR"
-],
-"gadget/let_it_snow": [
-"FIREWORK_STAR"
-],
-"gadget/magic_8_ball": [
-"FIREWORK_STAR"
-],
-"gadget/magic_8_ball_3d": [
-"ENDER_EYE",
-"FIREWORK_STAR"
-],
-"gadget/magic_wand": [
-"FIREWORK_STAR"
-],
-"gadget/melody_maker": [
-"FIREWORK_STAR"
-],
-"gadget/mob_gun": [
-"FIREWORK_STAR"
-],
-"gadget/mob_gun_gui": [
-"FIREWORK_STAR"
-],
-"gadget/paintball": [
-"FIREWORK_STAR"
-],
-"gadget/paintball_0": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_1": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_2": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_3": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_4": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_5": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_6": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_7": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_0": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_0_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_1": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_1_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_2": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_2_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_3": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_3_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_4": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_4_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_5": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_5_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_6": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_6_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_7": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_7_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/paintball_gun_gui": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/party_popper": [
-"FIREWORK_STAR"
-],
-"gadget/party_popper_gui": [
-"FIREWORK_STAR"
-],
-"gadget/party_popper_open": [
-"FIREWORK_STAR"
-],
-"gadget/party_popper_open_gui": [
-"FIREWORK_STAR"
-],
-"gadget/pigs_fly": [
-"FIREWORK_STAR"
-],
-"gadget/pinata": [
-"FIREWORK_STAR"
-],
-"gadget/pinata_3d": [
-"FIREWORK_STAR",
-"PINK_WOOL"
-],
-"gadget/pinata_bat": [
-"CAKE",
-"COOKIE",
-"FIREWORK_STAR",
-"GLOW_BERRIES",
-"GOLDEN_CARROT",
-"HONEY_BOTTLE",
-"LIGHT_BLUE_CONCRETE",
-"LIME_CONCRETE",
-"OAK_FENCE",
-"ORANGE_CONCRETE",
-"PINK_CONCRETE",
-"PINK_WOOL",
-"PUMPKIN_PIE",
-"SWEET_BERRIES",
-"WHITE_CONCRETE",
-"YELLOW_CONCRETE"
-],
-"gadget/pinata_stand": [
-"FIREWORK_STAR",
-"OAK_FENCE"
-],
-"gadget/pong": [
-"FIREWORK_STAR"
-],
-"gadget/pong_ball": [
-"FIREWORK_STAR"
-],
-"gadget/pool_water": [
-"BLUE_STAINED_GLASS",
-"FIREWORK_STAR"
-],
-"gadget/pumpkin_launcher": [
-"FIREWORK_STAR"
-],
-"gadget/pumpkin_rain": [
-"FIREWORK_STAR"
-],
-"gadget/rail_ring": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/railgun": [
-"FIREWORK_STAR"
-],
-"gadget/railgun_gui": [
-"FIREWORK_STAR"
-],
-"gadget/rainbow": [
-"FIREWORK_STAR"
-],
-"gadget/rainbow_arc": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/rainbow_cloud": [
-"FIREWORK_STAR",
-"WHITE_WOOL"
-],
-"gadget/rock_paper_shears": [
-"FIREWORK_STAR"
-],
-"gadget/rock_paper_shears_held": [
-"FIREWORK_STAR"
-],
-"gadget/rope": [
-"FIREWORK_STAR"
-],
-"gadget/rps_paper": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/rps_rock": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/rps_shears": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/rush_pearl": [
-"ENDER_PEARL",
-"FIREWORK_STAR"
-],
-"gadget/sand_castle": [
-"FIREWORK_STAR"
-],
-"gadget/sand_castle_3d": [
-"FIREWORK_STAR",
-"SAND"
-],
-"gadget/scarecrow": [
-"FIREWORK_STAR"
-],
-"gadget/scarecrow_body": [
-"FARMLAND",
-"FIREWORK_STAR",
-"HAY_BLOCK"
-],
-"gadget/scarecrow_head": [
-"FARMLAND",
-"FIREWORK_STAR",
-"HAY_BLOCK"
-],
-"gadget/scarecrow_head_scare": [
-"FIREWORK_STAR",
-"HAY_BLOCK"
-],
-"gadget/snow_cannon": [
-"FIREWORK_STAR"
-],
-"gadget/snow_cloud": [
-"CARVED_PUMPKIN",
-"FIREWORK_STAR",
-"SNOW",
-"SNOW_BLOCK"
-],
-"gadget/streamer_0": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/streamer_1": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/streamer_2": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/streamer_3": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/streamer_4": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/streamer_5": [
-"FIREWORK_STAR",
-"PAPER"
-],
-"gadget/swing": [
-"FIREWORK_STAR"
-],
-"gadget/swing_frame": [
-"FIREWORK_STAR",
-"OAK_FENCE"
-],
-"gadget/swing_seat": [
-"FIREWORK_STAR",
-"RED_CARPET"
-],
-"gadget/tetherball": [
-"FIREWORK_STAR"
-],
-"gadget/tetherball_3d": [
-"FIREWORK_STAR",
-"YELLOW_WOOL"
-],
-"gadget/tetherball_pole": [
-"FIREWORK_STAR",
-"IRON_BARS"
-],
-"gadget/tic_tac_toe": [
-"FIREWORK_STAR"
-],
-"gadget/trampoline": [
-"FIREWORK_STAR"
-],
-"gadget/trampoline_3d": [
-"FIREWORK_STAR",
-"SLIME_BLOCK"
-],
-"gadget/ttt_board": [
-"FIREWORK_STAR",
-"OAK_PRESSURE_PLATE"
-],
-"gadget/ttt_o": [
-"BLUE_CARPET",
-"FIREWORK_STAR",
-"OAK_PRESSURE_PLATE",
-"RED_CARPET"
-],
-"gadget/ttt_x": [
-"BLUE_CARPET",
-"FIREWORK_STAR",
-"OAK_PRESSURE_PLATE",
-"RED_CARPET"
-],
-"gadget/volleyball_3d": [
-"FIREWORK_STAR",
-"SNOWBALL"
-],
-"gadget/witch_cauldron": [
-"FIREWORK_STAR"
-],
-"gesture/bow": [
-"FEATHER"
-],
-"gesture/celebrate": [
-"FEATHER"
-],
-"gesture/clap": [
-"FEATHER"
-],
-"gesture/dab": [
-"FEATHER"
-],
-"gesture/explode": [
-"FEATHER"
-],
-"gesture/facepalm": [
-"FEATHER"
-],
-"gesture/floss": [
-"FEATHER"
-],
-"gesture/giant": [
-"FEATHER"
-],
-"gesture/headbang": [
-"FEATHER"
-],
-"gesture/levitate": [
-"FEATHER"
-],
-"gesture/magic_trick": [
-"FEATHER"
-],
-"gesture/moonwalk": [
-"FEATHER"
-],
-"gesture/sleep": [
-"FEATHER"
-],
-"gesture/spin": [
-"FEATHER"
-],
-"gesture/swim": [
-"FEATHER"
-],
-"gesture/tiny": [
-"FEATHER"
-],
-"gesture/twirl_jump": [
-"FEATHER"
-],
-"gesture/wave": [
-"FEATHER"
-],
-"gesture/zombie_walk": [
-"FEATHER"
-],
-"hat/beanie": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/bunny_ears": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/cat_ears": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/chef_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/chick_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/cowboy_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/crown": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/devil_horns": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/egg_shell": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/elf_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/flower_crown": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/headphones": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/pineapple": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/propeller": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/propeller_cap": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/propeller_cap_base": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/pumpkin_head": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/reindeer_antlers": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/santa_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/snorkel": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/snowman_head": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/suit_baker": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_bumblebee": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_bunny": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_chick": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_disco": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_frog": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_thor": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/suit_warrior": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LEATHER_LEGGINGS",
-"PAPER"
-],
-"hat/sun_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/top_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/viking_helmet": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/witch_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"hat/wizard_hat": [
-"LEATHER_HELMET",
-"PAPER"
-],
-"menu/add-friend": [
-"WRITABLE_BOOK"
-],
-"menu/audience-donors": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/audience-everyone": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/audience-nobody": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/audience-staff": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/back": [
-"ARROW",
-"SPECTRAL_ARROW",
-"STRUCTURE_VOID"
-],
-"menu/back-off": [
-"GRAY_DYE"
-],
-"menu/chat": [
-"WRITABLE_BOOK"
-],
-"menu/chat-color": [
-"NAME_TAG"
-],
-"menu/collectibles": [
-"ENDER_CHEST"
-],
-"menu/command-spy": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"menu/confirm": [
-"LIME_DYE"
-],
-"menu/double-jump": [
-"FEATHER"
-],
-"menu/friend-notify": [
-"EMERALD"
-],
-"menu/friend-requests": [
-"BOOK",
-"WRITABLE_BOOK"
-],
-"menu/friends": [
-"PLAYER_HEAD"
-],
-"menu/glow": [
-"GLOWSTONE_DUST"
-],
-"menu/header": [
-"COMPARATOR"
-],
-"menu/ignored": [
-"SKELETON_SKULL"
-],
-"menu/join-messages": [
-"OAK_DOOR"
-],
-"menu/leave-messages": [
-"IRON_DOOR"
-],
-"menu/lobby": [
-"GRASS_BLOCK"
-],
-"menu/locked": [
-"AMETHYST_CLUSTER",
-"AMETHYST_SHARD",
-"ARMOR_STAND",
-"ARROW",
-"BARRIER",
-"BLAZE_POWDER",
-"BLUE_DYE",
-"CHEST",
-"CRAFTING_TABLE",
-"EMERALD",
-"ENCHANTED_BOOK",
-"END_ROD",
-"FEATHER",
-"FIREWORK_STAR",
-"GLOWSTONE_DUST",
-"GRAY_DYE",
-"HONEYCOMB",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LIGHTNING_ROD",
-"LIGHT_BLUE_DYE",
-"LIGHT_GRAY_DYE",
-"LIME_DYE",
-"NETHER_STAR",
-"NOTE_BLOCK",
-"ORANGE_DYE",
-"PHANTOM_MEMBRANE",
-"PINK_DYE",
-"PINK_PETALS",
-"PLAYER_HEAD",
-"PRISMARINE_CRYSTALS",
-"PURPLE_DYE",
-"RED_DYE",
-"SNOWBALL",
-"SOUL_TORCH",
-"TOTEM_OF_UNDYING",
-"WHITE_DYE",
-"WHITE_WOOL",
-"YELLOW_DYE"
-],
-"menu/locked_buy": [
-"AMETHYST_CLUSTER",
-"AMETHYST_SHARD",
-"ARMOR_STAND",
-"BLAZE_POWDER",
-"BLUE_DYE",
-"EMERALD",
-"ENCHANTED_BOOK",
-"END_ROD",
-"FEATHER",
-"FIREWORK_STAR",
-"HONEYCOMB",
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET",
-"LIGHTNING_ROD",
-"LIGHT_BLUE_DYE",
-"LIGHT_GRAY_DYE",
-"LIME_DYE",
-"NETHER_STAR",
-"NOTE_BLOCK",
-"ORANGE_DYE",
-"PHANTOM_MEMBRANE",
-"PINK_DYE",
-"PINK_PETALS",
-"PLAYER_HEAD",
-"PRISMARINE_CRYSTALS",
-"PURPLE_DYE",
-"RED_DYE",
-"SNOWBALL",
-"SOUL_TORCH",
-"TOTEM_OF_UNDYING",
-"WHITE_DYE",
-"WHITE_WOOL",
-"YELLOW_DYE"
-],
-"menu/mentions": [
-"NOTE_BLOCK"
-],
-"menu/message-sounds": [
-"BELL"
-],
-"menu/middle": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"menu/more": [
-"PAPER"
-],
-"menu/network": [
-"ENDER_PEARL"
-],
-"menu/next": [
-"ARROW"
-],
-"menu/next-off": [
-"GRAY_DYE"
-],
-"menu/none": [
-"BARRIER",
-"LIME_DYE",
-"RED_DYE",
-"SPECTRAL_ARROW",
-"STRUCTURE_VOID"
-],
-"menu/off": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/on": [
-"LIME_STAINED_GLASS_PANE",
-"ORANGE_STAINED_GLASS_PANE",
-"RED_STAINED_GLASS_PANE",
-"YELLOW_STAINED_GLASS_PANE"
-],
-"menu/parkour": [
-"GOLDEN_BOOTS"
-],
-"menu/party-invites": [
-"CAKE"
-],
-"menu/player": [
-"PLAYER_HEAD"
-],
-"menu/player-visibility": [
-"ENDER_EYE"
-],
-"menu/players-hidden": [
-"GRAY_DYE"
-],
-"menu/players-shown": [
-"LIME_DYE"
-],
-"menu/private-messages": [
-"PAPER"
-],
-"menu/radio": [
-"JUKEBOX"
-],
-"menu/realms": [
-"COMPASS"
-],
-"menu/reset": [
-"BARRIER",
-"TNT_MINECART"
-],
-"menu/scoreboard": [
-"PAINTING"
-],
-"menu/search": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"menu/social-spy": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"menu/take_off": [
-"BARRIER"
-],
-"menu/trail": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"menu/unavailable": [
-"BARRIER"
-],
-"menu/vanish": [
-"ARROW",
-"BARRIER",
-"BELL",
-"BOOK",
-"CAKE",
-"COMPARATOR",
-"EMERALD",
-"ENDER_EYE",
-"ENDER_PEARL",
-"FEATHER",
-"GLOWSTONE_DUST",
-"GOLDEN_BOOTS",
-"GRASS_BLOCK",
-"GRAY_DYE",
-"IRON_DOOR",
-"LIME_DYE",
-"NAME_TAG",
-"NOTE_BLOCK",
-"OAK_DOOR",
-"PAINTING",
-"PAPER",
-"RED_DYE",
-"TNT_MINECART",
-"WRITABLE_BOOK"
-],
-"mystery/box_1": [
-"CHEST"
-],
-"mystery/box_2": [
-"CHEST",
-"PAPER"
-],
-"mystery/box_3": [
-"CHEST"
-],
-"mystery/box_4": [
-"CHEST"
-],
-"mystery/box_5": [
-"CHEST"
-],
-"mystery/collection": [
-"PAPER"
-],
-"mystery/craft": [
-"CRAFTING_TABLE"
-],
-"mystery/craft_locked": [
-"PAPER"
-],
-"mystery/dust": [
-"GLOWSTONE_DUST"
-],
-"mystery/empty": [
-"PAPER"
-],
-"mystery/gift_1": [
-"CHEST"
-],
-"mystery/gift_2": [
-"CHEST"
-],
-"mystery/gift_3": [
-"CHEST"
-],
-"mystery/gift_4": [
-"CHEST"
-],
-"mystery/gift_5": [
-"CHEST"
-],
-"mystery/locked": [
-"PAPER"
-],
-"mystery/open_all": [
-"ARROW",
-"BARRIER",
-"CHEST",
-"CRAFTING_TABLE",
-"GLOWSTONE_DUST",
-"GRAY_DYE"
-],
-"mystery/open_all_off": [
-"ARROW",
-"BARRIER",
-"CHEST",
-"CRAFTING_TABLE",
-"GLOWSTONE_DUST",
-"GRAY_DYE"
-],
-"mystery/vault_body": [
-"CHEST"
-],
-"mystery/vault_lid": [
-"OAK_SLAB"
-],
-"parkour/dot": [
-"GLOWSTONE_DUST"
-],
-"parkour/ghost": [
-"PAPER"
-],
-"radio/bar-action": [
-"GRAY_DYE",
-"NAME_TAG"
-],
-"radio/bar-boss": [
-"DRAGON_HEAD",
-"REPEATER"
-],
-"radio/bar-off": [
-"GRAY_DYE",
-"NAME_TAG"
-],
-"radio/blank": [
-"PAPER"
-],
-"radio/categories": [
-"BOOKSHELF",
-"NETHER_STAR"
-],
-"radio/close": [
-"BARRIER"
-],
-"radio/disc_0": [
-"MUSIC_DISC_11",
-"MUSIC_DISC_13",
-"MUSIC_DISC_MALL"
-],
-"radio/disc_1": [
-"MUSIC_DISC_CAT",
-"MUSIC_DISC_MELLOHI",
-"MUSIC_DISC_WAIT"
-],
-"radio/disc_2": [
-"MUSIC_DISC_BLOCKS",
-"MUSIC_DISC_PIGSTEP",
-"MUSIC_DISC_STAL"
-],
-"radio/disc_3": [
-"MUSIC_DISC_CHIRP",
-"MUSIC_DISC_OTHERSIDE",
-"MUSIC_DISC_STRAD"
-],
-"radio/disc_4": [
-"MUSIC_DISC_FAR",
-"MUSIC_DISC_RELIC",
-"MUSIC_DISC_WARD"
-],
-"radio/empty": [
-"PAPER"
-],
-"radio/favorites": [
-"BOOKSHELF",
-"NETHER_STAR"
-],
-"radio/genre/anime": [
-"CHERRY_SAPLING"
-],
-"radio/genre/anthems": [
-"WHITE_BANNER"
-],
-"radio/genre/christmas": [
-"SNOWBALL"
-],
-"radio/genre/classical-jazz": [
-"BELL"
-],
-"radio/genre/default": [
-"NOTE_BLOCK"
-],
-"radio/genre/electronic": [
-"AMETHYST_CLUSTER"
-],
-"radio/genre/games": [
-"DIAMOND_SWORD"
-],
-"radio/genre/hip-hop": [
-"GOLD_INGOT"
-],
-"radio/genre/memes": [
-"SLIME_BALL"
-],
-"radio/genre/pop": [
-"POPPED_CHORUS_FRUIT"
-],
-"radio/genre/rock": [
-"ANVIL"
-],
-"radio/genre/tv-film": [
-"PAINTING"
-],
-"radio/next-off": [
-"BARRIER",
-"BLACK_STAINED_GLASS_PANE",
-"MAGENTA_STAINED_GLASS_PANE",
-"PURPLE_STAINED_GLASS_PANE",
-"SPECTRAL_ARROW",
-"STRUCTURE_VOID"
-],
-"radio/pause": [
-"ECHO_SHARD",
-"PURPLE_DYE"
-],
-"radio/play": [
-"AMETHYST_SHARD",
-"LIME_DYE"
-],
-"radio/previous": [
-"ECHO_SHARD",
-"PURPLE_DYE"
-],
-"radio/queue": [
-"JUKEBOX",
-"WRITABLE_BOOK"
-],
-"radio/repeat": [
-"DRAGON_HEAD",
-"REPEATER"
-],
-"radio/search": [
-"BOOKSHELF",
-"HOPPER",
-"JUKEBOX",
-"NETHER_STAR",
-"SPECTRAL_ARROW",
-"SPYGLASS",
-"WRITABLE_BOOK"
-],
-"radio/shuffle": [
-"ENDER_EYE",
-"ENDER_PEARL"
-],
-"radio/shuffle-off": [
-"ENDER_EYE",
-"ENDER_PEARL"
-],
-"radio/skip": [
-"AMETHYST_SHARD",
-"LIME_DYE"
-],
-"radio/sort": [
-"HOPPER",
-"NOTE_BLOCK"
-],
-"radio/station": [
-"JUKEBOX",
-"WRITABLE_BOOK"
-],
-"radio/volume": [
-"HOPPER",
-"NOTE_BLOCK"
-],
-"season/easter": [
-"PAPER"
-],
-"season/halloween": [
-"PAPER"
-],
-"season/holiday": [
-"PAPER"
-],
-"season/normal": [
-"PAPER"
-],
-"season/summer": [
-"PAPER"
-],
-"status/angel": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/angry": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/begging": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/clown": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/cool": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/crying": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/dead": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/evil": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/eyes": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/happy": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/heart": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/joy": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/kiss": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/love": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/melt": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/mindblown": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/money": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/poop": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/sad": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/scream": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/skull": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/sweat": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/thinking": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/thumbsup": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"status/wink": [
-"PLAYER_HEAD",
-"SUNFLOWER"
-],
-"suit/astronaut/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/astronaut/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/astronaut/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/astronaut/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/astronaut/set": [
-"ARMOR_STAND"
-],
-"suit/baker/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/baker/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/baker/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/baker/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/baker/set": [
-"ARMOR_STAND"
-],
-"suit/bumblebee/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/bumblebee/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/bumblebee/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/bumblebee/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/bumblebee/set": [
-"ARMOR_STAND"
-],
-"suit/bunny/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/bunny/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/bunny/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/bunny/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/bunny/set": [
-"ARMOR_STAND"
-],
-"suit/chick/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/chick/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/chick/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/chick/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/chick/set": [
-"ARMOR_STAND"
-],
-"suit/disco/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/disco/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/disco/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/disco/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/disco/set": [
-"ARMOR_STAND"
-],
-"suit/elf/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/elf/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/elf/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/elf/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/elf/set": [
-"ARMOR_STAND"
-],
-"suit/frog/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/frog/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/frog/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/frog/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/frog/set": [
-"ARMOR_STAND"
-],
-"suit/lifeguard/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/lifeguard/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/lifeguard/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/lifeguard/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/lifeguard/set": [
-"ARMOR_STAND"
-],
-"suit/mermaid/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/mermaid/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/mermaid/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/mermaid/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/mermaid/set": [
-"ARMOR_STAND"
-],
-"suit/necromancer/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/necromancer/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/necromancer/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/necromancer/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/necromancer/set": [
-"ARMOR_STAND"
-],
-"suit/ninja/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/ninja/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/ninja/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/ninja/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/ninja/set": [
-"ARMOR_STAND"
-],
-"suit/plumber/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/plumber/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/plumber/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/plumber/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/plumber/set": [
-"ARMOR_STAND"
-],
-"suit/santa/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/santa/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/santa/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/santa/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/santa/set": [
-"ARMOR_STAND"
-],
-"suit/skeleton/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/skeleton/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/skeleton/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/skeleton/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/skeleton/set": [
-"ARMOR_STAND"
-],
-"suit/speedster/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/speedster/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/speedster/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/speedster/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/speedster/set": [
-"ARMOR_STAND"
-],
-"suit/spooderman/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/spooderman/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/spooderman/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/spooderman/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/spooderman/set": [
-"ARMOR_STAND"
-],
-"suit/thor/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/thor/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/thor/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/thor/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/thor/set": [
-"ARMOR_STAND"
-],
-"suit/tourist/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/tourist/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/tourist/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/tourist/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/tourist/set": [
-"ARMOR_STAND"
-],
-"suit/vampire/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/vampire/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/vampire/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/vampire/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/vampire/set": [
-"ARMOR_STAND"
-],
-"suit/warrior/boots": [
-"LEATHER_BOOTS",
-"LEATHER_CHESTPLATE"
-],
-"suit/warrior/chestplate": [
-"LEATHER_CHESTPLATE"
-],
-"suit/warrior/helmet": [
-"LEATHER_CHESTPLATE",
-"LEATHER_HELMET"
-],
-"suit/warrior/leggings": [
-"LEATHER_CHESTPLATE",
-"LEATHER_LEGGINGS"
-],
-"suit/warrior/set": [
-"ARMOR_STAND"
-],
-"survival": [
-"ARROW",
-"BOOK",
-"GRASS_BLOCK",
-"LIME_DYE",
-"PAPER",
-"PLAYER_HEAD",
-"WRITABLE_BOOK"
-],
-"trail/blossom": [
-"PAPER",
-"PINK_PETALS"
-],
-"trail/clouds": [
-"PAPER",
-"WHITE_WOOL"
-],
-"trail/enchanted": [
-"ENCHANTED_BOOK",
-"PAPER"
-],
-"trail/flames": [
-"BLAZE_POWDER",
-"PAPER"
-],
-"trail/hearts": [
-"PAPER",
-"RED_DYE"
-],
-"trail/magic": [
-"AMETHYST_SHARD",
-"PAPER"
-],
-"trail/notes": [
-"NOTE_BLOCK",
-"PAPER"
-],
-"trail/snowflakes": [
-"PAPER",
-"SNOWBALL"
-],
-"trail/soul-flames": [
-"PAPER",
-"SOUL_TORCH"
-],
-"trail/sparkles": [
-"EMERALD",
-"PAPER"
-],
-"trail/sparks": [
-"LIGHTNING_ROD",
-"PAPER"
-],
-"trail/stars": [
-"END_ROD",
-"PAPER"
-],
-"trail/totem": [
-"PAPER",
-"TOTEM_OF_UNDYING"
-]
+  "category/chat_colours": [
+    "NAME_TAG"
+  ],
+  "category/cloaks": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "category/emotes": [
+    "PLAYER_HEAD"
+  ],
+  "category/gadgets": [
+    "FIREWORK_STAR"
+  ],
+  "category/gestures": [
+    "FEATHER"
+  ],
+  "category/hats": [
+    "LEATHER_HELMET"
+  ],
+  "category/suits": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "category/take_off": [
+    "BARRIER"
+  ],
+  "category/trails": [
+    "BLAZE_POWDER"
+  ],
+  "cloak/angel_wings": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/blossom_aura": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/flame_ring": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/halo": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/orbit": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/bat": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/bolt": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/cloud": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/fire_ring": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/flame": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/flame_tongue": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/ghost": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/halo": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/halo_ring": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/orb_blue": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/orb_gold": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/orb_pink": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/petal": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/planet_blue": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/planet_pink": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/planet_ringed": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/pumpkin_light": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/rain_cloud2": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/raindrop": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/snowflake": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sparkle": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/spook_ghost": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/star_gold": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/star_lilac": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/star_pink": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/star_white": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun3d": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun_ball": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun_glow": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun_rays2": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/sun_ring": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/wing_left": [
+    "FEATHER",
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/part/wing_right": [
+    "FEATHER",
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/rain_cloud": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/snow_globe": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/sparkle_aura": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/spooky_aura": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "cloak/sun_rays": [
+    "PHANTOM_MEMBRANE"
+  ],
+  "color/aqua": [
+    "LIGHT_BLUE_DYE",
+    "PAPER"
+  ],
+  "color/blue": [
+    "BLUE_DYE",
+    "PAPER"
+  ],
+  "color/fractal": [
+    "AMETHYST_CLUSTER",
+    "PAPER"
+  ],
+  "color/gray": [
+    "LIGHT_GRAY_DYE",
+    "PAPER"
+  ],
+  "color/green": [
+    "LIME_DYE",
+    "PAPER"
+  ],
+  "color/lavender": [
+    "AMETHYST_SHARD",
+    "PAPER"
+  ],
+  "color/ocean": [
+    "PAPER",
+    "PRISMARINE_CRYSTALS"
+  ],
+  "color/orange": [
+    "ORANGE_DYE",
+    "PAPER"
+  ],
+  "color/pink": [
+    "PAPER",
+    "PINK_DYE"
+  ],
+  "color/purple": [
+    "PAPER",
+    "PURPLE_DYE"
+  ],
+  "color/rainbow": [
+    "NETHER_STAR",
+    "PAPER"
+  ],
+  "color/red": [
+    "PAPER",
+    "RED_DYE"
+  ],
+  "color/sunset": [
+    "HONEYCOMB",
+    "PAPER"
+  ],
+  "color/white": [
+    "PAPER",
+    "WHITE_DYE"
+  ],
+  "color/yellow": [
+    "PAPER",
+    "YELLOW_DYE"
+  ],
+  "gadget/ball_orange": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/balloon": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/balloon_3d": [
+    "FIREWORK_STAR",
+    "LEATHER_HORSE_ARMOR"
+  ],
+  "gadget/bat_blaster": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/beach_ball": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/beach_ball_3d": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/blink_stick": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/boomerang_fly": [
+    "FIREWORK_STAR",
+    "STICK"
+  ],
+  "gadget/bubble": [
+    "FIREWORK_STAR",
+    "GLASS_PANE"
+  ],
+  "gadget/bubble_wand": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/catapult": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/catapult_arm": [
+    "FIREWORK_STAR",
+    "OAK_PLANKS"
+  ],
+  "gadget/catapult_base": [
+    "FIREWORK_STAR",
+    "OAK_PLANKS"
+  ],
+  "gadget/chain_link": [
+    "FIREWORK_STAR",
+    "IRON_NUGGET"
+  ],
+  "gadget/confetti_0": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/confetti_1": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/confetti_2": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/confetti_3": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/confetti_4": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/confetti_5": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/cookie": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/cookie_fountain": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/cookie_fountain_3d": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/cookie_fountain_flow": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/creeper_astronaut": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/crow": [
+    "COAL",
+    "FIREWORK_STAR"
+  ],
+  "gadget/crow_down": [
+    "COAL",
+    "FIREWORK_STAR"
+  ],
+  "gadget/crow_up": [
+    "COAL",
+    "FIREWORK_STAR"
+  ],
+  "gadget/diamond_shower": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/disco_ball": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/disco_ball_3d": [
+    "FIREWORK_STAR",
+    "GLASS"
+  ],
+  "gadget/diving_board": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/diving_board_3d": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/dj_booth": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/dj_booth_3d": [
+    "FIREWORK_STAR",
+    "JUKEBOX"
+  ],
+  "gadget/duckling": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/exploding_sheep": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/explosive_bow": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/fake_tnt": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/fc_left": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/fc_right": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/fc_slip": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/fc_whole": [
+    "COOKIE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/firework_launcher": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/firework_launcher_gui": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/fortune_cookie": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/frisbee": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/frisbee_3d": [
+    "FIREWORK_STAR",
+    "RED_CARPET"
+  ],
+  "gadget/fx_circle": [
+    "FIREWORK_STAR",
+    "NETHER_STAR"
+  ],
+  "gadget/fx_orb": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/fx_sparkle": [
+    "DIAMOND",
+    "FIREWORK_STAR",
+    "GLASS",
+    "IRON_TRAPDOOR",
+    "OAK_PLANKS"
+  ],
+  "gadget/fx_star": [
+    "FIREWORK_STAR",
+    "STICK"
+  ],
+  "gadget/fx_twinkle": [
+    "DIAMOND",
+    "FIREWORK_STAR",
+    "PAPER",
+    "WHITE_WOOL"
+  ],
+  "gadget/ghost": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/grappling_hook": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/grappling_hook_head": [
+    "FIREWORK_STAR",
+    "TRIPWIRE_HOOK"
+  ],
+  "gadget/hot_potato": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/ice_skate": [
+    "FIREWORK_STAR",
+    "LEATHER_BOOTS",
+    "PACKED_ICE",
+    "SNOWBALL"
+  ],
+  "gadget/jet_flame": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/jetpack": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/jetpack_3d": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/let_it_snow": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/magic_8_ball": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/magic_8_ball_3d": [
+    "ENDER_EYE",
+    "FIREWORK_STAR"
+  ],
+  "gadget/magic_wand": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/melody_maker": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/mob_gun": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/mob_gun_gui": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/paintball": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/paintball_0": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_1": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_2": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_3": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_4": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_5": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_6": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_7": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_0": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_0_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_1": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_1_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_2": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_2_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_3": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_3_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_4": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_4_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_5": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_5_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_6": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_6_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_7": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_7_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/paintball_gun_gui": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/party_popper": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/party_popper_gui": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/party_popper_open": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/party_popper_open_gui": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pigs_fly": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pinata": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pinata_3d": [
+    "FIREWORK_STAR",
+    "PINK_WOOL"
+  ],
+  "gadget/pinata_bat": [
+    "CAKE",
+    "COOKIE",
+    "FIREWORK_STAR",
+    "GLOW_BERRIES",
+    "GOLDEN_CARROT",
+    "HONEY_BOTTLE",
+    "LIGHT_BLUE_CONCRETE",
+    "LIME_CONCRETE",
+    "OAK_FENCE",
+    "ORANGE_CONCRETE",
+    "PINK_CONCRETE",
+    "PINK_WOOL",
+    "PUMPKIN_PIE",
+    "SWEET_BERRIES",
+    "WHITE_CONCRETE",
+    "YELLOW_CONCRETE"
+  ],
+  "gadget/pinata_stand": [
+    "FIREWORK_STAR",
+    "OAK_FENCE"
+  ],
+  "gadget/pong": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pong_ball": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pool_water": [
+    "BLUE_STAINED_GLASS",
+    "FIREWORK_STAR"
+  ],
+  "gadget/pumpkin_launcher": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/pumpkin_rain": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rail_ring": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/railgun": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/railgun_gui": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rainbow": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rainbow_arc": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/rainbow_cloud": [
+    "FIREWORK_STAR",
+    "WHITE_WOOL"
+  ],
+  "gadget/rock_paper_shears": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rock_paper_shears_held": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rope": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/rps_paper": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/rps_rock": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/rps_shears": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/rush_pearl": [
+    "ENDER_PEARL",
+    "FIREWORK_STAR"
+  ],
+  "gadget/sand_castle": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/sand_castle_3d": [
+    "FIREWORK_STAR",
+    "SAND"
+  ],
+  "gadget/scarecrow": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/scarecrow_body": [
+    "FARMLAND",
+    "FIREWORK_STAR",
+    "HAY_BLOCK"
+  ],
+  "gadget/scarecrow_head": [
+    "FARMLAND",
+    "FIREWORK_STAR",
+    "HAY_BLOCK"
+  ],
+  "gadget/scarecrow_head_scare": [
+    "FIREWORK_STAR",
+    "HAY_BLOCK"
+  ],
+  "gadget/snow_cannon": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/snow_cloud": [
+    "CARVED_PUMPKIN",
+    "FIREWORK_STAR",
+    "SNOW",
+    "SNOW_BLOCK"
+  ],
+  "gadget/streamer_0": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/streamer_1": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/streamer_2": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/streamer_3": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/streamer_4": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/streamer_5": [
+    "FIREWORK_STAR",
+    "PAPER"
+  ],
+  "gadget/swing": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/swing_frame": [
+    "FIREWORK_STAR",
+    "OAK_FENCE"
+  ],
+  "gadget/swing_seat": [
+    "FIREWORK_STAR",
+    "RED_CARPET"
+  ],
+  "gadget/tetherball": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/tetherball_3d": [
+    "FIREWORK_STAR",
+    "YELLOW_WOOL"
+  ],
+  "gadget/tetherball_pole": [
+    "FIREWORK_STAR",
+    "IRON_BARS"
+  ],
+  "gadget/tic_tac_toe": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/trampoline": [
+    "FIREWORK_STAR"
+  ],
+  "gadget/trampoline_3d": [
+    "FIREWORK_STAR",
+    "SLIME_BLOCK"
+  ],
+  "gadget/ttt_board": [
+    "FIREWORK_STAR",
+    "OAK_PRESSURE_PLATE"
+  ],
+  "gadget/ttt_o": [
+    "BLUE_CARPET",
+    "FIREWORK_STAR",
+    "OAK_PRESSURE_PLATE",
+    "RED_CARPET"
+  ],
+  "gadget/ttt_x": [
+    "BLUE_CARPET",
+    "FIREWORK_STAR",
+    "OAK_PRESSURE_PLATE",
+    "RED_CARPET"
+  ],
+  "gadget/volleyball_3d": [
+    "FIREWORK_STAR",
+    "SNOWBALL"
+  ],
+  "gadget/witch_cauldron": [
+    "FIREWORK_STAR"
+  ],
+  "gesture/bow": [
+    "FEATHER"
+  ],
+  "gesture/celebrate": [
+    "FEATHER"
+  ],
+  "gesture/clap": [
+    "FEATHER"
+  ],
+  "gesture/dab": [
+    "FEATHER"
+  ],
+  "gesture/explode": [
+    "FEATHER"
+  ],
+  "gesture/facepalm": [
+    "FEATHER"
+  ],
+  "gesture/floss": [
+    "FEATHER"
+  ],
+  "gesture/giant": [
+    "FEATHER"
+  ],
+  "gesture/headbang": [
+    "FEATHER"
+  ],
+  "gesture/levitate": [
+    "FEATHER"
+  ],
+  "gesture/magic_trick": [
+    "FEATHER"
+  ],
+  "gesture/moonwalk": [
+    "FEATHER"
+  ],
+  "gesture/sleep": [
+    "FEATHER"
+  ],
+  "gesture/spin": [
+    "FEATHER"
+  ],
+  "gesture/swim": [
+    "FEATHER"
+  ],
+  "gesture/tiny": [
+    "FEATHER"
+  ],
+  "gesture/twirl_jump": [
+    "FEATHER"
+  ],
+  "gesture/wave": [
+    "FEATHER"
+  ],
+  "gesture/zombie_walk": [
+    "FEATHER"
+  ],
+  "hat/beanie": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/bunny_ears": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/cat_ears": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/chef_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/chick_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/cowboy_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/crown": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/devil_horns": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/egg_shell": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/elf_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/flower_crown": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/headphones": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/pineapple": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/propeller": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/propeller_cap": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/propeller_cap_base": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/pumpkin_head": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/reindeer_antlers": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/santa_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/snorkel": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/snowman_head": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/suit_baker": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_bumblebee": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_bunny": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_chick": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_disco": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_frog": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_thor": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/suit_warrior": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LEATHER_LEGGINGS",
+    "PAPER"
+  ],
+  "hat/sun_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/top_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/viking_helmet": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/witch_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "hat/wizard_hat": [
+    "LEATHER_HELMET",
+    "PAPER"
+  ],
+  "menu/add-friend": [
+    "WRITABLE_BOOK"
+  ],
+  "menu/audience-donors": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/audience-everyone": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/audience-nobody": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/audience-staff": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/back": [
+    "ARROW",
+    "SPECTRAL_ARROW",
+    "STRUCTURE_VOID"
+  ],
+  "menu/back-off": [
+    "GRAY_DYE"
+  ],
+  "menu/chat": [
+    "WRITABLE_BOOK"
+  ],
+  "menu/chat-color": [
+    "NAME_TAG"
+  ],
+  "menu/collectibles": [
+    "ENDER_CHEST"
+  ],
+  "menu/command-spy": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "menu/confirm": [
+    "LIME_DYE"
+  ],
+  "menu/double-jump": [
+    "FEATHER"
+  ],
+  "menu/friend-notify": [
+    "EMERALD"
+  ],
+  "menu/friend-requests": [
+    "BOOK",
+    "WRITABLE_BOOK"
+  ],
+  "menu/friends": [
+    "PLAYER_HEAD"
+  ],
+  "menu/glow": [
+    "GLOWSTONE_DUST"
+  ],
+  "menu/header": [
+    "COMPARATOR"
+  ],
+  "menu/ignored": [
+    "SKELETON_SKULL"
+  ],
+  "menu/join-messages": [
+    "OAK_DOOR"
+  ],
+  "menu/leave-messages": [
+    "IRON_DOOR"
+  ],
+  "menu/lobby": [
+    "GRASS_BLOCK"
+  ],
+  "menu/locked": [
+    "AMETHYST_CLUSTER",
+    "AMETHYST_SHARD",
+    "ARMOR_STAND",
+    "ARROW",
+    "BARRIER",
+    "BLAZE_POWDER",
+    "BLUE_DYE",
+    "CHEST",
+    "CRAFTING_TABLE",
+    "EMERALD",
+    "ENCHANTED_BOOK",
+    "END_ROD",
+    "FEATHER",
+    "FIREWORK_STAR",
+    "GLOWSTONE_DUST",
+    "GRAY_DYE",
+    "HONEYCOMB",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LIGHTNING_ROD",
+    "LIGHT_BLUE_DYE",
+    "LIGHT_GRAY_DYE",
+    "LIME_DYE",
+    "NETHER_STAR",
+    "NOTE_BLOCK",
+    "ORANGE_DYE",
+    "PHANTOM_MEMBRANE",
+    "PINK_DYE",
+    "PINK_PETALS",
+    "PLAYER_HEAD",
+    "PRISMARINE_CRYSTALS",
+    "PURPLE_DYE",
+    "RED_DYE",
+    "SNOWBALL",
+    "SOUL_TORCH",
+    "TOTEM_OF_UNDYING",
+    "WHITE_DYE",
+    "WHITE_WOOL",
+    "YELLOW_DYE"
+  ],
+  "menu/locked_buy": [
+    "AMETHYST_CLUSTER",
+    "AMETHYST_SHARD",
+    "ARMOR_STAND",
+    "BLAZE_POWDER",
+    "BLUE_DYE",
+    "EMERALD",
+    "ENCHANTED_BOOK",
+    "END_ROD",
+    "FEATHER",
+    "FIREWORK_STAR",
+    "HONEYCOMB",
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET",
+    "LIGHTNING_ROD",
+    "LIGHT_BLUE_DYE",
+    "LIGHT_GRAY_DYE",
+    "LIME_DYE",
+    "NETHER_STAR",
+    "NOTE_BLOCK",
+    "ORANGE_DYE",
+    "PHANTOM_MEMBRANE",
+    "PINK_DYE",
+    "PINK_PETALS",
+    "PLAYER_HEAD",
+    "PRISMARINE_CRYSTALS",
+    "PURPLE_DYE",
+    "RED_DYE",
+    "SNOWBALL",
+    "SOUL_TORCH",
+    "TOTEM_OF_UNDYING",
+    "WHITE_DYE",
+    "WHITE_WOOL",
+    "YELLOW_DYE"
+  ],
+  "menu/mentions": [
+    "NOTE_BLOCK"
+  ],
+  "menu/message-sounds": [
+    "BELL"
+  ],
+  "menu/middle": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "menu/more": [
+    "PAPER"
+  ],
+  "menu/network": [
+    "ENDER_PEARL"
+  ],
+  "menu/next": [
+    "ARROW"
+  ],
+  "menu/next-off": [
+    "GRAY_DYE"
+  ],
+  "menu/none": [
+    "BARRIER",
+    "LIME_DYE",
+    "RED_DYE",
+    "SPECTRAL_ARROW",
+    "STRUCTURE_VOID"
+  ],
+  "menu/off": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/on": [
+    "LIME_STAINED_GLASS_PANE",
+    "ORANGE_STAINED_GLASS_PANE",
+    "RED_STAINED_GLASS_PANE",
+    "YELLOW_STAINED_GLASS_PANE"
+  ],
+  "menu/parkour": [
+    "GOLDEN_BOOTS"
+  ],
+  "menu/party-invites": [
+    "CAKE"
+  ],
+  "menu/player": [
+    "PLAYER_HEAD"
+  ],
+  "menu/player-visibility": [
+    "ENDER_EYE"
+  ],
+  "menu/players-hidden": [
+    "GRAY_DYE"
+  ],
+  "menu/players-shown": [
+    "LIME_DYE"
+  ],
+  "menu/private-messages": [
+    "PAPER"
+  ],
+  "menu/radio": [
+    "JUKEBOX"
+  ],
+  "menu/realms": [
+    "COMPASS"
+  ],
+  "menu/reset": [
+    "BARRIER",
+    "TNT_MINECART"
+  ],
+  "menu/scoreboard": [
+    "PAINTING"
+  ],
+  "menu/search": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "menu/social-spy": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "menu/take_off": [
+    "BARRIER"
+  ],
+  "menu/trail": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "menu/unavailable": [
+    "BARRIER"
+  ],
+  "menu/vanish": [
+    "ARROW",
+    "BARRIER",
+    "BELL",
+    "BOOK",
+    "CAKE",
+    "COMPARATOR",
+    "EMERALD",
+    "ENDER_EYE",
+    "ENDER_PEARL",
+    "FEATHER",
+    "GLOWSTONE_DUST",
+    "GOLDEN_BOOTS",
+    "GRASS_BLOCK",
+    "GRAY_DYE",
+    "IRON_DOOR",
+    "LIME_DYE",
+    "NAME_TAG",
+    "NOTE_BLOCK",
+    "OAK_DOOR",
+    "PAINTING",
+    "PAPER",
+    "RED_DYE",
+    "TNT_MINECART",
+    "WRITABLE_BOOK"
+  ],
+  "mystery/box_1": [
+    "CHEST"
+  ],
+  "mystery/box_2": [
+    "CHEST",
+    "PAPER"
+  ],
+  "mystery/box_3": [
+    "CHEST"
+  ],
+  "mystery/box_4": [
+    "CHEST"
+  ],
+  "mystery/box_5": [
+    "CHEST"
+  ],
+  "mystery/collection": [
+    "PAPER"
+  ],
+  "mystery/craft": [
+    "CRAFTING_TABLE"
+  ],
+  "mystery/craft_locked": [
+    "PAPER"
+  ],
+  "mystery/dust": [
+    "GLOWSTONE_DUST"
+  ],
+  "mystery/empty": [
+    "PAPER"
+  ],
+  "mystery/gift_1": [
+    "CHEST"
+  ],
+  "mystery/gift_2": [
+    "CHEST"
+  ],
+  "mystery/gift_3": [
+    "CHEST"
+  ],
+  "mystery/gift_4": [
+    "CHEST"
+  ],
+  "mystery/gift_5": [
+    "CHEST"
+  ],
+  "mystery/locked": [
+    "PAPER"
+  ],
+  "mystery/open_all": [
+    "ARROW",
+    "BARRIER",
+    "CHEST",
+    "CRAFTING_TABLE",
+    "GLOWSTONE_DUST",
+    "GRAY_DYE"
+  ],
+  "mystery/open_all_off": [
+    "ARROW",
+    "BARRIER",
+    "CHEST",
+    "CRAFTING_TABLE",
+    "GLOWSTONE_DUST",
+    "GRAY_DYE"
+  ],
+  "mystery/vault_body": [
+    "CHEST"
+  ],
+  "mystery/vault_lid": [
+    "OAK_SLAB"
+  ],
+  "parkour/dot": [
+    "GLOWSTONE_DUST"
+  ],
+  "parkour/ghost": [
+    "PAPER"
+  ],
+  "radio/bar-action": [
+    "GRAY_DYE",
+    "NAME_TAG"
+  ],
+  "radio/bar-boss": [
+    "DRAGON_HEAD",
+    "REPEATER"
+  ],
+  "radio/bar-off": [
+    "GRAY_DYE",
+    "NAME_TAG"
+  ],
+  "radio/blank": [
+    "PAPER"
+  ],
+  "radio/categories": [
+    "BOOKSHELF",
+    "NETHER_STAR"
+  ],
+  "radio/close": [
+    "BARRIER"
+  ],
+  "radio/disc_0": [
+    "MUSIC_DISC_11",
+    "MUSIC_DISC_13",
+    "MUSIC_DISC_MALL"
+  ],
+  "radio/disc_1": [
+    "MUSIC_DISC_CAT",
+    "MUSIC_DISC_MELLOHI",
+    "MUSIC_DISC_WAIT"
+  ],
+  "radio/disc_2": [
+    "MUSIC_DISC_BLOCKS",
+    "MUSIC_DISC_PIGSTEP",
+    "MUSIC_DISC_STAL"
+  ],
+  "radio/disc_3": [
+    "MUSIC_DISC_CHIRP",
+    "MUSIC_DISC_OTHERSIDE",
+    "MUSIC_DISC_STRAD"
+  ],
+  "radio/disc_4": [
+    "MUSIC_DISC_FAR",
+    "MUSIC_DISC_RELIC",
+    "MUSIC_DISC_WARD"
+  ],
+  "radio/empty": [
+    "PAPER"
+  ],
+  "radio/favorites": [
+    "BOOKSHELF",
+    "NETHER_STAR"
+  ],
+  "radio/genre/anime": [
+    "CHERRY_SAPLING"
+  ],
+  "radio/genre/anthems": [
+    "WHITE_BANNER"
+  ],
+  "radio/genre/christmas": [
+    "SNOWBALL"
+  ],
+  "radio/genre/classical-jazz": [
+    "BELL"
+  ],
+  "radio/genre/default": [
+    "NOTE_BLOCK"
+  ],
+  "radio/genre/electronic": [
+    "AMETHYST_CLUSTER"
+  ],
+  "radio/genre/games": [
+    "DIAMOND_SWORD"
+  ],
+  "radio/genre/hip-hop": [
+    "GOLD_INGOT"
+  ],
+  "radio/genre/memes": [
+    "SLIME_BALL"
+  ],
+  "radio/genre/pop": [
+    "POPPED_CHORUS_FRUIT"
+  ],
+  "radio/genre/rock": [
+    "ANVIL"
+  ],
+  "radio/genre/tv-film": [
+    "PAINTING"
+  ],
+  "radio/next-off": [
+    "BARRIER",
+    "BLACK_STAINED_GLASS_PANE",
+    "MAGENTA_STAINED_GLASS_PANE",
+    "PURPLE_STAINED_GLASS_PANE",
+    "SPECTRAL_ARROW",
+    "STRUCTURE_VOID"
+  ],
+  "radio/pause": [
+    "ECHO_SHARD",
+    "PURPLE_DYE"
+  ],
+  "radio/play": [
+    "AMETHYST_SHARD",
+    "LIME_DYE"
+  ],
+  "radio/previous": [
+    "ECHO_SHARD",
+    "PURPLE_DYE"
+  ],
+  "radio/queue": [
+    "JUKEBOX",
+    "WRITABLE_BOOK"
+  ],
+  "radio/repeat": [
+    "DRAGON_HEAD",
+    "REPEATER"
+  ],
+  "radio/search": [
+    "BOOKSHELF",
+    "HOPPER",
+    "JUKEBOX",
+    "NETHER_STAR",
+    "SPECTRAL_ARROW",
+    "SPYGLASS",
+    "WRITABLE_BOOK"
+  ],
+  "radio/shuffle": [
+    "ENDER_EYE",
+    "ENDER_PEARL"
+  ],
+  "radio/shuffle-off": [
+    "ENDER_EYE",
+    "ENDER_PEARL"
+  ],
+  "radio/skip": [
+    "AMETHYST_SHARD",
+    "LIME_DYE"
+  ],
+  "radio/sort": [
+    "HOPPER",
+    "NOTE_BLOCK"
+  ],
+  "radio/station": [
+    "JUKEBOX",
+    "WRITABLE_BOOK"
+  ],
+  "radio/volume": [
+    "HOPPER",
+    "NOTE_BLOCK"
+  ],
+  "season/easter": [
+    "PAPER"
+  ],
+  "season/halloween": [
+    "PAPER"
+  ],
+  "season/holiday": [
+    "PAPER"
+  ],
+  "season/normal": [
+    "PAPER"
+  ],
+  "season/summer": [
+    "PAPER"
+  ],
+  "status/angel": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/angry": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/begging": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/clown": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/cool": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/crying": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/dead": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/evil": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/eyes": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/happy": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/heart": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/joy": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/kiss": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/love": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/melt": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/mindblown": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/money": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/poop": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/sad": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/scream": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/skull": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/sweat": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/thinking": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/thumbsup": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "status/wink": [
+    "PLAYER_HEAD",
+    "SUNFLOWER"
+  ],
+  "suit/astronaut/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/astronaut/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/astronaut/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/astronaut/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/astronaut/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/baker/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/baker/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/baker/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/baker/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/baker/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/bumblebee/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/bumblebee/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/bumblebee/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/bumblebee/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/bumblebee/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/bunny/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/bunny/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/bunny/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/bunny/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/bunny/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/chick/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/chick/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/chick/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/chick/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/chick/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/disco/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/disco/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/disco/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/disco/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/disco/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/elf/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/elf/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/elf/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/elf/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/elf/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/frog/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/frog/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/frog/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/frog/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/frog/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/lifeguard/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/lifeguard/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/lifeguard/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/lifeguard/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/lifeguard/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/mermaid/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/mermaid/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/mermaid/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/mermaid/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/mermaid/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/necromancer/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/necromancer/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/necromancer/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/necromancer/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/necromancer/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/ninja/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/ninja/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/ninja/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/ninja/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/ninja/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/plumber/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/plumber/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/plumber/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/plumber/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/plumber/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/santa/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/santa/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/santa/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/santa/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/santa/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/skeleton/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/skeleton/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/skeleton/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/skeleton/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/skeleton/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/speedster/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/speedster/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/speedster/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/speedster/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/speedster/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/spooderman/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/spooderman/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/spooderman/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/spooderman/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/spooderman/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/thor/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/thor/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/thor/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/thor/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/thor/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/tourist/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/tourist/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/tourist/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/tourist/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/tourist/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/vampire/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/vampire/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/vampire/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/vampire/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/vampire/set": [
+    "ARMOR_STAND"
+  ],
+  "suit/warrior/boots": [
+    "LEATHER_BOOTS",
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/warrior/chestplate": [
+    "LEATHER_CHESTPLATE"
+  ],
+  "suit/warrior/helmet": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_HELMET"
+  ],
+  "suit/warrior/leggings": [
+    "LEATHER_CHESTPLATE",
+    "LEATHER_LEGGINGS"
+  ],
+  "suit/warrior/set": [
+    "ARMOR_STAND"
+  ],
+  "survival": [
+    "ARROW",
+    "BOOK",
+    "GRASS_BLOCK",
+    "LIME_DYE",
+    "PAPER",
+    "PLAYER_HEAD",
+    "WRITABLE_BOOK"
+  ],
+  "trail/blossom": [
+    "PAPER",
+    "PINK_PETALS"
+  ],
+  "trail/clouds": [
+    "PAPER",
+    "WHITE_WOOL"
+  ],
+  "trail/enchanted": [
+    "ENCHANTED_BOOK",
+    "PAPER"
+  ],
+  "trail/flames": [
+    "BLAZE_POWDER",
+    "PAPER"
+  ],
+  "trail/hearts": [
+    "PAPER",
+    "RED_DYE"
+  ],
+  "trail/magic": [
+    "AMETHYST_SHARD",
+    "PAPER"
+  ],
+  "trail/notes": [
+    "NOTE_BLOCK",
+    "PAPER"
+  ],
+  "trail/snowflakes": [
+    "PAPER",
+    "SNOWBALL"
+  ],
+  "trail/soul-flames": [
+    "PAPER",
+    "SOUL_TORCH"
+  ],
+  "trail/sparkles": [
+    "EMERALD",
+    "PAPER"
+  ],
+  "trail/sparks": [
+    "LIGHTNING_ROD",
+    "PAPER"
+  ],
+  "trail/stars": [
+    "END_ROD",
+    "PAPER"
+  ],
+  "trail/totem": [
+    "PAPER",
+    "TOTEM_OF_UNDYING"
+  ],
+  "ctf": [
+    "PAPER",
+    "RED_BANNER"
+  ]
 }

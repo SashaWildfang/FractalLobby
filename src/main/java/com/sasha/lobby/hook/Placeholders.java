@@ -66,6 +66,12 @@ public final class Placeholders {
                 out = out.replace("%lobby_parkour_best%", board.best(player))
                         .replace("%lobby_parkour_rank%", rank > 0 ? "#" + rank : plugin.messages().raw("parkour.unranked"));
             }
+            if (out.contains("%lobby_level") && plugin.levels() != null) {
+                var level = plugin.levels().progress(player);
+                out = out.replace("%lobby_level_xp%", String.format(java.util.Locale.ROOT, "%,d", level.total()))
+                        .replace("%lobby_level_percent%", String.valueOf((int) (level.fraction() * 100)))
+                        .replace("%lobby_level%", String.valueOf(level.level()));
+            }
             out = out.replace("%player_name%", player.getName()).replace("%player_ping%", String.valueOf(player.getPing()));
         }
         out = out.replace("%server_online%", String.valueOf(plugin.getServer().getOnlinePlayers().size()));

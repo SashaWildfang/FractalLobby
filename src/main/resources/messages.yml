@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 63
+messages-version: 64
 
 theme:
   primary: "#B266FF"
@@ -116,6 +116,12 @@ realm-selector:
     - "<muted>Playing: <players>"
     - ""
     - "<action>"
+  # Under a realm's description while a network booster runs on it (the realm's server name is the booster's game).
+  # <multiplier> <player> <minutes>
+  booster:
+    - ""
+    - "<gray>Coins Multiplier: <gold>+<multiplier>x"
+    - "<dark_gray>➠ <gray>Network Booster by <aqua><player>"
   players: "<white><online>"                                   # max players unknown
   players-max: "<white><online><dark_gray>/<gray><max>"
   status:
@@ -502,6 +508,30 @@ profile:
       - "<muted>double jump and the scoreboard."
       - ""
       - "<accent><left-click></accent> <muted>to open"
+  # Network level: XP from playing Capture the Flag (not while AFK). <level> <next> <bar> <percent> <xp> <needed> <total>
+  level:
+    name: "<primary>Network Level <white><level>"
+    lore:
+      - "<muted>Level up by playing on the network."
+      - ""
+      - "<muted>Progress to level <white><next></white>: <#B266FF><percent>%"
+      - "<bar>"
+      - "<white><xp> <muted>/ <white><needed> XP"
+      - ""
+      - "<muted>Total XP: <white><total>"
+      - ""
+      - "<muted>Earn XP while you play <secondary>Capture the Flag</secondary>."
+      - "<dark_gray>Standing around AFK doesn't count."
+  # Network boosters the player owns. <count>
+  boosters:
+    name: "<primary>Boosters"
+    lore:
+      - "<muted>Coin boosters for everyone on a"
+      - "<muted>game, bought in the store."
+      - ""
+      - "<muted>You have: <white><count>"
+      - ""
+      - "<accent><left-click></accent> <muted>to see them"
   parkour:
     name: "<primary>Parkour"
     lore:
@@ -777,3 +807,58 @@ confirm:
     name: "<bad>Cancel"
     lore:
       - "<accent><left-click></accent> <muted>to go back"
+
+
+# ── Network boosters ─────────────────────────────────────────
+# Bought in the store (it runs /booster give <player> <game> <minutes> <multiplier>), kept in the player's
+# booster inventory and used from My Profile → Boosters. <multiplier> <minutes> <game> <player>
+boosters:
+  title: "<brand><bold>Boosters</bold></brand>"
+  # Each game's name and icon (an item model from the resource pack).
+  games:
+    ctf: "<secondary>Capture the Flag"
+  icon:
+    ctf: "fractal:ctf"
+  item:
+    name: "<gold><multiplier>x Coins Booster"
+    lore:
+      - "<muted>Game: <game>"
+      - "<muted>Lasts: <white><minutes> minutes"
+      - ""
+      - "<muted>Everyone playing earns <gold><multiplier>x</gold>"
+      - "<muted>coins, and sees it's from you."
+      - ""
+      - "<accent><left-click></accent> <muted>to activate"
+  # In the "Are you sure?" menu. <ahead>: boosters running or waiting on that game before it
+  confirm:
+    name: "<gold>Activate <multiplier>x Coins Booster?"
+    lore:
+      - "<muted>Game: <game>"
+      - "<muted>Lasts: <white><minutes> minutes"
+      - ""
+      - "<muted>It starts right away, or after the"
+      - "<muted>boosters ahead of it (<white><ahead></white>)."
+      - "<bad>It can't be stopped once it's on."
+  empty:
+    name: "<muted>No boosters yet"
+    lore:
+      - "<muted>Coin boosters from the store"
+      - "<muted>show up here for you to use."
+      - ""
+      - "<muted>Get them at <accent>/store"
+  info:
+    name: "<primary>Running now"
+    lore: []
+    idle:
+      - "<game><muted>: no booster"
+    running:
+      - "<game><muted>: <gold><multiplier>x <muted>by <aqua><player>"
+      - "<muted><minutes> min left, <white><waiting></white> waiting"
+  activated-now: "<prefix><good>Your <gold><multiplier>x Coins Booster</gold> is on for <game><good>! <muted>Everyone there gets <multiplier>x coins for <minutes> minutes."
+  activated-queued: "<prefix><good>Your <gold><multiplier>x Coins Booster</gold> for <game> <good>is queued. <muted>It starts in about <wait> min, after the ones ahead of it."
+  announce: "<prefix><aqua><player> <secondary>activated a <gold><multiplier>x Coins Booster</gold> <secondary>on <game><secondary>!"
+  already-used: "<prefix><bad>That booster was already used."
+  unavailable: "<prefix><bad>Boosters aren't available right now. <muted>Try again soon."
+  # To whoever ran /booster give, and to the player if they're here.
+  given: "<prefix><good>Gave <white><player></white> a <multiplier>x Coins Booster for <game> <good>(<minutes> min)."
+  received: "<prefix><good>You got a <gold><multiplier>x Coins Booster</gold> <good>for <game><good>! <muted>Use it from <accent>My Profile → Boosters</accent>."

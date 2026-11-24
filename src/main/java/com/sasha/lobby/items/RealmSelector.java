@@ -175,6 +175,13 @@ public final class RealmSelector implements Listener {
             TagResolver args = args(realm);
             List<Component> lore = new ArrayList<>();
             for (String line : realm.description()) lore.add(messages.render("<!italic>" + line, args));
+            // A network booster running on this realm's game: "Coins Multiplier: +2.0x / ➠ Network Booster by Name"
+            var booster = plugin.boosters() == null ? null : plugin.boosters().active(realm.server());
+            if (booster != null) {
+                lore.addAll(messages.lore("realm-selector.booster", Messages.name("player", booster.owner()),
+                        Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(booster.multiplier())),
+                        Messages.arg("minutes", booster.minutesLeft(System.currentTimeMillis()))));
+            }
             lore.addAll(messages.lore("realm-selector.button-lore", args));
 
             // Bedrock can't show a pack icon on a block item (Geyser's custom items are flat items), so there the
