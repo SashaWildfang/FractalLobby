@@ -1,149 +1,222 @@
 """Art for the Levels snake (Hypixel-style: up a column, across, down the next, across).
-- links (16x16, animated stripes): the bar between two levels, one per shape the snake uses (sn = from the bottom
-  up, ns = down, we = left to right, se = in from the bottom and out to the right, ws = in from the left and out the
-  bottom), filled 0..4 quarters along the way it flows: level/link_<shape>_<q>
-- badges (16x16): level/node_locked|ready|claimed (a gem) and level/box_locked|ready|claimed (a gift)
-- level/coin (the C coin, 16x16), level/recenter
+
+Links and level badges are 18x18 and their models show them 1.125x in menus, so they fill the whole slot (16 px plus
+the 1 px border either side): the bars run edge to edge with no gap, one texture pixel per screen pixel.
+- links: level/link_<shape>_<0..4> (shape = how the bar runs: sn up, ns down, we right, se up-then-right,
+  ws right-then-down), filled in quarters the way it flows; green stripes that travel along the bar (.mcmeta).
+- badges: level/node_<state> (a gem) and level/box_<state> (a gift), state locked / ready / claimed.
+- 16x16: level/coin, level/recenter, level/scroll_left|right (+ _off, greyed), level/claim, level/chest.
 Run from resourcepack/: python3 art/level_snake.py"""
 from PIL import Image
 import json, math, os
 
 OUT = 'FractalLobby/assets/fractal'
 K = (26, 27, 38)
-TRACK, TRACK_L = (36, 38, 56), (48, 50, 72)
-G1, G2, G3 = (120, 236, 120), (66, 186, 86), (40, 140, 64)      # stripe light, stripe dark, shade
+N = 18                                                           # links and badges
 FRAMES, PERIOD = 8, 8
+GREEN = [(150, 248, 140), (104, 222, 104), (64, 178, 82), (42, 132, 62)]   # light, stripe, base, shade
+TRACK, TRACK_L = (34, 36, 54), (46, 48, 70)
 
-SIDES = {'n': (7.5, -0.5), 's': (7.5, 15.5), 'w': (-0.5, 7.5), 'e': (15.5, 7.5)}
+MID = (N - 1) / 2                                                # 8.5
+EDGE = {'n': (MID, -0.5), 's': (MID, N - 0.5), 'w': (-0.5, MID), 'e': (N - 0.5, MID)}
 SHAPES = {'sn': ('s', 'n'), 'ns': ('n', 's'), 'we': ('w', 'e'), 'se': ('s', 'e'), 'ws': ('w', 's')}
 
 
-def along(px, py, a, b):
-    """For a pixel: its distance to the path a → centre → b, and how far along the path (0..1) its nearest point is."""
-    c = (7.5, 7.5)
-    best = None
-    pts = [SIDES[a], c, SIDES[b]]
-    total = sum(math.dist(pts[i], pts[i + 1]) for i in range(2))
-    run = 0
+def model(path, scale=None):
+    os.makedirs(os.path.dirname(f'{OUT}/models/item/{path}'), exist_ok=True)
+    os.makedirs(os.path.dirname(f'{OUT}/items/{path}'), exist_ok=True)
+    m = {"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/{path}"}}
+    if scale:
+        m["display"] = {"gui": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [scale, scale, scale]}}
+    json.dump(m, open(f'{OUT}/models/item/{path}.json', 'w'))
+    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/{path}"}}, open(f'{OUT}/items/{path}.json', 'w'))
+
+
+def save(path, frames, size, scale=None):
+    full = f'{OUT}/textures/item/{path}.png'
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    for old in (full + '.mcmeta',):
+        if os.path.exists(old):
+            os.remove(old)
+    if len(frames) == 1:
+        frames[0].save(full)
+    else:
+        strip = Image.new('RGBA', (size, size * len(frames)), (0, 0, 0, 0))
+        for i, fr in enumerate(frames):
+            strip.alpha_composite(fr, (0, size * i))
+        strip.save(full)
+        json.dump({"animation": {"frametime": 2, "interpolate": False}}, open(full + '.mcmeta', 'w'))
+    model(path, scale)
+
+
+# ---------------------------------------------------------------- links
+
+def place(px, py, a, b):
+    """Nearest point on the bar's path (edge a → middle → edge b): (distance across, signed side, distance along)."""
+    c = (MID, MID)
+    pts = [EDGE[a], c, EDGE[b]]
+    best, run = None, 0
     for i in range(2):
         (x0, y0), (x1, y1) = pts[i], pts[i + 1]
         dx, dy = x1 - x0, y1 - y0
         L = math.hypot(dx, dy)
         t = max(0, min(1, ((px - x0) * dx + (py - y0) * dy) / (L * L)))
         qx, qy = x0 + t * dx, y0 + t * dy
-        d = max(abs(px - qx), abs(py - qy))                     # square ends, crisp edges
-        if best is None or d < best[0]:
-            best = (d, (run + t * L) / total)
+        across = max(abs(px - qx), abs(py - qy))
+        side = ((px - qx) * -dy + (py - qy) * dx) / L          # which side of the line (for the stripes' slant)
+        if best is None or across < best[0] - 1e-9:
+            best = (across, side, run + t * L)
         run += L
-    return best
+    return best[0], best[1], best[2], run
+
+
+DIRS = {'n': (0, -1), 's': (0, 1), 'w': (-1, 0), 'e': (1, 0)}
+
+
+def corner_along(px, py, a, b, s, total):
+    """For a bend: distance along it that turns smoothly round the corner (a diagonal edge, no notch)."""
+    if a in ('n', 's') and b in ('n', 's') or a in ('w', 'e') and b in ('w', 'e'):
+        return s
+    ix, iy = -DIRS[a][0], -DIRS[a][1]                            # travelling in from edge a: towards the middle
+    ox, oy = DIRS[b]                                             # then out towards edge b
+    before = -((px - MID) * ix + (py - MID) * iy)               # > 0 still before the middle
+    after = (px - MID) * ox + (py - MID) * oy                    # > 0 past it
+    if before > 3:
+        return MID + 0.5 - before
+    if after > 3:
+        return MID + 0.5 + after
+    return MID + 0.5 + (after - before) / 2
 
 
 def link(shape, quarters):
     a, b = SHAPES[shape]
-    frames = []
-    for f in range(FRAMES):
-        img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-        for y in range(16):
-            for x in range(16):
-                d, t = along(x, y, a, b)
-                if d > 3.5:
+    out = []
+    for f in range(FRAMES if quarters else 1):
+        img = Image.new('RGBA', (N, N), (0, 0, 0, 0))
+        for y in range(N):
+            for x in range(N):
+                across, side, s, total = place(x, y, a, b)
+                s = corner_along(x, y, a, b, s, total)
+                if across > 3.5:
                     continue
-                if d > 2.5:
+                if across > 2.5:
                     img.putpixel((x, y), K + (255,))
                     continue
-                if t <= quarters / 4 + 1e-6 and quarters > 0:
-                    # diagonal stripes, moving with the frames along the flow
-                    stripe = (x + y - f) % PERIOD < PERIOD / 2
-                    c = G1 if stripe else G2
-                    if d > 1.5 and (y > 8 if shape in ('we',) else False):
-                        c = G3 if not stripe else G2
+                if quarters and s <= total * quarters / 4 + 0.01:
+                    # stripes slanting across the bar, travelling forward along it
+                    phase = (s + side - f) % PERIOD
+                    c = GREEN[1] if phase < PERIOD / 2 else GREEN[2]
+                    if side < -1.5:
+                        c = GREEN[0] if phase < PERIOD / 2 else GREEN[1]     # the lit edge
+                    elif side > 1.5:
+                        c = GREEN[2] if phase < PERIOD / 2 else GREEN[3]     # the shaded edge
                 else:
-                    c = TRACK_L if d <= 0.5 else TRACK
+                    c = TRACK_L if side < -1.5 else TRACK
                 img.putpixel((x, y), c + (255,))
-        frames.append(img)
-    return frames
+        out.append(img)
+    return out
 
 
-def save_anim(path, frames):
-    full = f'{OUT}/textures/item/{path}.png'
-    os.makedirs(os.path.dirname(full), exist_ok=True)
-    if len(frames) == 1:
-        frames[0].save(full)
-        return
-    strip = Image.new('RGBA', (16, 16 * len(frames)), (0, 0, 0, 0))
-    for i, fr in enumerate(frames):
-        strip.alpha_composite(fr, (0, 16 * i))
-    strip.save(full)
-    json.dump({"animation": {"frametime": 2, "interpolate": False}}, open(full + '.mcmeta', 'w'))
+# ---------------------------------------------------------------- badges (18x18)
+
+RIM = {'locked': ((104, 108, 134), (72, 75, 98), (48, 50, 68)),
+       'ready': ((255, 228, 130), (236, 174, 52), (168, 108, 26)),
+       'claimed': ((206, 170, 255), (152, 100, 232), (98, 60, 164))}
+INNER = {'locked': (40, 42, 60), 'ready': (64, 46, 30), 'claimed': (46, 32, 78)}
+PURPLE = {'L': (232, 214, 255), 'Y': (178, 102, 255), 'D': (122, 66, 200), 'd': (82, 44, 142)}
+GREY = {'L': (176, 180, 200), 'Y': (124, 128, 150), 'D': (88, 92, 112), 'd': (64, 66, 84)}
+GOLDP = {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'd': (150, 96, 20)}
+GEM = ["..KKKKKK..",
+       ".KLLLYYDK.",
+       "KLLYYYYDdK",
+       "KDDDDDDddK",
+       ".KDYYYYdK.",
+       "..KDYYdK..",
+       "...KDdK...",
+       "....KK...."]
+GIFT = ["..KK..KK..",
+        ".KRRKKRRK.",
+        "KKKKKKKKKK",
+        "KLLLRRLLLK",
+        "KKKKRRKKKK",
+        ".KYYRRYDK.",
+        ".KYYRRYDK.",
+        ".KYYRRYDK.",
+        ".KDDrrDDK.",
+        ".KKKKKKKK."]
 
 
-def model(path):
-    os.makedirs(os.path.dirname(f'{OUT}/models/item/{path}'), exist_ok=True)
-    os.makedirs(os.path.dirname(f'{OUT}/items/{path}'), exist_ok=True)
-    json.dump({"parent": "minecraft:item/generated", "textures": {"layer0": f"fractal:item/{path}"}}, open(f'{OUT}/models/item/{path}.json', 'w'))
-    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/{path}"}}, open(f'{OUT}/items/{path}.json', 'w'))
+def disc(img, cx, cy, r, colour):
+    for y in range(img.size[1]):
+        for x in range(img.size[0]):
+            if math.hypot(x - cx, y - cy) <= r:
+                img.putpixel((x, y), colour + (255,))
 
 
-# ---------------------------------------------------------------- badges
-
-RIMS = {'locked': ((92, 96, 120), (60, 62, 82), (40, 42, 58)),
-        'ready': ((255, 224, 120), (230, 168, 50), (160, 104, 24)),
-        'claimed': ((200, 160, 255), (150, 98, 230), (96, 58, 160))}
-INNER = {'locked': (44, 46, 64), 'ready': (70, 52, 30), 'claimed': (52, 36, 84)}
-GEM = {'locked': {'L': (150, 154, 176), 'Y': (110, 114, 138), 'D': (80, 84, 104), 'd': (60, 62, 80)},
-       'ready': {'L': (226, 206, 255), 'Y': (178, 102, 255), 'D': (120, 66, 196), 'd': (80, 44, 140)},
-       'claimed': {'L': (226, 206, 255), 'Y': (178, 102, 255), 'D': (120, 66, 196), 'd': (80, 44, 140)}}
-GEM9 = ["....K....", "...KLK...", "..KLYYK..", ".KLYYYDK.", "KLYYYYDdK", ".KYYYDdK.", "..KYDdK..", "...KdK...", "....K...."]
-GIFT9 = ["..KK.KK..", ".KRRKRRK.", "KKKKKKKKK", "KLLLRLLDK", "KYYYRYYDK", "KYYYRYYDK", "KYYYRYYDK", "KDDDdDDDK", "KKKKKKKKK"]
-GIFT = {'locked': {'L': (150, 154, 176), 'Y': (110, 114, 138), 'D': (80, 84, 104), 'R': (130, 120, 160), 'd': (90, 84, 120)},
-        'ready': {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'R': (150, 98, 230), 'd': (104, 64, 176)},
-        'claimed': {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'R': (150, 98, 230), 'd': (104, 64, 176)}}
-
-
-def badge(state, art, pal):
-    """A round badge: a bevelled rim in the state's colour, a dark inner disc, the 9x9 art in the middle."""
-    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    light, mid, dark = RIMS[state]
-    for y in range(16):
-        for x in range(16):
-            d = math.hypot(x - 7.5, y - 7.5)
-            if d > 7.6:
+def badge(state, kind):
+    img = Image.new('RGBA', (N, N), (0, 0, 0, 0))
+    light, mid, dark = RIM[state]
+    for y in range(N):
+        for x in range(N):
+            d = math.hypot(x - MID, y - MID)
+            if d > 8.9:
                 continue
-            if d > 6.7:
+            if d > 8.0:
                 c = K
+            elif d > 6.0:
+                lean = (x - MID) + (y - MID)
+                c = light if lean < -3 else dark if lean > 3 else mid
             elif d > 5.2:
-                c = light if (x + y) < 13 else dark if (x + y) > 17 else mid
+                c = tuple(max(0, v - 10) for v in INNER[state])
             else:
                 c = INNER[state]
-                if d > 4.4 and (x + y) > 15:
-                    c = tuple(max(0, v - 14) for v in c)
             img.putpixel((x, y), c + (255,))
+    if kind == 'node':
+        art = GEM
+        pal = {'locked': GREY, 'ready': PURPLE, 'claimed': PURPLE}[state]
+    else:
+        art = GIFT
+        base = {'locked': GREY, 'ready': GOLDP, 'claimed': GOLDP}[state]
+        rib = {'locked': ((120, 112, 150), (86, 80, 110)), 'ready': ((168, 108, 248), (110, 64, 190)),
+               'claimed': ((168, 108, 248), (110, 64, 190))}[state]
+        pal = dict(base, R=rib[0], r=rib[1])
+    h, w = len(art), len(art[0])
+    ox, oy = (N - w) // 2, (N - h) // 2                         # even sizes: exactly centred
     for y, row in enumerate(art):
         for x, ch in enumerate(row):
-            if ch == '.':
-                continue
-            img.putpixel((x + 3, y + 3), (K if ch == 'K' else pal[ch]) + (255,))
+            if ch != '.':
+                img.putpixel((ox + x, oy + y), (K if ch == 'K' else pal[ch]) + (255,))
     if state == 'ready':
-        for x, y in ((13, 1), (12, 2), (14, 2), (13, 3), (2, 13)):
+        for x, y in ((14, 2), (13, 3), (15, 3), (14, 4)):
             img.putpixel((x, y), (255, 255, 255, 255))
+        img.putpixel((3, 14), (255, 240, 180, 255))
     if state == 'claimed':
-        tick = [(9, 12), (10, 13), (11, 12), (12, 11), (13, 10), (14, 9)]
-        cells = set()
-        for x, y in tick:
-            cells |= {(x, y), (x, y + 1)}
-        for x, y in list(cells):
-            for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
-                if (x + a, y + b) not in cells and 0 <= x + a < 16 and 0 <= y + b < 16:
-                    img.putpixel((x + a, y + b), K + (255,))
-        for x, y in cells:
-            img.putpixel((x, y), ((110, 240, 120) if (x, y) in tick else (50, 160, 80)) + (255,))
+        # a green tick badge at the bottom right
+        disc(img, 13.5, 13.5, 4.4, K)
+        disc(img, 13.5, 13.5, 3.5, (76, 200, 96))
+        for x, y in ((11, 13), (12, 14), (13, 15), (14, 14), (15, 13), (16, 12)):
+            if 0 <= x < N and 0 <= y < N:
+                img.putpixel((x, y), (255, 255, 255, 255))
+        for x, y in ((12, 13), (13, 14), (14, 13), (15, 12)):
+            img.putpixel((x, y), (220, 255, 220, 255))
+    return img
+
+
+# ---------------------------------------------------------------- 16x16 buttons
+
+def paint16(rows, pal):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch == 'K':
+                img.putpixel((x, y), K + (255,))
+            elif ch in pal:
+                img.putpixel((x, y), pal[ch] + (255,))
     return img
 
 
 def coin():
-    """The C coin, 16x16 (the chat glyph's design, bigger)."""
-    gold = {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'd': (150, 96, 20)}
-    rows = [
+    return paint16([
         "................",
         ".....KKKKKK.....",
         "...KKLLLYYYKK...",
@@ -159,93 +232,91 @@ def coin():
         "..KDYYYYYYYDDK..",
         "...KKDDDDDDKK...",
         ".....KKKKKK.....",
+        "................"], GOLDP)
+
+
+def chest():
+    """A gold-trimmed purple chest with light spilling out: Claim All."""
+    pal = {'L': (232, 214, 255), 'Y': (178, 102, 255), 'D': (122, 66, 200), 'd': (82, 44, 142),
+           'G': (255, 196, 64), 'g': (204, 140, 30), 'W': (255, 244, 190)}
+    return paint16([
+        "....W..W..W.....",
+        ".....W.W.W......",
+        "..KKKKKKKKKKKK..",
+        ".KLLLLLGGLLLLLK.",
+        ".KYYYYYGGYYYYDK.",
+        ".KGGGGGGGGGGGgK.",
+        ".KKKKKKWWKKKKKK.",
+        ".KYYYYGKKGYYYDK.",
+        ".KYYYYGWWGYYYDK.",
+        ".KYYYYYGGYYYYDK.",
+        ".KYYYYYGGYYYYDK.",
+        ".KDDDDDggDDDDdK.",
+        ".KGGGGGGGGGGGgK.",
+        ".KKKKKKKKKKKKKK.",
         "................",
-    ]
-    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row):
-            if ch == 'K':
-                img.putpixel((x, y), K + (255,))
-            elif ch in gold:
-                img.putpixel((x, y), gold[ch] + (255,))
-    return img
+        "................"], pal)
 
 
 def recenter():
-    """A crosshair on a purple disc: back to your level."""
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     for y in range(16):
         for x in range(16):
             d = math.hypot(x - 7.5, y - 7.5)
-            if 4.6 < d <= 5.8:
+            if 4.4 < d <= 5.6:
                 img.putpixel((x, y), (178, 102, 255, 255))
-            elif 5.8 < d <= 6.8 or 3.6 < d <= 4.6:
+            elif 5.6 < d <= 6.6 or 3.4 < d <= 4.4:
                 img.putpixel((x, y), K + (255,))
             elif d <= 1.6:
                 img.putpixel((x, y), (255, 255, 255, 255))
-    for i in range(0, 4):
-        for x, y in ((7 + 0, i), (8, i), (7, 15 - i), (8, 15 - i), (i, 7), (i, 8), (15 - i, 7), (15 - i, 8)):
+    for i in range(4):
+        for x, y in ((7, i), (8, i), (7, 15 - i), (8, 15 - i), (i, 7), (i, 8), (15 - i, 7), (15 - i, 8)):
             img.putpixel((x, y), (226, 206, 255, 255) if i in (1, 2) else K + (255,))
     return img
 
 
-made = {}
-for shape in SHAPES:
-    for q in range(5):
-        path = f'level/link_{shape}_{q}'
-        frames = link(shape, q)
-        save_anim(path, frames if q > 0 else frames[:1])
-        model(path)
-        made[path] = frames[0]
-for state in ('locked', 'ready', 'claimed'):
-    for kind, art, pal in (('node', GEM9, GEM[state]), ('box', GIFT9, GIFT[state])):
-        path = f'level/{kind}_{state}'
-        img = badge(state, art, pal)
-        save_anim(path, [img])
-        model(path)
-        made[path] = img
-for path, img in (('level/coin', coin()), ('level/recenter', recenter())):
-    save_anim(path, [img])
-    model(path)
-    made[path] = img
-
-# a sheet to look at: every piece, and a little snake
-sheet = Image.new('RGBA', (16 * 12 * 4, 16 * 5 * 4), (60, 62, 80, 255))
-for i, (path, img) in enumerate(made.items()):
-    sheet.alpha_composite(img.resize((48, 48), Image.NEAREST), ((i % 12) * 64 + 8, (i // 12) * 64 + 8))
-sheet.save('/tmp/snake_sheet.png')
-
-
-def chevrons(right):
-    """« or »: scroll the snake (purple, outlined)."""
+def chevrons(right, off=False):
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    pts = set()
-    for start in (3, 8):
-        for k in range(5):
-            for w in range(2):
-                x = start + k + w if right else 15 - (start + k + w)
-                pts |= {(x, 7 - (4 - k) + 4 - 4 + 0), }
     pts = set()
     for start in (2, 8):
         for i in range(-4, 5):
             for w in range(3):
                 x = start + (4 - abs(i)) + w
-                if right:
-                    pts.add((x, 7 + i))
-                else:
-                    pts.add((15 - x, 7 + i))
+                pts.add((x if right else 15 - x, 7 + i))
     for x, y in pts:
         for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if (x + a, y + b) not in pts and 0 <= x + a < 16 and 0 <= y + b < 16:
                 img.putpixel((x + a, y + b), K + (255,))
+    shades = [(120, 124, 148), (92, 96, 118), (70, 72, 92)] if off else [(226, 206, 255), (178, 102, 255), (120, 66, 196)]
     for x, y in pts:
-        if 0 <= x < 16 and 0 <= y < 16:
-            light = (x + y) % 2 == 0 and y < 7
-            img.putpixel((x, y), ((226, 206, 255) if y < 6 else (178, 102, 255) if y < 10 else (120, 66, 196)) + (255,))
+        img.putpixel((x, y), (shades[0] if y < 6 else shades[1] if y < 10 else shades[2]) + (255,))
     return img
 
 
-for name, img in (('level/scroll_left', chevrons(False)), ('level/scroll_right', chevrons(True))):
-    save_anim(name, [img])
-    model(name)
-    img.resize((96, 96), Image.NEAREST).save(f'/tmp/{name.split("/")[1]}.png')
+SCALE = 1.125
+sheet = []
+for shape in SHAPES:
+    for q in range(5):
+        frames = link(shape, q)
+        save(f'level/link_{shape}_{q}', frames, N, SCALE)
+        sheet.append(frames[0])
+for state in ('locked', 'ready', 'claimed'):
+    for kind in ('node', 'box'):
+        img = badge(state, kind)
+        save(f'level/{kind}_{state}', [img], N, SCALE)
+        sheet.append(img)
+for path, img in (('level/coin', coin()), ('level/recenter', recenter()), ('level/chest', chest()),
+                  ('level/scroll_left', chevrons(False)), ('level/scroll_right', chevrons(True)),
+                  ('level/scroll_left_off', chevrons(False, True)), ('level/scroll_right_off', chevrons(True, True))):
+    save(path, [img], 16)
+    sheet.append(img)
+
+big = Image.new('RGBA', (12 * 80, 4 * 80), (60, 62, 80, 255))
+for i, img in enumerate(sheet):
+    big.alpha_composite(img.resize((img.size[0] * 4, img.size[1] * 4), Image.NEAREST), ((i % 12) * 80 + 4, (i // 12) * 80 + 4))
+big.save('/tmp/snake_sheet.png')
+# a few frames of one bar, to check the stripes move along it
+anim = Image.new('RGBA', (8 * 80, 80), (60, 62, 80, 255))
+for i, fr in enumerate(link('se', 4)):
+    anim.alpha_composite(fr.resize((72, 72), Image.NEAREST), (i * 80 + 4, 4))
+anim.save('/tmp/snake_anim.png')

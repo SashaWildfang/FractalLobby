@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 68
+messages-version: 69
 
 theme:
   primary: "#B266FF"
@@ -973,6 +973,14 @@ levels:
     name: "<secondary>Scroll on →"
     lore:
       - "<muted>Towards level <white><to></white>."
+  scroll-left-off:
+    name: "<dark_gray>← Scroll back"
+    lore:
+      - "<dark_gray>You're at the start."
+  scroll-right-off:
+    name: "<dark_gray>Scroll on →"
+    lore:
+      - "<dark_gray>That's as far as it goes for now."
   recenter:
     name: "<#B266FF>Re-center"
     lore:

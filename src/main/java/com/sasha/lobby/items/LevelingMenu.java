@@ -171,10 +171,14 @@ public final class LevelingMenu implements Listener {
         menu.inventory.setItem(BACK, style.icon(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
         menu.inventory.setItem(RECENTER, recenter(player, level));
         menu.inventory.setItem(CLAIM_ALL, claimAll(player, rewards.waiting(player, level).size()));
-        if (offset > 0) menu.inventory.setItem(LEFT, packIcon(player, Profile.button(messages, Material.ARROW, "levels.scroll-left",
-                Messages.arg("from", Math.max(1, firstLevelFrom(Math.max(0, offset - STEP))))), "level/scroll_left"));
-        if (offset < maxOffset(level)) menu.inventory.setItem(RIGHT, packIcon(player, Profile.button(messages, Material.ARROW,
-                "levels.scroll-right", Messages.arg("to", lastLevelTo(offset + STEP + 8))), "level/scroll_right"));
+        // the arrows stay put; at either end they're greyed out
+        boolean back = offset > 0, on = offset < maxOffset(level);
+        menu.inventory.setItem(LEFT, packIcon(player, back
+                ? Profile.button(messages, Material.ARROW, "levels.scroll-left", Messages.arg("from", Math.max(1, firstLevelFrom(Math.max(0, offset - STEP)))))
+                : Profile.button(messages, Material.GRAY_DYE, "levels.scroll-left-off"), back ? "level/scroll_left" : "level/scroll_left_off"));
+        menu.inventory.setItem(RIGHT, packIcon(player, on
+                ? Profile.button(messages, Material.ARROW, "levels.scroll-right", Messages.arg("to", lastLevelTo(offset + STEP + 8)))
+                : Profile.button(messages, Material.GRAY_DYE, "levels.scroll-right-off"), on ? "level/scroll_right" : "level/scroll_right_off"));
         player.openInventory(menu.inventory);
     }
 
@@ -342,7 +346,7 @@ public final class LevelingMenu implements Listener {
         Messages messages = plugin.messages();
         ItemStack item = Profile.button(messages, count > 0 ? Material.CHEST : Material.BARREL,
                 count > 0 ? "levels.claim-all" : "levels.claim-none", Messages.arg("count", count));
-        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "level/claim")));
+        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "level/chest")));
         if (count > 0) {
             item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
             item.setData(DataComponentTypes.MAX_STACK_SIZE, 99);
@@ -361,7 +365,7 @@ public final class LevelingMenu implements Listener {
         ItemStack item = Profile.button(plugin.messages(), Material.ENDER_CHEST, "levels.next-box", Messages.arg("level", target),
                 Messages.arg("levels", target - level), Messages.arg("xp", String.format(Locale.ROOT, "%,d", toGo)),
                 Placeholder.parsed("odds", odds()));
-        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "mystery/gift_2")));
+        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "level/box_ready")));
         return item;
     }
 
