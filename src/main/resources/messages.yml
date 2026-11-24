@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 67
+messages-version: 68
 
 theme:
   primary: "#B266FF"
@@ -871,7 +871,7 @@ boosters:
 # Icons (resource pack, font fractal:lobby): \uF024 Mystery Dust, \uF025 Mystery Box,
 # \uF026 CTF coins, \uF027 network level.
 levels:
-  title: "<brand><bold>Levels</bold></brand> <dark_gray>(<page>/<pages>)"
+  title: "<brand><bold>Levels</bold></brand> <dark_gray>(<from>-<to>)"
   # On joining the Lobby with rewards waiting (each line centred). <count>
   notify-one:
     - "<#6A5A8C><strikethrough>                                                  </strikethrough>"
@@ -888,7 +888,7 @@ levels:
   head:
     name: "<white><font:fractal:lobby>\uF027</font> <#B266FF>Network Level <white><level>"
     lore:
-      - "<muted>Progress to level <white><next></white>: <#B266FF><percent>%"
+      - "<muted>Progress to level <white><next></white>: <#6CE36C><percent>%"
       - "<bar>"
       - "<white><xp> <muted>/ <white><needed> XP <dark_gray>(<left> to go)"
       - ""
@@ -899,9 +899,9 @@ levels:
       - "<muted>Earn XP playing <secondary>Survival</secondary> and <secondary>CTF</secondary>."
   # The beads leading to the next level. <level> <next> <bar> <percent> <xp> <needed> <left>
   bead:
-    name: "<#B266FF>Level <level> <dark_gray>➜</dark_gray> <#B266FF><next>"
+    name: "<#6CE36C>Level <level> <dark_gray>➜</dark_gray> <#6CE36C><next>"
     lore:
-      - "<bar> <#B266FF><percent>%"
+      - "<bar> <#6CE36C><percent>%"
       - "<white><xp> <muted>/ <white><needed> XP <dark_gray>(<left> to go)"
   # Each level. <level> <dust> <coins> <xp> (to go) <stars> (the box it gave) <odds>
   rewards:
@@ -965,12 +965,20 @@ levels:
       - "<muted>Every 5th level gives a Mystery Box."
       - "<muted>Its stars are picked when you claim:"
       - " <odds>"
-  previous:
-    name: "<secondary>← Levels <from>-<to>"
-    lore: []
-  next:
-    name: "<secondary>Levels <from>-<to> →"
-    lore: []
+  scroll-left:
+    name: "<secondary>← Scroll back"
+    lore:
+      - "<muted>Towards level <white><from></white>."
+  scroll-right:
+    name: "<secondary>Scroll on →"
+    lore:
+      - "<muted>Towards level <white><to></white>."
+  recenter:
+    name: "<#B266FF>Re-center"
+    lore:
+      - "<muted>Back to your level (<white><level></white>)."
+      - ""
+      - "<accent><left-click></accent> <muted>to jump there"
   # After claiming (lines). <count> <level> <dust> <coins> <boxes>
   claimed-one:
     - "<prefix><good>Level <white><level></white> reward claimed!"
