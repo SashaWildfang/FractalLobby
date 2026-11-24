@@ -182,9 +182,7 @@ public final class BoostersMenu implements Listener {
                     Messages.arg("wait", Math.max(1, (start - System.currentTimeMillis() + 59_999) / 60_000)));
             boolean now = start <= System.currentTimeMillis() + 2000;
             messages.send(player, now ? "boosters.activated-now" : "boosters.activated-queued", tags);
-            for (Player other : Bukkit.getOnlinePlayers()) {
-                if (other != player) messages.send(other, "boosters.announce", tags);
-            }
+            // everyone on the network is told when it starts (Core on the proxy, with a line to click to tip)
             player.playSound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.MASTER, 0.7f, 1.2f), Sound.Emitter.self());
         }));
     }

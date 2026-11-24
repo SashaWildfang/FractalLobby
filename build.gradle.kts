@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.sasha"
-version = "1.61.0"
+version = "1.62.0"
 description = "Lobby core for Fractal Network: scoreboard with network player counts, lobby protection, void rescue and join items. Built by Sasha Wildfang."
 
 repositories {
