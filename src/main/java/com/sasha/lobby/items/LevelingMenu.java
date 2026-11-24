@@ -40,38 +40,40 @@ import java.util.TreeMap;
 /**
  * My Profile → Levels (/levels): the network level snake, like Hypixel's skill menus.
  *
- * <p>The snake winds through rows 1-4: up a column, across the top, down the next column, across the bottom, and on.
+ * <p>The snake winds through rows 1-5: up a column, across the top, down the next column, across the bottom, and on.
  * Every other square on it is a level; between two levels is one link, a green striped bar (animated by the resource
  * pack) that fills along the way it flows as the player earns XP towards the next level. It goes on past the menu's
  * edge: the arrows in the bottom corners scroll it four columns at a time, and Re-center brings back the player's
  * level.
  *
- * <p>Below the snake: coin multiplier, the player's level, claim all; then scroll, back, re-center, scroll. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
+ * <p>One row of buttons below: scroll back, back, coin multiplier, the player's level, claim all, re-center, scroll on. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
  */
 public final class LevelingMenu implements Listener {
 
     private static final char BACKGROUND = '\uF1C6';
-    static final int MULTIPLIER = 38, HEAD = 40, CLAIM_ALL = 42, LEFT = 45, BACK = 48, RECENTER = 50, RIGHT = 53;
+    static final int LEFT = 45, BACK = 46, MULTIPLIER = 48, HEAD = 49, CLAIM_ALL = 50, RECENTER = 52, RIGHT = 53;
     /** Columns the arrows move the snake. */
-    static final int STEP = 4;
+    static final int STEP = 1;
 
-    /** Where square {@code i} of the snake is: its column (from the start, 0 up) and row (0 top to 3 bottom). */
+    /**
+     * Where square {@code i} of the snake is: its column (from the start, 0 up) and row (0 top to 4 bottom). Up a
+     * column, one square across the top, down the next, one across the bottom: 12 squares every 4 columns, so the
+     * turns always land on levels.
+     */
     static int[] cell(int i) {
-        int cycle = i / 10, r = i % 10, base = cycle * 4;
-        if (r <= 3) return new int[] {base, 3 - r};                   // up the first column
-        if (r == 4) return new int[] {base + 1, 0};                   // across the top
-        if (r <= 8) return new int[] {base + 2, r - 5};               // down the next
-        return new int[] {base + 3, 3};                               // across the bottom
+        int cycle = i / 12, r = i % 12, base = cycle * 4;
+        if (r <= 4) return new int[] {base, 4 - r};                   // up the first column
+        if (r == 5) return new int[] {base + 1, 0};                   // across the top
+        if (r <= 10) return new int[] {base + 2, r - 6};              // down the next
+        return new int[] {base + 3, 4};                               // across the bottom
     }
 
     /** The shape of the link at square {@code i} (always odd): the way the bar runs through it. */
     static String linkShape(int i) {
-        return switch (i % 10) {
-            case 1 -> "sn";                                           // up
-            case 3 -> "se";                                           // up, then right
-            case 5 -> "ws";                                           // right, then down
-            case 7 -> "ns";                                           // down
-            default -> "we";                                          // 9: right along the bottom
+        return switch (i % 12) {
+            case 1, 3 -> "sn";                                        // up
+            case 7, 9 -> "ns";                                        // down
+            default -> "we";                                          // 5 and 11: right, along the top or the bottom
         };
     }
 
@@ -318,11 +320,19 @@ public final class LevelingMenu implements Listener {
         LevelRewards rewards = plugin.levelRewards();
         String now = NetworkBoosters.multiplier(rewards.multiplier(level));
         List<Component> lore = new ArrayList<>(messages.lore("levels.multiplier.lore", Messages.arg("multiplier", now)));
+        // level 1 (1.0x) first, then each step: ones passed ticked, the one the player is on highlighted, the next marked
+        var steps = new TreeMap<Integer, Double>(rewards.multipliers());
+        steps.putIfAbsent(1, 1.0);
+        int current = steps.floorKey(Math.max(1, level));
         boolean nextShown = false;
-        for (var step : rewards.multipliers().entrySet()) {
-            boolean reached = level >= step.getKey();
-            String key = reached ? "levels.multiplier.step-reached" : !nextShown ? "levels.multiplier.step-next" : "levels.multiplier.step";
-            if (!reached) nextShown = true;
+        for (var step : steps.entrySet()) {
+            String key;
+            if (step.getKey() == current) key = "levels.multiplier.step-current";
+            else if (step.getKey() < current) key = "levels.multiplier.step-reached";
+            else if (!nextShown) {
+                key = "levels.multiplier.step-next";
+                nextShown = true;
+            } else key = "levels.multiplier.step";
             lore.add(messages.render(messages.raw(key), Messages.arg("level", step.getKey()),
                     Messages.arg("multiplier", NetworkBoosters.multiplier(step.getValue()))));
         }

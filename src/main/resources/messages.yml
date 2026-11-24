@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 69
+messages-version: 70
 
 theme:
   primary: "#B266FF"
@@ -465,9 +465,11 @@ profile:
       - "<muted>Playtime: <white><playtime>"
       - ""
       - "<network>"
+      - "<coin-multiplier-line>"
       - "<muted>Parkour best: <white><parkour-best> <muted>(<parkour-rank>)"
-    # The <network> line: network level and the CTF coin multiplier it gives. <level> <multiplier>
-    network: "<muted>Network Level: <white><font:fractal:lobby>\uF027</font> <#B266FF><level></#B266FF> <dark_gray>·</dark_gray> <muted>Coins: <white><font:fractal:lobby>\uF026</font> <gold><multiplier>x"
+    # The <network> and <coin-multiplier-line> lines: network level and the CTF coin multiplier it gives. <level> <multiplier>
+    network: "<muted>Network Level: <white><font:fractal:lobby>\uF027</font> <#B266FF><level>"
+    coin-multiplier: "<muted>Coin Multiplier: <white><font:fractal:lobby>\uF026</font> <gold><multiplier>x"
   status:
     name: "<primary>Status"
     lore:
@@ -940,7 +942,8 @@ levels:
       - "<muted>Your network level multiplies"
       - "<muted>the CTF coins you earn."
       - ""
-    step-reached: " <good>✔ <muted>Level <white><level></white>: <gold><multiplier>x"
+    step-reached: " <dark_gray>✔ Level <level>: <multiplier>x"
+    step-current: " <good>▶ <white>Level <level>: <gold><multiplier>x <good>(you)"
     step-next: " <accent>▸ <muted>Level <white><level></white>: <gold><multiplier>x <muted>(next)"
     step: " <dark_gray>▪ Level <level>: <multiplier>x"
     footer:

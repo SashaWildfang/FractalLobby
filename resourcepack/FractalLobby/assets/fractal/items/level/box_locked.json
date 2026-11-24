@@ -1,1 +1,1 @@
-{"model": {"type": "minecraft:model", "model": "fractal:item/level/box_locked"}}
+{"model": {"type": "minecraft:model", "model": "fractal:item/level/box_locked"}, "oversized_in_gui": true}

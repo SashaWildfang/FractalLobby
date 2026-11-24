@@ -31,7 +31,10 @@ def model(path, scale=None):
     if scale:
         m["display"] = {"gui": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [scale, scale, scale]}}
     json.dump(m, open(f'{OUT}/models/item/{path}.json', 'w'))
-    json.dump({"model": {"type": "minecraft:model", "model": f"fractal:item/{path}"}}, open(f'{OUT}/items/{path}.json', 'w'))
+    item = {"model": {"type": "minecraft:model", "model": f"fractal:item/{path}"}}
+    if scale:
+        item["oversized_in_gui"] = True          # since 1.21.6 menus clip items to their slot unless this is set
+    json.dump(item, open(f'{OUT}/items/{path}.json', 'w'))
 
 
 def save(path, frames, size, scale=None):
@@ -302,44 +305,43 @@ def recenter():
 
 
 def claim_button(on):
-    """A round button with a gift: lit gold and green when there's something to claim, grey otherwise."""
+    """Claim All. With rewards waiting: an open treasure chest spilling gold coins and a purple gem, light rising
+    out of it. With none: a plain grey circle (nothing to do)."""
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    if on:
-        light, mid, dark, inner = (170, 250, 160), (90, 210, 100), (44, 140, 64), (36, 96, 52)
-    else:
-        light, mid, dark, inner = (120, 124, 146), (86, 90, 110), (60, 62, 80), (42, 44, 60)
-    for y in range(16):
-        for x in range(16):
-            d = math.hypot(x - 7.5, y - 7.5)
-            if d > 7.9:
-                continue
-            if d > 7.0:
-                c = K
-            elif d > 5.4:
-                lean = (x - 7.5) + (y - 7.5)
-                c = light if lean < -3 else dark if lean > 3 else mid
-            else:
-                c = inner
-            img.putpixel((x, y), c + (255,))
-    gift = ["..K..K..",
-            ".KRKKRK.",
-            "KKKKKKKK",
-            "KLLRRLLK",
-            "KYYRRYDK",
-            "KYYRRYDK",
-            "KDDrrDDK",
-            "KKKKKKKK"]
-    if on:
-        pal = {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'R': (168, 108, 248), 'r': (110, 64, 190)}
-    else:
-        pal = {'L': (150, 154, 176), 'Y': (112, 116, 138), 'D': (84, 88, 108), 'R': (126, 120, 150), 'r': (90, 86, 112)}
-    for y, row in enumerate(gift):
+    if not on:
+        for y in range(16):
+            for x in range(16):
+                d = math.hypot(x - 7.5, y - 7.5)
+                if d > 6.9:
+                    continue
+                c = K if d > 6.0 else (96, 100, 122) if d > 4.6 and (x + y) < 15 else (70, 73, 92) if d > 4.6 else (52, 54, 72)
+                img.putpixel((x, y), c + (255,))
+        return img
+    pal = {'W': (255, 248, 210), 'w': (255, 230, 150), 'G': (255, 196, 64), 'g': (204, 140, 30), 'L': (255, 236, 170),
+           'B': (150, 92, 52), 'b': (104, 62, 34), 'P': (178, 102, 255), 'p': (226, 206, 255)}
+    rows = [
+        "...w...W...w....",
+        "....w..W..w.....",
+        ".KKKKKKKKKKKKKK.",
+        ".KBBBBBBBBBBBbK.",
+        ".KGGGGGGGGGGGgK.",
+        ".KKKKKKKKKKKKKK.",
+        ".KLGpPLGLGKLGgK.",
+        "KKGGPPGGGGLGGgKK",
+        "KBKKKKKKKKKKKKbK",
+        "KBBBBBGGGGBBBBbK",
+        "KBBBBBGKKGBBBBbK",
+        "KBBBBBGGGGBBBBbK",
+        "KbbbbbbggbbbbbbK",
+        "KGGGGGGGGGGGGGgK",
+        "KKKKKKKKKKKKKKKK",
+        "................"]
+    for y, row in enumerate(rows):
         for x, ch in enumerate(row):
-            if ch != '.':
-                img.putpixel((4 + x, 4 + y), (K if ch == 'K' else pal[ch]) + (255,))
-    if on:
-        for x, y in ((13, 1), (12, 2), (14, 2), (13, 3)):
-            img.putpixel((x, y), (255, 255, 255, 255))
+            if ch == 'K':
+                img.putpixel((x, y), K + (255,))
+            elif ch in pal:
+                img.putpixel((x, y), pal[ch] + (255,))
     return img
 
 

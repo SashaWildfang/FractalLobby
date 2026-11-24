@@ -158,9 +158,12 @@ public final class Profile implements Listener {
                 : com.sasha.lobby.network.NetworkBoosters.multiplier(plugin.levelRewards().multiplier(networkLevel));
         Component networkLine = plugin.levels() == null ? Component.empty()
                 : messages.component("profile.head.network", Messages.arg("level", networkLevel), Messages.arg("multiplier", coinMultiplier));
+        Component coinLine = plugin.levels() == null ? Component.empty()
+                : messages.component("profile.head.coin-multiplier", Messages.arg("level", networkLevel), Messages.arg("multiplier", coinMultiplier));
 
         return TagResolver.resolver(
                 Placeholder.component("network", networkLine),
+                Placeholder.component("coin-multiplier-line", coinLine),
                 Messages.arg("network-level", networkLevel), Messages.arg("coin-multiplier", coinMultiplier),
                 Messages.name("player", player.getName()),
                 Placeholder.component("rank", rank),

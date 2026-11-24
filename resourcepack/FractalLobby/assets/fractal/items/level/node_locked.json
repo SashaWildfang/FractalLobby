@@ -1,1 +1,1 @@
-{"model": {"type": "minecraft:model", "model": "fractal:item/level/node_locked"}}
+{"model": {"type": "minecraft:model", "model": "fractal:item/level/node_locked"}, "oversized_in_gui": true}
