@@ -294,9 +294,7 @@ public final class LevelingMenu implements Listener {
             meta.addItemFlags(ItemFlag.values());
             if (java) meta.setItemModel(new NamespacedKey("fractal", model));
         });
-        if (state.equals("ready")) item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
-        item.setData(DataComponentTypes.MAX_STACK_SIZE, 99);
-        item.setAmount(Math.max(1, Math.min(99, l)));
+        if (state.equals("ready") && !java) item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
         return item;
     }
 
@@ -342,16 +340,13 @@ public final class LevelingMenu implements Listener {
         return item;
     }
 
+    /** Claim All: a lit round button when there's something to claim, a grey one when there isn't. */
     private ItemStack claimAll(Player player, int count) {
         Messages messages = plugin.messages();
-        ItemStack item = Profile.button(messages, count > 0 ? Material.CHEST : Material.BARREL,
+        ItemStack item = Profile.button(messages, count > 0 ? Material.LIME_DYE : Material.GRAY_DYE,
                 count > 0 ? "levels.claim-all" : "levels.claim-none", Messages.arg("count", count));
-        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "level/chest")));
-        if (count > 0) {
-            item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
-            item.setData(DataComponentTypes.MAX_STACK_SIZE, 99);
-            item.setAmount(Math.min(99, count));
-        }
+        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", count > 0 ? "level/claim_on" : "level/claim_off")));
+        else if (count > 0) item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
         return item;
     }
 

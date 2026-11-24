@@ -13,7 +13,9 @@ import json, math, os
 OUT = 'FractalLobby/assets/fractal'
 K = (26, 27, 38)
 N = 18                                                           # links and badges
-FRAMES, PERIOD = 8, 8
+# PERIOD divides 36 (two squares: from one bar to the next along the snake), so every bar's stripes line up
+# with the last one's, as one stripe running the whole snake; a pixel a frame.
+FRAMES, PERIOD = 12, 12
 GREEN = [(150, 248, 140), (104, 222, 104), (64, 178, 82), (42, 132, 62)]   # light, stripe, base, shade
 TRACK, TRACK_L = (34, 36, 54), (46, 48, 70)
 
@@ -259,19 +261,76 @@ def chest():
 
 
 def recenter():
+    """Focus brackets round a small gem: 'back to my level'."""
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    W, P = (236, 228, 255), (178, 102, 255)
+    corners = [(1, 1, 1, 1), (14, 1, -1, 1), (1, 14, 1, -1), (14, 14, -1, -1)]
+    arm = set()
+    for x0, y0, dx, dy in corners:
+        for k in range(4):
+            arm.add((x0 + dx * k, y0))
+            arm.add((x0, y0 + dy * k))
+    for x, y in arm:
+        for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            q = (x + a, y + b)
+            if q not in arm and 0 <= q[0] < 16 and 0 <= q[1] < 16:
+                img.putpixel(q, K + (255,))
+    for x, y in arm:
+        img.putpixel((x, y), W + (255,))
+    gem = ["..KKKK..",
+           ".KLLYDK.",
+           "KLYYYDdK",
+           "KDDDDddK",
+           ".KDYYdK.",
+           "..KDdK..",
+           "...KK..."]
+    pal = {'L': (232, 214, 255), 'Y': P, 'D': (122, 66, 200), 'd': (82, 44, 142)}
+    for y, row in enumerate(gem):
+        for x, ch in enumerate(row):
+            if ch != '.':
+                img.putpixel((4 + x, 4 + y), (K if ch == 'K' else pal[ch]) + (255,))
+    return img
+
+
+def claim_button(on):
+    """A round button with a gift: lit gold and green when there's something to claim, grey otherwise."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    if on:
+        light, mid, dark, inner = (170, 250, 160), (90, 210, 100), (44, 140, 64), (36, 96, 52)
+    else:
+        light, mid, dark, inner = (120, 124, 146), (86, 90, 110), (60, 62, 80), (42, 44, 60)
     for y in range(16):
         for x in range(16):
             d = math.hypot(x - 7.5, y - 7.5)
-            if 4.4 < d <= 5.6:
-                img.putpixel((x, y), (178, 102, 255, 255))
-            elif 5.6 < d <= 6.6 or 3.4 < d <= 4.4:
-                img.putpixel((x, y), K + (255,))
-            elif d <= 1.6:
-                img.putpixel((x, y), (255, 255, 255, 255))
-    for i in range(4):
-        for x, y in ((7, i), (8, i), (7, 15 - i), (8, 15 - i), (i, 7), (i, 8), (15 - i, 7), (15 - i, 8)):
-            img.putpixel((x, y), (226, 206, 255, 255) if i in (1, 2) else K + (255,))
+            if d > 7.9:
+                continue
+            if d > 7.0:
+                c = K
+            elif d > 5.4:
+                lean = (x - 7.5) + (y - 7.5)
+                c = light if lean < -3 else dark if lean > 3 else mid
+            else:
+                c = inner
+            img.putpixel((x, y), c + (255,))
+    gift = ["..K..K..",
+            ".KRKKRK.",
+            "KKKKKKKK",
+            "KLLRRLLK",
+            "KYYRRYDK",
+            "KYYRRYDK",
+            "KDDrrDDK",
+            "KKKKKKKK"]
+    if on:
+        pal = {'L': (255, 236, 170), 'Y': (255, 196, 64), 'D': (204, 140, 30), 'R': (168, 108, 248), 'r': (110, 64, 190)}
+    else:
+        pal = {'L': (150, 154, 176), 'Y': (112, 116, 138), 'D': (84, 88, 108), 'R': (126, 120, 150), 'r': (90, 86, 112)}
+    for y, row in enumerate(gift):
+        for x, ch in enumerate(row):
+            if ch != '.':
+                img.putpixel((4 + x, 4 + y), (K if ch == 'K' else pal[ch]) + (255,))
+    if on:
+        for x, y in ((13, 1), (12, 2), (14, 2), (13, 3)):
+            img.putpixel((x, y), (255, 255, 255, 255))
     return img
 
 
@@ -306,6 +365,7 @@ for state in ('locked', 'ready', 'claimed'):
         save(f'level/{kind}_{state}', [img], N, SCALE)
         sheet.append(img)
 for path, img in (('level/coin', coin()), ('level/recenter', recenter()), ('level/chest', chest()),
+                  ('level/claim_on', claim_button(True)), ('level/claim_off', claim_button(False)),
                   ('level/scroll_left', chevrons(False)), ('level/scroll_right', chevrons(True)),
                   ('level/scroll_left_off', chevrons(False, True)), ('level/scroll_right_off', chevrons(True, True))):
     save(path, [img], 16)
@@ -316,7 +376,7 @@ for i, img in enumerate(sheet):
     big.alpha_composite(img.resize((img.size[0] * 4, img.size[1] * 4), Image.NEAREST), ((i % 12) * 80 + 4, (i // 12) * 80 + 4))
 big.save('/tmp/snake_sheet.png')
 # a few frames of one bar, to check the stripes move along it
-anim = Image.new('RGBA', (8 * 80, 80), (60, 62, 80, 255))
+anim = Image.new('RGBA', (12 * 80, 80), (60, 62, 80, 255))
 for i, fr in enumerate(link('se', 4)):
     anim.alpha_composite(fr.resize((72, 72), Image.NEAREST), (i * 80 + 4, 4))
 anim.save('/tmp/snake_anim.png')
