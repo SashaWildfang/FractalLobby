@@ -73,7 +73,7 @@ public final class NetworkLevels implements Listener {
     public Progress progress(Player player) {
         var c = plugin.getConfig();
         return progress(xp.getOrDefault(player.getUniqueId(), 0L),
-                Math.max(1, c.getLong("leveling.first-level-xp", 500)), Math.max(0, c.getLong("leveling.extra-xp-per-level", 100)));
+                Math.max(1, c.getLong("leveling.first-level-xp", 200)), Math.max(0, c.getLong("leveling.extra-xp-per-level", 50)));
     }
 
     private void refresh() {

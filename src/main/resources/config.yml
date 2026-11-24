@@ -633,10 +633,13 @@ database:
 # ── Network levels ─────────────────────────────────────────
 # Shown in My Profile. XP is earned on CTF (each minute of active play) and kept
 # in the network database. Level L to L+1 takes first-level-xp + extra-xp-per-level
-# × (L - 1) XP. Keep these the same as network-xp: in CTF's config.yml.
+# × (L - 1) XP: each level costs the same fixed amount more than the last, like
+# Hypixel (there 10,000 then +2,500 a level; here 200 then +50, the same shape
+# scaled to 10 XP a minute). Level 2 in 20 min, 5 in ~2 h, 10 in ~6 h, 20 in
+# ~21 h, 50 in ~114 h. Keep these the same as network-xp: in CTF's config.yml.
 leveling:
-  first-level-xp: 500
-  extra-xp-per-level: 100
+  first-level-xp: 200
+  extra-xp-per-level: 50
 
 
 # ── Scoreboard and tab list ─────────────────────────────────────
