@@ -121,6 +121,12 @@ public final class Lobby extends JavaPlugin implements Listener {
         placeholderApi = getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
         luckPerms = getServer().getPluginManager().isPluginEnabled("LuckPerms");
 
+        database = com.sasha.lobby.data.NetworkDb.open(this);
+        if (database != null) {
+            playerData = new com.sasha.lobby.data.PlayerDataMirror(this, database);
+            getServer().getPluginManager().registerEvents(playerData, this);
+            playerData.start();
+        }
         playerFormat = new PlayerFormat(this);
         serverStatus = new ServerStatus(this);
         proxyCounts = new ProxyCounts(this);
@@ -184,6 +190,7 @@ public final class Lobby extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if (playerData != null) playerData.saveAll();
         if (placeholderExpansion != null) ((LobbyExpansion) placeholderExpansion).unregister();
         if (display != null) display.stop();
         if (proxyCounts != null) proxyCounts.stop();
@@ -198,6 +205,15 @@ public final class Lobby extends JavaPlugin implements Listener {
         if (selector != null) selector.stop();
         if (doubleJump != null) doubleJump.stop();
         if (trails != null) trails.stop();
+        if (database != null) database.close();
+    }
+
+    private com.sasha.lobby.data.NetworkDb database;
+    private com.sasha.lobby.data.PlayerDataMirror playerData;
+
+    /** The network database, or null without one (config.yml database:). */
+    public com.sasha.lobby.data.NetworkDb database() {
+        return database;
     }
 
     public LobbyConfig lobbyConfig() {

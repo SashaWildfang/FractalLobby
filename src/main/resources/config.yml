@@ -615,6 +615,21 @@ proxy:
     - ctf
 
 
+# ── Database ────────────────────────────────────────────────────
+# The network database (Pterodactyl → Lobby → Databases). Parkour scores,
+# everyone's lobby settings, FractalCosmetics' Mystery Boxes and FractalRadio's
+# song stats are kept there, and so are network levels and boosters (the CTF
+# servers use it too). The first start with it copies the old files in.
+# Without a password everything stays in files as before.
+database:
+  enabled: true
+  host: "172.18.0.1"
+  port: 3306
+  name: "s3_network"
+  username: "u3_yyEu0yFpdd"
+  password: ""
+
+
 # ── Scoreboard and tab list ─────────────────────────────────────
 # The text is in messages.yml (scoreboard and tablist).
 scoreboard:

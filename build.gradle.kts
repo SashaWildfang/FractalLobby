@@ -1,10 +1,11 @@
 plugins {
     java
     id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "com.sasha"
-version = "1.53.0"
+version = "1.54.0"
 description = "Lobby core for Fractal Network: scoreboard with network player counts, lobby protection, void rescue and join items. Built by Sasha Wildfang."
 
 repositories {
@@ -20,6 +21,10 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.6")
     // Optional: rank prefixes for chat, nametags and the tab list.
     compileOnly("net.luckperms:api:5.4")
+    // Bundled: the network database's connection pool (Paper already has the MySQL driver and slf4j).
+    implementation("com.zaxxer:HikariCP:6.3.0") {
+        exclude(group = "org.slf4j")
+    }
 
     testImplementation("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
@@ -46,6 +51,19 @@ tasks {
         filesMatching("plugin.yml") {
             expand(props)
         }
+    }
+
+    jar {
+        archiveClassifier = "plain"
+    }
+
+    shadowJar {
+        archiveClassifier = ""
+        relocate("com.zaxxer.hikari", "com.sasha.lobby.lib.hikari")
+    }
+
+    build {
+        dependsOn(shadowJar)
     }
 
     test {

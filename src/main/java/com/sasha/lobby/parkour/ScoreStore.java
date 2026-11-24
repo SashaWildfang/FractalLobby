@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Everyone's parkour bests, in parkour-scores.yml: per player their name, best score, how long that run took and
+ * Everyone's parkour bests, in the network database (lobby_parkour), or parkour-scores.yml without one: per player their name, best score, how long that run took and
  * how many runs they've done. The first time it's made, ajParkour's scores are brought over if they're there.
  */
 public final class ScoreStore {
@@ -42,6 +42,56 @@ public final class ScoreStore {
         boolean fresh = !file.exists();
         load();
         if (fresh) importAjParkour();
+        if (plugin.database() != null) fromDatabase();
+    }
+
+    /**
+     * With the network database: the scores live there. The first time (an empty table) everything in
+     * parkour-scores.yml is copied in; the file is then left alone as a backup.
+     */
+    private void fromDatabase() {
+        try {
+            int rows = plugin.database().now(c -> {
+                try (java.sql.PreparedStatement s = c.prepareStatement("SELECT COUNT(*) FROM lobby_parkour");
+                     ResultSet r = s.executeQuery()) {
+                    return r.next() ? r.getInt(1) : 0;
+                }
+            });
+            if (rows == 0 && !records.isEmpty()) {
+                plugin.database().now(c -> {
+                    for (Record r : records.values()) write(c, r);
+                    return null;
+                });
+                plugin.getLogger().info("Moved " + records.size() + " parkour scores from parkour-scores.yml to the database.");
+                return;
+            }
+            records.clear();
+            plugin.database().now(c -> {
+                try (java.sql.PreparedStatement s = c.prepareStatement("SELECT uuid, name, best, time_seconds, games FROM lobby_parkour");
+                     ResultSet r = s.executeQuery()) {
+                    while (r.next()) {
+                        UUID id = uuid(r.getString(1));
+                        if (id != null) records.put(id, new Record(id, r.getString(2), r.getInt(3), r.getInt(4), r.getInt(5)));
+                    }
+                }
+                return null;
+            });
+            resort();
+        } catch (SQLException e) {
+            plugin.getLogger().warning("Couldn't read parkour scores from the database: " + e.getMessage() + " (using parkour-scores.yml)");
+        }
+    }
+
+    private static void write(Connection c, Record r) throws SQLException {
+        try (java.sql.PreparedStatement s = c.prepareStatement("INSERT INTO lobby_parkour (uuid, name, best, time_seconds, games) VALUES (?, ?, ?, ?, ?)"
+                + " ON DUPLICATE KEY UPDATE name = VALUES(name), best = VALUES(best), time_seconds = VALUES(time_seconds), games = VALUES(games)")) {
+            s.setString(1, r.id().toString());
+            s.setString(2, r.name());
+            s.setInt(3, r.best());
+            s.setInt(4, r.timeSeconds());
+            s.setInt(5, r.games());
+            s.executeUpdate();
+        }
     }
 
     private void load() {
@@ -114,10 +164,15 @@ public final class ScoreStore {
         Record old = records.get(id);
         boolean better = old == null ? score > 0 : score > old.best() || (score == old.best() && score > 0 && timeSeconds < old.timeSeconds());
         int games = (old == null ? 0 : old.games()) + 1;
-        records.put(id, better ? new Record(id, name, score, timeSeconds, games)
-                : new Record(id, name, old == null ? 0 : old.best(), old == null ? 0 : old.timeSeconds(), games));
+        Record now = better ? new Record(id, name, score, timeSeconds, games)
+                : new Record(id, name, old == null ? 0 : old.best(), old == null ? 0 : old.timeSeconds(), games);
+        records.put(id, now);
         resort();
-        save();
+        if (plugin.database() != null) plugin.database().run(c -> {
+            write(c, now);
+            return null;
+        });
+        else save();
         return better && (old == null || score > old.best());
     }
 
