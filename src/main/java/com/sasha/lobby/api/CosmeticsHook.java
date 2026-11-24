@@ -40,6 +40,16 @@ public interface CosmeticsHook {
     /** A new parkour best, which can give a Mystery Box. */
     void parkourBest(Player player, int score);
 
+    /** Gives Mystery Dust (online or not). False when this FractalCosmetics can't (an older version). */
+    default boolean giveDust(UUID player, long amount) {
+        return false;
+    }
+
+    /** Gives Mystery Boxes (online or not). False when this FractalCosmetics can't (an older version). */
+    default boolean giveBoxes(UUID player, int stars, int amount) {
+        return false;
+    }
+
     /** /lobby reload: FractalCosmetics reloads too. */
     void reload();
 }

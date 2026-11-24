@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 65
+messages-version: 66
 
 theme:
   primary: "#B266FF"
@@ -523,6 +523,8 @@ profile:
       - "<muted>Earn XP while you play <secondary>Survival</secondary>"
       - "<muted>and <secondary>Capture the Flag</secondary>."
       - "<dark_gray>Standing around AFK doesn't count."
+      - ""
+      - "<accent><left-click></accent> <muted>for levels and rewards"
   # Network boosters the player owns. <count>
   boosters:
     name: "<primary>Boosters"
@@ -863,3 +865,85 @@ boosters:
   # To whoever ran /booster give, and to the player if they're here.
   given: "<prefix><good>Gave <white><player></white> a <multiplier>x Coins Booster for <game> <good>(<minutes> min)."
   received: "<prefix><good>You got a <gold><multiplier>x Coins Booster</gold> <good>for <game><good>! <muted>Use it from <accent>My Profile → Boosters</accent>."
+
+
+# ── Network levels (My Profile → Levels, /levels) ─────────────
+levels:
+  title: "<brand><bold>Levels</bold></brand> <dark_gray>(<page>/<pages>)"
+  waiting-join: "<prefix><good>You have <white><count></white> network level reward(s) to claim! <muted>Open <accent>/levels</accent>."
+  head:
+    name: "<primary>Network Level <white><level>"
+    lore:
+      - "<muted>Progress to level <white><next></white>: <#B266FF><percent>%"
+      - "<bar>"
+      - "<white><xp> <muted>/ <white><needed> XP"
+      - ""
+      - "<muted>Total XP: <white><total>"
+      - "<muted>Coin multiplier: <gold><multiplier>x"
+      - ""
+      - "<muted>Earn XP playing <secondary>Survival</secondary> and <secondary>CTF</secondary>."
+  # Each level on the trail. <level> <dust> <coins> <xp> (to go) <stars> (the box it gave)
+  rewards:
+    - "<muted>Rewards:"
+    - " <#B266FF>✦ <white><dust> <muted>Mystery Dust"
+    - " <gold>⛁ <white><coins> <muted>CTF Coins"
+  reward-box:
+    - " <aqua>✉ <white>Mystery Box <muted>(1-3★)"
+  reward-box-got:
+    - " <aqua>✉ <white><stars>★ Mystery Box"
+  node:
+    start:
+      name: "<good>Level 1"
+      lore:
+        - "<muted>Where everyone starts."
+    claimed:
+      name: "<good>✔ Level <level>"
+      lore:
+        - ""
+        - "<good>Claimed"
+    ready:
+      name: "<gold>Level <level> <good>Reward ready!"
+      lore:
+        - ""
+        - "<accent><left-click></accent> <muted>to claim"
+    locked:
+      name: "<dark_gray>Level <level>"
+      lore:
+        - ""
+        - "<bad>✖ <muted>Reach level <white><level></white> <muted>(<white><xp></white> XP to go)"
+  multiplier:
+    name: "<gold>Coin Multiplier: <yellow><multiplier>x"
+    lore:
+      - "<muted>Your network level multiplies"
+      - "<muted>the CTF coins you earn."
+      - ""
+    step-reached: " <good>✔ <muted>Level <white><level></white>: <gold><multiplier>x"
+    step-next: " <accent>▸ <muted>Level <white><level></white>: <gold><multiplier>x <muted>(next)"
+    step: " <dark_gray>▪ Level <level>: <multiplier>x"
+    footer:
+      - ""
+      - "<muted>Stacks with Network Boosters."
+  claim-all:
+    name: "<good>Claim All <white>(<count>)"
+    lore:
+      - "<muted>Every reward you've reached."
+      - ""
+      - "<accent><left-click></accent> <muted>to claim them all"
+  claim-none:
+    name: "<muted>Nothing to claim"
+    lore:
+      - "<muted>Level up to unlock more rewards."
+  next-box:
+    name: "<aqua>Next Mystery Box: <white>Level <level>"
+    lore:
+      - "<muted><white><levels></white> level(s) to go"
+      - "<muted>(<white><xp></white> XP)."
+  previous:
+    name: "<secondary>← Page <page>"
+    lore: []
+  next:
+    name: "<secondary>Page <page> →"
+    lore: []
+  claimed-one: "<prefix><good>Level <level> reward claimed: <#B266FF>+<dust> Mystery Dust</#B266FF><good>, <gold>+<coins> CTF Coins</gold><good>."
+  claimed-many: "<prefix><good>Claimed <white><count></white> level rewards: <#B266FF>+<dust> Mystery Dust</#B266FF><good>, <gold>+<coins> CTF Coins</gold><good>."
+  claimed-boxes: "<prefix><aqua>Mystery Box(es): <white><boxes></white>. <muted>Open them at the Mystery Vault. CTF Coins arrive when you next join CTF."

@@ -226,6 +226,11 @@ public final class Profile implements Listener {
                 plugin.settings().open(player, true);
             }
             case PARKOUR -> plugin.parkour().openLeaderboard(player);
+            case LEVEL -> {
+                if (plugin.levelingMenu() == null || plugin.levels() == null) return;
+                click(player);
+                plugin.levelingMenu().open(player);
+            }
             case BOOSTERS -> {
                 if (plugin.boosters() == null) return;
                 click(player);

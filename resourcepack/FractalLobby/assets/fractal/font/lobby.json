@@ -1384,6 +1384,15 @@
    "chars": [
     "\uf1c5"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/levels.png",
+   "ascent": 29,
+   "height": 256,
+   "chars": [
+    "\uf1c6"
+   ]
   }
  ]
 }

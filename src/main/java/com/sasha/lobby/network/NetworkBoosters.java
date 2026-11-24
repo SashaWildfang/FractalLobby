@@ -224,9 +224,10 @@ public final class NetworkBoosters implements Listener {
         });
     }
 
-    /** "2.0", "2.5": how multipliers are shown. */
+    /** "2.0", "2.5", "1.75": how multipliers are shown. */
     public static String multiplier(double value) {
-        return String.format(Locale.ROOT, "%.1f", value);
+        double tenths = Math.round(value * 100) / 10.0;
+        return String.format(Locale.ROOT, tenths == Math.rint(tenths) ? "%.1f" : "%.2f", value);
     }
 
     @EventHandler

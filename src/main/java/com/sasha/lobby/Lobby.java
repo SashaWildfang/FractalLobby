@@ -130,6 +130,8 @@ public final class Lobby extends JavaPlugin implements Listener {
             levels = new com.sasha.lobby.network.NetworkLevels(this, database);
             getServer().getPluginManager().registerEvents(boosters, this);
             getServer().getPluginManager().registerEvents(levels, this);
+            levelRewards = new com.sasha.lobby.network.LevelRewards(this, database);
+            getServer().getPluginManager().registerEvents(levelRewards, this);
             boosters.start();
             levels.start();
         }
@@ -169,10 +171,11 @@ public final class Lobby extends JavaPlugin implements Listener {
         friendsMenu = new com.sasha.lobby.items.FriendsMenu(this);
         confirm = new com.sasha.lobby.items.ConfirmMenu(this);
         boostersMenu = new com.sasha.lobby.items.BoostersMenu(this);
+        levelingMenu = new com.sasha.lobby.items.LevelingMenu(this);
 
         for (Listener listener : List.of(this, settings, coreLink, protection, chatColors, voidRescue, border, flyingMinecarts,
                 new LaunchPadListener(this), new ChatListener(this), spawn, glow, selector, joinItems, parkour, doubleJump, fly, new com.sasha.lobby.listener.BoundsListener(this, spawn),
-                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, boostersMenu, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
+                trails, statuses, afk, parkour.game(), holograms, npcs, profile, friendsMenu, skins, confirm, boostersMenu, levelingMenu, new PunchListener(this), new com.sasha.lobby.listener.NoCrafting(this))) {
             getServer().getPluginManager().registerEvents(listener, this);
         }
         registerCommands();
@@ -222,6 +225,17 @@ public final class Lobby extends JavaPlugin implements Listener {
     private com.sasha.lobby.network.NetworkBoosters boosters;
     private com.sasha.lobby.network.NetworkLevels levels;
     private com.sasha.lobby.items.BoostersMenu boostersMenu;
+    private com.sasha.lobby.network.LevelRewards levelRewards;
+    private com.sasha.lobby.items.LevelingMenu levelingMenu;
+
+    /** Network level rewards and coin multipliers, or null without the network database. */
+    public com.sasha.lobby.network.LevelRewards levelRewards() {
+        return levelRewards;
+    }
+
+    public com.sasha.lobby.items.LevelingMenu levelingMenu() {
+        return levelingMenu;
+    }
 
     /** Network boosters (owned and running), or null without the network database. */
     public com.sasha.lobby.network.NetworkBoosters boosters() {
@@ -504,6 +518,10 @@ public final class Lobby extends JavaPlugin implements Listener {
                     .then(Commands.literal("remove")
                             .executes(context -> asPlayer(context.getSource(), player -> parkour.removeHologram(player, "playtime"))))
                     .build(), "Place, move or remove the playtime leaderboard hologram", List.of());
+
+            commands.register(Commands.literal("levels")
+                    .executes(context -> asPlayer(context.getSource(), player -> levelingMenu.open(player)))
+                    .build(), "Your network level, rewards and coin multiplier", List.of("level", "leveling", "networklevel"));
 
             // /booster opens your boosters; /booster give is for the store (run from the console) and staff.
             commands.register(Commands.literal("booster")

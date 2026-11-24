@@ -90,6 +90,13 @@ public final class NetworkDb {
             s.executeUpdate("CREATE TABLE IF NOT EXISTS network_booster_items (id BIGINT AUTO_INCREMENT PRIMARY KEY, uuid CHAR(36) NOT NULL,"
                     + " name VARCHAR(32) NOT NULL, game VARCHAR(16) NOT NULL, multiplier DOUBLE NOT NULL, minutes INT NOT NULL,"
                     + " source VARCHAR(64), created BIGINT NOT NULL, used_at BIGINT, INDEX (uuid))");
+            // network level rewards each player has claimed (stars: the Mystery Box it gave, 0 = none)
+            s.executeUpdate("CREATE TABLE IF NOT EXISTS network_level_rewards (uuid CHAR(36) NOT NULL, level INT NOT NULL,"
+                    + " stars INT NOT NULL DEFAULT 0, claimed_at BIGINT NOT NULL, PRIMARY KEY (uuid, level))");
+            // CTF coins waiting to be paid on CTF (the CTF servers pay and delete them when the player joins)
+            s.executeUpdate("CREATE TABLE IF NOT EXISTS network_pending_coins (id BIGINT AUTO_INCREMENT PRIMARY KEY, uuid CHAR(36) NOT NULL,"
+                    + " name VARCHAR(32) NOT NULL, game VARCHAR(16) NOT NULL, coins INT NOT NULL, source VARCHAR(64), created BIGINT NOT NULL,"
+                    + " INDEX (uuid))");
             s.executeUpdate("CREATE TABLE IF NOT EXISTS network_boosters (id BIGINT AUTO_INCREMENT PRIMARY KEY, game VARCHAR(16) NOT NULL,"
                     + " multiplier DOUBLE NOT NULL, starts BIGINT NOT NULL, ends BIGINT NOT NULL, owner_uuid CHAR(36),"
                     + " owner_name VARCHAR(32) NOT NULL, created BIGINT NOT NULL, INDEX (game, ends))");
