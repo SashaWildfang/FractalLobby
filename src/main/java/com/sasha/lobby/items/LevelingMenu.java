@@ -6,6 +6,7 @@ package com.sasha.lobby.items;
 import com.sasha.lobby.Lobby;
 import com.sasha.lobby.config.Messages;
 import com.sasha.lobby.network.LevelRewards;
+import com.sasha.lobby.network.NetworkBoosters;
 import com.sasha.lobby.network.NetworkLevels;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.key.Key;
@@ -15,6 +16,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -27,26 +29,42 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * My Profile → Levels: the network level trail. Ten levels a page wind across the menu like a path (five left to
- * right, a bend, five back), joined by panes that light up as they're reached. Each level shows its reward: ready to
- * claim (glowing), claimed (with the box's stars) or still ahead (how much XP to go); every fifth one has a Mystery
- * Box. Above: the coin multiplier, the player's level and Claim All; below: the next Mystery Box, pages and back.
+ * My Profile → Levels (/levels): the network level snake.
+ *
+ * <p>The snake runs across row 1, turns down the right, back along row 3, down the left and across row 5: 29 slots,
+ * a level every third slot (ten a page) and two beads between levels that fill with the XP towards the next one;
+ * the last bead leads on to the next page. Opening it, the snake fills up from the start to where the player is,
+ * then a shine runs along the filled part (Java with the resource pack; Bedrock gets plain items).
+ *
+ * <p>Top row: back, coin multiplier, the player's level, Claim All, next Mystery Box. Page arrows sit beside the
+ * snake's start (previous) and end (next).
  */
 public final class LevelingMenu implements Listener {
 
     private static final char BACKGROUND = '';
-    /** The ten levels of a page, in order along the trail, and the panes between them. */
-    static final int[] NODES = {9, 11, 13, 15, 17, 35, 33, 31, 29, 27};
-    static final int[][] LINKS = {{10}, {12}, {14}, {16}, {26}, {34}, {32}, {30}, {28}};
-    static final int MULTIPLIER = 1, HEAD = 4, CLAIM_ALL = 7, NEXT_BOX = 40, PREVIOUS = 45, BACK = 49, NEXT = 53;
+    /** The snake, in order: row 1 left to right, the right of row 2, row 3 right to left, the left of row 4, row 5. */
+    static final int[] PATH;
+    static final int BACK = 0, MULTIPLIER = 2, HEAD = 4, CLAIM_ALL = 6, NEXT_BOX = 8, PREVIOUS = 18, NEXT = 44;
+
+    static {
+        List<Integer> path = new ArrayList<>();
+        for (int s = 9; s <= 17; s++) path.add(s);
+        path.add(26);
+        for (int s = 35; s >= 27; s--) path.add(s);
+        path.add(36);
+        for (int s = 45; s <= 53; s++) path.add(s);
+        PATH = path.stream().mapToInt(Integer::intValue).toArray();
+    }
 
     private final Lobby plugin;
 
@@ -54,10 +72,16 @@ public final class LevelingMenu implements Listener {
         this.plugin = plugin;
     }
 
+    /** A bead on the snake: its place along it and how full it is (0..1). */
+    private record Bead(int slot, int order, double fill) {}
+
     private static final class Menu implements InventoryHolder {
         private Inventory inventory;
         private int page;
         private final Map<Integer, Integer> levels = new HashMap<>();
+        private final List<Bead> beads = new ArrayList<>();
+        private BukkitTask animation;
+        private int frame;
 
         @Override
         public Inventory getInventory() {
@@ -87,6 +111,10 @@ public final class LevelingMenu implements Listener {
         return (Math.max(plugin.levelRewards().levelsShown(), level + 10) + 9) / 10;
     }
 
+    private boolean custom(Player player) {
+        return plugin.menuStyle().filler(player) == null;              // the resource pack's backgrounds are on
+    }
+
     private void show(Player player, int page) {
         Messages messages = plugin.messages();
         MenuStyle style = plugin.menuStyle();
@@ -103,104 +131,184 @@ public final class LevelingMenu implements Listener {
         for (int i = 0; i < 54; i++) menu.inventory.setItem(i, filler);
 
         Map<Integer, Integer> claimed = rewards.claimed(player);
-        for (int i = 0; i < NODES.length; i++) {
-            int l = page * 10 + i + 1;
-            menu.inventory.setItem(NODES[i], node(player, l, level, progress, claimed));
-            menu.levels.put(NODES[i], l);
-            if (i < LINKS.length) {
-                boolean lit = l + 1 <= level;
-                for (int slot : LINKS[i]) menu.inventory.setItem(slot, link(lit));
+        for (int i = 0; i < PATH.length; i++) {
+            int node = i / 3 * 3;                                     // the level slot at or before this one
+            int l = page * 10 + node / 3 + 1;
+            if (i % 3 == 0) {
+                menu.inventory.setItem(PATH[i], node(player, l, level, progress, claimed));
+                menu.levels.put(PATH[i], l);
+            } else {
+                // two beads between level l and l + 1: full once past l, filling while at l
+                double fill = level > l ? 1 : level == l ? Math.max(0, Math.min(1, progress.fraction() * 2 - (i % 3 - 1))) : 0;
+                menu.beads.add(new Bead(PATH[i], i, fill));
+                menu.inventory.setItem(PATH[i], bead(player, fill, false, level == l, progress, l));
             }
         }
-        menu.inventory.setItem(HEAD, head(player, progress));
-        menu.inventory.setItem(MULTIPLIER, multiplier(level));
-        menu.inventory.setItem(CLAIM_ALL, claimAll(rewards.waiting(player, level).size()));
-        menu.inventory.setItem(NEXT_BOX, nextBox(level, progress));
-        if (page > 0) menu.inventory.setItem(PREVIOUS, style.icon(Profile.button(messages, Material.ARROW, "levels.previous",
-                Messages.arg("page", page)), "back"));
-        if (page < pages(level) - 1) menu.inventory.setItem(NEXT, style.icon(Profile.button(messages, Material.ARROW, "levels.next",
-                Messages.arg("page", page + 2)), "next"));
         menu.inventory.setItem(BACK, style.icon(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
+        menu.inventory.setItem(MULTIPLIER, multiplier(player, level));
+        menu.inventory.setItem(HEAD, head(player, progress));
+        menu.inventory.setItem(CLAIM_ALL, claimAll(player, rewards.waiting(player, level).size()));
+        menu.inventory.setItem(NEXT_BOX, nextBox(player, level, progress));
+        if (page > 0) menu.inventory.setItem(PREVIOUS, style.icon(Profile.button(messages, Material.ARROW, "levels.previous",
+                Messages.arg("page", page), Messages.arg("from", (page - 1) * 10 + 1), Messages.arg("to", page * 10)), "back"));
+        if (page < pages(level) - 1) menu.inventory.setItem(NEXT, style.icon(Profile.button(messages, Material.ARROW, "levels.next",
+                Messages.arg("page", page + 2), Messages.arg("from", (page + 1) * 10 + 1), Messages.arg("to", (page + 2) * 10)), "next"));
         player.openInventory(menu.inventory);
+        if (custom(player)) animate(player, menu);
     }
 
-    private TagResolver rewardTags(LevelRewards.Reward reward) {
-        return TagResolver.resolver(Messages.arg("level", reward.level()), Messages.arg("dust", String.format(Locale.ROOT, "%,d", reward.dust())),
-                Messages.arg("coins", String.format(Locale.ROOT, "%,d", reward.coins())));
+    // ---------------------------------------------------------------- the snake
+
+    /** One bead: Java gets the pack's bead (empty, quarters, full, shining); Bedrock a pane. */
+    private ItemStack bead(Player player, double fill, boolean shine, boolean current, NetworkLevels.Progress progress, int l) {
+        int quarters = fill <= 0 ? 0 : Math.max(1, (int) Math.round(fill * 4));
+        ItemStack item;
+        if (custom(player)) {
+            item = ItemStack.of(Material.PAPER);
+            String model = shine ? "level/bead_glow" : "level/bead_" + quarters;
+            item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", model)));
+        } else {
+            item = ItemStack.of(quarters >= 4 ? Material.PURPLE_STAINED_GLASS_PANE : quarters > 0 ? Material.MAGENTA_STAINED_GLASS_PANE
+                    : Material.GRAY_STAINED_GLASS_PANE);
+        }
+        if (current) {
+            // the beads towards the next level say how far along it is
+            TagResolver tags = progressTags(progress);
+            item.editMeta(meta -> {
+                meta.displayName(plugin.messages().item("levels.bead.name", tags));
+                meta.lore(plugin.messages().lore("levels.bead.lore", tags));
+                meta.addItemFlags(ItemFlag.values());
+            });
+        } else {
+            item.editMeta(meta -> meta.setHideTooltip(true));
+        }
+        return item;
     }
 
-    /** One level on the trail. */
+    /**
+     * Every 2 ticks while the menu is open: first the snake fills from its start to where the player is (about a
+     * second), then a shine runs along the filled beads, again and again.
+     */
+    private void animate(Player player, Menu menu) {
+        NetworkLevels.Progress progress = plugin.levels().progress(player);
+        List<Bead> filled = menu.beads.stream().filter(b -> b.fill() >= 1).toList();
+        int reveal = 12;                                                   // frames for the fill (2 ticks each)
+        int run = filled.size() + 5;                                       // the shine's trip, then a short pause
+        menu.animation = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline() || player.getOpenInventory().getTopInventory() != menu.inventory) {
+                menu.animation.cancel();
+                return;
+            }
+            int f = menu.frame++;
+            int level = progress.level();
+            if (f < reveal) {
+                // filling: beads up to this point along the snake show their fill, the rest wait empty
+                double reach = (f + 1.0) / reveal * PATH.length;
+                for (Bead b : menu.beads) {
+                    int l = menu.page * 10 + b.order() / 3 + 1;
+                    menu.inventory.setItem(b.slot(), bead(player, b.order() > reach ? 0 : b.fill(), false, level == l, progress, l));
+                }
+                if (f == reveal - 1) player.playSound(Sound.sound(Key.key("block.amethyst_block.chime"), Sound.Source.MASTER, 0.5f, 1.4f),
+                        Sound.Emitter.self());
+                return;
+            }
+            if (filled.isEmpty()) {
+                menu.animation.cancel();
+                return;
+            }
+            int now = (f - reveal) % run, before = (f - reveal - 1 + run) % run;
+            if (before < filled.size()) set(player, menu, filled.get(before), false, progress);
+            if (now < filled.size()) set(player, menu, filled.get(now), true, progress);
+        }, 1L, 2L);
+    }
+
+    private void set(Player player, Menu menu, Bead b, boolean shine, NetworkLevels.Progress progress) {
+        int l = menu.page * 10 + b.order() / 3 + 1;
+        menu.inventory.setItem(b.slot(), bead(player, b.fill(), shine, progress.level() == l, progress, l));
+    }
+
+    // ---------------------------------------------------------------- levels
+
+    private TagResolver progressTags(NetworkLevels.Progress p) {
+        int width = 20, filled = (int) Math.round(p.fraction() * width);
+        Locale l = Locale.ROOT;
+        return TagResolver.resolver(Messages.arg("level", p.level()), Messages.arg("next", p.level() + 1),
+                Placeholder.parsed("bar", "<#B266FF>" + "|".repeat(filled) + "<dark_gray>" + "|".repeat(width - filled)),
+                Messages.arg("percent", (int) (p.fraction() * 100)),
+                Messages.arg("xp", String.format(l, "%,d", p.into())), Messages.arg("needed", String.format(l, "%,d", p.needed())),
+                Messages.arg("left", String.format(l, "%,d", p.needed() - p.into())),
+                Messages.arg("total", String.format(l, "%,d", p.total())));
+    }
+
+    /** "1★ 60% · 2★ 30% · 3★ 10%" from level-rewards.mystery-box-stars. */
+    private String odds() {
+        var weights = plugin.levelRewards().boxWeights();
+        int total = weights.values().stream().mapToInt(Integer::intValue).sum();
+        StringBuilder out = new StringBuilder();
+        for (var w : weights.entrySet()) {
+            if (!out.isEmpty()) out.append(" <dark_gray>·</dark_gray> ");
+            out.append("<white>").append(w.getKey()).append("★</white> <muted>").append(Math.round(w.getValue() * 100.0 / total)).append("%</muted>");
+        }
+        return out.toString();
+    }
+
+    /** One level on the snake. */
     private ItemStack node(Player player, int l, int level, NetworkLevels.Progress progress, Map<Integer, Integer> claimed) {
         Messages messages = plugin.messages();
-        MenuStyle style = plugin.menuStyle();
         LevelRewards.Reward reward = plugin.levelRewards().reward(l);
-        List<Component> lore = new ArrayList<>();
-        TagResolver tags = rewardTags(reward);
-        String state;
-        ItemStack item;
-        if (l == 1) {
-            state = "start";
-            item = style.icon(ItemStack.of(Material.LIME_DYE), "confirm");
-        } else if (claimed.containsKey(l)) {
-            state = "claimed";
-            item = style.icon(ItemStack.of(Material.LIME_DYE), "confirm");
-        } else if (l <= level) {
-            state = "ready";
-            item = ItemStack.of(reward.box() ? Material.ENDER_CHEST : Material.EXPERIENCE_BOTTLE);
-            item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
-        } else {
-            state = "locked";
-            item = reward.box() ? ItemStack.of(Material.ENDER_CHEST) : style.locked(ItemStack.of(Material.GRAY_DYE));
+        boolean java = custom(player);
+        String state = l == 1 ? "start" : claimed.containsKey(l) ? "claimed" : l <= level ? "ready" : "locked";
+        Material base;
+        String model;
+        switch (state) {
+            case "start", "claimed" -> {
+                base = Material.LIME_DYE;
+                model = "level/node_claimed";
+            }
+            case "ready" -> {
+                base = reward.box() ? Material.ENDER_CHEST : Material.EXPERIENCE_BOTTLE;
+                model = reward.box() ? "mystery/box_3" : "level/node_ready";
+            }
+            default -> {
+                base = reward.box() ? Material.ENDER_CHEST : Material.GRAY_DYE;
+                model = reward.box() ? "mystery/box_1" : "level/node_locked";
+            }
         }
         long toGo = 0;
         if (state.equals("locked")) {
             toGo = progress.needed() - progress.into();
-            for (int x = level + 1; x < l; x++) toGo += NetworkLevels.needed(x, first(), extra());
+            for (int x = level + 1; x < l; x++) toGo += NetworkLevels.needed(x, plugin.levels().first(), plugin.levels().extra());
         }
-        TagResolver all = TagResolver.resolver(tags, Messages.arg("xp", String.format(Locale.ROOT, "%,d", toGo)),
-                Messages.arg("stars", claimed.getOrDefault(l, 0)));
+        TagResolver tags = TagResolver.resolver(Messages.arg("level", l),
+                Messages.arg("dust", String.format(Locale.ROOT, "%,d", reward.dust())),
+                Messages.arg("coins", String.format(Locale.ROOT, "%,d", reward.coins())),
+                Messages.arg("xp", String.format(Locale.ROOT, "%,d", toGo)),
+                Messages.arg("stars", claimed.getOrDefault(l, 0)), Placeholder.parsed("odds", odds()));
+        List<Component> lore = new ArrayList<>();
         if (!state.equals("start")) {
-            lore.addAll(messages.lore("levels.rewards", all));
-            if (reward.box()) {
-                int got = claimed.getOrDefault(l, 0);
-                lore.addAll(messages.lore(got > 0 ? "levels.reward-box-got" : "levels.reward-box", all));
-            }
+            lore.addAll(messages.lore("levels.rewards", tags));
+            if (reward.box()) lore.addAll(messages.lore(claimed.getOrDefault(l, 0) > 0 ? "levels.reward-box-got" : "levels.reward-box", tags));
         }
-        lore.addAll(messages.lore("levels.node." + state + ".lore", all));
-        Component name = messages.item("levels.node." + state + ".name", all);
+        lore.addAll(messages.lore("levels.node." + state + ".lore", tags));
+        ItemStack item = ItemStack.of(base);
         item.editMeta(meta -> {
-            meta.displayName(name);
+            meta.displayName(messages.item("levels.node." + state + ".name", tags));
             meta.lore(lore);
             meta.addItemFlags(ItemFlag.values());
+            if (java) meta.setItemModel(new NamespacedKey("fractal", model));
         });
+        if (state.equals("ready")) item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
         item.setData(DataComponentTypes.MAX_STACK_SIZE, 99);
         item.setAmount(Math.max(1, Math.min(99, l)));
         return item;
     }
 
-    private long first() {
-        return Math.max(1, plugin.getConfig().getLong("leveling.first-level-xp", 200));
-    }
-
-    private long extra() {
-        return Math.max(0, plugin.getConfig().getLong("leveling.extra-xp-per-level", 50));
-    }
-
-    private static ItemStack link(boolean lit) {
-        ItemStack pane = ItemStack.of(lit ? Material.PURPLE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
-        pane.editMeta(meta -> meta.setHideTooltip(true));
-        return pane;
-    }
+    // ---------------------------------------------------------------- the top row
 
     private ItemStack head(Player player, NetworkLevels.Progress progress) {
-        int width = 20, filled = (int) Math.round(progress.fraction() * width);
-        Locale l = Locale.ROOT;
-        TagResolver tags = TagResolver.resolver(Messages.arg("level", progress.level()), Messages.arg("next", progress.level() + 1),
-                Placeholder.parsed("bar", "<#B266FF>" + "■".repeat(filled) + "<dark_gray>" + "■".repeat(width - filled)),
-                Messages.arg("percent", (int) (progress.fraction() * 100)),
-                Messages.arg("xp", String.format(l, "%,d", progress.into())), Messages.arg("needed", String.format(l, "%,d", progress.needed())),
-                Messages.arg("total", String.format(l, "%,d", progress.total())),
-                Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(plugin.levelRewards().multiplier(progress.level()))));
+        TagResolver tags = TagResolver.resolver(progressTags(progress),
+                Messages.arg("multiplier", NetworkBoosters.multiplier(plugin.levelRewards().multiplier(progress.level()))),
+                Messages.arg("waiting", plugin.levelRewards().waiting(player, progress.level()).size()));
         ItemStack head = ItemStack.of(Material.PLAYER_HEAD);
         head.editMeta(SkullMeta.class, meta -> {
             meta.setPlayerProfile(player.getPlayerProfile());
@@ -212,46 +320,59 @@ public final class LevelingMenu implements Listener {
     }
 
     /** The coin multiplier and its steps: reached ones ticked, the next one marked. */
-    private ItemStack multiplier(int level) {
+    private ItemStack multiplier(Player player, int level) {
         Messages messages = plugin.messages();
         LevelRewards rewards = plugin.levelRewards();
-        List<Component> lore = new ArrayList<>(messages.lore("levels.multiplier.lore",
-                Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(rewards.multiplier(level)))));
+        String now = NetworkBoosters.multiplier(rewards.multiplier(level));
+        List<Component> lore = new ArrayList<>(messages.lore("levels.multiplier.lore", Messages.arg("multiplier", now)));
         boolean nextShown = false;
         for (var step : rewards.multipliers().entrySet()) {
-            String key = level >= step.getKey() ? "levels.multiplier.step-reached" : !nextShown ? "levels.multiplier.step-next" : "levels.multiplier.step";
-            if (level < step.getKey()) nextShown = true;
+            boolean reached = level >= step.getKey();
+            String key = reached ? "levels.multiplier.step-reached" : !nextShown ? "levels.multiplier.step-next" : "levels.multiplier.step";
+            if (!reached) nextShown = true;
             lore.add(messages.render(messages.raw(key), Messages.arg("level", step.getKey()),
-                    Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(step.getValue()))));
+                    Messages.arg("multiplier", NetworkBoosters.multiplier(step.getValue()))));
         }
         lore.addAll(messages.lore("levels.multiplier.footer"));
         ItemStack item = ItemStack.of(Material.GOLD_INGOT);
+        boolean java = custom(player);
         item.editMeta(meta -> {
-            meta.displayName(messages.item("levels.multiplier.name",
-                    Messages.arg("multiplier", com.sasha.lobby.network.NetworkBoosters.multiplier(rewards.multiplier(level)))));
+            meta.displayName(messages.item("levels.multiplier.name", Messages.arg("multiplier", now)));
             meta.lore(lore);
             meta.addItemFlags(ItemFlag.values());
+            if (java) meta.setItemModel(new NamespacedKey("fractal", "level/coins"));
         });
         return item;
     }
 
-    private ItemStack claimAll(int count) {
-        ItemStack item = Profile.button(plugin.messages(), count > 0 ? Material.CHEST : Material.BARREL,
+    private ItemStack claimAll(Player player, int count) {
+        Messages messages = plugin.messages();
+        ItemStack item = Profile.button(messages, count > 0 ? Material.CHEST : Material.BARREL,
                 count > 0 ? "levels.claim-all" : "levels.claim-none", Messages.arg("count", count));
-        if (count > 0) item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
+        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "level/claim")));
+        if (count > 0) {
+            item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
+            item.setData(DataComponentTypes.MAX_STACK_SIZE, 99);
+            item.setAmount(Math.min(99, count));
+        }
         return item;
     }
 
     /** The next level with a Mystery Box, and how far off it is. */
-    private ItemStack nextBox(int level, NetworkLevels.Progress progress) {
+    private ItemStack nextBox(Player player, int level, NetworkLevels.Progress progress) {
         int every = Math.max(0, plugin.getConfig().getInt("level-rewards.mystery-box-every", 5));
         if (every == 0) return null;
         int target = (level / every + 1) * every;
         long toGo = progress.needed() - progress.into();
-        for (int x = level + 1; x < target; x++) toGo += NetworkLevels.needed(x, first(), extra());
-        return Profile.button(plugin.messages(), Material.ENDER_EYE, "levels.next-box", Messages.arg("level", target),
-                Messages.arg("levels", target - level), Messages.arg("xp", String.format(Locale.ROOT, "%,d", toGo)));
+        for (int x = level + 1; x < target; x++) toGo += NetworkLevels.needed(x, plugin.levels().first(), plugin.levels().extra());
+        ItemStack item = Profile.button(plugin.messages(), Material.ENDER_CHEST, "levels.next-box", Messages.arg("level", target),
+                Messages.arg("levels", target - level), Messages.arg("xp", String.format(Locale.ROOT, "%,d", toGo)),
+                Placeholder.parsed("odds", odds()));
+        if (custom(player)) item.editMeta(meta -> meta.setItemModel(new NamespacedKey("fractal", "mystery/box_2")));
+        return item;
     }
+
+    // ---------------------------------------------------------------- clicks
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onClick(InventoryClickEvent event) {
@@ -282,8 +403,7 @@ public final class LevelingMenu implements Listener {
             case CLAIM_ALL -> claim(player, plugin.levelRewards().waiting(player, level), menu.page);
             default -> {
                 Integer l = menu.levels.get(slot);
-                if (l == null || l < 2) return;
-                if (plugin.levelRewards().claimed(player).containsKey(l)) return;
+                if (l == null || l < 2 || plugin.levelRewards().claimed(player).containsKey(l)) return;
                 if (l > level) {
                     player.playSound(Sound.sound(Key.key("entity.villager.no"), Sound.Source.MASTER, 0.5f, 1f), Sound.Emitter.self());
                     return;
@@ -296,9 +416,8 @@ public final class LevelingMenu implements Listener {
     private final java.util.Set<java.util.UUID> busy = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private void claim(Player player, List<Integer> levels, int page) {
-        if (levels.isEmpty()) return;
+        if (levels.isEmpty() || !busy.add(player.getUniqueId())) return;     // one claim at a time
         var cosmetics = Lobby.cosmeticsHook();
-        if (!busy.add(player.getUniqueId())) return;                  // one claim at a time
         int level = plugin.levels().progress(player).level();
         plugin.levelRewards().claim(player, levels, level).whenComplete((given, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
             busy.remove(player.getUniqueId());
@@ -310,7 +429,7 @@ public final class LevelingMenu implements Listener {
             if (given.isEmpty()) return;
             long dust = 0;
             int coins = 0;
-            Map<Integer, Integer> boxes = new java.util.TreeMap<>();
+            Map<Integer, Integer> boxes = new TreeMap<>();
             for (LevelRewards.Given g : given) {
                 dust += g.dust();
                 coins += g.coins();
@@ -328,14 +447,19 @@ public final class LevelingMenu implements Listener {
             StringBuilder boxText = new StringBuilder();
             for (var box : boxes.entrySet()) {
                 if (!boxText.isEmpty()) boxText.append(", ");
-                boxText.append(box.getValue()).append("× ").append(box.getKey()).append("★");
+                boxText.append(box.getValue() > 1 ? box.getValue() + "× " : "").append(box.getKey()).append("★");
             }
-            TagResolver tags = TagResolver.resolver(Messages.arg("count", given.size()), Messages.arg("dust", String.format(Locale.ROOT, "%,d", dust)),
+            TagResolver tags = TagResolver.resolver(Messages.arg("count", given.size()), Messages.arg("level", given.get(0).level()),
+                    Messages.arg("dust", String.format(Locale.ROOT, "%,d", dust)),
                     Messages.arg("coins", String.format(Locale.ROOT, "%,d", coins)), Messages.arg("boxes", boxText.toString()));
-            messages.send(player, given.size() == 1 ? "levels.claimed-one" : "levels.claimed-many",
-                    TagResolver.resolver(tags, Messages.arg("level", given.get(0).level())));
+            for (Component line : messages.lore(given.size() == 1 ? "levels.claimed-one" : "levels.claimed-many", tags)) {
+                player.sendMessage(line);
+            }
             if (!boxes.isEmpty()) messages.send(player, "levels.claimed-boxes", tags);
+            messages.send(player, "levels.claimed-footer", tags);
             player.playSound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.MASTER, 0.7f, 1.3f), Sound.Emitter.self());
+            if (!boxes.isEmpty()) player.playSound(Sound.sound(Key.key("block.amethyst_block.resonate"), Sound.Source.MASTER, 0.8f, 1.2f),
+                    Sound.Emitter.self());
             if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof Menu) show(player, page);
         }));
     }

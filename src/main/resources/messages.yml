@@ -16,7 +16,7 @@
 
 # Do not change. When a plugin update ships new text, your old file is
 # saved as messages.yml.old and replaced.
-messages-version: 66
+messages-version: 67
 
 theme:
   primary: "#B266FF"
@@ -464,7 +464,10 @@ profile:
       - "<muted>First joined: <white><joined>"
       - "<muted>Playtime: <white><playtime>"
       - ""
+      - "<network>"
       - "<muted>Parkour best: <white><parkour-best> <muted>(<parkour-rank>)"
+    # The <network> line: network level and the CTF coin multiplier it gives. <level> <multiplier>
+    network: "<muted>Network Level: <white><font:fractal:lobby>\uF027</font> <#B266FF><level></#B266FF> <dark_gray>·</dark_gray> <muted>Coins: <white><font:fractal:lobby>\uF026</font> <gold><multiplier>x"
   status:
     name: "<primary>Status"
     lore:
@@ -510,7 +513,7 @@ profile:
       - "<accent><left-click></accent> <muted>to open"
   # Network level: XP from playing Survival and Capture the Flag (not while AFK). <level> <next> <bar> <percent> <xp> <needed> <total>
   level:
-    name: "<primary>Network Level <white><level>"
+    name: "<#B266FF>Network Level <white><level>"
     lore:
       - "<muted>Level up by playing on the network."
       - ""
@@ -518,11 +521,8 @@ profile:
       - "<bar>"
       - "<white><xp> <muted>/ <white><needed> XP"
       - ""
-      - "<muted>Total XP: <white><total>"
-      - ""
       - "<muted>Earn XP while you play <secondary>Survival</secondary>"
       - "<muted>and <secondary>Capture the Flag</secondary>."
-      - "<dark_gray>Standing around AFK doesn't count."
       - ""
       - "<accent><left-click></accent> <muted>for levels and rewards"
   # Network boosters the player owns. <count>
@@ -868,29 +868,51 @@ boosters:
 
 
 # ── Network levels (My Profile → Levels, /levels) ─────────────
+# Icons (resource pack, font fractal:lobby): \uF024 Mystery Dust, \uF025 Mystery Box,
+# \uF026 CTF coins, \uF027 network level.
 levels:
   title: "<brand><bold>Levels</bold></brand> <dark_gray>(<page>/<pages>)"
-  waiting-join: "<prefix><good>You have <white><count></white> network level reward(s) to claim! <muted>Open <accent>/levels</accent>."
+  # On joining the Lobby with rewards waiting (each line centred). <count>
+  notify-one:
+    - "<#6A5A8C><strikethrough>                                                  </strikethrough>"
+    - "<#B266FF><bold>✦ NETWORK REWARDS ✦</bold>"
+    - "<white>You have <#B266FF><bold>1</bold></#B266FF> unclaimed level reward!"
+    - "<click:run_command:'/levels'><hover:show_text:'<#B266FF>Open your level rewards'><gold><bold>[ CLICK TO CLAIM ]</bold></gold></hover></click>"
+    - "<#6A5A8C><strikethrough>                                                  </strikethrough>"
+  notify-many:
+    - "<#6A5A8C><strikethrough>                                                  </strikethrough>"
+    - "<#B266FF><bold>✦ NETWORK REWARDS ✦</bold>"
+    - "<white>You have <#B266FF><bold><count></bold></#B266FF> unclaimed level rewards!"
+    - "<click:run_command:'/levels'><hover:show_text:'<#B266FF>Open your level rewards'><gold><bold>[ CLICK TO CLAIM ]</bold></gold></hover></click>"
+    - "<#6A5A8C><strikethrough>                                                  </strikethrough>"
   head:
-    name: "<primary>Network Level <white><level>"
+    name: "<white><font:fractal:lobby>\uF027</font> <#B266FF>Network Level <white><level>"
     lore:
       - "<muted>Progress to level <white><next></white>: <#B266FF><percent>%"
       - "<bar>"
-      - "<white><xp> <muted>/ <white><needed> XP"
+      - "<white><xp> <muted>/ <white><needed> XP <dark_gray>(<left> to go)"
       - ""
       - "<muted>Total XP: <white><total>"
-      - "<muted>Coin multiplier: <gold><multiplier>x"
+      - "<muted>Coin multiplier: <white><font:fractal:lobby>\uF026</font> <gold><multiplier>x"
+      - "<muted>Rewards to claim: <white><waiting>"
       - ""
       - "<muted>Earn XP playing <secondary>Survival</secondary> and <secondary>CTF</secondary>."
-  # Each level on the trail. <level> <dust> <coins> <xp> (to go) <stars> (the box it gave)
+  # The beads leading to the next level. <level> <next> <bar> <percent> <xp> <needed> <left>
+  bead:
+    name: "<#B266FF>Level <level> <dark_gray>➜</dark_gray> <#B266FF><next>"
+    lore:
+      - "<bar> <#B266FF><percent>%"
+      - "<white><xp> <muted>/ <white><needed> XP <dark_gray>(<left> to go)"
+  # Each level. <level> <dust> <coins> <xp> (to go) <stars> (the box it gave) <odds>
   rewards:
     - "<muted>Rewards:"
-    - " <#B266FF>✦ <white><dust> <muted>Mystery Dust"
-    - " <gold>⛁ <white><coins> <muted>CTF Coins"
+    - " <white><font:fractal:lobby>\uF024</font> <#FFD27F><dust></#FFD27F> <muted>Mystery Dust"
+    - " <white><font:fractal:lobby>\uF026</font> <gold><coins></gold> <muted>CTF Coins"
   reward-box:
-    - " <aqua>✉ <white>Mystery Box <muted>(1-3★)"
+    - " <white><font:fractal:lobby>\uF025</font> <aqua>1 Mystery Box</aqua> <muted>with random stars:"
+    - "    <odds>"
   reward-box-got:
-    - " <aqua>✉ <white><stars>★ Mystery Box"
+    - " <white><font:fractal:lobby>\uF025</font> <aqua>1 Mystery Box</aqua> <muted>(you got <white><stars>★</white>)"
   node:
     start:
       name: "<good>Level 1"
@@ -902,7 +924,7 @@ levels:
         - ""
         - "<good>Claimed"
     ready:
-      name: "<gold>Level <level> <good>Reward ready!"
+      name: "<gold>Level <level> <dark_gray>·</dark_gray> <good>Reward ready!"
       lore:
         - ""
         - "<accent><left-click></accent> <muted>to claim"
@@ -910,7 +932,8 @@ levels:
       name: "<dark_gray>Level <level>"
       lore:
         - ""
-        - "<bad>✖ <muted>Reach level <white><level></white> <muted>(<white><xp></white> XP to go)"
+        - "<bad>✖ <muted>Reach level <white><level></white> to claim"
+        - "<dark_gray><xp> XP to go"
   multiplier:
     name: "<gold>Coin Multiplier: <yellow><multiplier>x"
     lore:
@@ -926,9 +949,10 @@ levels:
   claim-all:
     name: "<good>Claim All <white>(<count>)"
     lore:
-      - "<muted>Every reward you've reached."
+      - "<muted>Every reward you've reached,"
+      - "<muted>all at once."
       - ""
-      - "<accent><left-click></accent> <muted>to claim them all"
+      - "<accent><left-click></accent> <muted>to claim"
   claim-none:
     name: "<muted>Nothing to claim"
     lore:
@@ -936,14 +960,23 @@ levels:
   next-box:
     name: "<aqua>Next Mystery Box: <white>Level <level>"
     lore:
-      - "<muted><white><levels></white> level(s) to go"
-      - "<muted>(<white><xp></white> XP)."
+      - "<muted><white><levels></white> level(s) to go <dark_gray>(<xp> XP)"
+      - ""
+      - "<muted>Every 5th level gives a Mystery Box."
+      - "<muted>Its stars are picked when you claim:"
+      - " <odds>"
   previous:
-    name: "<secondary>← Page <page>"
+    name: "<secondary>← Levels <from>-<to>"
     lore: []
   next:
-    name: "<secondary>Page <page> →"
+    name: "<secondary>Levels <from>-<to> →"
     lore: []
-  claimed-one: "<prefix><good>Level <level> reward claimed: <#B266FF>+<dust> Mystery Dust</#B266FF><good>, <gold>+<coins> CTF Coins</gold><good>."
-  claimed-many: "<prefix><good>Claimed <white><count></white> level rewards: <#B266FF>+<dust> Mystery Dust</#B266FF><good>, <gold>+<coins> CTF Coins</gold><good>."
-  claimed-boxes: "<prefix><aqua>Mystery Box(es): <white><boxes></white>. <muted>Open them at the Mystery Vault. CTF Coins arrive when you next join CTF."
+  # After claiming (lines). <count> <level> <dust> <coins> <boxes>
+  claimed-one:
+    - "<prefix><good>Level <white><level></white> reward claimed!"
+    - "  <white><font:fractal:lobby>\uF024</font> <#FFD27F>+<dust></#FFD27F> <muted>Mystery Dust  <white><font:fractal:lobby>\uF026</font> <gold>+<coins></gold> <muted>CTF Coins"
+  claimed-many:
+    - "<prefix><good>Claimed <white><count></white> level rewards!"
+    - "  <white><font:fractal:lobby>\uF024</font> <#FFD27F>+<dust></#FFD27F> <muted>Mystery Dust  <white><font:fractal:lobby>\uF026</font> <gold>+<coins></gold> <muted>CTF Coins"
+  claimed-boxes: "  <white><font:fractal:lobby>\uF025</font> <aqua>Mystery Box: <white><boxes></white> <muted>(open it at the Mystery Vault)"
+  claimed-footer: "  <dark_gray>CTF Coins arrive the next time you join CTF."

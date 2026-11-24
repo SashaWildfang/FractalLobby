@@ -130,7 +130,7 @@ public final class Profile implements Listener {
                 Placeholder.parsed("bar", bar), Messages.arg("percent", (int) (progress.fraction() * 100)),
                 Messages.arg("xp", String.format(l, "%,d", progress.into())), Messages.arg("needed", String.format(l, "%,d", progress.needed())),
                 Messages.arg("total", String.format(l, "%,d", progress.total())));
-        return button(plugin.messages(), Material.EXPERIENCE_BOTTLE, "profile.level", tags);
+        return plugin.menuStyle().icon(button(plugin.messages(), Material.EXPERIENCE_BOTTLE, "profile.level", tags), "level");
     }
 
     /** Everything the profile shows about a player, as tags. */
@@ -152,7 +152,16 @@ public final class Profile implements Listener {
         LobbyConfig.Status status = plugin.statuses().chosen(player);
         int parkourRank = plugin.parkour().leaderboard().rank(player);
 
+        // network level and the CTF coin multiplier it gives (with the network database)
+        int networkLevel = plugin.levels() == null ? 0 : plugin.levels().progress(player).level();
+        String coinMultiplier = plugin.levelRewards() == null ? "1.0"
+                : com.sasha.lobby.network.NetworkBoosters.multiplier(plugin.levelRewards().multiplier(networkLevel));
+        Component networkLine = plugin.levels() == null ? Component.empty()
+                : messages.component("profile.head.network", Messages.arg("level", networkLevel), Messages.arg("multiplier", coinMultiplier));
+
         return TagResolver.resolver(
+                Placeholder.component("network", networkLine),
+                Messages.arg("network-level", networkLevel), Messages.arg("coin-multiplier", coinMultiplier),
                 Messages.name("player", player.getName()),
                 Placeholder.component("rank", rank),
                 Messages.arg("joined", joined),

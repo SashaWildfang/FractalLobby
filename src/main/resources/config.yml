@@ -641,6 +641,9 @@ database:
 leveling:
   first-level-xp: 200
   extra-xp-per-level: 50
+  # Show the network level on the XP bar in the lobby (number = level, bar =
+  # progress to the next). The lobby has no other use for vanilla XP.
+  xp-bar: true
   # The CTF coin multiplier a network level gives (the highest step reached),
   # shown in /levels. Keep these the same as network-xp.coin-multipliers in
   # CTF's config.yml. It multiplies with Network Boosters.

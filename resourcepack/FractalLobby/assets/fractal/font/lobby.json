@@ -1393,6 +1393,24 @@
    "chars": [
     "\uf1c6"
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/hud_coins.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf026"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "fractal:gui/hud_level.png",
+   "ascent": 8,
+   "height": 9,
+   "chars": [
+    "\uf027"
+   ]
   }
  ]
 }

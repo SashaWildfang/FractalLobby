@@ -69,11 +69,28 @@ public final class NetworkLevels implements Listener {
         return new Progress(level, left, needed(level, first, extra), total);
     }
 
+    public long first() {
+        return Math.max(1, plugin.getConfig().getLong("leveling.first-level-xp", 200));
+    }
+
+    public long extra() {
+        return Math.max(0, plugin.getConfig().getLong("leveling.extra-xp-per-level", 50));
+    }
+
     /** This player's level (level 1 with no XP, or until it's been read). */
     public Progress progress(Player player) {
-        var c = plugin.getConfig();
-        return progress(xp.getOrDefault(player.getUniqueId(), 0L),
-                Math.max(1, c.getLong("leveling.first-level-xp", 200)), Math.max(0, c.getLong("leveling.extra-xp-per-level", 50)));
+        return progress(xp.getOrDefault(player.getUniqueId(), 0L), first(), extra());
+    }
+
+    /**
+     * The XP bar shows the network level: the number is the level, the bar how far to the next
+     * (leveling.xp-bar; the lobby has no use for vanilla XP).
+     */
+    public void showOnXpBar(Player player) {
+        if (!plugin.getConfig().getBoolean("leveling.xp-bar", true) || !player.isOnline()) return;
+        Progress p = progress(player);
+        player.setLevel(p.level());
+        player.setExp((float) Math.min(0.999, p.fraction()));
     }
 
     private void refresh() {
@@ -92,15 +109,39 @@ public final class NetworkLevels implements Listener {
                     }
                 }
             });
-            xp.put(uuid, value);
+            Long before = xp.put(uuid, value);
+            if (!value.equals(before)) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null) showOnXpBar(player);
+                });
+            }
         } catch (SQLException e) {
             plugin.getLogger().fine("Couldn't read network XP: " + e.getMessage());
         }
     }
 
+    /** Vanilla gives XP back on respawn and world changes: show the level again. */
+    @EventHandler
+    public void onRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+        Bukkit.getScheduler().runTask(plugin, () -> showOnXpBar(event.getPlayer()));
+    }
+
+    @EventHandler
+    public void onWorld(org.bukkit.event.player.PlayerChangedWorldEvent event) {
+        showOnXpBar(event.getPlayer());
+    }
+
+    /** No XP orbs in the lobby (they'd change the bar). */
+    @EventHandler(ignoreCancelled = true)
+    public void onExp(org.bukkit.event.player.PlayerExpChangeEvent event) {
+        if (plugin.getConfig().getBoolean("leveling.xp-bar", true)) event.setAmount(0);
+    }
+
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
+        showOnXpBar(event.getPlayer());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> read(uuid));
     }
 

@@ -162,7 +162,7 @@ add(0xF1A5, 'parkour', background(5, [], "PARKOUR", cells=[11, 12, 13, 14, 15, 2
 add(0xF1C3, 'profile', background(3, [4], "PROFILE", cells=[13, 19, 20, 21, 22, 23, 24, 25]))  # before 1.18.1
 add(0xF1C4, 'profile_4', background(4, [4], "PROFILE", cells=[11, 13, 15, 29, 30, 31, 32, 33]))
 add(0xF1C5, 'boosters', background(5, [], "BOOSTERS", cells=grid(5) + [39, 41]))
-add(0xF1C6, 'levels', background(6, [], "LEVELS", cells=[1, 4, 7, 9, 11, 13, 15, 17, 27, 29, 31, 33, 35, 40, 45, 49, 53]))
+# 0xF1C6 'levels': drawn by art/levels_gui.py (a snake track), not here
 def status_cols(k):  # a part row of k (of 7) is centred; an even count leaves the middle empty
     if k == 7: return list(range(7))
     if k % 2: return list(range((7 - k) // 2, (7 - k) // 2 + k))

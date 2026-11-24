@@ -84,24 +84,32 @@ public final class LevelRewards implements Listener {
         return new Reward(level, Math.max(0, dust), Math.max(0, coins), every > 0 && level % every == 0);
     }
 
-    /** A Mystery Box's stars, by level-rewards.mystery-box-stars weights. */
-    private int rollStars() {
+    /** level-rewards.mystery-box-stars: stars → weight, in star order. */
+    public NavigableMap<Integer, Integer> boxWeights() {
+        NavigableMap<Integer, Integer> map = new TreeMap<>();
         ConfigurationSection weights = config().getConfigurationSection("mystery-box-stars");
-        NavigableMap<Integer, Integer> table = new TreeMap<>();
-        int total = 0;
         if (weights != null) {
             for (String key : weights.getKeys(false)) {
                 try {
                     int stars = Math.max(1, Math.min(5, Integer.parseInt(key))), weight = weights.getInt(key);
-                    if (weight <= 0) continue;
-                    total += weight;
-                    table.put(total, stars);
+                    if (weight > 0) map.merge(stars, weight, Integer::sum);
                 } catch (NumberFormatException ignored) {
                     // not a star count
                 }
             }
         }
-        if (total == 0) return 1 + ThreadLocalRandom.current().nextInt(3);
+        if (map.isEmpty()) for (int i = 1; i <= 3; i++) map.put(i, 1);
+        return map;
+    }
+
+    /** A Mystery Box's stars, by level-rewards.mystery-box-stars weights. */
+    private int rollStars() {
+        NavigableMap<Integer, Integer> table = new TreeMap<>();
+        int total = 0;
+        for (var w : boxWeights().entrySet()) {
+            total += w.getValue();
+            table.put(total, w.getKey());
+        }
         return table.higherEntry(ThreadLocalRandom.current().nextInt(total)).getValue();
     }
 
@@ -230,7 +238,20 @@ public final class LevelRewards implements Listener {
     private void remind(Player player) {
         if (!player.isOnline() || plugin.levels() == null || !enabled()) return;
         int count = waiting(player, plugin.levels().progress(player).level()).size();
-        if (count > 0) plugin.messages().send(player, "levels.waiting-join", com.sasha.lobby.config.Messages.arg("count", count));
+        if (count <= 0) return;
+        var tags = com.sasha.lobby.config.Messages.arg("count", count);
+        for (var line : plugin.messages().lore(count == 1 ? "levels.notify-one" : "levels.notify-many", tags)) {
+            player.sendMessage(center(line));
+        }
+        player.playSound(net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("block.note_block.pling"),
+                net.kyori.adventure.sound.Sound.Source.MASTER, 0.6f, 1.6f), net.kyori.adventure.sound.Sound.Emitter.self());
+    }
+
+    /** Pads a chat line so it sits in the middle of the chat box. */
+    static net.kyori.adventure.text.Component center(net.kyori.adventure.text.Component line) {
+        int width = com.sasha.lobby.scoreboard.TextWidth.width(line);
+        int pad = (154 - width / 2) / 4;
+        return width <= 0 || pad <= 0 ? line : net.kyori.adventure.text.Component.text(" ".repeat(pad)).append(line);
     }
 
     @EventHandler
