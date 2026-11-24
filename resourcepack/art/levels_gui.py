@@ -9,3 +9,12 @@ g = {}
 exec(compile(src, 'make_gui.py', 'exec'), g)
 img = g['background'](6, [], "LEVELS", cells=[45, 46, 48, 49, 50, 52, 53], dividers=(106,))
 img.save('FractalLobby/assets/fractal/textures/gui/levels.png')
+
+# the vanilla greys round the edge become slate, as build_pack.py does for every menu background
+bp = open('build_pack.py').read()
+ns = {}
+exec(bp[bp.index('SLATE = {'):bp.index('def slate(img):')], ns)
+exec(bp[bp.index('def slate(img):'):bp.index('\n', bp.index('return', bp.index('def slate(img):'))) + 1], ns)
+from PIL import Image
+p = 'FractalLobby/assets/fractal/textures/gui/levels.png'
+ns['slate'](Image.open(p).convert('RGBA')).save(p)
