@@ -46,12 +46,12 @@ import java.util.TreeMap;
  * edge: the arrows in the bottom corners scroll it four columns at a time, and Re-center brings back the player's
  * level.
  *
- * <p>Below the snake: coin multiplier and the player's level; then scroll, back, re-center, claim all, scroll. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
+ * <p>Below the snake: coin multiplier, the player's level, claim all; then scroll, back, re-center, scroll. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
  */
 public final class LevelingMenu implements Listener {
 
     private static final char BACKGROUND = '\uF1C6';
-    static final int MULTIPLIER = 38, HEAD = 40, NEXT_BOX = 42, LEFT = 45, BACK = 47, RECENTER = 49, CLAIM_ALL = 51, RIGHT = 53;
+    static final int MULTIPLIER = 38, HEAD = 40, CLAIM_ALL = 42, LEFT = 45, BACK = 48, RECENTER = 50, RIGHT = 53;
     /** Columns the arrows move the snake. */
     static final int STEP = 4;
 
