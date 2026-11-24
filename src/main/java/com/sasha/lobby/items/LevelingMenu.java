@@ -46,8 +46,7 @@ import java.util.TreeMap;
  * edge: the arrows in the bottom corners scroll it four columns at a time, and Re-center brings back the player's
  * level.
  *
- * <p>Below the snake: coin multiplier, the player's level, next Mystery Box; then scroll, back, re-center, claim all,
- * scroll. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
+ * <p>Below the snake: coin multiplier and the player's level; then scroll, back, re-center, claim all, scroll. Java with the resource pack gets the pack's badges and bars; Bedrock gets plain items.
  */
 public final class LevelingMenu implements Listener {
 
@@ -167,7 +166,6 @@ public final class LevelingMenu implements Listener {
         }
         menu.inventory.setItem(MULTIPLIER, multiplier(player, level));
         menu.inventory.setItem(HEAD, head(player, progress));
-        menu.inventory.setItem(NEXT_BOX, nextBox(player, level, progress));
         menu.inventory.setItem(BACK, style.icon(Profile.button(messages, Material.ARROW, "profile.back"), "back"));
         menu.inventory.setItem(RECENTER, recenter(player, level));
         menu.inventory.setItem(CLAIM_ALL, claimAll(player, rewards.waiting(player, level).size()));

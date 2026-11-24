@@ -261,34 +261,43 @@ def chest():
 
 
 def recenter():
-    """Focus brackets round a small gem: 'back to my level'."""
+    """A gold compass with a purple needle: back to your level."""
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
-    W, P = (236, 228, 255), (178, 102, 255)
-    corners = [(1, 1, 1, 1), (14, 1, -1, 1), (1, 14, 1, -1), (14, 14, -1, -1)]
-    arm = set()
-    for x0, y0, dx, dy in corners:
-        for k in range(4):
-            arm.add((x0 + dx * k, y0))
-            arm.add((x0, y0 + dy * k))
-    for x, y in arm:
-        for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
-            q = (x + a, y + b)
-            if q not in arm and 0 <= q[0] < 16 and 0 <= q[1] < 16:
-                img.putpixel(q, K + (255,))
-    for x, y in arm:
-        img.putpixel((x, y), W + (255,))
-    gem = ["..KKKK..",
-           ".KLLYDK.",
-           "KLYYYDdK",
-           "KDDDDddK",
-           ".KDYYdK.",
-           "..KDdK..",
-           "...KK..."]
-    pal = {'L': (232, 214, 255), 'Y': P, 'D': (122, 66, 200), 'd': (82, 44, 142)}
-    for y, row in enumerate(gem):
-        for x, ch in enumerate(row):
-            if ch != '.':
-                img.putpixel((4 + x, 4 + y), (K if ch == 'K' else pal[ch]) + (255,))
+    gold_l, gold, gold_d = (255, 236, 170), (255, 196, 64), (190, 124, 28)
+    face, face_d = (238, 232, 250), (196, 188, 220)
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if d > 7.8:
+                continue
+            if d > 6.9:
+                c = K
+            elif d > 5.4:
+                lean = (x - 7.5) + (y - 7.5)
+                c = gold_l if lean < -3 else gold_d if lean > 3 else gold
+            elif d > 4.7:
+                c = K
+            else:
+                c = face if (x - 7.5) + (y - 7.5) < 2 else face_d
+            img.putpixel((x, y), c + (255,))
+    # tick marks at N E S W
+    for x, y in ((7, 3), (8, 3), (12, 7), (12, 8), (7, 12), (8, 12), (3, 7), (3, 8)):
+        img.putpixel((x, y), (150, 140, 180, 255))
+    # the needle: a diamond from the middle, purple pointing up-right, grey down-left, a gold pin
+    P, PL, PD, G, GD = (178, 102, 255), (226, 206, 255), (110, 60, 190), (128, 130, 152), (90, 92, 112)
+    for y in range(16):
+        for x in range(16):
+            u = ((x - 7.5) + (7.5 - y)) / 1.414                  # along the needle (up-right +)
+            v = ((x - 7.5) - (7.5 - y)) / 1.414                  # across it
+            if abs(u) <= 4.8 and abs(v) <= 2.4 * (1 - abs(u) / 5.4) + 0.5:
+                if u > 0:
+                    c = PL if v < -0.3 else P if v < 0.6 else PD
+                else:
+                    c = G if v < 0 else GD
+                img.putpixel((x, y), c + (255,))
+    for x, y in ((7, 7), (8, 8), (7, 8), (8, 7)):
+        img.putpixel((x, y), gold + (255,))
+    img.putpixel((7, 7), gold_l + (255,))
     return img
 
 
