@@ -613,6 +613,9 @@ proxy:
     - survival
     - prison
     - ctf
+  # Servers counted as one: <online:ctf> and the CTF realm include players in a match on ctf-game.
+  count-together:
+    ctf: [ctf-game]
 
 
 # ── Database ────────────────────────────────────────────────────

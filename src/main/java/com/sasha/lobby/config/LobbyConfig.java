@@ -132,7 +132,23 @@ public record LobbyConfig(
     public record Nametag(boolean enabled, String format, boolean applyToTablist) {
     }
 
-    public record Proxy(boolean enabled, long refreshTicks, List<String> servers) {
+    /** {@code together}: a server's count includes these others too (ctf: [ctf-game], so a match counts as CTF). */
+    public record Proxy(boolean enabled, long refreshTicks, List<String> servers, java.util.Map<String, List<String>> together) {
+    }
+
+    /** proxy.count-together; older configs have none, so CTF's hub counts its game server too. */
+    private static java.util.Map<String, List<String>> together(org.bukkit.configuration.ConfigurationSection c) {
+        java.util.Map<String, List<String>> out = new java.util.HashMap<>();
+        org.bukkit.configuration.ConfigurationSection section = c.getConfigurationSection("proxy.count-together");
+        if (section == null || section.getKeys(false).isEmpty()) {
+            out.put("ctf", List.of("ctf-game"));
+            return out;
+        }
+        for (String key : section.getKeys(false)) {
+            out.put(key.toLowerCase(java.util.Locale.ROOT), section.getStringList(key).stream()
+                    .map(v -> v.trim().toLowerCase(java.util.Locale.ROOT)).filter(v -> !v.isEmpty()).toList());
+        }
+        return out;
     }
 
     public record Scoreboard(boolean enabled, int updateTicks, DateTimeFormatter dateFormat, ZoneId timeZone,
@@ -237,7 +253,8 @@ public record LobbyConfig(
                 new Proxy(
                         c.getBoolean("proxy.enabled", true),
                         Math.max(5L, Math.round(c.getDouble("proxy.refresh-seconds", 1) * 20)),
-                        c.getStringList("proxy.servers").stream().map(String::trim).filter(s -> !s.isEmpty()).toList()),
+                        c.getStringList("proxy.servers").stream().map(String::trim).filter(s -> !s.isEmpty()).toList(),
+                        together(c)),
                 new Scoreboard(
                         c.getBoolean("scoreboard.enabled", true),
                         Math.max(1, c.getInt("scoreboard.update-ticks", 10)),

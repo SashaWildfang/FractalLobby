@@ -74,6 +74,13 @@ public final class ProxyCounts implements PluginMessageListener {
     /** Players on a proxy server (case-insensitive), or on the whole network for "all". 0 until known. */
     public int count(String server) {
         String key = server.equalsIgnoreCase("all") ? ALL : server.toLowerCase(Locale.ROOT);
+        int total = one(key);
+        for (String other : plugin.lobbyConfig().proxy().together().getOrDefault(key, List.of())) total += one(other);
+        return total;
+    }
+
+    /** One server's own count (no others counted with it). */
+    private int one(String key) {
         if (key.equals(ownName)) return plugin.getServer().getOnlinePlayers().size();
         return counts.getOrDefault(key, 0);
     }
@@ -84,7 +91,12 @@ public final class ProxyCounts implements PluginMessageListener {
         if (ownName == null) carrier.sendPluginMessage(plugin, CHANNEL, simple("GetServer"));
         for (String server : plugin.serverStatus().needAddress()) carrier.sendPluginMessage(plugin, CHANNEL, ask("ServerIP", server));
         List<String> servers = plugin.lobbyConfig().proxy().servers();
-        for (String server : servers) carrier.sendPluginMessage(plugin, CHANNEL, request(server));
+        java.util.Set<String> asked = new java.util.LinkedHashSet<>();
+        for (String server : servers) {
+            asked.add(server.toLowerCase(Locale.ROOT));
+            asked.addAll(plugin.lobbyConfig().proxy().together().getOrDefault(server.toLowerCase(Locale.ROOT), List.of()));
+        }
+        for (String server : asked) carrier.sendPluginMessage(plugin, CHANNEL, request(server));
         carrier.sendPluginMessage(plugin, CHANNEL, request(ALL));
     }
 
